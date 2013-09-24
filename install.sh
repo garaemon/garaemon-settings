@@ -13,6 +13,12 @@ echo disabling git ff
 git config --global --add merge.ff false
 
 #################################################
+# setting up tmux
+#################################################
+echo installing .tmux.conf
+cp -v resources/rcfiles/tmux.conf ~/.tmux.conf
+
+#################################################
 # setting up emacs
 #################################################
 cd ~/gprog
