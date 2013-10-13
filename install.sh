@@ -4,7 +4,7 @@ set -e
 
 # packages
 sudo apt-get install aptitude
-sudo aptitude install git-core emacs vim tmux anthy-el
+sudo aptitude install git-core emacs vim tmux anthy-el ssh
 
 #################################################
 # setting up git
