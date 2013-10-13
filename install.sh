@@ -2,6 +2,9 @@
 set -e
 # install.sh
 
+# packages
+sudo apt-get install aptitude
+sudo aptitude install git-core emacs vim tmux anthy-el
 
 #################################################
 # setting up git
