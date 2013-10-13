@@ -23,7 +23,8 @@ cp -v resources/rcfiles/tmux.conf ~/.tmux.conf
 #################################################
 cd ~/gprog
 rm -rf ~/.emacs ~/.emacs.d      # uninstalling .emacs
-git clone git@github.com:garaemon/emacs.d.git
+#git clone git@github.com:garaemon/emacs.d.git
+git clone https://github.com/garaemon/emacs.d.git
 cd emacs.d
 git submodule update --init .
 ./install.sh
