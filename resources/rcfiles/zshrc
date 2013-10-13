@@ -156,12 +156,6 @@ elif [ "$OS" = "Darwin" ] ; then
     fi
 fi
 
-# ros zshrc
-if [ -e $HOME/.zshrc.cturtle.ros ]; then
-    echo loading ros setup file ...
-    source $HOME/.zshrc.cturtle.ros
-fi
-
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
@@ -356,3 +350,7 @@ export RECOME_ENV=development-local
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
+
+if [ -e $HOME/ros/groovy/setup.zsh ]; then
+    source $HOME/ros/groovy/setup.zsh
+fi
