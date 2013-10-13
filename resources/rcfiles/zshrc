@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 umask 022
 
+export LC_ALL=en_US.UTF-8
+
 #zsh
 autoload -U colors
 colors
@@ -192,7 +194,7 @@ nvm use v0.10.3                  # for heroku
 #         echo '\\\033AnSiTc' $PWD
 #     fi
 # }
-export LANG="ja_JP.utf-8"
+# export LANG="ja_JP.utf-8"
 export PATH=$PATH:$HOME/gprog/git-your-emacs
 
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
@@ -213,15 +215,18 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 export PATH=$PATH:$HOME/gprog/jq
 
 #ROS
-export ROS_OS_OVERRIDE=osx:homebrew
-export PATH=/usr/local/lib/wxPython/bin:$PATH
-if [ -e $HOME/ros/setup.zsh ]; then
-    source $HOME/ros/setup.zsh
-else
-    echo ... cannot find ros/setup.zsh
+#export ROS_OS_OVERRIDE=osx:homebrew
+# export PATH=/usr/local/lib/wxPython/bin:$PATH
+# if [ -e $HOME/ros/setup.zsh ]; then
+#     source $HOME/ros/setup.zsh
+# else
+#     echo ... cannot find ros/setup.zsh
+# fi
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/gprog/garaemon-ros-pkg
+if [ -e $HOME/ros/groovy/setup.zsh ]; then
+    source $HOME/ros/groovy/setup.zsh
 fi
 
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/gprog/garaemon-ros-pkg
 
 #export HOMEBREW_CC=gcc
 
@@ -351,6 +356,4 @@ export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
 
-if [ -e $HOME/ros/groovy/setup.zsh ]; then
-    source $HOME/ros/groovy/setup.zsh
-fi
+
