@@ -7,6 +7,12 @@ sudo apt-get install aptitude
 sudo aptitude install git-core emacs vim tmux anthy-el ssh zsh curl
 
 #################################################
+# setting up vim
+#################################################
+ln -sf $PWD/resources/rcfiles/vimrc ~/.vimrc
+
+
+#################################################
 # setting up git
 #################################################
 echo installing commit-msg
