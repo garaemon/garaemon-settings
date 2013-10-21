@@ -188,6 +188,7 @@ export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
 nvm use v0.10.3                  # for heroku
+export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
 
 # function chpwd() {
 #     echo chpwd
@@ -227,6 +228,20 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/gprog/garaemon-ros-pkg
 if [ -e $HOME/ros/groovy/setup.zsh ]; then
     source $HOME/ros/groovy/setup.zsh
 fi
+
+if [ -e /usr/share/drcsim/setup.sh ]; then
+    ROS_WORKSPACE_ORG=$ROS_WORKSPACE
+    PYTHONPATH_ORG=$PYTHONPATH
+    source /usr/share/drcsim/setup.sh
+    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH_ORG:$ROS_PACKAGE_PATH
+    export ROS_WORKSPACE=$ROS_WORKSPACE_ORG
+    export PYTHONPATH=$PYTHONPATH_ORG:$PYTHONPATH
+    export ROS_PACKAGE_PATH=`echo $(echo $ROS_PACKAGE_PATH | sed -e "s/:/\n/g" | awk '!($0 in A) && A[$0] = 1' | grep -v "opt/ros"; echo $ROS_PACKAGE_PATH | sed -e "s/:/\n/g" | awk '!($0 in A) && A[$0] = 1' | grep "opt/ros") | sed -e "s/ /:/g"`
+    export VRC_CHEATS_ENABLED=1
+    source $(rospack find hrpsys_gazebo_tutorials)/setup.sh
+    
+fi
+alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 
 #export HOMEBREW_CC=gcc
@@ -277,7 +292,7 @@ PROMPT='$FG[237]Yes, Master? %D{[%K:%M:%S]}-------------------------------------
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
-
+RPROMPT='$my_orange%n@%m%{$reset_color%}%'
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -306,7 +321,7 @@ export PATH=/usr/local/mahout/bin:$PATH
 
 export JAVA_HOME=/Library/Java/Home
 
-export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
+# export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
 
 # source $HOME/gprog/maven-zsh-completion/_mvn
 
@@ -357,5 +372,3 @@ export RECOME_ENV=development-local
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
-
-
