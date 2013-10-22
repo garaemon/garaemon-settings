@@ -292,7 +292,7 @@ PROMPT='$FG[237]Yes, Master? %D{[%K:%M:%S]}-------------------------------------
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
-RPROMPT='$my_orange%n@%m%{$reset_color%}%'
+RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
