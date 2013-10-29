@@ -243,6 +243,7 @@ if [ -e /usr/share/drcsim/setup.sh ]; then
 fi
 alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
+export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 
 #export HOMEBREW_CC=gcc
 
