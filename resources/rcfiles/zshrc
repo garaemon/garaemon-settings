@@ -224,12 +224,13 @@ export PATH=$PATH:$HOME/gprog/jq
 # else
 #     echo ... cannot find ros/setup.zsh
 # fi
-export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/gprog/garaemon-ros-pkg
+
 if [ -e $HOME/ros/groovy/setup.zsh ]; then
     source $HOME/ros/groovy/setup.zsh
 fi
 
 if [ -e /usr/share/drcsim/setup.sh ]; then
+    ROS_PACKAGE_PATH_ORG=$ROS_PACKAGE_PATH
     ROS_WORKSPACE_ORG=$ROS_WORKSPACE
     PYTHONPATH_ORG=$PYTHONPATH
     source /usr/share/drcsim/setup.sh
@@ -356,7 +357,6 @@ function do_enter() {
     fi
     echo
     ls
-    # ↓おすすめ
     # ls_abbrev
     if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = 'true' ]; then
         echo
