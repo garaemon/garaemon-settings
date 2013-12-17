@@ -247,6 +247,25 @@ alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 alias rosmake="rosmake --pjobs=`grep -c processor /proc/cpuinfo`"
 
+function rossetrobot() {
+    local hostname=${1-"pr1012"}
+    local ros_port=${2-"11311"}
+    export ROS_MASTER_URI=http://$hostname:$ros_port
+    echo -e "\e[1;31mset ROS_MASTER_URI to $ROS_MASTER_URI\e[m"
+    rossetip
+}
+function rossetlocal() {
+    rossetrobot localhost
+}
+
+
+function rossetip() {
+    export ROS_IP=`LANGUAGE=en LANG=C ifconfig | grep 'wlan|eth' -E -A 7 | grep inet\  | grep -v 127.0.0.1 | sed 's/.*inet addr:\([0-9\.]*\).*/\1/' | head -1`
+    export ROS_HOSTNAME=$ROS_IP
+    echo -e "\e[1;31mset ROS_IP and ROS_HOSTNAME to $ROS_IP\e[m"
+}
+rossetlocal
+
 #export HOMEBREW_CC=gcc
 
 ##################################################################
