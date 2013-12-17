@@ -310,7 +310,13 @@ plugins=(git brew osx bower bundler mvn npm pip svn web-search)
 
 # Customize to your needs...
 
-PROMPT='$FG[237]Yes, Master? %D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
+function rosmaster_prompt() {
+    local host
+    host=`echo $ROS_MASTER_URI | sed -e 's%http://%%g'`
+    echo $host
+}
+
+PROMPT='%F{006}[`rosmaster_prompt`] $FG[237]Yes, Master? %D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
