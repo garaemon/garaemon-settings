@@ -229,6 +229,16 @@ if [ -e $HOME/ros/groovy/setup.zsh ]; then
     source $HOME/ros/groovy/setup.zsh
 fi
 
+if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
+    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
+fi
+export EUSDIR=`rospack find euslisp`/jskeus/eus
+export CVSDIR=$HOME/prog
+export OPENHRPHOME=$HOME/prog/OpenHRP
+export ROBOT=HRP2JSKNT
+export HRP2NO=16
+export ARCHDIR=Linux64
+
 if [ -e /usr/share/drcsim/setup.sh ]; then
     ROS_PACKAGE_PATH_ORG=$ROS_PACKAGE_PATH
     ROS_WORKSPACE_ORG=$ROS_WORKSPACE
@@ -399,3 +409,10 @@ export RECOME_ENV=development-local
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
+
+export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
+
+#rossetrobot 172.16.116.1 10016
+# export ROS_MASTER_URI=http://172.16.116.1:10016
+# export ROS_IP=172.16.116.253
+# export ROS_HOSTNAME=172.16.116.253
