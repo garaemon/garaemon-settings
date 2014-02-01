@@ -416,3 +416,6 @@ export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
 # export ROS_MASTER_URI=http://172.16.116.1:10016
 # export ROS_IP=172.16.116.253
 # export ROS_HOSTNAME=172.16.116.253
+
+#export MD_BASIC_USER="user"
+#export MD_BASIC_PASSWD="pass"

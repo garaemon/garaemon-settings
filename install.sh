@@ -36,6 +36,10 @@ fi
 #################################################
 curl https://raw.github.com/creationix/nvm/master/install.sh | sh
 
+#################################################
+# setting up rvm
+#################################################
+curl -sSL https://get.rvm.io | bash -s stable
 
 #################################################
 # setting up tmux
