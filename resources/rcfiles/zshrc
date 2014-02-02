@@ -190,6 +190,9 @@ export PATH=/opt/android-sdk/tools:$PATH
 nvm use v0.10.21                  # for heroku
 export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
 
+[ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
+
+
 # function chpwd() {
 #     echo chpwd
 #     if [ `echo $EMACS | grep -c "term"` -eq 1 ]; then
@@ -266,6 +269,8 @@ function rossetrobot() {
 }
 function rossetlocal() {
     rossetrobot localhost
+    unset ROS_HOSTNAME
+    unset ROS_IP
 }
 
 
