@@ -7,7 +7,7 @@
 # All rights reserved - Do Not Redistribute
 #
 
-%w{zsh mosh}.each do |pkg|
+%w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop}.each do |pkg|
   package pkg do
     action :install
   end
