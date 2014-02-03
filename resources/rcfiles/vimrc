@@ -2,7 +2,7 @@ set nocompatible  " おまじない
 syntax on  " シンタックスハイライト有効化
 set number  " 行数表示
 nnoremap q :<C-u>q<CR>  " q でvimを閉じる
-colorscheme darkblue
+"colorscheme darkblue
 
 " 行末のスペースを赤く表示する
 highlight WhitespaceEOL ctermbg=red
