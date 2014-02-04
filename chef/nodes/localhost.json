@@ -1,1 +1,10 @@
-{"run_list":["base"]}
+{"run_list":
+ ["base",
+  "ros-desktop"],
+ "default_attributes": {
+   "base_configuration": {
+     "home_dir": "/home/jskuser",
+     "user": "jskuser"
+   }
+ }
+}

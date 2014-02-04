@@ -22,7 +22,12 @@ end
 end
 
 # create catkin workspace
-
+# home_directory = nodes[:base_configuration][:home_dir]
+# user = nodes[:base_configuration][:user]
+# directory "#{home_directory}/hoge" do
+#   action :create
+#   owener user
+# end
 
 
 # create rosbuild workspace

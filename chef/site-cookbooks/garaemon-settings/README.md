@@ -1,5 +1,5 @@
-ros-desktop Cookbook
-============
+garaemon-settings Cookbook
+==========================
 TODO: Enter the cookbook description here.
 
 e.g.
@@ -11,14 +11,14 @@ TODO: List your cookbook requirements. Be sure to include any requirements this 
 
 e.g.
 #### packages
-- `toaster` - ros-desktop needs toaster to brown your bagel.
+- `toaster` - garaemon-settings needs toaster to brown your bagel.
 
 Attributes
 ----------
 TODO: List you cookbook attributes here.
 
 e.g.
-#### ros-desktop::default
+#### garaemon-settings::default
 <table>
   <tr>
     <th>Key</th>
@@ -27,7 +27,7 @@ e.g.
     <th>Default</th>
   </tr>
   <tr>
-    <td><tt>['ros-desktop']['bacon']</tt></td>
+    <td><tt>['garaemon-settings']['bacon']</tt></td>
     <td>Boolean</td>
     <td>whether to include bacon</td>
     <td><tt>true</tt></td>
@@ -36,17 +36,17 @@ e.g.
 
 Usage
 -----
-#### ros-desktop::default
+#### garaemon-settings::default
 TODO: Write usage instructions for each cookbook.
 
 e.g.
-Just include `ros-desktop` in your node's `run_list`:
+Just include `garaemon-settings` in your node's `run_list`:
 
 ```json
 {
   "name":"my_node",
   "run_list": [
-    "recipe[ros-desktop]"
+    "recipe[garaemon-settings]"
   ]
 }
 ```

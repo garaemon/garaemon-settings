@@ -1,11 +1,11 @@
-ros CHANGELOG
-=============
+garaemon-settings CHANGELOG
+===========================
 
-This file is used to list changes made in each version of the ros-desktop cookbook.
+This file is used to list changes made in each version of the garaemon-settings cookbook.
 
 0.1.0
 -----
-- [garaemon] - Initial release of ros-desktop
+- [your_name] - Initial release of garaemon-settings
 
 - - -
 Check the [Markdown Syntax Guide](http://daringfireball.net/projects/markdown/syntax) for help with Markdown.
