@@ -1,6 +1,7 @@
 {"run_list":
  ["base",
   "garaemon-settings",
+  "garaemon-emacs.d",
   "ros-desktop"],
    "base_configuration": {
      "home_dir": "/home/jskuser",
