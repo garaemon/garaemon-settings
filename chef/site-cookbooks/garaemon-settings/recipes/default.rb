@@ -24,6 +24,7 @@ garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
 git "#{garaemon_settings_path}" do
   repository "https://github.com/garaemon/garaemon-settings.git"
   enable_submodules true
+  user user
 end
 
 
