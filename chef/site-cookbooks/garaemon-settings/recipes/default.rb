@@ -11,10 +11,47 @@
 # done
 
 # checkout
-user = node[
-home = node['etc']['passwd'][user]['dir'] # Chef DSL
+user = node["base_configuration"]["user"]
+home = node["base_configuration"]["home_dir"]
+git_root_dir = node["garaemon-settings"]["git_root"]
+# creating gprog
+directory "#{home}/#{git_root_dir}" do
+  action :create
+  owner user
+end
 
-git "#{home}/gprog/garaemon-settings" do
+garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
+git "#{garaemon_settings_path}" do
   repository "https://github.com/garaemon/garaemon-settings.git"
   enable_submodules true
+end
+
+
+# installing vimrc
+link "#{home}/.vimrc" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/vimrc"
+end
+
+# setting up git
+file "/usr/share/git-core/templates/hooks/commit-msg" do
+  content IO.read("#{garaemon_settings_path}/resources/git/commit-msg")
+end
+bash "git no-ff" do
+  user user
+  code <<-EOH
+    git config --global --add merge.ff false
+  EOH
+end
+
+# zsh
+bash "install oh-my-zsh" do
+  user user
+  code <<-EOH
+   curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
+  EOH
+end
+link "#{home}/.zshrc" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/zshrc"
 end

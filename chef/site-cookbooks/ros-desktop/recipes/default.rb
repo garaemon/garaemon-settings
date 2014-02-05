@@ -15,7 +15,9 @@ apt_repository 'ros-latest' do
 end
 
 # install ros package
-%w{ros-hydro-desktop-full ros-groovy-desktop-full}.each do |pkg|
+%w{ros-hydro-desktop-full ros-groovy-desktop-full
+   ros-hydro-rosbuild ros-groovy-rosbuild
+   ros-hydro-catkin ros-groovy-catkin}.each do |pkg|
   package pkg do
     action :install
   end
