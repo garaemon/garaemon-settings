@@ -14,6 +14,16 @@
 user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
 git_root_dir = node["garaemon-settings"]["git_root"]
+
+# packages
+%w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop}.each do |pkg|
+  package pkg do
+    action :install
+  end
+end
+
+
+
 # creating gprog
 directory "#{home}/#{git_root_dir}" do
   action :create
@@ -42,8 +52,8 @@ end
 
 
 # setting up git
-file "/usr/share/git-core/templates/hooks/commit-msg" do
-  content IO.read("#{garaemon_settings_path}/resources/git/commit-msg")
+link "/usr/share/git-core/templates/hooks/commit-msg" do
+  to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
 bash "git no-ff" do
   user user

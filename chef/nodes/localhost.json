@@ -1,6 +1,5 @@
 {"run_list":
- ["base",
-  "garaemon-settings",
+ ["garaemon-settings",
   "garaemon-emacs.d",
   "ros-desktop"],
    "base_configuration": {

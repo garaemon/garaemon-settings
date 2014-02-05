@@ -11,6 +11,22 @@ user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
 git_root_dir = node["garaemon-settings"]["git_root"]
 
+# installing emacs24 for ubuntu 12.04
+apt_repository 'emacs-24' do
+  uri          'http://ppa.launchpad.net/cassou/emacs/ubuntu'
+  distribution node['lsb']['codename']
+  components   ['main']
+  keyserver    'keyserver.ubuntu.com'
+  key          'CEC45805'
+end
+
+
+%w{emacs24 emacs24-el}.each do |pkg|
+  package pkg do
+    action :install
+  end
+end
+
 directory "#{home}/#{git_root_dir}" do
   action :create
   owner user
