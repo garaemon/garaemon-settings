@@ -33,6 +33,13 @@ link "#{home}/.vimrc" do
   to "#{garaemon_settings_path}/resources/rcfiles/vimrc"
 end
 
+# installing tmux.conf
+link "#{home}/.tmux.conf" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/tmux.conf"
+end
+
+
 # setting up git
 file "/usr/share/git-core/templates/hooks/commit-msg" do
   content IO.read("#{garaemon_settings_path}/resources/git/commit-msg")
@@ -55,3 +62,18 @@ link "#{home}/.zshrc" do
   owner user
   to "#{garaemon_settings_path}/resources/rcfiles/zshrc"
 end
+
+bash "install nvm" do
+  user user
+  code <<-EOH
+    curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+  EOH
+end
+
+bash "install rvm" do
+  user user
+  code <<-EOH
+    curl -sSL https://get.rvm.io | bash -s stable
+  EOH
+end
+
