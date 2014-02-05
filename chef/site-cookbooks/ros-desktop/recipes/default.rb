@@ -7,12 +7,19 @@
 #
 
 # adding ROS repository
-apt_repository 'ros-latest' do
-  uri 'http://packages.ros.org/ros/ubuntu'
-  #uri 'http://ros.jsk.imi.i.u-tokyo.ac.jp/packages/ros/ubuntu'
-  distribution node['lsb']['codename']
-  key 'http://packages.ros.org/ros.key'
-  components   ['main']
+if not node["ros-desktop"]["jsk_apt"] then
+  apt_repository 'ros-latest' do
+    uri 'http://packages.ros.org/ros/ubuntu'
+    distribution node['lsb']['codename']
+    key 'http://packages.ros.org/ros.key'
+    components   ['main']
+  end
+else
+  apt_repository 'ros-latest' do
+    uri 'http://ros.jsk.imi.i.u-tokyo.ac.jp/packages/ros/ubuntu'
+    distribution node['lsb']['codename']
+    components   ['main']
+  end
 end
 
 # install ros package
