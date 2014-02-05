@@ -1,16 +1,8 @@
 {"run_list":
- ["garaemon-settings",
-  "garaemon-emacs.d",
-  "ros-desktop"],
-   "base_configuration": {
-     "home_dir": "/home/vagrant",
-     "user": "vagrant"
- },
- "ros-desktop": {
- },
- "garaemon-settings": {
-   "git_root": "gprog"
+ ["role[garaemon-desktop]"],
+ "base_configuration": {
+   "home_dir": "/home/vagrant",
+   "user": "vagrant"
  }
- 
 }
 

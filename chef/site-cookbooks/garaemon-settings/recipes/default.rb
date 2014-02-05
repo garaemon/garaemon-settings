@@ -63,12 +63,12 @@ bash "git no-ff" do
 end
 
 # zsh
-bash "install oh-my-zsh" do
+git "#{home}/.oh-my-zsh" do
+  repository "https://github.com/robbyrussell/oh-my-zsh.git"
+  enable_submodules true
   user user
-  code <<-EOH
-   curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-  EOH
 end
+
 link "#{home}/.zshrc" do
   owner user
   to "#{garaemon_settings_path}/resources/rcfiles/zshrc"

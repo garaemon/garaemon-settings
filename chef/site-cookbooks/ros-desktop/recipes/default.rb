@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: ros
+# Cookbook Name:: ros-desktop
 # Recipe:: default
 #
 # Copyright 2014, garaemon
@@ -9,6 +9,7 @@
 # adding ROS repository
 apt_repository 'ros-latest' do
   uri 'http://packages.ros.org/ros/ubuntu'
+  #uri 'http://ros.jsk.imi.i.u-tokyo.ac.jp/packages/ros/ubuntu'
   distribution node['lsb']['codename']
   key 'http://packages.ros.org/ros.key'
   components   ['main']
@@ -44,7 +45,7 @@ def setup_catkin(distro)
   create_dirs(directories)
   
   unless File.exists? "#{home_directory}/#{catkin_ws}/#{distro}/src/CMakeLists.txt" then
-    bash "catkin_init_workspace" do
+    bash "catkin_init_workspace for #{distro}" do
       user user
       cwd "#{home_directory}/#{catkin_ws}/#{distro}/src"
       code <<-EOH
@@ -52,7 +53,7 @@ def setup_catkin(distro)
        catkin_init_workspace
       EOH
     end
-    bash "catkin_make" do
+    bash "catkin_make for #{distro}" do
       user user
       cwd "#{home_directory}/#{catkin_ws}/#{distro}"
       code <<-EOH
@@ -76,7 +77,7 @@ def setup_rosbuild(distro)
   create_dirs(directories)
   # run rosws init
   unless File.exists? "#{home_directory}/#{rosbuild_ws}/#{distro}/.rosinstall" then
-    bash "rosws_init" do
+    bash "rosws_init for #{distro}" do
       user user
       cwd "#{home_directory}/#{rosbuild_ws}/#{distro}"
       code <<-EOH
