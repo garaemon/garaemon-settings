@@ -1,5 +1,5 @@
-base Cookbook
-=============
+garaemon-emacs.d Cookbook
+=========================
 TODO: Enter the cookbook description here.
 
 e.g.
@@ -11,14 +11,14 @@ TODO: List your cookbook requirements. Be sure to include any requirements this 
 
 e.g.
 #### packages
-- `toaster` - base needs toaster to brown your bagel.
+- `toaster` - garaemon-emacs.d needs toaster to brown your bagel.
 
 Attributes
 ----------
 TODO: List you cookbook attributes here.
 
 e.g.
-#### base::default
+#### garaemon-emacs.d::default
 <table>
   <tr>
     <th>Key</th>
@@ -27,7 +27,7 @@ e.g.
     <th>Default</th>
   </tr>
   <tr>
-    <td><tt>['base']['bacon']</tt></td>
+    <td><tt>['garaemon-emacs.d']['bacon']</tt></td>
     <td>Boolean</td>
     <td>whether to include bacon</td>
     <td><tt>true</tt></td>
@@ -36,17 +36,17 @@ e.g.
 
 Usage
 -----
-#### base::default
+#### garaemon-emacs.d::default
 TODO: Write usage instructions for each cookbook.
 
 e.g.
-Just include `base` in your node's `run_list`:
+Just include `garaemon-emacs.d` in your node's `run_list`:
 
 ```json
 {
   "name":"my_node",
   "run_list": [
-    "recipe[base]"
+    "recipe[garaemon-emacs.d]"
   ]
 }
 ```

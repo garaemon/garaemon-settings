@@ -1,0 +1,14 @@
+{"name": "garaemon-desktop",
+ "chef_type": "role",
+ "json_class":"Chef::Role",
+ "run_list":
+ ["garaemon-settings",
+  "garaemon-emacs.d",
+  "ros-desktop"],
+ "default_attributes": {
+   "garaemon-settings": {
+     "git_root": "gprog"
+   }
+ }
+}
+

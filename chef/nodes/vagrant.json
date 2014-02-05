@@ -1,0 +1,8 @@
+{"run_list":
+ ["role[garaemon-desktop]"],
+ "base_configuration": {
+   "home_dir": "/home/vagrant",
+   "user": "vagrant"
+ }
+}
+

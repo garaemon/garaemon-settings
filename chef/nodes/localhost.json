@@ -1,1 +1,16 @@
-{"run_list":["base"]}
+{"run_list":
+ ["garaemon-settings",
+  "garaemon-emacs.d",
+  "ros-desktop"],
+   "base_configuration": {
+     "home_dir": "/home/jskuser",
+     "user": "jskuser"
+ },
+ "ros-desktop": {
+   "catkin_ws": "catkin_tmp"
+ },
+ "garaemon-settings": {
+   "git_root": "gprog2"
+ }
+ 
+}
