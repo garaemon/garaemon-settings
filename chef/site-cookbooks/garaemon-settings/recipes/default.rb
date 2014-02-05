@@ -89,23 +89,23 @@ bash "install rvm" do
   EOH
 end
 
-%w{2.1.0}.each do |pkg|
-  bash "install gem #{pkg}" do
-    user user
-    code <<-EOH
-      source #{home}/.rvm/scripts/rvm
-      rvm install #{pkg}
-    EOH
-  end
-end
+# %w{2.1.0}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       rvm install #{pkg}
+#     EOH
+#   end
+# end
 
-%w{vagrant}.each do |pkg|
-  bash "install gem #{pkg}" do
-    user user
-    code <<-EOH
-      source #{home}/.rvm/scripts/rvm
-      gem install #{pkg} --no-ri --no-rdoc
-    EOH
-  end
-end
+# %w{vagrant}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       gem install #{pkg} --no-ri --no-rdoc
+#     EOH
+#   end
+# end
 
