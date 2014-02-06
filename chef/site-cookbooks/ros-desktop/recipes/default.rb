@@ -25,7 +25,8 @@ end
 # install ros package
 %w{ros-hydro-desktop-full ros-groovy-desktop-full
    ros-hydro-rosbuild ros-groovy-rosbuild
-   ros-hydro-catkin ros-groovy-catkin}.each do |pkg|
+   ros-hydro-catkin ros-groovy-catkin
+   ros-hydro-openni-camera ros-groovy-openni-camera}.each do |pkg|
   package pkg do
     action :install
   end
@@ -44,6 +45,7 @@ end
 # create catkin workspace
 
 def setup_catkin(distro)
+  user = node["base_configuration"]["user"]
   catkin_ws = node["ros-desktop"]["catkin_ws"]
   home_directory = node["base_configuration"]["home_dir"]
   directories = ["#{home_directory}/#{catkin_ws}",
@@ -58,6 +60,7 @@ def setup_catkin(distro)
       code <<-EOH
        source /opt/ros/#{distro}/setup.sh
        catkin_init_workspace
+       wstool init
       EOH
     end
     bash "catkin_make for #{distro}" do
