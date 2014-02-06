@@ -3,8 +3,8 @@
   "garaemon-emacs.d",
   "ros-desktop"],
    "base_configuration": {
-     "home_dir": "/home/jskuser",
-     "user": "jskuser"
+     "home_dir": "/home/garaemon",
+     "user": "garaemon"
  },
  "ros-desktop": {
    "catkin_ws": "catkin_tmp"
