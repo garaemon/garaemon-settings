@@ -16,7 +16,7 @@ home = node["base_configuration"]["home_dir"]
 git_root_dir = node["garaemon-settings"]["git_root"]
 
 # packages
-%w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop}.each do |pkg|
+%w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop virtualbox}.each do |pkg|
   package pkg do
     action :install
   end
@@ -81,10 +81,31 @@ bash "install nvm" do
   EOH
 end
 
+### ruby
 bash "install rvm" do
   user user
   code <<-EOH
     curl -sSL https://get.rvm.io | bash -s stable
   EOH
 end
+
+# %w{2.1.0}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       rvm install #{pkg}
+#     EOH
+#   end
+# end
+
+# %w{vagrant}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       gem install #{pkg} --no-ri --no-rdoc
+#     EOH
+#   end
+# end
 
