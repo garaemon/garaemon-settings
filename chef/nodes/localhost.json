@@ -5,7 +5,7 @@
      "user": "jskuser"
  },
  "ros-desktop": {
-   "catkin_ws": "catkin_tmp"
+   "catkin_ws": "ros_catkin_ws"
  },
  "garaemon-settings": {
    "git_root": "gprog2"

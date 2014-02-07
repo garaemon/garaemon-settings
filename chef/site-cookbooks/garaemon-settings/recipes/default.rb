@@ -91,6 +91,23 @@ bash "install nvm" do
   EOH
 end
 
+# installing npm packages
+bash "install node.js" do
+  user user
+  code <<-EOH
+    source #{home}/.nvm/nvm.sh
+    nvm install v0.10.21
+  EOH
+end
+
+bash "install npm packages" do
+  user user
+  code <<-EOH
+    source #{home}/.nvm/nvm.sh
+    nvm use v0.10.21
+    npm install -g express grunt grunt-cli
+  EOH
+end
 ### ruby
 
 # bash "install rvm" do
