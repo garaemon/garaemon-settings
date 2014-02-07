@@ -31,9 +31,15 @@ directory "#{home}/#{git_root_dir}" do
   owner user
 end
 
+if node["garaemon-settings"]["git_ssh"] then
+  git_prefix = "git@github.com:"
+else
+  git_prefix = "https://github.com/"
+end
+
 garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
 git "#{garaemon_settings_path}" do
-  repository "https://github.com/garaemon/garaemon-settings.git"
+  repository "#{git_prefix}garaemon/garaemon-settings.git"
   enable_submodules true
   user user
 end
