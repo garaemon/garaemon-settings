@@ -26,7 +26,7 @@ end
 %w{ros-hydro-desktop-full ros-groovy-desktop-full
    ros-hydro-rosbuild ros-groovy-rosbuild
    ros-hydro-catkin ros-groovy-catkin
-   ros-hydro-openni-camera ros-groovy-openni-camera}.each do |pkg|
+}.each do |pkg|
   package pkg do
     action :install
   end

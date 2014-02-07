@@ -5,6 +5,16 @@
 # Copyright 2014, garaemon
 #
 
+%w{ros-hydro-openni-launch ros-groovy-openni-launch
+   ros-hydro-openni-tracker ros-groovy-openni-tracker
+   ros-hydro-moveit-core ros-groovy-moveit-core
+   ros-hydro-moveit-ros-warehouse ros-groovy-moveit-ros-warehouse
+   ros-hydro-manipulation-msgs ros-groovy-manipulation-msgs
+   ros-hydro-pr2-controllers-msgs}.each do |pkg|
+  package pkg do
+    action :install
+  end
+end
 
 
 def wstool_set(distro, vcs, dir, repo)
