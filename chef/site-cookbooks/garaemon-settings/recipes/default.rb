@@ -4,6 +4,7 @@
 #
 # Copyright 2014, garaemon
 #
+include_recipe "rvm"
 
 # make directory
 # directory node['etc']['passwd'][user]['dir'] + '/gprog' do
@@ -55,12 +56,21 @@ end
 link "/usr/share/git-core/templates/hooks/commit-msg" do
   to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
+
 bash "git no-ff" do
   user user
   code <<-EOH
     git config --global --add merge.ff false
   EOH
 end
+
+bash "git auto color" do
+  user user
+  code <<-EOH
+    git config --global color.ui auto
+  EOH
+end
+
 
 # zsh
 git "#{home}/.oh-my-zsh" do
@@ -81,13 +91,31 @@ bash "install nvm" do
   EOH
 end
 
-### ruby
-bash "install rvm" do
+# installing npm packages
+bash "install node.js" do
   user user
   code <<-EOH
-    curl -sSL https://get.rvm.io | bash -s stable
+    source #{home}/.nvm/nvm.sh
+    nvm install v0.10.21
   EOH
 end
+
+bash "install npm packages" do
+  user user
+  code <<-EOH
+    source #{home}/.nvm/nvm.sh
+    nvm use v0.10.21
+    npm install -g express grunt grunt-cli
+  EOH
+end
+### ruby
+
+# bash "install rvm" do
+#   user user
+#   code <<-EOH
+#     curl -sSL https://get.rvm.io | bash -s stable
+#   EOH
+# end
 
 # %w{2.1.0}.each do |pkg|
 #   bash "install gem #{pkg}" do

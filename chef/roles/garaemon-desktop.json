@@ -4,7 +4,8 @@
  "run_list":
  ["garaemon-settings",
   "garaemon-emacs.d",
-  "ros-desktop"],
+  "ros-desktop",
+  "jsk-ros"],
  "default_attributes": {
    "garaemon-settings": {
      "git_root": "gprog"

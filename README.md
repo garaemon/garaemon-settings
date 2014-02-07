@@ -16,5 +16,7 @@ vagrant ssh-config --host vagrant >> ~/.ssh/config
 
 * running chef for that vagrant
 ```sh
+cd vagrant
+vagrant up
 knife solo cook vagrant
 ```

@@ -1,0 +1,12 @@
+{"name": "jsk-desktop",
+ "chef_type": "role",
+ "json_class":"Chef::Role",
+ "run_list":
+ ["ros-desktop", "jsk-ros"],
+ "default_attributes": {
+   "ros-desktop": {
+     
+   }
+ }
+}
+

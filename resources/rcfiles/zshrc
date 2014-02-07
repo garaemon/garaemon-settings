@@ -228,8 +228,9 @@ export PATH=$PATH:$HOME/gprog/jq
 #     echo ... cannot find ros/setup.zsh
 # fi
 
-if [ -e $HOME/ros/groovy/setup.zsh ]; then
-    source $HOME/ros/groovy/setup.zsh
+ROS_DISTRO=hydro
+if [ -e $HOME/ros/${ROS_DISTRO}/setup.zsh ]; then
+    source $HOME/ros/${ROS_DISTRO}/setup.zsh
 fi
 
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
@@ -401,7 +402,7 @@ function do_enter() {
     if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = 'true' ]; then
         echo
         echo -e "\e[0;33m--- git status ---\e[0m"
-        git status -sb
+        git status --short --branch
     fi
     zle reset-prompt
     return 0
@@ -424,3 +425,5 @@ export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
 
 #export MD_BASIC_USER="user"
 #export MD_BASIC_PASSWD="pass"
+
+alias git-graph="git log --graph --decorate --oneline"
