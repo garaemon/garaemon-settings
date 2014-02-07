@@ -84,7 +84,6 @@ end
 
 ### ruby
 
-
 # bash "install rvm" do
 #   user user
 #   code <<-EOH
