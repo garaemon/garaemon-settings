@@ -56,12 +56,21 @@ end
 link "/usr/share/git-core/templates/hooks/commit-msg" do
   to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
+
 bash "git no-ff" do
   user user
   code <<-EOH
     git config --global --add merge.ff false
   EOH
 end
+
+bash "git auto color" do
+  user user
+  code <<-EOH
+    git config --global color.ui auto
+  EOH
+end
+
 
 # zsh
 git "#{home}/.oh-my-zsh" do
