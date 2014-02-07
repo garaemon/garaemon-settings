@@ -461,4 +461,5 @@ if [ `which percol` ]; then
     }
     zle -N insert-file-by-percol
     bindkey '^[c' insert-file-by-percol
+    alias p=percol
 fi
