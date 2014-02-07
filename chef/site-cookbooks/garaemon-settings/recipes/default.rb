@@ -23,8 +23,6 @@ git_root_dir = node["garaemon-settings"]["git_root"]
   end
 end
 
-
-
 # creating gprog
 directory "#{home}/#{git_root_dir}" do
   action :create
@@ -89,6 +87,12 @@ link "#{home}/.zshrc" do
   owner user
   to "#{garaemon_settings_path}/resources/rcfiles/zshrc"
 end
+
+link "#{home}/.profile" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/profile"
+end
+
 
 bash "install nvm" do
   user user
