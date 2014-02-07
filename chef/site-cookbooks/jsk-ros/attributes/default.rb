@@ -1,1 +1,1 @@
-default["jsk-ros"]["distributions"] = ["hydro"]
+default["jsk-ros"]["distributions"] = ["hydro", "groovy"]

@@ -51,6 +51,9 @@ wstool_set("hydro",
 wstool_set("hydro",
            "--git", "baxter_common",
            "https://github.com/RethinkRobotics/baxter_common")
+wstool_set("groovy",
+           "--svn", "rtm-ros-robotics",
+           "https://rtm-ros-robotics.googlecode.com/svn/trunk")
 
 # compile them
 user = node["base_configuration"]["user"]
