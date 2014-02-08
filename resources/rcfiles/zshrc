@@ -430,7 +430,7 @@ alias git-graph="git log --graph --decorate --oneline"
 
 #percol settings
 
-if [ `which percol` ]; then
+if [ -e `which percol` ]; then
     function percol_select_history() {
         local tac_cmd
         which gtac &> /dev/null && tac_cmd=gtac || tac_cmd=tac
@@ -461,4 +461,14 @@ if [ `which percol` ]; then
     }
     zle -N insert-file-by-percol
     bindkey '^[c' insert-file-by-percol
+    
+    function percol_select_dirstack_entry() {
+        BUFFER=$(dirs -pl | percol --query "$LBUFFER")
+        CURSOR=$#BUFFER
+        zle -R -c
+    }
+    zle -N percol_select_dirstack_entry
+    bindkey '^[d' percol_select_dirstack_entry
+    
+    alias p=percol
 fi
