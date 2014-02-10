@@ -8,7 +8,8 @@
    "catkin_ws": "ros_catkin_ws"
  },
  "garaemon-settings": {
-   "git_root": "gprog2"
+   "git_root": "gprog2",
+   "git_ssh": true
  }
  
 }
