@@ -3,6 +3,21 @@ garaemon-settings
 
 some script to setup garaemon's environment
 
+Setting up chef master
+---
+```sh
+cd chef
+breks install
+```
+
+Running chef
+---
+```sh
+cd chef
+knife solo prepare {target}
+knife solo cook {target}
+```
+
 Setting up vagrant
 ---
 ```sh
