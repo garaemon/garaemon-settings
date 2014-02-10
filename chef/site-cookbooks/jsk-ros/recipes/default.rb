@@ -18,31 +18,6 @@
 end
 
 
-user = node["base_configuration"]["user"]
-home = node["base_configuration"]["home_dir"]
-catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
-catkin_ws = "#{home}/#{catkin_ws_suffix}"
-distro = "hydro"
-
-bash "wstool init" do
-  user user
-  cwd "#{catkin_ws}/#{distro}/src"
-  code <<-EOH
-    source /opt/ros/#{distro}/setup.sh
-    test -e #{catkin_ws}/#{distro}/src/.rosinstall || wstool init
-  EOH
-end
-
-
-bash "wstool merge" do
-  user user
-  cwd "#{catkin_ws}/#{distro}/src"
-  code <<-EOH
-    source /opt/ros/#{distro}/setup.sh
-    wstool merge https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall
-  EOH
-end
-
 # compile them
 user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
@@ -50,17 +25,33 @@ catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
 node["jsk-ros"]["distributions"].each do |distro|
+  bash "wstool init" do
+    user
+    cwd "#{catkin_ws}/#{distro}/src"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.bash
+      test -e #{catkin_ws}/#{distro}/src || wstool init
+    EOH
+  end
+
+  bash "wstool merge" do
+    user
+    cwd "#{catkin_ws}/#{distro}/src"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.bash
+      wstool merge https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall
+    EOH
+  end
+
   bash "wstool update for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
-      wstool update -j 10
+      wstool update -j10
     EOH
   end
-end
 
-node["jsk-ros"]["distributions"].each do |distro|
   bash "catkin_make for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}"
