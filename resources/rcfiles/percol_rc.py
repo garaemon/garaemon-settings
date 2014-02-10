@@ -1,6 +1,6 @@
 # percol_rc.py
 # X / _ / X
-percol.view.PROMPT  = ur"<bold><yellow>X / _ / X</yellow></bold> %q"
+percol.view.PROMPT  = ur"<bold><yellow>Yes, Master?</yellow></bold> %q"
 
 # Emacs like
 percol.import_keymap({
