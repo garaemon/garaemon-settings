@@ -63,6 +63,7 @@ def setup_catkin(distro)
        wstool init
       EOH
     end
+    # need to be able to configure supressing compile
     bash "catkin_make for #{distro}" do
       user user
       cwd "#{home_directory}/#{catkin_ws}/#{distro}"
