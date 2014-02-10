@@ -30,7 +30,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.bash
-      test -e #{catkin_ws}/#{distro}/src || wstool init
+      test -e #{catkin_ws}/#{distro}/src/.rosinstall || wstool init
     EOH
   end
 
