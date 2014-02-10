@@ -54,3 +54,4 @@ link "#{home}/.emacs.d" do
   owner user
   to "#{garaemon_emacs_path}"
 end
+

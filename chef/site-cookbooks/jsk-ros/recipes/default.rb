@@ -18,43 +18,30 @@
 end
 
 
-def wstool_set(distro, vcs, dir, repo)
-  user = node["base_configuration"]["user"]
-  home = node["base_configuration"]["home_dir"]
-  catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
-  catkin_ws = "#{home}/#{catkin_ws_suffix}"
-  unless File.exists? "#{catkin_ws}/#{distro}/src/#{dir}" then
-    bash "wstool set for #{dir}" do
-      user user
-      cwd "#{catkin_ws}/#{distro}/src"
-      code <<-EOH
-        source /opt/ros/#{distro}/setup.sh
-        wstool set #{vcs} -y #{dir} #{repo} 
-      EOH
-    end
-  end
+user = node["base_configuration"]["user"]
+home = node["base_configuration"]["home_dir"]
+catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
+catkin_ws = "#{home}/#{catkin_ws_suffix}"
+distro = "hydro"
+
+bash "wstool init" do
+  user user
+  cwd "#{catkin_ws}/#{distro}/src"
+  code <<-EOH
+    source /opt/ros/#{distro}/setup.sh
+    test -e #{catkin_ws}/#{distro}/src/.rosinstall || wstool init
+  EOH
 end
 
-wstool_set("hydro",
-           "--git", "moveit_ros", "https://github.com/ros-planning/moveit_ros.git")
-wstool_set("hydro",
-           "--git", "rviz_animated_view_controller",
-           "https://github.com/ros-visualization/rviz_animated_view_controller.git")
-wstool_set("hydro",
-           "--git", "view_controller_msgs",
-           "https://github.com/ros-visualization/view_controller_msgs.git")
-wstool_set("hydro",
-           "--svn", "rtm-ros-robotics",
-           "https://rtm-ros-robotics.googlecode.com/svn/trunk")
-wstool_set("hydro",
-           "--svn", "jsk-ros-pkg",
-           "https://svn.code.sf.net/p/jsk-ros-pkg/code/trunk")
-wstool_set("hydro",
-           "--git", "baxter_common",
-           "https://github.com/RethinkRobotics/baxter_common")
-wstool_set("groovy",
-           "--svn", "rtm-ros-robotics",
-           "https://rtm-ros-robotics.googlecode.com/svn/trunk")
+
+bash "wstool merge" do
+  user user
+  cwd "#{catkin_ws}/#{distro}/src"
+  code <<-EOH
+    source /opt/ros/#{distro}/setup.sh
+    wstool merge https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall
+  EOH
+end
 
 # compile them
 user = node["base_configuration"]["user"]
