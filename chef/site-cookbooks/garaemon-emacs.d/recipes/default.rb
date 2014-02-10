@@ -32,10 +32,16 @@ directory "#{home}/#{git_root_dir}" do
   owner user
 end
 
+if node["garaemon-settings"]["git_ssh"] then
+  git_prefix = "git@github.com:"
+else
+  git_prefix = "https://github.com/"
+end
+
 garaemon_emacs_path = "#{home}/#{git_root_dir}/emacs.d"
 git garaemon_emacs_path do
   user user
-  repository "https://github.com/garaemon/emacs.d.git"
+  repository "#{git_prefix}garaemon/emacs.d.git"
   enable_submodules true
 end
 
