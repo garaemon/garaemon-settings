@@ -1,3 +1,5 @@
 site :opscode
 cookbook 'apt'
 cookbook 'rvm', git: 'https://github.com/fnichol/chef-rvm.git'
+cookbook 'python
+'
