@@ -430,7 +430,8 @@ alias git-graph="git log --graph --decorate --oneline"
 
 #percol settings
 
-if [ -e `which percol` ]; then
+which precol > /dev/null
+if [ $? ]; then
     function percol_select_history() {
         local tac_cmd
         which gtac &> /dev/null && tac_cmd=gtac || tac_cmd=tac
