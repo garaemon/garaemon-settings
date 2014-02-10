@@ -35,27 +35,6 @@ def wstool_set(distro, vcs, dir, repo)
   end
 end
 
-wstool_set("hydro",
-           "--git", "moveit_ros", "https://github.com/ros-planning/moveit_ros.git")
-wstool_set("hydro",
-           "--git", "rviz_animated_view_controller",
-           "https://github.com/ros-visualization/rviz_animated_view_controller.git")
-wstool_set("hydro",
-           "--git", "view_controller_msgs",
-           "https://github.com/ros-visualization/view_controller_msgs.git")
-wstool_set("hydro",
-           "--svn", "rtm-ros-robotics",
-           "https://rtm-ros-robotics.googlecode.com/svn/trunk")
-wstool_set("hydro",
-           "--svn", "jsk-ros-pkg",
-           "https://svn.code.sf.net/p/jsk-ros-pkg/code/trunk")
-wstool_set("hydro",
-           "--git", "baxter_common",
-           "https://github.com/RethinkRobotics/baxter_common")
-wstool_set("groovy",
-           "--svn", "rtm-ros-robotics",
-           "https://rtm-ros-robotics.googlecode.com/svn/trunk")
-
 # compile them
 user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
@@ -63,6 +42,24 @@ catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
 node["jsk-ros"]["distributions"].each do |distro|
+  bash "wstool init" do
+    user
+    cwd "#{catkin_ws}/#{distro}/src"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.bash
+      test -e #{catkin_ws}/#{distro}/src || wstool init
+    EOH
+  end
+
+  bash "wstool merge" do
+    user
+    cwd "#{catkin_ws}/#{distro}/src"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.bash
+      wstool merge https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall
+    EOH
+  end
+
   bash "wstool update for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}/src"
@@ -71,9 +68,7 @@ node["jsk-ros"]["distributions"].each do |distro|
       wstool update -j 10
     EOH
   end
-end
 
-node["jsk-ros"]["distributions"].each do |distro|
   bash "catkin_make for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}"

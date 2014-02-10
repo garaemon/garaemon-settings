@@ -1,0 +1,14 @@
+{"run_list":
+ ["role[garaemon-desktop]"],
+   "base_configuration": {
+     "home_dir": "/home/jskuser",
+     "user": "jskuser"
+ },
+ "ros-desktop": {
+   "catkin_ws": "ros_catkin_ws"
+ },
+ "garaemon-settings": {
+   "git_root": "gprog2"
+ }
+ 
+}
