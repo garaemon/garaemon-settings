@@ -62,6 +62,16 @@ node["jsk-ros"]["distributions"].each do |distro|
     EOH
   end
 
+  bash "rosdep install for #{distro}" do
+    user user
+    cwd "#{catkin_ws}/#{distro}"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.sh
+      rosdep update
+      rosdep install -r -n --from-paths src --ignore-src --rosdistro #{distro} -y
+    EOH
+  end
+  
   #should clear before catkin_make ???
   bash "catkin_make for #{distro}" do
     user user
