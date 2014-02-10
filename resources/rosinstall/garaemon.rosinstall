@@ -1,0 +1,27 @@
+# rtm-ros-robotics
+- git:
+    uri: https://github.com/start-jsk/openrtm_common
+    local-name: rtm-ros-robotics/openrtm_common
+- git:
+    uri: https://github.com/start-jsk/rtmros_common
+    local-name: rtm-ros-robotics/rtmros_common
+- git:
+    uri: https://github.com/start-jsk/rtmros_tutorials
+    local-name: rtm-ros-robotics/rtmros_tutorials
+- git:
+    uri: https://github.com/start-jsk/rtmros_hironx
+    local-name: rtm-ros-robotics/rtmros_hironx
+- git:
+    uri: https://github.com/start-jsk/rtmros_gazebo
+    local-name: rtm-ros-robotics/rtmros_gazebo
+- svn:
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps
+    local-name: rtm-ros-robotics/openrtm_apps
+- svn:
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials
+    local-name: rtm-ros-robotics/agentsystem_ros_tutorials
+##
+## jsk ros packages
+- svn:
+    uri: https://svn.code.sf.net/p/jsk-ros-pkg/code/trunk
+    local-name: jsk-ros-pkg

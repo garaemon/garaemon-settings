@@ -4,6 +4,7 @@
 #
 # Copyright 2014, garaemon
 #
+include_recipe "rvm"
 
 # make directory
 # directory node['etc']['passwd'][user]['dir'] + '/gprog' do
@@ -14,15 +15,29 @@
 user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
 git_root_dir = node["garaemon-settings"]["git_root"]
+
+# packages
+%w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop virtualbox}.each do |pkg|
+  package pkg do
+    action :install
+  end
+end
+
 # creating gprog
 directory "#{home}/#{git_root_dir}" do
   action :create
   owner user
 end
 
+if node["garaemon-settings"]["git_ssh"] then
+  git_prefix = "git@github.com:"
+else
+  git_prefix = "https://github.com/"
+end
+
 garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
 git "#{garaemon_settings_path}" do
-  repository "https://github.com/garaemon/garaemon-settings.git"
+  repository "#{git_prefix}garaemon/garaemon-settings.git"
   enable_submodules true
   user user
 end
@@ -42,9 +57,10 @@ end
 
 
 # setting up git
-file "/usr/share/git-core/templates/hooks/commit-msg" do
-  content IO.read("#{garaemon_settings_path}/resources/git/commit-msg")
+link "/usr/share/git-core/templates/hooks/commit-msg" do
+  to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
+
 bash "git no-ff" do
   user user
   code <<-EOH
@@ -52,17 +68,31 @@ bash "git no-ff" do
   EOH
 end
 
-# zsh
-bash "install oh-my-zsh" do
+bash "git auto color" do
   user user
   code <<-EOH
-   curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
+    git config --global color.ui auto
   EOH
 end
+
+
+# zsh
+git "#{home}/.oh-my-zsh" do
+  repository "https://github.com/robbyrussell/oh-my-zsh.git"
+  enable_submodules true
+  user user
+end
+
 link "#{home}/.zshrc" do
   owner user
   to "#{garaemon_settings_path}/resources/rcfiles/zshrc"
 end
+
+link "#{home}/.profile" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/profile"
+end
+
 
 bash "install nvm" do
   user user
@@ -71,10 +101,49 @@ bash "install nvm" do
   EOH
 end
 
-bash "install rvm" do
+# installing npm packages
+bash "install node.js" do
   user user
   code <<-EOH
-    curl -sSL https://get.rvm.io | bash -s stable
+    source #{home}/.nvm/nvm.sh
+    nvm install v0.10.21
   EOH
 end
+
+bash "install npm packages" do
+  user user
+  code <<-EOH
+    source #{home}/.nvm/nvm.sh
+    nvm use v0.10.21
+    npm install -g express grunt grunt-cli
+  EOH
+end
+### ruby
+
+# bash "install rvm" do
+#   user user
+#   code <<-EOH
+#     curl -sSL https://get.rvm.io | bash -s stable
+#   EOH
+# end
+
+# %w{2.1.0}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       rvm install #{pkg}
+#     EOH
+#   end
+# end
+
+# %w{vagrant}.each do |pkg|
+#   bash "install gem #{pkg}" do
+#     user user
+#     code <<-EOH
+#       source #{home}/.rvm/scripts/rvm
+#       gem install #{pkg} --no-ri --no-rdoc
+#     EOH
+#   end
+# end
 
