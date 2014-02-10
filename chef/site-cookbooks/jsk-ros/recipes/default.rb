@@ -65,7 +65,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
-      wstool update -j 10
+      wstool update -j10
     EOH
   end
 
