@@ -122,32 +122,34 @@ bash "install npm packages" do
 end
 ### ruby
 
-# bash "install rvm" do
-#   user user
-#   code <<-EOH
-#     curl -sSL https://get.rvm.io | bash -s stable
-#   EOH
-# end
+bash "install rvm" do
+  user user
+  code <<-EOH
+    curl -sSL https://get.rvm.io | bash -s stable
+  EOH
+end
 
-# %w{2.1.0}.each do |pkg|
-#   bash "install gem #{pkg}" do
-#     user user
-#     code <<-EOH
-#       source #{home}/.rvm/scripts/rvm
-#       rvm install #{pkg}
-#     EOH
-#   end
-# end
-
-# %w{vagrant}.each do |pkg|
-#   bash "install gem #{pkg}" do
-#     user user
-#     code <<-EOH
-#       source #{home}/.rvm/scripts/rvm
-#       gem install #{pkg} --no-ri --no-rdoc
-#     EOH
-#   end
-# end
+ruby_versions = %w{2.1.0}
+gem_packages = %w{vagrant}
+ruby_versions.each do |version|
+  bash "install ruby #{version}" do
+    user user
+    code <<-EOH
+      source #{home}/.rvm/scripts/rvm
+      rvm install #{version}
+    EOH
+  end
+  gem_packages.each do |pkg|
+    bash "install gem #{pkg} for #{version}" do
+      user user
+      code <<-EOH
+        source #{home}/.rvm/scripts/rvm
+        rvm use #{version}
+        gem install #{pkg} --no-ri --no-rdoc
+      EOH
+    end
+  end
+end
 
 ### python
 bash "install pip packages" do
