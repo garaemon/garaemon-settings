@@ -37,4 +37,3 @@
 - git:
     uri: https://github.com/RethinkRobotics/baxter_common
     local-name: baxter/baxter_common
-    

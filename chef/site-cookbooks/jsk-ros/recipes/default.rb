@@ -25,7 +25,17 @@ catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
 node["jsk-ros"]["distributions"].each do |distro|
-  bash "wstool init" do
+  if node["jsk-ros"]["clear_catkin"] then
+    bash "clear catkin ws for #{distro}" do
+      user user
+      cwd "#{catkin_ws}/#{distro}"
+      code <<-EOH
+        rm -rf build devel install
+      EOH
+    end
+  end
+  
+  bash "wstool init for #{distro}" do
     user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
@@ -34,7 +44,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     EOH
   end
 
-  bash "wstool merge" do
+  bash "wstool merge for #{distro}" do
     user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
@@ -52,12 +62,22 @@ node["jsk-ros"]["distributions"].each do |distro|
     EOH
   end
 
+  #should clear before catkin_make ???
   bash "catkin_make for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
+      
       catkin_make
+    EOH
+  end
+  bash "catkin_make install for #{distro}" do
+    user user
+    cwd "#{catkin_ws}/#{distro}"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.sh
+      catkin_make install
     EOH
   end
 end

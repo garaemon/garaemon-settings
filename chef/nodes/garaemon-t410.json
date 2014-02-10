@@ -7,6 +7,9 @@
  "ros-desktop": {
    "catkin_ws": "ros_catkin_ws"
  },
+ "jsk-ros": {
+   "clear_catkin": true
+ },
  "garaemon-settings": {
    "git_root": "gprog2",
    "git_ssh": true
