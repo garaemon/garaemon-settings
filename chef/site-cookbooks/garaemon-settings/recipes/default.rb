@@ -149,3 +149,20 @@ end
 #   end
 # end
 
+### python
+bash "install pip packages" do
+  code <<-EOH
+    pip install percol
+  EOH
+end
+
+# setup percol
+directory "#{home}/.percol.d" do
+  action :create
+  owner user
+end
+
+link "#{home}/.percol.d/rc.py" do
+  owner user
+  to "#{garaemon_settings_path}/resources/rcfiles/percol_rc.py"
+end

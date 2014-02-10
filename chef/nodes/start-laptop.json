@@ -10,6 +10,8 @@
  "garaemon-settings": {
    "git_root": "gprog2",
    "git_ssh": true
+ },
+ "jsk-ros": {
+   "distributions": ["hydro"]
  }
- 
 }
