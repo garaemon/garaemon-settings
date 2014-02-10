@@ -1,0 +1,11 @@
+{"run_list":
+ ["role[garaemon-desktop]"],
+   "base_configuration": {
+     "home_dir": "/home/jsk/ueda",
+     "user": "ueda"
+ },
+ "garaemon-settings": {
+   "git_root": "gprog"
+ }
+ 
+}
