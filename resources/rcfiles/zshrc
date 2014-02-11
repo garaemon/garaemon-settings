@@ -332,7 +332,7 @@ function rosmaster_prompt() {
     echo $host
 }
 
-PROMPT='%F{006}[`rosmaster_prompt`] $FG[237]Yes, Master? %D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
+PROMPT='%F{006}[`rosmaster_prompt`] $FG[014]Yes, Master? $FG[047][[`echo $CATKIN_WS`]] $FG[014]%D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
@@ -348,7 +348,7 @@ alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t p
 export COOKIE_SECRET="hkfc-sakuchan"
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
-alias emacsclient="emacsclient -n"
+alias em="emacsclient -n"
 
 
 export BASIC_USER="garaemon"
@@ -473,3 +473,27 @@ if [ $? ]; then
     
     alias p=percol
 fi
+
+function change_ros_setup() {
+    local prefix_path=$1
+    source $prefix_path/setup.zsh
+    export CATKIN_WS=$prefix_path
+}
+
+function roshydro() {
+    change_ros_setup $HOME/ros_catkin_ws/hydro/install
+}
+
+function roshydrodev() {
+    change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+}
+
+function rosgroovy() {
+    change_ros_setup $HOME/ros_catkin_ws/groovy/install
+}
+
+function rosgroovydev() {
+    change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+}
+
+roshydro
