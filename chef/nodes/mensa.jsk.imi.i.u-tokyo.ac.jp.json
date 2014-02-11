@@ -6,6 +6,11 @@
  },
  "garaemon-settings": {
    "git_root": "gprog"
+ },
+  "ros-desktop": {
+   "catkin_ws": "ros_catkin_ws_release"
+ },
+ "jsk-ros": {
+   "clear_catkin": true
  }
- 
 }
