@@ -36,7 +36,7 @@ node["jsk-ros"]["distributions"].each do |distro|
   end
   
   bash "wstool init for #{distro}" do
-    user
+    user user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.bash
@@ -45,7 +45,7 @@ node["jsk-ros"]["distributions"].each do |distro|
   end
 
   bash "wstool merge for #{distro}" do
-    user
+    user user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.bash
@@ -62,12 +62,18 @@ node["jsk-ros"]["distributions"].each do |distro|
     EOH
   end
 
-  bash "rosdep install for #{distro}" do
+  bash "rosdep update for #{distro}" do
     user user
-    cwd "#{catkin_ws}/#{distro}"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
       rosdep update
+    EOH
+  end
+  
+  bash "rosdep install for #{distro}" do
+    cwd "#{catkin_ws}/#{distro}"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.sh
       rosdep install -r -n --from-paths src --ignore-src --rosdistro #{distro} -y
     EOH
   end

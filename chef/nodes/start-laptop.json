@@ -12,6 +12,7 @@
    "git_ssh": true
  },
  "jsk-ros": {
-   "distributions": ["hydro"]
+   "distributions": ["hydro"],
+   "clear_catkin": false
  }
 }
