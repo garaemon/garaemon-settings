@@ -332,7 +332,11 @@ function rosmaster_prompt() {
     echo $host
 }
 
-PROMPT='%F{006}[`rosmaster_prompt`] $FG[014]Yes, Master? $FG[047][[`echo $CATKIN_WS`]] $FG[014]%D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
+function catkin_ws_prompt() {
+    echo $CATKIN_WS | sed -e "s%$HOME%~%g";
+}
+
+PROMPT='%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
