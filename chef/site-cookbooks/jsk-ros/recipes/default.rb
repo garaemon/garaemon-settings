@@ -4,6 +4,12 @@
 #
 # Copyright 2014, garaemon
 #
+apt_repository 'osrf' do
+  uri 'http://packages.osrfoundation.org/drc/ubuntu'
+  distribution node['lsb']['codename']
+  key 'http://packages.osrfoundation.org/drc.key'
+  components ['main']
+end
 
 %w{ros-hydro-openni-launch ros-groovy-openni-launch
    ros-hydro-openni-tracker ros-groovy-openni-tracker
