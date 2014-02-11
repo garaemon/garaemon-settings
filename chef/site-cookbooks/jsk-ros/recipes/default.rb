@@ -18,23 +18,6 @@
 end
 
 
-def wstool_set(distro, vcs, dir, repo)
-  user = node["base_configuration"]["user"]
-  home = node["base_configuration"]["home_dir"]
-  catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
-  catkin_ws = "#{home}/#{catkin_ws_suffix}"
-  unless File.exists? "#{catkin_ws}/#{distro}/src/#{dir}" then
-    bash "wstool set for #{dir}" do
-      user user
-      cwd "#{catkin_ws}/#{distro}/src"
-      code <<-EOH
-        source /opt/ros/#{distro}/setup.sh
-        wstool set #{vcs} -y #{dir} #{repo} 
-      EOH
-    end
-  end
-end
-
 # compile them
 user = node["base_configuration"]["user"]
 home = node["base_configuration"]["home_dir"]
@@ -42,16 +25,26 @@ catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
 node["jsk-ros"]["distributions"].each do |distro|
-  bash "wstool init" do
+  if node["jsk-ros"]["clear_catkin"] then
+    bash "clear catkin ws for #{distro}" do
+      user user
+      cwd "#{catkin_ws}/#{distro}"
+      code <<-EOH
+        rm -rf build devel install
+      EOH
+    end
+  end
+  
+  bash "wstool init for #{distro}" do
     user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
       source /opt/ros/#{distro}/setup.bash
-      test -e #{catkin_ws}/#{distro}/src || wstool init
+      test -e #{catkin_ws}/#{distro}/src/.rosinstall || wstool init
     EOH
   end
 
-  bash "wstool merge" do
+  bash "wstool merge for #{distro}" do
     user
     cwd "#{catkin_ws}/#{distro}/src"
     code <<-EOH
@@ -69,12 +62,32 @@ node["jsk-ros"]["distributions"].each do |distro|
     EOH
   end
 
+  bash "rosdep install for #{distro}" do
+    user user
+    cwd "#{catkin_ws}/#{distro}"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.sh
+      rosdep update
+      rosdep install -r -n --from-paths src --ignore-src --rosdistro #{distro} -y
+    EOH
+  end
+  
+  #should clear before catkin_make ???
   bash "catkin_make for #{distro}" do
     user user
     cwd "#{catkin_ws}/#{distro}"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
+      
       catkin_make
+    EOH
+  end
+  bash "catkin_make install for #{distro}" do
+    user user
+    cwd "#{catkin_ws}/#{distro}"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.sh
+      catkin_make install
     EOH
   end
 end

@@ -105,21 +105,23 @@ bash "install nvm" do
 end
 
 # installing npm packages
-bash "install node.js" do
-  user user
-  code <<-EOH
-    source #{home}/.nvm/nvm.sh
-    nvm install v0.10.21
-  EOH
-end
-
-bash "install npm packages" do
-  user user
-  code <<-EOH
-    source #{home}/.nvm/nvm.sh
-    nvm use v0.10.21
-    npm install -g express grunt grunt-cli
-  EOH
+node["garaemon-settings"]["node-versions"].each do |version|
+  bash "install node.js #{version}" do
+    user user
+    code <<-EOH
+      source #{home}/.nvm/nvm.sh
+      nvm install #{version}
+    EOH
+  end
+  npm_packages = ["express", "grunt", "grunt-cli"]
+  bash "install npm packages for #{version}" do
+    user user
+    code <<-EOH
+      source #{home}/.nvm/nvm.sh
+      nvm use #{version}
+      npm install -g express grunt grunt-cli
+    EOH
+  end
 end
 ### ruby
 
@@ -130,7 +132,7 @@ bash "install rvm" do
   EOH
 end
 
-ruby_versions = %w{2.1.0}
+ruby_versions = node["garaemon-settings"]["ruby-versions"]
 gem_packages = %w{vagrant}
 ruby_versions.each do |version|
   bash "install ruby #{version}" do
