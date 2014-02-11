@@ -17,6 +17,7 @@ end
    ros-hydro-moveit-ros-warehouse ros-groovy-moveit-ros-warehouse
    ros-hydro-manipulation-msgs ros-groovy-manipulation-msgs
    ros-hydro-pr2-controllers-msgs
+   drcsim-hydro
    omniidl-python}.each do |pkg|
   package pkg do
     action :install
