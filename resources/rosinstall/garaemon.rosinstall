@@ -15,7 +15,8 @@
     uri: https://github.com/start-jsk/rtmros_common
     local-name: rtm-ros-robotics/rtmros_common
 - git:
-    uri: https://github.com/start-jsk/rtmros_tutorials
+#    uri: https://github.com/start-jsk/rtmros_tutorials
+    uri: https://github.com/garaemon/rtmros_tutorials
     local-name: rtm-ros-robotics/rtmros_tutorials
 - git:
     uri: https://github.com/start-jsk/rtmros_hironx
