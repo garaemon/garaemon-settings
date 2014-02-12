@@ -133,7 +133,7 @@ bash "install rvm" do
 end
 
 ruby_versions = node["garaemon-settings"]["ruby-versions"]
-gem_packages = %w{vagrant}
+gem_packages = %w{vagrant, travis}
 ruby_versions.each do |version|
   bash "install ruby #{version}" do
     user user
