@@ -220,19 +220,29 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 export PATH=$PATH:$HOME/gprog/jq
 
 #ROS
-#export ROS_OS_OVERRIDE=osx:homebrew
-# export PATH=/usr/local/lib/wxPython/bin:$PATH
-# if [ -e $HOME/ros/setup.zsh ]; then
-#     source $HOME/ros/setup.zsh
-# else
-#     echo ... cannot find ros/setup.zsh
-# fi
+function change_ros_setup() {
+    local prefix_path=$1
+    source $prefix_path/setup.zsh
+    export CATKIN_WS=$prefix_path
+}
 
-ROS_DISTRO=hydro
-if [ -e $HOME/ros/${ROS_DISTRO}/setup.zsh ]; then
-    source $HOME/ros/${ROS_DISTRO}/setup.zsh
-fi
+function roshydro() {
+    change_ros_setup $HOME/ros_catkin_ws/hydro/install
+}
 
+function roshydrodev() {
+    change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+}
+
+function rosgroovy() {
+    change_ros_setup $HOME/ros_catkin_ws/groovy/install
+}
+
+function rosgroovydev() {
+    change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+}
+
+roshydro
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
@@ -243,19 +253,6 @@ export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
 
-if [ -e /usr/share/drcsim/setup.sh ]; then
-    ROS_PACKAGE_PATH_ORG=$ROS_PACKAGE_PATH
-    ROS_WORKSPACE_ORG=$ROS_WORKSPACE
-    PYTHONPATH_ORG=$PYTHONPATH
-    source /usr/share/drcsim/setup.sh
-    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH_ORG:$ROS_PACKAGE_PATH
-    export ROS_WORKSPACE=$ROS_WORKSPACE_ORG
-    export PYTHONPATH=$PYTHONPATH_ORG:$PYTHONPATH
-    export ROS_PACKAGE_PATH=`echo $(echo $ROS_PACKAGE_PATH | sed -e "s/:/\n/g" | awk '!($0 in A) && A[$0] = 1' | grep -v "opt/ros"; echo $ROS_PACKAGE_PATH | sed -e "s/:/\n/g" | awk '!($0 in A) && A[$0] = 1' | grep "opt/ros") | sed -e "s/ /:/g"`
-    export VRC_CHEATS_ENABLED=1
-    source $(rospack find hrpsys_gazebo_tutorials)/setup.sh
-    
-fi
 alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
@@ -332,7 +329,11 @@ function rosmaster_prompt() {
     echo $host
 }
 
-PROMPT='%F{006}[`rosmaster_prompt`] $FG[014]Yes, Master? $FG[047][[`echo $CATKIN_WS`]] $FG[014]%D{[%K:%M:%S]}------------------------------------------------%{$reset_color%}
+function catkin_ws_prompt() {
+    echo $CATKIN_WS | sed -e "s%$HOME%~%g";
+}
+
+PROMPT='%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
@@ -473,27 +474,3 @@ if [ $? ]; then
     
     alias p=percol
 fi
-
-function change_ros_setup() {
-    local prefix_path=$1
-    source $prefix_path/setup.zsh
-    export CATKIN_WS=$prefix_path
-}
-
-function roshydro() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/install
-}
-
-function roshydrodev() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/devel
-}
-
-function rosgroovy() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/install
-}
-
-function rosgroovydev() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/devel
-}
-
-roshydro
