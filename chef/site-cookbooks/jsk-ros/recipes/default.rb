@@ -31,7 +31,21 @@ home = node["base_configuration"]["home_dir"]
 catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
+
+
 node["jsk-ros"]["distributions"].each do |distro|
+
+  # create directory
+  directories = ["#{catkin_ws}",
+                 "#{catkin_ws}/#{distro}",
+                 "#{catkin_ws}/#{distro}/src"]
+  directories.each do |dir|
+    directory dir do
+      action :create
+      owner user
+    end
+  end
+
   if node["jsk-ros"]["clear_catkin"] then
     bash "clear catkin ws for #{distro}" do
       user user
@@ -40,6 +54,15 @@ node["jsk-ros"]["distributions"].each do |distro|
         rm -rf build devel install
       EOH
     end
+  end
+
+  bash "catkin init for #{distro}" do
+    user user
+    cwd "#{catkin_ws}/#{distro}/src"
+    code <<-EOH
+      source /opt/ros/#{distro}/setup.bash
+      test -e CMakeLists.txt || catkin_init_workspace
+    EOH
   end
   
   bash "wstool init for #{distro}" do
