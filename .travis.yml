@@ -28,6 +28,7 @@ install: # Use this to install any prerequisites or dependencies necessary to ru
   # Create workspace
   - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
   - cd ~/ros/ws_$REPOSITORY_NAME/src
+  - source /opt/ros/$ROS_DISTRO/setup.bash
   - catkin_init_workspace
   - wstool init
   - wstool merge ${CI_SOURCE_PATH}/resources/rosinstall/garaemon.rosinstall
