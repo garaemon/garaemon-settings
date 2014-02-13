@@ -20,7 +20,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
 %w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop
    python-pip
    ttf-dejavu
-   sqlite3 libgdbm-dev bison libffi-dev
+   sqlite3 libgdbm-dev bison libffi-dev dstat
    virtualbox}.each do |pkg|
   package pkg do
     action :install
