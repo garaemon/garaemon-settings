@@ -224,7 +224,7 @@ function change_ros_setup() {
     local prefix_path=$1
     source $prefix_path/setup.zsh
     export CATKIN_WS=$prefix_path
-    source `rospack find hrpsys_gazebo_totorials`/setup.sh
+    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
 }
 
 function roshydro() {
