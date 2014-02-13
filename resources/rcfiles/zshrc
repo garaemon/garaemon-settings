@@ -239,7 +239,7 @@ function catmake() {
     return $result
 }
 
-unction roshydro() {
+function roshydro() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/install
 }
 
@@ -487,3 +487,8 @@ if [ $? ]; then
     
     alias p=percol
 fi
+
+function preexec_fluent() {
+    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh
+}
+preexec_functions=(preexec_fluent)
