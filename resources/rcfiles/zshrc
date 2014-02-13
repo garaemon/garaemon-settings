@@ -239,7 +239,7 @@ function catmake() {
     return $result
 }
 
-function roshydro() {
+unction roshydro() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/install
 }
 
