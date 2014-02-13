@@ -51,7 +51,8 @@ node["jsk-ros"]["distributions"].each do |distro|
       user user
       cwd "#{catkin_ws}/#{distro}"
       code <<-EOH
-        rm -rf build devel install
+        rm -rf build devel install src
+        mkdir src
       EOH
     end
   end
