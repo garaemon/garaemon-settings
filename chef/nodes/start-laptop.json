@@ -13,6 +13,6 @@
  },
  "jsk-ros": {
    "distributions": ["hydro"],
-   "clear_catkin": false
+   "clear_catkin": true
  }
 }
