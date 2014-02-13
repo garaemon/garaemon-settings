@@ -21,12 +21,12 @@ before_install: # Use this to prepare the system to install prerequisites or dep
   - sudo sh -c 'echo "deb http://packages.osrfoundation.org/drc/ubuntu precise main" > /etc/apt/sources.list.d/drc-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - wget http://packages.osrfoundation.org/drc.key -O - | sudo apt-key add -
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros
-  - sudo apt-get install drcsim-$ROS_DISTRO ## Ubuntu/Precise
+  - sudo apt-get update -qq > /dev/null
+  - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros > /dev/null
+  - sudo apt-get install drcsim-$ROS_DISTRO > /dev/null ## Ubuntu/Precise
   # MongoDB hack - I don't fully understand this but its for moveit_warehouse
-  - sudo apt-get remove -y mongodb mongodb-10gen
-  - sudo apt-get install -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" # default actions
+  - sudo apt-get remove -y mongodb mongodb-10gen > /dev/null
+  - sudo apt-get install -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" > /dev/null # default actions
   # Setup rosdep
   - sudo rosdep init
   - rosdep update
@@ -38,7 +38,7 @@ install: # Use this to install any prerequisites or dependencies necessary to ru
   - catkin_init_workspace
   - wstool init
   - wstool merge ${CI_SOURCE_PATH}/resources/rosinstall/garaemon.rosinstall
-  - wstool update -j10
+  - wstool update -j10 > /dev/null
   - cd ../
   # Install dependencies for source repos
   - rosdep install -r -n --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
