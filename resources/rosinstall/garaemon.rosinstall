@@ -23,7 +23,8 @@
     uri: https://github.com/start-jsk/rtmros_hironx
     local-name: rtm-ros-robotics/rtmros_hironx
 - git:
-    uri: https://github.com/start-jsk/rtmros_gazebo
+#    uri: https://github.com/start-jsk/rtmros_gazebo
+    uri: https://github.com/garaemon/rtmros_gazebo
     local-name: rtm-ros-robotics/rtmros_gazebo
 - svn:
     uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps
