@@ -232,9 +232,9 @@ function catmake() {
     (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
     local result=$?
     if [ $result ] ; then
-        t update "[success!!] catkin_make $* [`date`]"
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null
     else
-        t update "[failed!!] catkin_make $* [`date`]"
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
     fi
     return $result
 }
