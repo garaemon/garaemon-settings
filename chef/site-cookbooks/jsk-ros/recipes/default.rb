@@ -116,7 +116,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
       
-      catkin_make
+      catkin_make --only-pkg-with-deps hrpsys_ros_bridge_tutorials
     EOH
   end
   bash "catkin_make install for #{distro}" do
