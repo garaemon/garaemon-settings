@@ -17,6 +17,7 @@ end
    ros-hydro-moveit-ros-warehouse ros-groovy-moveit-ros-warehouse
    ros-hydro-manipulation-msgs ros-groovy-manipulation-msgs
    ros-hydro-pr2-controllers-msgs
+   ros-hydro-collada-urdf ros-groovy-collada-urdf
    drcsim-hydro
    omniidl-python}.each do |pkg|
   package pkg do
@@ -114,8 +115,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     cwd "#{catkin_ws}/#{distro}"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
-      
-      catkin_make
+      catkin_make --only-pkg-with-deps hrpsys_gazebo_tutorials
     EOH
   end
   bash "catkin_make install for #{distro}" do
