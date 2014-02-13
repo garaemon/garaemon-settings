@@ -20,7 +20,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
 %w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop
    python-pip
    ttf-dejavu
-   sqlite3 libgdbm-dev bison libffi-dev
+   sqlite3 libgdbm-dev bison libffi-dev dstat
    virtualbox}.each do |pkg|
   package pkg do
     action :install
@@ -134,7 +134,7 @@ bash "install rvm" do
 end
 
 ruby_versions = node["garaemon-settings"]["ruby-versions"]
-gem_packages = %w{vagrant travis fluentd t}
+gem_packages = %w{vagrant travis fluentd t fluent-plugin-dstat fluent-plugin-datacounter}
 ruby_versions.each do |version|
   bash "install ruby #{version}" do
     user user
