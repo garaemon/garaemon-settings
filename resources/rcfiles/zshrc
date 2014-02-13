@@ -225,6 +225,11 @@ function change_ros_setup() {
     source $prefix_path/setup.zsh
     export CATKIN_WS=$prefix_path
     source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    export ROS_WORKSPACE=`dirname $prefix_path`
+}
+
+function catmake() {
+    (cd $ROS_WORKSPACE && catkin_make $@)
 }
 
 function roshydro() {
