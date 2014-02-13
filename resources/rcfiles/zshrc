@@ -229,7 +229,7 @@ function change_ros_setup() {
 }
 
 function catmake() {
-    (cd $ROS_WORKSPACE && catkin_make $@)
+    (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
 }
 
 function roshydro() {
