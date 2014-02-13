@@ -1,0 +1,45 @@
+language:
+  - cpp
+  - python
+python:
+  - "2.7"
+compiler:
+  - gcc
+notifications:
+  email:
+    recipients:
+      - garaemon@gmail.com
+    on_success: change #[always|never|change] # default: change
+    on_failure: change #[always|never|change] # default: always
+before_install: # Use this to prepare the system to install prerequisites or dependencies
+  # Define some config vars
+  - export ROS_DISTRO=hydro
+  - export CI_SOURCE_PATH=$(pwd)
+  - export REPOSITORY_NAME=${PWD##*/}
+  - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros
+  # Setup rosdep
+  - sudo rosdep init
+  - rosdep update
+install: # Use this to install any prerequisites or dependencies necessary to run your build
+  # Create workspace
+  - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
+  - cd ~/ros/ws_$REPOSITORY_NAME/src
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+  - catkin_init_workspace
+  - wstool init
+  - wstool merge ${CI_SOURCE_PATH}/resources/rosinstall/garaemon.rosinstall
+  - wstool update -j10
+  - cd ../
+  # Install dependencies for source repos
+  - rosdep install -r -n --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
+before_script: # Use this to prepare your build for testing e.g. copy database configurations, environment variables, etc.
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+script: # All commands must exit with code 0 on success. Anything else is considered failure.
+  - find . \! -path "*/.*" -type f | xargs egrep -i "(hoge|fuga)" ; if [ $? == 0 ]; then exit 1; fi
+  - catkin_make
+
+

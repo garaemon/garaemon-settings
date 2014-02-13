@@ -224,9 +224,22 @@ function change_ros_setup() {
     local prefix_path=$1
     source $prefix_path/setup.zsh
     export CATKIN_WS=$prefix_path
+    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    export ROS_WORKSPACE=`dirname $prefix_path`
 }
 
-function roshydro() {
+function catmake() {
+    (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
+    local result=$?
+    if [ $result ] ; then
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null
+    else
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
+    fi
+    return $result
+}
+
+unction roshydro() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/install
 }
 

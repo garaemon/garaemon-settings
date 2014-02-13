@@ -52,7 +52,8 @@ node["jsk-ros"]["distributions"].each do |distro|
       user user
       cwd "#{catkin_ws}/#{distro}"
       code <<-EOH
-        rm -rf build devel install
+        rm -rf build devel install src
+        mkdir src
       EOH
     end
   end
@@ -115,7 +116,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     cwd "#{catkin_ws}/#{distro}"
     code <<-EOH
       source /opt/ros/#{distro}/setup.sh
-      catkin_make --only-pkg-with-deps hrpsys_gazebo_tutorials
+      catkin_make --only-pkg-with-deps hrpsys_ros_bridge_tutorials
     EOH
   end
   bash "catkin_make install for #{distro}" do
