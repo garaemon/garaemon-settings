@@ -11,6 +11,7 @@
    "catkin_ws": "ros_catkin_ws_release"
  },
  "jsk-ros": {
-   "clear_catkin": true
+   "clear_catkin": true,
+   "distributions": ["hydro"]
  }
 }

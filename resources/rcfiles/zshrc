@@ -230,7 +230,13 @@ function change_ros_setup() {
 
 function catmake() {
     (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
-    t update "catkin_make [`date`]"
+    local result=$?
+    if [ $result ] ; then
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null
+    else
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
+    fi
+    return $result
 }
 
 function roshydro() {
@@ -481,3 +487,8 @@ if [ $? ]; then
     
     alias p=percol
 fi
+
+function preexec_fluent() {
+    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh
+}
+preexec_functions=(preexec_fluent)
