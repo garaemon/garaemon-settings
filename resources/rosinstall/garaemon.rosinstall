@@ -44,4 +44,7 @@
     local-name: view_controller_msgs
     uri: 'https://github.com/ros-visualization/view_controller_msgs'
     version: hydro-devel
-    
+- git:
+    local-name: rviz_animated_view_controller
+    uri: 'https://github.com/ros-visualization/rviz_animated_view_controller'
+    version: hydro-devel
