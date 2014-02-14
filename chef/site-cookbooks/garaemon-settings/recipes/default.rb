@@ -181,3 +181,5 @@ apt_repository "dropbox" do
   key "5044912E"
 end
 package "dropbox"
+
+# http://robomongo.org/files/linux/robomongo-0.8.4-x86_64.deb
