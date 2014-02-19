@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 umask 022
 
+export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
+
+
 export LC_ALL=en_US.UTF-8
 
 #zsh
@@ -491,6 +494,6 @@ if [ $? ]; then
 fi
 
 function preexec_fluent() {
-    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null
+    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null 2>&1
 }
 preexec_functions=(preexec_fluent)
