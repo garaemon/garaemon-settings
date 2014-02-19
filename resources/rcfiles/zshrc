@@ -491,6 +491,6 @@ if [ $? ]; then
 fi
 
 function preexec_fluent() {
-    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh
+    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null
 }
 preexec_functions=(preexec_fluent)
