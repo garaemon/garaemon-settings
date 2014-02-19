@@ -245,6 +245,7 @@ function roshydro() {
 
 function roshydrodev() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function rosgroovy() {
@@ -253,9 +254,10 @@ function rosgroovy() {
 
 function rosgroovydev() {
     change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
-roshydro
+roshydrodev
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
@@ -430,7 +432,7 @@ export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
 
-export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
+#export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
 
 #rossetrobot 172.16.116.1 10016
 # export ROS_MASTER_URI=http://172.16.116.1:10016
