@@ -367,17 +367,11 @@ alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t p
 export COOKIE_SECRET="hkfc-sakuchan"
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
-alias em="emacsclient -n"
+alias ec="emacsclient -n"
 
 
 export BASIC_USER="garaemon"
 export BASIC_PASS="sakuchan"
-
-#[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"
-#pybrew use 2.7.3
-
-
-#source $HOME/ros_ws/setup.zsh
 
 export PATH=/usr/local/bin:$PATH
 export PATH=/usr/local/mahout/bin:$PATH
