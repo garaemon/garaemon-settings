@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 umask 022
 
+export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
+
+
 export LC_ALL=en_US.UTF-8
 
 #zsh
@@ -239,12 +242,13 @@ function catmake() {
     return $result
 }
 
-unction roshydro() {
+function roshydro() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/install
 }
 
 function roshydrodev() {
     change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function rosgroovy() {
@@ -253,9 +257,10 @@ function rosgroovy() {
 
 function rosgroovydev() {
     change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
-roshydro
+roshydrodev
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
@@ -362,17 +367,11 @@ alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t p
 export COOKIE_SECRET="hkfc-sakuchan"
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
-alias em="emacsclient -n"
+alias ec="emacsclient -n"
 
 
 export BASIC_USER="garaemon"
 export BASIC_PASS="sakuchan"
-
-#[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"
-#pybrew use 2.7.3
-
-
-#source $HOME/ros_ws/setup.zsh
 
 export PATH=/usr/local/bin:$PATH
 export PATH=/usr/local/mahout/bin:$PATH
@@ -430,7 +429,7 @@ export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
 
-export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
+#export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
 
 #rossetrobot 172.16.116.1 10016
 # export ROS_MASTER_URI=http://172.16.116.1:10016
@@ -487,3 +486,8 @@ if [ $? ]; then
     
     alias p=percol
 fi
+
+function preexec_fluent() {
+    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null 2>&1
+}
+preexec_functions=(preexec_fluent)

@@ -28,8 +28,8 @@ before_install: # Use this to prepare the system to install prerequisites or dep
   - sudo apt-get remove -y mongodb mongodb-10gen > /dev/null
   - sudo apt-get install -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" > /dev/null # default actions
   # Setup rosdep
-  - sudo rosdep init
-  - rosdep update
+  - sudo rosdep init > /dev/null
+  - rosdep update > /dev/null
 install: # Use this to install any prerequisites or dependencies necessary to run your build
   # Create workspace
   - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
@@ -41,11 +41,11 @@ install: # Use this to install any prerequisites or dependencies necessary to ru
   - wstool update -j10 > /dev/null
   - cd ../
   # Install dependencies for source repos
-  - rosdep install -r -n --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
+  - rosdep install -r -n --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y > /dev/null
 before_script: # Use this to prepare your build for testing e.g. copy database configurations, environment variables, etc.
   - source /opt/ros/$ROS_DISTRO/setup.bash
 script: # All commands must exit with code 0 on success. Anything else is considered failure.
   - find . \! -path "*/.*" -type f | xargs egrep -i "(hoge|fuga)" ; if [ $? == 0 ]; then exit 1; fi
-  - catkin_make
+  - catkin_make --only-pkg-with-deps hrpsys_gazebo_tutorials hrpsys_ros_bridge_tutorials jsk_footstep_planner jsk_interactive_marker
 
 
