@@ -225,9 +225,13 @@ export PATH=$PATH:$HOME/gprog/jq
 #ROS
 function change_ros_setup() {
     local prefix_path=$1
-    source $prefix_path/setup.zsh
+    if [ -e $prefix_path/setup.zsh ]; then
+        source $prefix_path/setup.zsh
+    fi
     export CATKIN_WS=$prefix_path
-    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    if [ -e `rospack find hrpsys_gazebo_tutorials`/setup.sh ]; then
+        source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    fi
     export ROS_WORKSPACE=`dirname $prefix_path`
 }
 
@@ -261,9 +265,11 @@ function rosgroovydev() {
 }
 
 roshydrodev
+
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
+
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
@@ -274,7 +280,9 @@ export ARCHDIR=Linux64
 alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
-alias rosmake="rosmake --pjobs=`grep -c processor /proc/cpuinfo`"
+if [ -e /proc/cpuinfo ]; then
+    alias rosmake="rosmake --pjobs=`grep -c processor /proc/cpuinfo`"
+fi
 
 function rossetrobot() {
     local hostname=${1-"pr1012"}
@@ -295,7 +303,9 @@ function rossetip() {
     export ROS_HOSTNAME=$ROS_IP
     echo -e "\e[1;31mset ROS_IP and ROS_HOSTNAME to $ROS_IP\e[m"
 }
-rossetlocal
+if [ `which sw_vers > /dev/null 2>&1` ]; then
+    rossetlocal
+fi
 
 #export HOMEBREW_CC=gcc
 
@@ -429,16 +439,6 @@ export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
 
-#export PATH=$PATH:`rospack find roseus`/bin:`rospack find euslib`/bin
-
-#rossetrobot 172.16.116.1 10016
-# export ROS_MASTER_URI=http://172.16.116.1:10016
-# export ROS_IP=172.16.116.253
-# export ROS_HOSTNAME=172.16.116.253
-
-#export MD_BASIC_USER="user"
-#export MD_BASIC_PASSWD="pass"
-
 alias git-graph="git log --graph --decorate --oneline"
 
 #percol settings
@@ -447,7 +447,9 @@ which precol > /dev/null
 if [ $? ]; then
     function percol_select_history() {
         local tac_cmd
-        which gtac &> /dev/null && tac_cmd=gtac || tac_cmd=tac
+        which gtac &> /dev/null && tac_cmd=gtac
+        which tac &> /dev/null && tac_cmd=tac
+        which sw_vers &> /dev/null && tac_cmd='tail -r'
         BUFFER=$($tac_cmd ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
             | percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER         # move cursor
@@ -491,3 +493,8 @@ function preexec_fluent() {
     curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null 2>&1
 }
 preexec_functions=(preexec_fluent)
+
+export PATH=/usr/local/bin:/usr/local/share/python:$PATH
+export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
+
+
