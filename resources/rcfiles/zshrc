@@ -445,22 +445,38 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? ]; then
-    function percol_select_history() {
-        local tac_cmd
-        which gtac &> /dev/null && tac_cmd=gtac
-        which tac &> /dev/null && tac_cmd=tac
-        if [ `which sw_vers &> /dev/null` ]; then
-            BUFFER=$(tail -r ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
-                | percol --match-method regex --query "$LBUFFER")
+    # function percol_select_history() {
+    #     local tac_cmd
+    #     which gtac &> /dev/null && tac_cmd=gtac
+    #     which tac &> /dev/null && tac_cmd=tac
+    #     if [ `which sw_vers &> /dev/null` ]; then
+    #         BUFFER=$(tail -r ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
+    #             | percol --match-method regex --query "$LBUFFER")
+    #     else
+    #         BUFFER=$($tac_cmd ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
+    #             | percol --match-method regex --query "$LBUFFER")
+    #     fi
+    #     CURSOR=$#BUFFER         # move cursor
+    #     zle -R -c               # refresh
+    # }
+    # zle -N percol_select_history
+    # bindkey '^R' percol_select_history
+
+    function percol-select-history() {
+        local tac
+        if which tac > /dev/null; then
+            tac="tac"
         else
-            BUFFER=$($tac_cmd ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
-                | percol --match-method regex --query "$LBUFFER")
+            tac="tail -r"
         fi
-        CURSOR=$#BUFFER         # move cursor
-        zle -R -c               # refresh
+        BUFFER=$(history -n 1 | \
+            eval $tac | \
+            percol --match-method regex --query "$LBUFFER")
+        CURSOR=$#BUFFER
+        zle clear-screen
     }
-    zle -N percol_select_history
-    bindkey '^R' percol_select_history
+    zle -N percol-select-history
+    bindkey '^r' percol-select-history
 
     function search-document-by-percol(){
         DOCUMENT_DIR="\
@@ -502,3 +518,4 @@ export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
 
+unalias history
