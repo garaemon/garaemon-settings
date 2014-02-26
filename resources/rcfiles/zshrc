@@ -32,14 +32,7 @@ local YELLOW=$'%{\e[1;33m%}'
 local BLUE=$'%{\e[1;34m%}'
 local LIGHT_BLUE=$'%{\e[1;36m%}'
 local DEFAULT=$'%{\e[1;0m%}'
-if [ "$TERM" = "emacs" ] ; then
-    PROMPT="${LIGHT_BLUE}Yes, Maaster${DEFAULT}@${GREEN}${HOST}?${DEFAULT} [${BLUE}%~/${DEFAULT}]%% "
-else
-    PROMPT="${LIGHT_BLUE}Yes, Master${DEFAULT}@${GREEN}${HOST}?${DEFAULT} [${BLUE}%~/${DEFAULT}]%% "
-fi
 
-PROMPT2="%_%% "
-SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
@@ -361,11 +354,16 @@ function catkin_ws_prompt() {
     echo $CATKIN_WS | sed -e "s%$HOME%~%g";
 }
 
+
+if [ "$TERM" != "dumb" ] ; then
 PROMPT='%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
 RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
+PROMPT2="%_%% "
+SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
+fi
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -517,5 +515,5 @@ preexec_functions=(preexec_fluent)
 export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
-
+# oh-my-zsh overwrite history
 unalias history
