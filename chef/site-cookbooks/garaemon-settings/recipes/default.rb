@@ -4,7 +4,7 @@
 #
 # Copyright 2014, garaemon
 #
-include_recipe "rvm"
+
 
 # make directory
 # directory node['etc']['passwd'][user]['dir'] + '/gprog' do
@@ -18,7 +18,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
 
 # packages
 %w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop
-   python-pip
+   python-pip tig ruby imagemagick
    ttf-dejavu
    sqlite3 libgdbm-dev bison libffi-dev dstat
    virtualbox}.each do |pkg|
@@ -26,6 +26,30 @@ git_root_dir = node["garaemon-settings"]["git_root"]
     action :install
   end
 end
+
+apt_repository "dropbox" do
+  uri "http://linux.dropbox.com/ubuntu"
+  distribution node['lsb']['codename']
+  components ["main"]
+  keyserver "pgp.mit.edu"
+  key "5044912E"
+end
+package "dropbox" do
+  action :install
+end
+
+remote_file "/tmp/gyazo.deb" do
+  source "https://github.com/downloads/kambara/Gyazo-for-Linux/gyazo_1.0-1_all.deb"
+  mode 0644
+  #  shasum -a 256
+  checksum "bc7d91598294322fd693e846a215f8ab9cd196046d1bb630f04c2117c8d244b6"
+end
+
+dpkg_package "gyazo" do
+  source "/tmp/gyazo.deb"
+  action :install
+end
+
 
 # creating gprog
 directory "#{home}/#{git_root_dir}" do
@@ -134,7 +158,7 @@ bash "install rvm" do
 end
 
 ruby_versions = node["garaemon-settings"]["ruby-versions"]
-gem_packages = %w{vagrant travis fluentd t fluent-plugin-dstat fluent-plugin-datacounter}
+gem_packages = %w{vagrant travis fluentd t fluent-plugin-dstat fluent-plugin-datacounter fluent-plugin-mongo bson_ext fluent-plugin-out-http}
 ruby_versions.each do |version|
   bash "install ruby #{version}" do
     user user
@@ -173,11 +197,5 @@ link "#{home}/.percol.d/rc.py" do
   to "#{garaemon_settings_path}/resources/rcfiles/percol_rc.py"
 end
 
-apt_repository "dropbox" do
-  uri "http://linux.dropbox.com/ubuntu"
-  distribution node['lsb']['codename']
-  components ["main"]
-  keyserver "pgp.mit.edu"
-  key "5044912E"
-end
-package "dropbox"
+# http://robomongo.org/files/linux/robomongo-0.8.4-x86_64.deb
+
