@@ -35,3 +35,9 @@ cd vagrant
 vagrant up
 knife solo cook vagrant
 ```
+
+Install ROS on mavericks
+---
+```sh
+curl https://raw.github.com/garaemon/garaemon-settings/master/scripts/install-mavericks-ros.sh | sh
+```
