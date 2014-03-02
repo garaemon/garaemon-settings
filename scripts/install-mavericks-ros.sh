@@ -1,6 +1,7 @@
 #!/bin/bash
 
 BASE_DIR=$HOME/ros_catkin_ws
+ROS_DISTRO=hydro
 ROS_INSTALL_DIR=${BASE_DIR}/${ROS_DISTRO}_base
 
 export PATH=/usr/local/bin:/usr/local/share/python:$PATH
@@ -11,7 +12,7 @@ export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 # 2. install pcl
 # 3. install ros softwares
 
-ROS_DISTRO=hydro
+
 
 # utils
 function echo_title() {
@@ -95,7 +96,10 @@ wstool set --git -y robot_model \
 wstool update -j10
 
 cd ..
+
+echo_title rosdep install
+rosdep install -v -r --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y
+
 echo_title catkin_make_isolated
 ./src/catkin/bin/catkin_make_isolated --install --cmake-args -DCUSTOM_PYTHON_INCLUDE_DIRS=/usr/local/Frameworks/Python.framework/Headers -DCUSTOM_PYTHON_LIBRARY=/usr/local/lib/libpython2.7.dylib -DCMAKE_CXX_FLAGS="-DGTEST_HAS_TR1_TUPLE=0"
-
 
