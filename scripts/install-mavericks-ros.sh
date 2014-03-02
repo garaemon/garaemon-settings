@@ -37,7 +37,7 @@ brew install ${BREW_PACKAGES}
 
 echo_title setup python
 pip install -U setuptools wstool rosdep rosinstall rosinstall_generator rospkg \
-catkin-pkg Distribute sphinx
+    catkin-pkg Distribute sphinx epydoc kitchen
 
 
 #############################
@@ -97,8 +97,8 @@ wstool update -j10
 
 cd ..
 
-echo_title rosdep install
-rosdep install -v -r --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y
+# echo_title rosdep install
+# rosdep install -v -r --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y
 
 echo_title catkin_make_isolated
 ./src/catkin/bin/catkin_make_isolated --install --cmake-args -DCUSTOM_PYTHON_INCLUDE_DIRS=/usr/local/Frameworks/Python.framework/Headers -DCUSTOM_PYTHON_LIBRARY=/usr/local/lib/libpython2.7.dylib -DCMAKE_CXX_FLAGS="-DGTEST_HAS_TR1_TUPLE=0"
