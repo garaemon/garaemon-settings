@@ -1,6 +1,7 @@
 #!/bin/bash
 
-BASE_DIR=$HOME/ros
+BASE_DIR=$HOME/ros_catkin_ws
+ROS_INSTALL_DIR=${BASE_DIR}/${ROS_DISTRO}_base
 
 export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
@@ -52,10 +53,10 @@ catkin-pkg Distribute sphinx
 # cmake ..
 # make -j$(sysctl hw.ncpu | awk '{print $2}')
 # sudo make install
-rm -rf ${BASE_DIR}/${ROS_DISTRO}
-echo_title setup base dir: ${BASE_DIR}/${ROS_DISTRO}_base
-mkdir -p ${BASE_DIR}/${ROS_DISTRO}_base
-cd ${BASE_DIR}/${ROS_DISTRO}_base
+rm -rf ${ROS_INSTALL_DIR}
+echo_title setup base dir: ${ROS_INSTALL_DIR}
+mkdir -p ${ROS_INSTALL_DIR}
+cd ${ROS_INSTALL_DIR}
 rosinstall_generator desktop --rosdistro ${ROS_DISTRO} --deps --wet-only --tar \
     > ${ROS_DISTRO}-desktop-wet.rosinstall
 mkdir -p src
