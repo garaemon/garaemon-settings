@@ -53,9 +53,9 @@ catkin-pkg Distribute sphinx
 # make -j$(sysctl hw.ncpu | awk '{print $2}')
 # sudo make install
 rm -rf ${BASE_DIR}/${ROS_DISTRO}
-echo_title setup base dir: ${BASE_DIR}/${ROS_DISTRO}/base
-mkdir -p ${BASE_DIR}/${ROS_DISTRO}/base
-cd ${BASE_DIR}/${ROS_DISTRO}/base
+echo_title setup base dir: ${BASE_DIR}/${ROS_DISTRO}_base
+mkdir -p ${BASE_DIR}/${ROS_DISTRO}_base
+cd ${BASE_DIR}/${ROS_DISTRO}_base
 rosinstall_generator desktop --rosdistro ${ROS_DISTRO} --deps --wet-only --tar \
     > ${ROS_DISTRO}-desktop-wet.rosinstall
 mkdir -p src
