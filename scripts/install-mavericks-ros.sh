@@ -78,7 +78,7 @@ wstool set --git -y orocos_kdl \
 echo_subtitle use the latest robot_state_publisher
 wstool rm robot_state_publisher
 wstool set --git -y robot_state_publisher \
-    https://github.com/jensenb/robot_state_publisher -v hydro-devel
+    https://github.com/garaemon/robot_state_publisher -v hydro-mavericks-fix
 
 echo_subtitle use the latest robot_model
 wstool rm robot_model/collada_parser
