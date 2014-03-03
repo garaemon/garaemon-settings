@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 umask 022
 
-export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 
 
 export LC_ALL=en_US.UTF-8
@@ -517,3 +517,4 @@ export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
 # oh-my-zsh overwrite history
 unalias history
+export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
