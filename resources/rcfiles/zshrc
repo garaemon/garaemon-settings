@@ -384,8 +384,7 @@ export BASIC_PASS="sakuchan"
 export PATH=/usr/local/bin:$PATH
 export PATH=/usr/local/mahout/bin:$PATH
 
-export JAVA_HOME=/Library/Java/Home
-
+# export JAVA_HOME=/Library/Java/Home
 # export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
 
 # source $HOME/gprog/maven-zsh-completion/_mvn
@@ -517,4 +516,4 @@ export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
 # oh-my-zsh overwrite history
 unalias history
-export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
+# export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
