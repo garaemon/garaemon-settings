@@ -240,11 +240,11 @@ function catmake() {
 }
 
 function roshydro() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/install
+    change_ros_setup $HOME/ros/hydro/install
 }
 
 function roshydrodev() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+    change_ros_setup $HOME/ros/hydro/devel
     export PATH=$PATH:`rospack find roseus`/bin
 }
 
