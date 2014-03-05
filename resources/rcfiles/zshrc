@@ -239,6 +239,16 @@ function catmake() {
     return $result
 }
 
+function _catmake() {
+    local options
+    echo $1
+    options="-h -C --source --build --force-cmake --no-color --pkg \
+--only-pkg-with-deps --cmake-args --make-args"
+    reply=(${=options})
+}
+
+compctl -K "_catmake" "catmake"
+
 function roshydro() {
     change_ros_setup $HOME/ros/hydro/install
 }
