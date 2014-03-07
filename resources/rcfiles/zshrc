@@ -533,3 +533,19 @@ unalias history
 
 # added by travis gem
 [ -f /home/jskuser/.travis/travis.sh ] && source /home/jskuser/.travis/travis.sh
+
+function sine_wave() {
+    i=0
+    for i in `seq 0 10`
+    do 
+        SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
+        echo -ne $SIN\\r 
+        let i=i+1
+        sleep 0.05
+    done
+    echo
+}
+
+if [ "$TERM" != "dumb" ] ; then
+    sine_wave
+fi
