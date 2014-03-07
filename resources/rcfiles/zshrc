@@ -172,6 +172,7 @@ alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 alias eclient='emacs-client -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
+export PATH=$PATH:$HOME/gprog/spark
 #alias jbibtex=bibtex
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
@@ -527,3 +528,6 @@ export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 # oh-my-zsh overwrite history
 unalias history
 # export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
+
+# added by travis gem
+[ -f /home/jskuser/.travis/travis.sh ] && source /home/jskuser/.travis/travis.sh
