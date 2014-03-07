@@ -242,9 +242,9 @@ function catmake() {
 
 function _catmake() {
     local options
-    echo $1
-    options="-h -C --source --build --force-cmake --no-color --pkg \
---only-pkg-with-deps --cmake-args --make-args"
+    options="install test clean -h -C --source --build --force-cmake --no-color --pkg \
+--only-pkg-with-deps --cmake-args --make-args \
+`rospack list | cut -f1 -d' '`"
     reply=(${=options})
 }
 
