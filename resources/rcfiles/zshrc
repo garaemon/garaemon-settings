@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 umask 022
 
-export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 
 
 export LC_ALL=en_US.UTF-8
@@ -32,14 +32,7 @@ local YELLOW=$'%{\e[1;33m%}'
 local BLUE=$'%{\e[1;34m%}'
 local LIGHT_BLUE=$'%{\e[1;36m%}'
 local DEFAULT=$'%{\e[1;0m%}'
-if [ "$TERM" = "emacs" ] ; then
-    PROMPT="${LIGHT_BLUE}Yes, Maaster${DEFAULT}@${GREEN}${HOST}?${DEFAULT} [${BLUE}%~/${DEFAULT}]%% "
-else
-    PROMPT="${LIGHT_BLUE}Yes, Master${DEFAULT}@${GREEN}${HOST}?${DEFAULT} [${BLUE}%~/${DEFAULT}]%% "
-fi
 
-PROMPT2="%_%% "
-SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
@@ -179,6 +172,7 @@ alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 alias eclient='emacs-client -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
+export PATH=$PATH:$HOME/gprog/spark
 #alias jbibtex=bibtex
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
@@ -246,21 +240,33 @@ function catmake() {
     return $result
 }
 
+function _catmake() {
+    local options
+    echo $1
+    options="-h -C --source --build --force-cmake --no-color --pkg \
+--only-pkg-with-deps --cmake-args --make-args"
+    reply=(${=options})
+}
+
+compctl -K "_catmake" "catmake"
+
 function roshydro() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/install
+    change_ros_setup $HOME/ros/hydro/install
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function roshydrodev() {
-    change_ros_setup $HOME/ros_catkin_ws/hydro/devel
+    change_ros_setup $HOME/ros/hydro/devel
     export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function rosgroovy() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/install
+    change_ros_setup $HOME/ros/groovy/
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function rosgroovydev() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+    change_ros_setup $HOME/ros/groovy/
     export PATH=$PATH:`rospack find roseus`/bin
 }
 
@@ -361,11 +367,16 @@ function catkin_ws_prompt() {
     echo $CATKIN_WS | sed -e "s%$HOME%~%g";
 }
 
+
+if [ "$TERM" != "dumb" ] ; then
 PROMPT='%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $FG[032]%~\
 $(git_prompt_info) \
 $FG[105]%(!.#.»)%{$reset_color%} '
 RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
+PROMPT2="%_%% "
+SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
+fi
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -386,8 +397,7 @@ export BASIC_PASS="sakuchan"
 export PATH=/usr/local/bin:$PATH
 export PATH=/usr/local/mahout/bin:$PATH
 
-export JAVA_HOME=/Library/Java/Home
-
+# export JAVA_HOME=/Library/Java/Home
 # export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
 
 # source $HOME/gprog/maven-zsh-completion/_mvn
@@ -517,5 +527,25 @@ preexec_functions=(preexec_fluent)
 export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
-
+# oh-my-zsh overwrite history
 unalias history
+# export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
+
+# added by travis gem
+[ -f /home/jskuser/.travis/travis.sh ] && source /home/jskuser/.travis/travis.sh
+
+function sine_wave() {
+    i=0
+    for i in `seq 0 10`
+    do 
+        SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
+        echo -ne $SIN\\r 
+        let i=i+1
+        sleep 0.05
+    done
+    echo
+}
+
+if [ "$TERM" != "dumb" ] ; then
+    sine_wave
+fi
