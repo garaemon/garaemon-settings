@@ -260,11 +260,11 @@ function roshydrodev() {
 }
 
 function rosgroovy() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/install
+    change_ros_setup $HOME/ros/groovy/install
 }
 
 function rosgroovydev() {
-    change_ros_setup $HOME/ros_catkin_ws/groovy/devel
+    change_ros_setup $HOME/ros/groovy/devel
     export PATH=$PATH:`rospack find roseus`/bin
 }
 
