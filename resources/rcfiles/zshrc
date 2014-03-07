@@ -373,7 +373,7 @@ if [ "$TERM" != "dumb" ] ; then
     
     PROMPT="%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $PS1"
-    RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
+    #RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
     PROMPT2="%_%% "
     SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 fi
@@ -549,3 +549,6 @@ function sine_wave() {
 if [ "$TERM" != "dumb" -a `which spark > /dev/null 2>&1` ] ; then
     sine_wave
 fi
+
+export TERM=xterm-256color
+
