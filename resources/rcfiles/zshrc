@@ -252,6 +252,7 @@ compctl -K "_catmake" "catmake"
 
 function roshydro() {
     change_ros_setup $HOME/ros/hydro/install
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function roshydrodev() {
@@ -260,11 +261,12 @@ function roshydrodev() {
 }
 
 function rosgroovy() {
-    change_ros_setup $HOME/ros/groovy/install
+    change_ros_setup $HOME/ros/groovy/
+    export PATH=$PATH:`rospack find roseus`/bin
 }
 
 function rosgroovydev() {
-    change_ros_setup $HOME/ros/groovy/devel
+    change_ros_setup $HOME/ros/groovy/
     export PATH=$PATH:`rospack find roseus`/bin
 }
 
