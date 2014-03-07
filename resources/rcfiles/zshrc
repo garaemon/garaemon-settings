@@ -546,6 +546,6 @@ function sine_wave() {
     echo
 }
 
-if [ "$TERM" != "dumb" ] ; then
+if [ "$TERM" != "dumb" -a `which spark > /dev/null 2>&1` ] ; then
     sine_wave
 fi
