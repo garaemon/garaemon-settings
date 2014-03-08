@@ -22,14 +22,15 @@ define :wstool do
   end
   case params[:action]
   when :init 
-    directory File.dirname(params[:workspace]) do
+    directory params[:workspace] do
       action :create
       recursive true
       owner params[:user]
     end
-    execute "wstool init #{params[:workspace]}/.rosinstall" do
+    cmd = "wstool init #{params[:workspace]}"
+    execute cmd do
       user params[:user]
-      command "wstool init #{params[:workspace]}"
+      command cmd
       not_if do
         ::File.exists?("#{params[:workspace]}/.rosinstall")
       end
