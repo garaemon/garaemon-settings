@@ -40,5 +40,10 @@ define :catkin, :only_pkg_with_deps => [] do
       make_target_option = params[:make_target]
     end
     cmd = ". #{params[:setup_sh]}; catkin_make #{make_target_option} #{only_pkg_with_deps_option}"
+    execute cmd do
+      user params[:user]
+      command cmd
+      cwd File.dirname(params[:workspace])
+    end
   end
 end
