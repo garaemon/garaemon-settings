@@ -32,21 +32,17 @@ home = node["base_configuration"]["home_dir"]
 catkin_ws_suffix = node["ros-desktop"]["catkin_ws"]
 catkin_ws = "#{home}/#{catkin_ws_suffix}"
 
-
-
 node["jsk-ros"]["distributions"].each do |distro|
 
-  # create directory
-  directories = ["#{catkin_ws}",
-                 "#{catkin_ws}/#{distro}",
-                 "#{catkin_ws}/#{distro}/src"]
-  directories.each do |dir|
+  ["#{catkin_ws}", "#{catkin_ws}/#{distro}", "#{catkin_ws}/#{distro}/src"].each do |dir|
     directory dir do
       action :create
+      recursive true
       owner user
     end
   end
-
+  
+  # create directory
   if node["jsk-ros"]["clear_catkin"] then
     bash "clear catkin ws for #{distro}" do
       user user
@@ -58,73 +54,61 @@ node["jsk-ros"]["distributions"].each do |distro|
     end
   end
 
-  bash "catkin init for #{distro}" do
+  catkin do
     user user
-    cwd "#{catkin_ws}/#{distro}/src"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.bash
-      test -e CMakeLists.txt || catkin_init_workspace
-    EOH
+    workspace "#{catkin_ws}/#{distro}/src"
+    action :init
+    setup_sh "/opt/ros/#{distro}/setup.sh"
   end
   
-  bash "wstool init for #{distro}" do
+  wstool do
     user user
-    cwd "#{catkin_ws}/#{distro}/src"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.bash
-      test -e #{catkin_ws}/#{distro}/src/.rosinstall || wstool init
-    EOH
+    workspace "#{catkin_ws}/#{distro}/src"
+    action :init
   end
 
-  bash "wstool merge for #{distro}" do
+  wstool do
     user user
-    cwd "#{catkin_ws}/#{distro}/src"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.bash
-      wstool merge https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall
-    EOH
-  end
-
-  bash "wstool update for #{distro}" do
-    user user
-    cwd "#{catkin_ws}/#{distro}/src"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.sh
-      wstool update -j10
-    EOH
-  end
-
-  bash "rosdep update for #{distro}" do
-    user user
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.sh
-      rosdep update
-    EOH
+    workspace "#{catkin_ws}/#{distro}/src"
+    action :merge
+    uri "https://raw.github.com/jsk-ros-pkg/jsk_common/master/jsk.rosinstall"
   end
   
-  bash "rosdep install for #{distro}" do
-    cwd "#{catkin_ws}/#{distro}"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.sh
-      rosdep install -r -n --from-paths src --ignore-src --rosdistro #{distro} -y
-    EOH
+  wstool do
+    user user
+    workspace "#{catkin_ws}/#{distro}/src"
+    action :update
+    parallel_jobs 10
+  end
+
+  rosdep do
+    action :init
+  end
+  rosdep do
+    action :update
+    user user
+    distro distro
   end
   
-  #should clear before catkin_make ???
-  bash "catkin_make for #{distro}" do
-    user user
-    cwd "#{catkin_ws}/#{distro}"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.sh
-      catkin_make --only-pkg-with-deps hrpsys_gazebo_tutorials
-    EOH
+  rosdep do
+    action :install_from_source
+    paths ["#{catkin_ws}/#{distro}/src"]
+    distro distro
   end
-  bash "catkin_make install for #{distro}" do
+
+  catkin do
+    action :make
+    setup_sh "/opt/ros/#{distro}/setup.sh"
+    workspace "#{catkin_ws}/#{distro}/src"
     user user
-    cwd "#{catkin_ws}/#{distro}"
-    code <<-EOH
-      source /opt/ros/#{distro}/setup.sh
-      catkin_make install
-    EOH
   end
+  
+  catkin do
+    action :make
+    make_target "install"
+    setup_sh "/opt/ros/#{distro}/setup.sh"
+    workspace "#{catkin_ws}/#{distro}/src"
+    user user
+  end
+  
 end
