@@ -24,7 +24,7 @@
 			}
 		},
 		"shell": {
-			"colorscheme": "default",
+			"colorscheme": "garaemon",
 			"theme": "default",
 			"local_themes": {
 				"continuation": "continuation",
@@ -32,7 +32,7 @@
 			}
 		},
 		"tmux": {
-			"colorscheme": "default",
+			"colorscheme": "garaemon",
 			"theme": "garaemon"
 		},
 		"vim": {
