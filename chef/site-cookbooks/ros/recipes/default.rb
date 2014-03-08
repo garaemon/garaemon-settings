@@ -57,3 +57,19 @@
 #   setup_sh "/opt/ros/hydro/setup.sh"
 #   user "jskuser"
 # end
+
+rosdep do
+  action :init
+end
+rosdep do
+  action :update
+  user "jskuser"
+  distro "hydro"
+end
+rosdep do
+  action :install
+  packages ["roscpp", "rospy"]
+  setup_sh "/opt/ros/hydro/setup.sh"
+  user "jskuser"
+  distro "hydro"
+end
