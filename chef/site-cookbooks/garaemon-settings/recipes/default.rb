@@ -63,13 +63,18 @@ else
   git_prefix = "https://github.com/"
 end
 
-garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
-git "#{garaemon_settings_path}" do
-  repository "#{git_prefix}garaemon/garaemon-settings.git"
-  enable_submodules true
-  user user
+github_packages = ["garaemon/garaemon-settings.git",
+                   "holman/spark.git", "joemiller/spark-ping.git"]
+github_packages.each do |pkg|
+  target_path = "#{home}/#{git_root_dir}/#{File.basename(pkg, ".git")}"
+  git target_path do
+    repository "#{git_prefix}#{pkg}"
+    enable_submodules true
+    user user
+  end
 end
 
+garaemon_settings_path = "#{home}/#{git_root_dir}/garaemon-settings"
 
 # installing vimrc
 link "#{home}/.vimrc" do
@@ -197,5 +202,38 @@ link "#{home}/.percol.d/rc.py" do
   to "#{garaemon_settings_path}/resources/rcfiles/percol_rc.py"
 end
 
-# http://robomongo.org/files/linux/robomongo-0.8.4-x86_64.deb
 
+###########################################################
+# powerline
+bash "install powerline pip" do
+  code <<-EOH
+    pip install git+git://github.com/Lokaltog/powerline
+  EOH
+end
+
+directory "#{node["base_configuration"]["home_dir"]}/.fonts" do
+  action :create
+  owner user
+end
+
+remote_file "#{node["base_configuration"]["home_dir"]}/.fonts/PowerlineSymbols.otf" do
+  source "https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf"
+  owner user
+end
+
+bash "fc-cache" do
+  user user
+  code <<-EOH
+    fc-cache -vf ~/.fonts
+  EOH
+end
+
+directory "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d" do
+  action :create
+  owner user
+end
+
+remote_file "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d/10-powerline-symbols.conf" do
+  source "https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf"
+  owner user
+end

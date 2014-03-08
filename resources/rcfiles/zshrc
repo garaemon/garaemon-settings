@@ -230,7 +230,14 @@ function change_ros_setup() {
 }
 
 function catmake() {
-    (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
+    local catkin_pkg
+    if [ -e package.xml ]; then
+        catkin_pkg=`basename $PWD`
+        (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@ --only-pkg-with-deps $catkin_pkg)
+    else
+        (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
+    fi
+    
     local result=$?
     if [ $result ] ; then
         t update "[success!!] catkin_make $* [`date`]" > /dev/null
