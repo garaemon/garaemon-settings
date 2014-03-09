@@ -79,7 +79,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     user user
     workspace "#{catkin_ws}/#{distro}/src"
     action :update
-    parallel_jobs 10
+    parallel_jobs 5
   end
 
   rosdep do

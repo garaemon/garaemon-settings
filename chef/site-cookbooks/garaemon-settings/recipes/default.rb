@@ -238,7 +238,7 @@ remote_file "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d/10-powerlin
 end
 
 link "#{home}/.config/powerline" do
-  oweenr user
+  owner user
   to "#{garaemon_settings_path}/resources/powerline"
 end
 # end of powerline
