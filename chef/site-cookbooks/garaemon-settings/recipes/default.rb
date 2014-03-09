@@ -98,7 +98,9 @@ cmds = ["git config --global --add merge.ff false",
         "git config --global color.ui auto",
         "git config --global user.name 'Ryohei Ueda'",
         "git config --global user.email garaemon@gmail.com",
-        "git config --global alias.graph 'log --graph --decorate --oneline'"]
+        "git config --global alias.graph 'log --graph --decorate --oneline'",
+        "git config --global alias.co checkout",
+        "git config --global alias.st status"]
 cmds.each do |cmd| 
   execute cmd do
     user user
