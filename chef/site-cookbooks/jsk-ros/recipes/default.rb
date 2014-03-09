@@ -71,7 +71,8 @@ node["jsk-ros"]["distributions"].each do |distro|
     user user
     workspace "#{catkin_ws}/#{distro}/src"
     action :merge
-    uri "https://raw.github.com/jsk-ros-pkg/jsk_common/master/jsk.rosinstall"
+    #uri "https://raw.github.com/jsk-ros-pkg/jsk_common/master/jsk.rosinstall"
+    uri "https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall"
   end
   
   wstool do
