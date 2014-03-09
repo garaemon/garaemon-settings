@@ -8,10 +8,10 @@
    "git_root": "gprog"
  },
   "ros-desktop": {
-   "catkin_ws": "ros_catkin_ws_release"
+   "catkin_ws": "ros"
  },
  "jsk-ros": {
-   "clear_catkin": true,
+   "clear_catkin": false,
    "distributions": ["hydro"]
  }
 }

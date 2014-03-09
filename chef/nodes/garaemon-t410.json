@@ -11,7 +11,7 @@
    "clear_catkin": false
  },
  "garaemon-settings": {
-   "git_root": "gprog2",
+   "git_root": "gprog",
    "git_ssh": true
  }
 }
