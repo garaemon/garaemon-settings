@@ -236,3 +236,10 @@ remote_file "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d/10-powerlin
   source "https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf"
   owner user
 end
+
+link "#{home}/.config/powerline" do
+  oweenr user
+  to "#{garaemon_settings_path}/resources/powerline"
+end
+# end of powerline
+###########################################################
