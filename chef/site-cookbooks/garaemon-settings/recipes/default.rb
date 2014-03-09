@@ -94,11 +94,16 @@ link "/usr/share/git-core/templates/hooks/commit-msg" do
   to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
 
-bash "git no-ff" do
-  user user
-  code <<-EOH
-    git config --global --add merge.ff false
-  EOH
+cmds = ["git config --global --add merge.ff false",
+        "git config --global color.ui auto",
+        "git config --global user.name 'Ryohei Ueda'",
+        "git config --global user.email garaemon@gmail.com",
+        "git config --global alias.graph 'log --graph --decorate --oneline'"]
+cmds.each do |cmd| 
+  execute cmd do
+    user user
+    command cmd
+  end
 end
 
 bash "git auto color" do
