@@ -217,12 +217,12 @@ bash "install powerline pip" do
   EOH
 end
 
-directory "#{node["base_configuration"]["home_dir"]}/.fonts" do
+directory "#{home}/.fonts" do
   action :create
   owner user
 end
 
-remote_file "#{node["base_configuration"]["home_dir"]}/.fonts/PowerlineSymbols.otf" do
+remote_file "#{home}/.fonts/PowerlineSymbols.otf" do
   source "https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf"
   owner user
 end
@@ -234,13 +234,18 @@ bash "fc-cache" do
   EOH
 end
 
-directory "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d" do
+directory "#{home}/.fonts.conf.d" do
   action :create
   owner user
 end
 
-remote_file "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d/10-powerline-symbols.conf" do
+remote_file "#{home}/.fonts.conf.d/10-powerline-symbols.conf" do
   source "https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf"
+  owner user
+end
+
+directory "#{home}/.config" do
+  action :create
   owner user
 end
 
