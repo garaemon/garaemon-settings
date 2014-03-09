@@ -172,15 +172,14 @@ ruby_versions.each do |version|
       rvm install #{version}
     EOH
   end
-  gem_packages.each do |pkg|
-    bash "install gem #{pkg} for #{version}" do
-      user user
-      code <<-EOH
-        source #{home}/.rvm/scripts/rvm
-        rvm use #{version}
-        gem install #{pkg} --no-ri --no-rdoc
-      EOH
-    end
+  gem_str = gem_packages.join(" ")
+  bash "install gems for #{version}" do
+    user user
+    code <<-EOH
+      source #{home}/.rvm/scripts/rvm
+      rvm use #{version}
+      gem install #{gem_str} --no-ri --no-rdoc
+    EOH
   end
 end
 
