@@ -3,6 +3,12 @@ garaemon-settings [![Build Status](https://travis-ci.org/garaemon/garaemon-setti
 
 some script to setup garaemon's environment
 
+Set up ssh
+---
+```sh
+curl https://raw.github.com/garaemon/garaemon-settings/master/scripts/ssh.sh | sh
+```
+
 Setting up chef master
 ---
 ```sh
