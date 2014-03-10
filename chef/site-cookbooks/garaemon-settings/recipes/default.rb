@@ -94,11 +94,18 @@ link "/usr/share/git-core/templates/hooks/commit-msg" do
   to "#{garaemon_settings_path}/resources/git/commit-msg"
 end
 
-bash "git no-ff" do
-  user user
-  code <<-EOH
-    git config --global --add merge.ff false
-  EOH
+cmds = ["git config --global --add merge.ff false",
+        "git config --global color.ui auto",
+        "git config --global user.name 'Ryohei Ueda'",
+        "git config --global user.email garaemon@gmail.com",
+        "git config --global alias.graph 'log --graph --decorate --oneline'",
+        "git config --global alias.co checkout",
+        "git config --global alias.st status"]
+cmds.each do |cmd| 
+  execute cmd do
+    user user
+    command cmd
+  end
 end
 
 bash "git auto color" do
@@ -172,15 +179,14 @@ ruby_versions.each do |version|
       rvm install #{version}
     EOH
   end
-  gem_packages.each do |pkg|
-    bash "install gem #{pkg} for #{version}" do
-      user user
-      code <<-EOH
-        source #{home}/.rvm/scripts/rvm
-        rvm use #{version}
-        gem install #{pkg} --no-ri --no-rdoc
-      EOH
-    end
+  gem_str = gem_packages.join(" ")
+  bash "install gems for #{version}" do
+    user user
+    code <<-EOH
+      source #{home}/.rvm/scripts/rvm
+      rvm use #{version}
+      gem install #{gem_str} --no-ri --no-rdoc
+    EOH
   end
 end
 
@@ -211,12 +217,12 @@ bash "install powerline pip" do
   EOH
 end
 
-directory "#{node["base_configuration"]["home_dir"]}/.fonts" do
+directory "#{home}/.fonts" do
   action :create
   owner user
 end
 
-remote_file "#{node["base_configuration"]["home_dir"]}/.fonts/PowerlineSymbols.otf" do
+remote_file "#{home}/.fonts/PowerlineSymbols.otf" do
   source "https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf"
   owner user
 end
@@ -228,12 +234,24 @@ bash "fc-cache" do
   EOH
 end
 
-directory "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d" do
+directory "#{home}/.fonts.conf.d" do
   action :create
   owner user
 end
 
-remote_file "#{node["base_configuration"]["home_dir"]}/.fonts.conf.d/10-powerline-symbols.conf" do
+remote_file "#{home}/.fonts.conf.d/10-powerline-symbols.conf" do
   source "https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf"
   owner user
 end
+
+directory "#{home}/.config" do
+  action :create
+  owner user
+end
+
+link "#{home}/.config/powerline" do
+  owner user
+  to "#{garaemon_settings_path}/resources/powerline"
+end
+# end of powerline
+###########################################################

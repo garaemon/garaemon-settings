@@ -71,7 +71,7 @@ define :wstool do
     if params[:parallel_jobs] then
       parallel_option = "-j#{params[:parallel_jobs]}"
     end
-    cmd = "wstool update #{parallel_option}"
+    cmd = "wstool update #{parallel_option} --delete-changed-uris"
     execute cmd do
       cwd params[:workspace]
       user params[:user]

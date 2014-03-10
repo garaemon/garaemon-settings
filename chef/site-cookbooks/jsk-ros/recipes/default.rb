@@ -44,13 +44,11 @@ node["jsk-ros"]["distributions"].each do |distro|
   
   # create directory
   if node["jsk-ros"]["clear_catkin"] then
-    bash "clear catkin ws for #{distro}" do
+    cmd = "rm -rf build devel install src; mkdir -p src"
+    execute cmd do
       user user
       cwd "#{catkin_ws}/#{distro}"
-      code <<-EOH
-        rm -rf build devel install src
-        mkdir src
-      EOH
+      command cmd
     end
   end
 
@@ -71,14 +69,15 @@ node["jsk-ros"]["distributions"].each do |distro|
     user user
     workspace "#{catkin_ws}/#{distro}/src"
     action :merge
-    uri "https://raw.github.com/jsk-ros-pkg/jsk_common/master/jsk.rosinstall"
+    #uri "https://raw.github.com/jsk-ros-pkg/jsk_common/master/jsk.rosinstall"
+    uri "https://raw.github.com/garaemon/garaemon-settings/master/resources/rosinstall/garaemon.rosinstall"
   end
   
   wstool do
     user user
     workspace "#{catkin_ws}/#{distro}/src"
     action :update
-    parallel_jobs 10
+    parallel_jobs 1
   end
 
   rosdep do
