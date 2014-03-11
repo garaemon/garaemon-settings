@@ -150,7 +150,7 @@ node["garaemon-settings"]["node-versions"].each do |version|
       nvm install #{version}
     EOH
   end
-  npm_packages = ["express", "grunt", "grunt-cli"]
+  npm_packages = ["express", "grunt", "grunt-cli", "yo"]
   bash "install npm packages for #{version}" do
     user user
     code <<-EOH
