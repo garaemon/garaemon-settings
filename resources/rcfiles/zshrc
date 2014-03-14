@@ -374,8 +374,12 @@ function catkin_ws_prompt() {
 }
 
 # load only one time
-if [ "$TERM" != "dumb" ] ; then
-    source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+if [ "$TERM" != "dumb" -a "`echo $PROMPT | grep -c POWERLINE`" = "0" ] ; then
+    if [ "$OS" = "Darwin" ]; then # if osx
+        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+    else
+        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+    fi
     newline_replacer="s@__NEWLINE__@\n@g"
     export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
 \$ "
@@ -393,8 +397,8 @@ fi
 # \$ "
 #     #RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
 #     #RPROMPT="%{$(echotc UP 1)%}$RPS1%{$echotc DO 1}%}"
-#     PROMPT2="%_%% "
-#     SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
+PROMPT2="%_%% "
+SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 # fi
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
