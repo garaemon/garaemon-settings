@@ -374,10 +374,12 @@ function catkin_ws_prompt() {
 }
 
 # load only one time
-source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
-newline_replacer="s@__NEWLINE__@\n@g"
-export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
+if [ "$TERM" != "dumb" ] ; then
+    source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+    newline_replacer="s@__NEWLINE__@\n@g"
+    export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
 \$ "
+fi
 #export PROMPT=`echo $PROMPT`
 # if [ "$TERM" != "dumb" -a "`echo $PS1 | grep -c POWERLINE`" = "0" ] ; then
 #     source $ZSH/oh-my-zsh.sh
