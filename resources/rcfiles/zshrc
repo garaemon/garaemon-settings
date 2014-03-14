@@ -374,13 +374,14 @@ function catkin_ws_prompt() {
 }
 
 # load only one time
-if [ "$TERM" != "dumb" -a "`echo $PROMPT | grep -c POWERLINE`" = "0" ] ; then
+if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
         source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     else
         source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
+    POWERLINE_LOADED=true
     export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
 \$ "
 fi
