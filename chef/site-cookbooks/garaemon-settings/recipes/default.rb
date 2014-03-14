@@ -64,8 +64,9 @@ else
 end
 
 github_packages = ["garaemon/garaemon-settings.git",
-                   "garaemon/rosenv.git"
-                   "holman/spark.git", "joemiller/spark-ping.git",
+                   "garaemon/rosenv.git",
+                   "holman/spark.git",
+                   "joemiller/spark-ping.git",
                    "seebi/dircolors-solarized.git",
                    "tomislav/osx-terminal.app-colors-solarized.git",
                    "sigurdga/gnome-terminal-colors-solarized.git"]
