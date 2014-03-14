@@ -257,5 +257,14 @@ link "#{home}/.config/powerline" do
   owner user
   to "#{garaemon_settings_path}/resources/powerline"
 end
+
 # end of powerline
 ###########################################################
+
+bash "install gnome solarized" do
+  user user
+  code <<-EOH
+    cd #{home}/gnome-terminal-colors-solarized
+    ./install.sh
+  EOH
+end
