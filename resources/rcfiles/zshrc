@@ -376,7 +376,11 @@ function catkin_ws_prompt() {
 # load only one time
 if [ "$TERM" != "dumb" -a "`echo $PS1 | grep -c POWERLINE`" = "0" ] ; then
     source $ZSH/oh-my-zsh.sh
-    source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+    if [ "$OS" = "Darwin" ]; then # if osx
+        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+    else
+        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+    fi
     PS1="%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
 $PS1
 \$ "
