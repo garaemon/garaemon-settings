@@ -1,0 +1,68 @@
+{
+  "default_module": "powerline.segments.common",
+  "segment_data": {
+    "hostname": {
+      "before": "@",
+      "after": ":",
+      "args": {
+        "only_if_ssh": false
+      }
+    },
+    "branch": {
+      "before": " "
+    }
+  },
+  "segments": {
+    "left": [
+      {
+        "name": "environment",
+        "before": "ROS_DISTRO=",
+        "args": {
+          "variable": "ROS_DISTRO"
+        }
+      },
+      {
+        "name": "environment",
+        "before": "ROS_MASTER_URI=",
+        "args": {
+          "variable": "ROS_MASTER_URI"
+        }
+      },
+      {
+        "type": "string",
+        "name": "newline",
+        "contents": "__NEWLINE__"
+      },
+      {
+        "name": "user"
+      },
+      {
+        "name": "hostname"
+      },
+      {
+        "name": "cwd",
+        "args": {
+          "dir_limit_depth": 3
+        }
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "contents": "Yes, Master?"
+      },
+      {
+        "module": "powerline.segments.shell",
+        "name": "jobnum"
+      }
+    ],
+    "right": [
+      {
+        "module": "powerline.segments.shell",
+        "name": "last_pipe_status"
+      },
+      {
+        "name": "branch"
+      }
+    ]
+  }
+}

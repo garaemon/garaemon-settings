@@ -64,7 +64,9 @@ else
 end
 
 github_packages = ["garaemon/garaemon-settings.git",
-                   "holman/spark.git", "joemiller/spark-ping.git"]
+                   "holman/spark.git", "joemiller/spark-ping.git",
+                   "seebi/dircolors-solarized.git",
+                   "tomislav/osx-terminal.app-colors-solarized.git"]
 github_packages.each do |pkg|
   target_path = "#{home}/#{git_root_dir}/#{File.basename(pkg, ".git")}"
   git target_path do
@@ -150,7 +152,7 @@ node["garaemon-settings"]["node-versions"].each do |version|
       nvm install #{version}
     EOH
   end
-  npm_packages = ["express", "grunt", "grunt-cli"]
+  npm_packages = ["express", "grunt", "grunt-cli", "yo", "generator-webapp"]
   bash "install npm packages for #{version}" do
     user user
     code <<-EOH
