@@ -42,8 +42,7 @@ setopt share_history        # share command history data
 bindkey -e
 
 #alias
-#alias ls='\ls -GF --color=auto'
-alias ls="ls -G"
+alias ls="ls --color=auto"
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
