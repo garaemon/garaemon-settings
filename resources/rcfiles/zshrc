@@ -577,3 +577,4 @@ fi
 
 export TERM=xterm-256color
 
+source $HOME/gprog/rosenv/rosenv.sh
