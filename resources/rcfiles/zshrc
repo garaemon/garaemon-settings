@@ -257,28 +257,6 @@ function _catmake() {
 
 compctl -K "_catmake" "catmake"
 
-function roshydro() {
-    change_ros_setup $HOME/ros/hydro/install
-    export PATH=$PATH:`rospack find roseus`/bin
-}
-
-function roshydrodev() {
-    change_ros_setup $HOME/ros/hydro/devel
-    export PATH=$PATH:`rospack find roseus`/bin
-}
-
-function rosgroovy() {
-    change_ros_setup $HOME/ros/groovy/
-    export PATH=$PATH:`rospack find roseus`/bin
-}
-
-function rosgroovydev() {
-    change_ros_setup $HOME/ros/groovy/
-    export PATH=$PATH:`rospack find roseus`/bin
-}
-
-roshydrodev
-
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
@@ -577,3 +555,22 @@ fi
 
 export TERM=xterm-256color
 
+source $HOME/gprog/rosenv/rosenv.sh
+if [ "$ROSENV_CURRENT" = "" ]; then 
+    rosenv use jsk.hydro
+fi
+
+# rename catmake
+eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
+catmake() {
+    orig_catmake
+    local result=$?
+    if [ $result ] ; then
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null
+    else
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
+    fi
+    return $result
+}
+
+alias roseus="rlwrap rosrun roseus roseus"

@@ -5,14 +5,13 @@
      "user": "jskuser"
  },
  "ros-desktop": {
-   "catkin_ws": "ros_catkin_ws"
+   "catkin_ws": "ros"
+ },
+ "jsk-ros": {
+   "clear_catkin": false
  },
  "garaemon-settings": {
    "git_root": "gprog",
    "git_ssh": true
- },
- "jsk-ros": {
-   "distributions": ["hydro"],
-   "clear_catkin": false
  }
 }
