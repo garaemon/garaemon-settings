@@ -572,3 +572,5 @@ catmake() {
     fi
     return $result
 }
+
+alias roseus="rlwrap rosrun roseus roseus"
