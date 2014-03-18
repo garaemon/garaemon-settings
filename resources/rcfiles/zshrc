@@ -274,7 +274,6 @@ function rossetlocal() {
     unset ROS_IP
 }
 
-
 function rossetip() {
     export ROS_IP=`LANGUAGE=en LANG=C ifconfig | grep 'wlan|eth' -E -A 7 | grep inet\  | grep -v 127.0.0.1 | sed 's/.*inet addr:\([0-9\.]*\).*/\1/' | head -1`
     export ROS_HOSTNAME=$ROS_IP
@@ -284,46 +283,16 @@ if [ `which sw_vers > /dev/null 2>&1` ]; then
     rossetlocal
 fi
 
-#export HOMEBREW_CC=gcc
-
-##################################################################
+################################################################################
 # oh my zsh
-# Path to your oh-my-zsh configuration.
-
 ZSH=$HOME/.oh-my-zsh
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-# af-magic candy jonathan
-ZSH_THEME="af-magic"
-
-
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# Set to this to use case-sensitive completion
-# CASE_SENSITIVE="true"
-
-# Comment this out to disable weekly auto-update checks
-# DISABLE_AUTO_UPDATE="true"
-
-# Uncomment following line if you want to disable colors in ls
-# DISABLE_LS_COLORS="true"
-
-# Uncomment following line if you want to disable autosetting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment following line if you want red dots to be displayed while waiting for completion
+ZSH_THEME=""
 COMPLETION_WAITING_DOTS="true"
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
 plugins=(git brew osx bower bundler mvn npm pip svn web-search)
-
+# keep PS1
+PS1_ORG=$PS1
+source $ZSH/oh-my-zsh.sh
+PS1=$PS1_ORG
 
 
 # Customize to your needs...
