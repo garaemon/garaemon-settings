@@ -43,7 +43,11 @@ bindkey -e
 
 #alias
 eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
-alias ls="ls --color=auto"
+if [ "$(uname)" != "Darwin" ]; then
+    alias ls="ls -AF --color=auto"
+else
+    alias ls="gls -AF --color=auto"
+fi
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
