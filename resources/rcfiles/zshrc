@@ -563,7 +563,7 @@ fi
 # rename catmake
 eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
 catmake() {
-    orig_catmake
+    orig_catmake $@
     local result=$?
     if [ $result ] ; then
         t update "[success!!] catkin_make $* [`date`]" > /dev/null
