@@ -194,30 +194,16 @@ export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
 [ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
 
 
-# function chpwd() {
-#     echo chpwd
-#     if [ `echo $EMACS | grep -c "term"` -eq 1 ]; then
-#         echo '\\\033AnSiTc' $PWD
-#     fi
-# }
-# export LANG="ja_JP.utf-8"
 export PATH=$PATH:$HOME/gprog/git-your-emacs
-
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
-
-
 export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin/
 
 fpath=($HOME/.zsh/functions/ $fpath) # not work?
-
-
 # export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 export PATH=$PATH:$HOME/gprog/minify-make
-
 export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
 export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
-
 export PATH=$PATH:$HOME/gprog/jq
 
 ################################################################################
