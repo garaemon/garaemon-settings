@@ -569,7 +569,7 @@ eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
 catmake() {
     orig_catmake $@
     local result=$?
-    if [ $result ] ; then
+    if [ "$result" = "0" ] ; then
         t update "[success!!] catkin_make $* [`date`]" > /dev/null
     else
         t update "[failed!!] catkin_make $* [`date`]" > /dev/null
