@@ -43,7 +43,11 @@ bindkey -e
 
 #alias
 eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
-alias ls="ls --color=auto"
+if [ "$(uname)" != "Darwin" ]; then
+    alias ls="ls -AF --color=auto"
+else
+    alias ls="gls -AF --color=auto"
+fi
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
@@ -216,30 +220,17 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 
 export PATH=$PATH:$HOME/gprog/jq
 
-#ROS
-function change_ros_setup() {
-    local prefix_path=$1
-    if [ -e $prefix_path/setup.zsh ]; then
-        source $prefix_path/setup.zsh
-    fi
-    export CATKIN_WS=$prefix_path
-    if [ -e `rospack find hrpsys_gazebo_tutorials`/setup.sh ]; then
-        source `rospack find hrpsys_gazebo_tutorials`/setup.sh
-    fi
-    export ROS_WORKSPACE=`dirname $prefix_path`
-}
+source $HOME/gprog/rosenv/rosenv.sh
+if [ "$ROSENV_CURRENT" = "" ]; then 
+    rosenv use jsk.hydro
+fi
 
-function catmake() {
-    local catkin_pkg
-    if [ -e package.xml ]; then
-        catkin_pkg=`basename $PWD`
-        (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@ --only-pkg-with-deps $catkin_pkg)
-    else
-        (cd $ROS_WORKSPACE && source /opt/ros/$ROS_DISTRO/setup.zsh && catkin_make $@)
-    fi
-    
+# rename catmake
+eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
+catmake() {
+    orig_catmake $@
     local result=$?
-    if [ $result ] ; then
+    if [ "$result" = "0" ] ; then
         t update "[success!!] catkin_make $* [`date`]" > /dev/null
     else
         t update "[failed!!] catkin_make $* [`date`]" > /dev/null
@@ -247,19 +238,13 @@ function catmake() {
     return $result
 }
 
-function _catmake() {
-    local options
-    options="install test clean -h -C --source --build --force-cmake --no-color --pkg \
---only-pkg-with-deps --cmake-args --make-args \
-`rospack list | cut -f1 -d' '`"
-    reply=(${=options})
-}
+alias roseus="rlwrap rosrun roseus roseus"
 
-compctl -K "_catmake" "catmake"
 
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
+
 
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
@@ -439,6 +424,9 @@ function do_enter() {
         echo
         echo -e "\e[0;33m--- git status ---\e[0m"
         git status --short --branch
+        echo
+        echo
+        echo
     fi
     zle reset-prompt
     return 0
@@ -549,28 +537,8 @@ function sine_wave() {
     echo
 }
 
-if [ "$TERM" != "dumb" -a `which spark > /dev/null 2>&1` ] ; then
+if [ "$TERM" != "dumb" ] ; then
     sine_wave
 fi
 
 export TERM=xterm-256color
-
-source $HOME/gprog/rosenv/rosenv.sh
-if [ "$ROSENV_CURRENT" = "" ]; then 
-    rosenv use jsk.hydro
-fi
-
-# rename catmake
-eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
-catmake() {
-    orig_catmake
-    local result=$?
-    if [ $result ] ; then
-        t update "[success!!] catkin_make $* [`date`]" > /dev/null
-    else
-        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
-    fi
-    return $result
-}
-
-alias roseus="rlwrap rosrun roseus roseus"
