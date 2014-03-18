@@ -7,7 +7,7 @@
     "newline":            { "fg": "oldlace", "bg": "royalblue5", "attr": ["bold"] },
     "prompt":            { "fg": "oldlace", "bg": "royalblue5", "attr": ["bold"] },
     "virtualenv":           { "fg": "oldlace", "bg": "green" },
-    "branch":               { "fg": "gray61", "bg": "royalblue5" },
+    "branch":               { "fg": "white", "bg": "cyan" },
     "branch_dirty":         { "fg": "yellow", "bg": "royalblue5" },
     "branch_clean":         { "fg": "gray61", "bg": "royalblue5" },
     "continuation":         { "fg": "lightyellow", "bg": "darkgreencopper" },
