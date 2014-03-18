@@ -173,7 +173,7 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
-alias eclient='emacs-client -n'
+alias eclient='emacsclient -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
@@ -376,7 +376,6 @@ alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t p
 export COOKIE_SECRET="hkfc-sakuchan"
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
-alias ec="emacsclient -n"
 
 
 export BASIC_USER="garaemon"
