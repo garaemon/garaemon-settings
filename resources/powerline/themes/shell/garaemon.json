@@ -16,14 +16,18 @@
     "left": [
       {
         "name": "environment",
-        "before": "ROS_DISTRO=",
+        "args": {
+          "variable": "ROSENV_CURRENT"
+        }
+      },
+      {
+        "name": "environment",
         "args": {
           "variable": "ROS_DISTRO"
         }
       },
       {
         "name": "environment",
-        "before": "ROS_MASTER_URI=",
         "args": {
           "variable": "ROS_MASTER_URI"
         }
