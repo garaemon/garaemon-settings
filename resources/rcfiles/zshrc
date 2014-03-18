@@ -294,20 +294,8 @@ PS1_ORG=$PS1
 source $ZSH/oh-my-zsh.sh
 PS1=$PS1_ORG
 
-
-# Customize to your needs...
-
-function rosmaster_prompt() {
-    local host
-    host=`echo $ROS_MASTER_URI | sed -e 's%http://%%g'`
-    echo $host
-}
-
-function catkin_ws_prompt() {
-    echo $CATKIN_WS | sed -e "s%$HOME%~%g";
-}
-
-# load only one time
+################################################################################
+# powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
         source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
@@ -319,22 +307,9 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
 \$ "
 fi
-#export PROMPT=`echo $PROMPT`
-# if [ "$TERM" != "dumb" -a "`echo $PS1 | grep -c POWERLINE`" = "0" ] ; then
-#     source $ZSH/oh-my-zsh.sh
-#     if [ "$OS" = "Darwin" ]; then # if osx
-#         source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
-#     else
-#         source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
-#     fi
-#     PS1="%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
-# $PS1
-# \$ "
-#     #RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
-#     #RPROMPT="%{$(echotc UP 1)%}$RPS1%{$echotc DO 1}%}"
 PROMPT2="%_%% "
 SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
-# fi
+
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
