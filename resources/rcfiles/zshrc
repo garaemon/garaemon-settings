@@ -220,12 +220,14 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 
 export PATH=$PATH:$HOME/gprog/jq
 
+################################################################################
+# ros
 source $HOME/gprog/rosenv/rosenv.sh
 if [ "$ROSENV_CURRENT" = "" ]; then 
     rosenv use jsk.hydro
 fi
 
-# rename catmake
+# rename catmake to orig_catmake
 eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
 catmake() {
     orig_catmake $@
@@ -238,13 +240,12 @@ catmake() {
     return $result
 }
 
+# alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
-
 
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
-
 
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
