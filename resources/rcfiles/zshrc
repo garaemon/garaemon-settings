@@ -42,8 +42,12 @@ setopt share_history        # share command history data
 bindkey -e
 
 #alias
-eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
-alias ls="ls --color=auto"
+if [ "$(uname)" != "Darwin" ]; then
+    eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
+    alias ls="ls --color=auto"
+else
+    alias ls="gls --color=auto"
+fi
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
