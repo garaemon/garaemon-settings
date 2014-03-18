@@ -370,7 +370,6 @@ function do_enter() {
         git status --short --branch
         echo
         echo
-        echo
     fi
     zle reset-prompt
     return 0
