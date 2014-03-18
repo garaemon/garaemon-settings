@@ -519,7 +519,9 @@ export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 
 # oh-my-zsh overwrite history
-unalias history
+if [ `alias history > /dev/null` ]; then
+    unalias history
+fi
 # export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
 
 # added by travis gem
