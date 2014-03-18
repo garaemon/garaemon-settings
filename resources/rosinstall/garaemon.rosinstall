@@ -1,35 +1,35 @@
 # rtm-ros-robotics
 - git:
-    uri: https://github.com/start-jsk/openrtm_aist_core
+    uri: https://github.com/start-jsk/openrtm_aist_core.git
     local-name: rtm-ros-robotics/openrtm_common/openrtm_aist_core
 - git:
-    uri: https://github.com/start-jsk/openhrp3
+    uri: https://github.com/start-jsk/openhrp3.git
     local-name: rtm-ros-robotics/openrtm_common/openhrp3
 - git:
-    uri: https://github.com/start-jsk/rtshell_core
+    uri: https://github.com/start-jsk/rtshell_core.git
     local-name: rtm-ros-robotics/openrtm_common/rtshell_core
 - git:
-    uri: https://github.com/start-jsk/hrpsys
+    uri: https://github.com/start-jsk/hrpsys.git
     local-name: rtm-ros-robotics/openrtm_common/hrpsys
 - git:
-#    uri: https://github.com/start-jsk/rtmros_common
-    uri: https://github.com/garaemon/rtmros_common
+#    uri: https://github.com/start-jsk/rtmros_common.git
+    uri: https://github.com/garaemon/rtmros_common.git
     local-name: rtm-ros-robotics/rtmros_common
     version: fix-project-generator-path
 - git:
-    uri: https://github.com/start-jsk/rtmros_tutorials
+    uri: https://github.com/start-jsk/rtmros_tutorials.git
     local-name: rtm-ros-robotics/rtmros_tutorials
 # - git:
 #     uri: https://github.com/start-jsk/rtmros_hironx
 #     local-name: rtm-ros-robotics/rtmros_hironx
 - git:
-    uri: https://github.com/start-jsk/rtmros_gazebo
+    uri: https://github.com/start-jsk/rtmros_gazebo.git
     local-name: rtm-ros-robotics/rtmros_gazebo
 - svn:
-    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps.git
     local-name: rtm-ros-robotics/openrtm_apps
 - svn:
-    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials.git
     local-name: rtm-ros-robotics/agentsystem_ros_tutorials
 # rosinstall file for https://github.com/jsk-ros-pkg
 # use #@# for special comment out, due to jsk.rosbuild specification
