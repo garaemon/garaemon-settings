@@ -434,8 +434,6 @@ function do_enter() {
 zle -N do_enter
 bindkey '^m' do_enter
 
-export RECOME_ENV=development-local
-
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
 source $HOME/.emacs.d/check_for_upgrade.sh
