@@ -43,7 +43,7 @@ bindkey -e
 
 #alias
 
-if [ "$(uname)" != "Darwin" ]; then
+if [ `uname` != Darwin ]; then
     eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
     alias ls="ls -AF --color=auto"
 else
@@ -454,8 +454,8 @@ function sine_wave() {
     done
     echo
 }
-
-if [ "$TERM" != "dumb" ] ; then
+which sine > /dev/null
+if [ $? = 0 -a "$TERM" != "dumb" ] ; then
     sine_wave
 fi
 
