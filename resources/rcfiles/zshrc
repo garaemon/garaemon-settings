@@ -173,7 +173,7 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
-alias eclient='emacs-client -n'
+alias eclient='emacsclient -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
@@ -194,38 +194,26 @@ export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
 [ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
 
 
-# function chpwd() {
-#     echo chpwd
-#     if [ `echo $EMACS | grep -c "term"` -eq 1 ]; then
-#         echo '\\\033AnSiTc' $PWD
-#     fi
-# }
-# export LANG="ja_JP.utf-8"
 export PATH=$PATH:$HOME/gprog/git-your-emacs
-
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
-
-
 export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin/
 
 fpath=($HOME/.zsh/functions/ $fpath) # not work?
-
-
 # export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 export PATH=$PATH:$HOME/gprog/minify-make
-
 export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
 export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
-
 export PATH=$PATH:$HOME/gprog/jq
 
+################################################################################
+# ros
 source $HOME/gprog/rosenv/rosenv.sh
 if [ "$ROSENV_CURRENT" = "" ]; then 
     rosenv use jsk.hydro
 fi
 
-# rename catmake
+# rename catmake to orig_catmake
 eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
 catmake() {
     orig_catmake $@
@@ -238,13 +226,12 @@ catmake() {
     return $result
 }
 
+# alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
-
 
 if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 fi
-
 
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
@@ -273,7 +260,6 @@ function rossetlocal() {
     unset ROS_IP
 }
 
-
 function rossetip() {
     export ROS_IP=`LANGUAGE=en LANG=C ifconfig | grep 'wlan|eth' -E -A 7 | grep inet\  | grep -v 127.0.0.1 | sed 's/.*inet addr:\([0-9\.]*\).*/\1/' | head -1`
     export ROS_HOSTNAME=$ROS_IP
@@ -283,61 +269,19 @@ if [ `which sw_vers > /dev/null 2>&1` ]; then
     rossetlocal
 fi
 
-#export HOMEBREW_CC=gcc
-
-##################################################################
+################################################################################
 # oh my zsh
-# Path to your oh-my-zsh configuration.
-
 ZSH=$HOME/.oh-my-zsh
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-# af-magic candy jonathan
-ZSH_THEME="af-magic"
-
-
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# Set to this to use case-sensitive completion
-# CASE_SENSITIVE="true"
-
-# Comment this out to disable weekly auto-update checks
-# DISABLE_AUTO_UPDATE="true"
-
-# Uncomment following line if you want to disable colors in ls
-# DISABLE_LS_COLORS="true"
-
-# Uncomment following line if you want to disable autosetting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment following line if you want red dots to be displayed while waiting for completion
+ZSH_THEME=""
 COMPLETION_WAITING_DOTS="true"
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
 plugins=(git brew osx bower bundler mvn npm pip svn web-search)
+# keep PS1
+PS1_ORG=$PS1
+source $ZSH/oh-my-zsh.sh
+PS1=$PS1_ORG
 
-
-
-# Customize to your needs...
-
-function rosmaster_prompt() {
-    local host
-    host=`echo $ROS_MASTER_URI | sed -e 's%http://%%g'`
-    echo $host
-}
-
-function catkin_ws_prompt() {
-    echo $CATKIN_WS | sed -e "s%$HOME%~%g";
-}
-
-# load only one time
+################################################################################
+# powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
         source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
@@ -349,22 +293,9 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
 \$ "
 fi
-#export PROMPT=`echo $PROMPT`
-# if [ "$TERM" != "dumb" -a "`echo $PS1 | grep -c POWERLINE`" = "0" ] ; then
-#     source $ZSH/oh-my-zsh.sh
-#     if [ "$OS" = "Darwin" ]; then # if osx
-#         source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
-#     else
-#         source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
-#     fi
-#     PS1="%F{006}[`rosmaster_prompt`] $FG[047][[`catkin_ws_prompt`]] $FG[014]%D{[%K:%M:%S]} $FG[014]Yes, Master? %{$reset_color%}
-# $PS1
-# \$ "
-#     #RPROMPT='%F{006}%n$my_gray@$my_orange%m%{$reset_color%}%'
-#     #RPROMPT="%{$(echotc UP 1)%}$RPS1%{$echotc DO 1}%}"
 PROMPT2="%_%% "
 SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
-# fi
+
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -376,7 +307,6 @@ alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t p
 export COOKIE_SECRET="hkfc-sakuchan"
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
-alias ec="emacsclient -n"
 
 
 export BASIC_USER="garaemon"
@@ -426,15 +356,12 @@ function do_enter() {
         git status --short --branch
         echo
         echo
-        echo
     fi
     zle reset-prompt
     return 0
 }
 zle -N do_enter
 bindkey '^m' do_enter
-
-export RECOME_ENV=development-local
 
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
@@ -445,24 +372,7 @@ alias git-graph="git log --graph --decorate --oneline"
 #percol settings
 
 which percol > /dev/null
-if [ $? ]; then
-    # function percol_select_history() {
-    #     local tac_cmd
-    #     which gtac &> /dev/null && tac_cmd=gtac
-    #     which tac &> /dev/null && tac_cmd=tac
-    #     if [ `which sw_vers &> /dev/null` ]; then
-    #         BUFFER=$(tail -r ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
-    #             | percol --match-method regex --query "$LBUFFER")
-    #     else
-    #         BUFFER=$($tac_cmd ~/.zsh_history | sed 's/^: [0-9]*:[0-9]*;//' \
-    #             | percol --match-method regex --query "$LBUFFER")
-    #     fi
-    #     CURSOR=$#BUFFER         # move cursor
-    #     zle -R -c               # refresh
-    # }
-    # zle -N percol_select_history
-    # bindkey '^R' percol_select_history
-
+if [ $? = 0 ]; then
     function percol-select-history() {
         local tac
         if which tac > /dev/null; then
