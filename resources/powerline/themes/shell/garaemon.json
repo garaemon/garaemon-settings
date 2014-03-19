@@ -15,6 +15,13 @@
   "segments": {
     "left": [
       {
+        "module": "powerline.segments.shell",
+        "name": "last_pipe_status"
+      },
+      {
+        "name": "branch"
+      },
+      {
         "name": "environment",
         "args": {
           "variable": "ROSENV_CURRENT"
@@ -57,15 +64,6 @@
       {
         "module": "powerline.segments.shell",
         "name": "jobnum"
-      }
-    ],
-    "right": [
-      {
-        "module": "powerline.segments.shell",
-        "name": "last_pipe_status"
-      },
-      {
-        "name": "branch"
       }
     ]
   }
