@@ -210,15 +210,16 @@ export PATH=$PATH:$HOME/gprog/jq
 
 ################################################################################
 # ros
+rosenv_use_hook() {
+    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    export PATH=`rospack find roseus`/bin:$PATH
+}
+
 source $HOME/gprog/rosenv/rosenv.sh
 if [ "$ROSENV_CURRENT" = "" ]; then 
     rosenv use jsk.hydro
 fi
 
-rosenv_use_hook() {
-    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
-    export PATH=`rospack find roseus`/bin:$PATH
-}
 
 # rename catmake to orig_catmake
 eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
