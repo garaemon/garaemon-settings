@@ -370,8 +370,8 @@ function do_enter() {
     zle reset-prompt
     return 0
 }
-zle -N do_enter
-bindkey '^m' do_enter
+# zle -N do_enter
+# bindkey '^m' do_enter
 
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
