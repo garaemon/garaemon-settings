@@ -43,13 +43,6 @@ bindkey -e
 
 #alias
 
-if [ "$(uname)" != "Darwin" ]; then
-    eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
-    alias ls="ls -AF --color=auto"
-else
-    eval `gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
-    alias ls="gls -AF --color=auto"
-fi
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
@@ -304,6 +297,15 @@ fi
 PROMPT2="%_%% "
 SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 
+if [ `uname` != Darwin ]; then
+    eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
+    alias ls="ls -AF --color=auto"
+else
+    eval `gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
+    alias ls="gls -AF --color=auto"
+fi
+
+
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
@@ -368,8 +370,8 @@ function do_enter() {
     zle reset-prompt
     return 0
 }
-zle -N do_enter
-bindkey '^m' do_enter
+# zle -N do_enter
+# bindkey '^m' do_enter
 
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
 
@@ -454,8 +456,8 @@ function sine_wave() {
     done
     echo
 }
-
-if [ "$TERM" != "dumb" ] ; then
+which sine > /dev/null
+if [ $? = 0 -a "$TERM" != "dumb" ] ; then
     sine_wave
 fi
 
