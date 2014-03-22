@@ -462,3 +462,13 @@ if [ $? = 0 -a "$TERM" != "dumb" ] ; then
 fi
 
 export TERM=xterm-256color
+
+# utility
+add_garaemon_fork() {
+    local repo
+    repo=$(git remote show origin -n | grep 'Fetch URL' | cut -f5 -d" " \
+        | xargs -n 1 -i basename {} .git)
+    echo adding git@github.com:garaemon/{repo}.git as garaemon
+    git remote add garaemon git@github.com:garaemon/{repo}.git
+    git fetch --all
+}
