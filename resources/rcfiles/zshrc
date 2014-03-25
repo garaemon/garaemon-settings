@@ -291,8 +291,13 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
-    export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
+    if [ `uname` = Darwin ]; then
+        export PROMPT="`echo $PROMPT | gsed 's/)/ | gsed $newline_replacer )/g'`
 \$ "
+    else
+        export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
+\$ "
+    fi
 fi
 PROMPT2="%_%% "
 SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
