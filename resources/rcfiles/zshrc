@@ -206,6 +206,7 @@ export PATH=$PATH:$HOME/gprog/jq
 rosenv_use_hook() {
     source `rospack find hrpsys_gazebo_tutorials`/setup.sh
     export PATH=`rospack find roseus`/bin:$PATH
+    
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
