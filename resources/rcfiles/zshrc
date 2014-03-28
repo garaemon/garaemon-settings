@@ -204,9 +204,12 @@ export PATH=$PATH:$HOME/gprog/jq
 ################################################################################
 # ros
 rosenv_use_hook() {
-    source `rospack find hrpsys_gazebo_tutorials`/setup.sh
-    export PATH=`rospack find roseus`/bin:$PATH
-    
+    if [ "$(rospack find hrpsys_gazebo_tutorials 2>/dev/null)" != "" ] ; then
+        source `rospack find hrpsys_gazebo_tutorials`/setup.sh
+    fi
+    if [ "$(rospack find roseus 2>/dev/null)" != "" ] ; then
+        export PATH=`rospack find roseus`/bin:$PATH
+    fi
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
