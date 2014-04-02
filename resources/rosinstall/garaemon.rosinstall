@@ -12,10 +12,8 @@
     uri: https://github.com/start-jsk/hrpsys.git
     local-name: rtm-ros-robotics/openrtm_common/hrpsys
 - git:
-#    uri: https://github.com/start-jsk/rtmros_common.git
-    uri: https://github.com/garaemon/rtmros_common.git
+    uri: https://github.com/start-jsk/rtmros_common.git
     local-name: rtm-ros-robotics/rtmros_common
-    version: fix-project-generator-path
 - git:
     uri: https://github.com/start-jsk/rtmros_tutorials.git
     local-name: rtm-ros-robotics/rtmros_tutorials
@@ -26,10 +24,10 @@
     uri: https://github.com/start-jsk/rtmros_gazebo.git
     local-name: rtm-ros-robotics/rtmros_gazebo
 - svn:
-    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps.git
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps
     local-name: rtm-ros-robotics/openrtm_apps
 - svn:
-    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials.git
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials
     local-name: rtm-ros-robotics/agentsystem_ros_tutorials
 # rosinstall file for https://github.com/jsk-ros-pkg
 # use #@# for special comment out, due to jsk.rosbuild specification
@@ -74,21 +72,21 @@
     local-name: jsk-ros-pkg/jsk_common
 
 # for snap map icp
-- svn:
-    uri: https://svn.code.sf.net/p/tum-ros-pkg/code/highlevel/SnapMapICP
-    local-name: tum-ros-pkg/highlevel/SnapMapICP
+# - svn:
+#     uri: https://svn.code.sf.net/p/tum-ros-pkg/code/highlevel/SnapMapICP
+#     local-name: tum-ros-pkg/highlevel/SnapMapICP
 # for face_detector_mono
-- svn:
-    uri: https://svn.code.sf.net/p/tum-ros-pkg/code/perception/
-    local-name: tum-ros-pkg/perception
+# - svn:
+#     uri: https://svn.code.sf.net/p/tum-ros-pkg/code/perception/
+#     local-name: tum-ros-pkg/perception
 # for safe_teleop_pr2
-- svn:
-    uri: http://svn.code.sf.net/p/bosch-ros-pkg/code/trunk/stacks/bosch_shared_autonomy
-    local-name: bosch-ros-pkg/stacks/bosch_shared_autonomy
+# - svn:
+#     uri: http://svn.code.sf.net/p/bosch-ros-pkg/code/trunk/stacks/bosch_shared_autonomy
+#     local-name: bosch-ros-pkg/stacks/bosch_shared_autonomy
 # for ee_cart_imped
-- svn:
-    uri: https://svn.csail.mit.edu/mit-ros-pkg/trunk/ee_cart_imped
-    local-name: mit-ros-pkg/trunk/ee_cart_imped
+# - svn:
+#     uri: https://svn.csail.mit.edu/mit-ros-pkg/trunk/ee_cart_imped
+#     local-name: mit-ros-pkg/trunk/ee_cart_imped
 
 # rwt
 - git:    
