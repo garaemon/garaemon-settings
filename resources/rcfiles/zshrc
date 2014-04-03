@@ -160,6 +160,7 @@ alias eclient='emacsclient -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
+export PATH=$PATH:$HOME/gprog/shell-color-pallet
 #alias jbibtex=bibtex
 
 export PATH=$PATH:$HOME/gprog/emacs-settings

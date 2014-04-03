@@ -69,6 +69,7 @@ github_packages = ["garaemon/garaemon-settings.git",
                    "joemiller/spark-ping.git",
                    "seebi/dircolors-solarized.git",
                    "tomislav/osx-terminal.app-colors-solarized.git",
+                   "yonchu/shell-color-pallet.git",
                    "sigurdga/gnome-terminal-colors-solarized.git"]
 github_packages.each do |pkg|
   target_path = "#{home}/#{git_root_dir}/#{File.basename(pkg, ".git")}"
