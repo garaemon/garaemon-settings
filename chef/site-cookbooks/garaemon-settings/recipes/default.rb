@@ -21,6 +21,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
    python-pip tig ruby imagemagick
    ttf-dejavu dconf gnome-tweak-tool
    sqlite3 libgdbm-dev bison libffi-dev dstat
+   gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool 
    virtualbox}.each do |pkg|
   package pkg do
     action :install
@@ -32,7 +33,7 @@ apt_repository "dropbox" do
   distribution node['lsb']['codename']
   components ["main"]
   keyserver "pgp.mit.edu"
-  key "5044912E"
+#  key "5044912E"
 end
 package "dropbox" do
   action :install
