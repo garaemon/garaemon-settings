@@ -19,6 +19,7 @@ end
    ros-hydro-pr2-controllers-msgs
    ros-hydro-collada-urdf ros-groovy-collada-urdf
    drcsim-hydro
+   python-wstool
    omniidl-python}.each do |pkg|
   package pkg do
     action :install
