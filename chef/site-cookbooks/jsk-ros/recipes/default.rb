@@ -18,6 +18,9 @@ end
    ros-hydro-manipulation-msgs ros-groovy-manipulation-msgs
    ros-hydro-pr2-controllers-msgs
    ros-hydro-collada-urdf ros-groovy-collada-urdf
+   ros-hydro-desktop-full ros-groovy-desktop-full
+   ros-hydro-rosbuild ros-groovy-rosbuild
+   ros-hydro-catkin ros-groovy-catkin
    drcsim-hydro
    python-wstool
    omniidl-python}.each do |pkg|
