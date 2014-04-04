@@ -21,7 +21,8 @@ git_root_dir = node["garaemon-settings"]["git_root"]
    python-pip tig ruby imagemagick
    ttf-dejavu dconf gnome-tweak-tool
    sqlite3 libgdbm-dev bison libffi-dev dstat
-   gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool 
+   gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool
+   gnome-panel
    virtualbox}.each do |pkg|
   package pkg do
     action :install
