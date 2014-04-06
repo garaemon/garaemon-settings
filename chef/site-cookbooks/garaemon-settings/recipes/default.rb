@@ -29,6 +29,20 @@ git_root_dir = node["garaemon-settings"]["git_root"]
   end
 end
 
+
+# chrome
+apt_repository "google-chrome" do
+  uri "http://dl.google.com/linux/chrome/deb/"
+  distribution "stable"
+  components ["main"]
+  action :add
+end
+
+package "google-chrome-stable" do
+  action :install
+end
+
+# dropbox
 apt_repository "dropbox" do
   uri "http://linux.dropbox.com/ubuntu"
   distribution node['lsb']['codename']
