@@ -204,6 +204,8 @@ rosenv_use_hook() {
 source $HOME/gprog/rosenv/rosenv.sh
 if [ "$ROSENV_CURRENT" = "" ]; then 
     rosenv use jsk.hydro
+else
+    rosenv use
 fi
 
 
