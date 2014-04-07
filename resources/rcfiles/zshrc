@@ -100,29 +100,17 @@ update_ssh_agent_ () {
 
 
 # X Window Setup
-function get_xserver ()
-{
-    case $TERM in
-        xterm )
-            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' ) 
-            XSERVER=${XSERVER%%:*}
-            ;;
-        aterm | rxvt)
-        # find some code that works here.....
-            ;;
-    esac  
-}
-
-if [ -z ${DISPLAY:=""} ]; then
-    get_xserver
-    if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) || ${XSERVER} == "unix" ]]; then 
-        DISPLAY=":0.0"          # Display on local host
-    else                
-        DISPLAY=${XSERVER}:0.0  # Display on remote host
+if [ "$TERM" != "dumb" ]; then
+    PID=`pgrep -n -u $USER gnome-session`
+    if [ -n "$PID" ]; then
+        export DISPLAY=`awk 'BEGIN{FS="="; RS="\0"}  $1=="DISPLAY" {print $2; exit}' /proc/$PID/environ`
+        echo "DISPLAY set to $DISPLAY"
+    else
+        echo "Could not set DISPLAY"
     fi
+    unset PID
 fi
 
-export DISPLAY
 
 # PATH setup
 export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
@@ -172,6 +160,7 @@ alias eclient='emacsclient -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
+export PATH=$PATH:$HOME/gprog/shell-color-pallet
 #alias jbibtex=bibtex
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
@@ -215,6 +204,8 @@ rosenv_use_hook() {
 source $HOME/gprog/rosenv/rosenv.sh
 if [ "$ROSENV_CURRENT" = "" ]; then 
     rosenv use jsk.hydro
+else
+    rosenv use
 fi
 
 
