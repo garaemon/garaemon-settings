@@ -19,20 +19,37 @@ git_root_dir = node["garaemon-settings"]["git_root"]
 # packages
 %w{zsh aptitude git-core emacs vim tmux anthy-el ssh zsh curl htop
    python-pip tig ruby imagemagick
+   ibus-mozc
    ttf-dejavu dconf gnome-tweak-tool
    sqlite3 libgdbm-dev bison libffi-dev dstat
+   gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool
+   gnome-panel compizconfig-settings-manager
    virtualbox}.each do |pkg|
   package pkg do
     action :install
   end
 end
 
+
+# chrome
+apt_repository "google-chrome" do
+  uri "http://dl.google.com/linux/chrome/deb/"
+  distribution "stable"
+  components ["main"]
+  action :add
+end
+
+package "google-chrome-stable" do
+  action :install
+end
+
+# dropbox
 apt_repository "dropbox" do
   uri "http://linux.dropbox.com/ubuntu"
   distribution node['lsb']['codename']
   components ["main"]
   keyserver "pgp.mit.edu"
-  key "5044912E"
+#  key "5044912E"
 end
 package "dropbox" do
   action :install
@@ -69,6 +86,7 @@ github_packages = ["garaemon/garaemon-settings.git",
                    "joemiller/spark-ping.git",
                    "seebi/dircolors-solarized.git",
                    "tomislav/osx-terminal.app-colors-solarized.git",
+                   "yonchu/shell-color-pallet.git",
                    "sigurdga/gnome-terminal-colors-solarized.git"]
 github_packages.each do |pkg|
   target_path = "#{home}/#{git_root_dir}/#{File.basename(pkg, ".git")}"
