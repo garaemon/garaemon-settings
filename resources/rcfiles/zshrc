@@ -472,3 +472,8 @@ add_garaemon_fork() {
     git remote add garaemon git@github.com:garaemon/${repo}.git
     git fetch --all
 }
+
+git_cleanup() {
+    git clean -xfd
+    git reset --hard
+}
