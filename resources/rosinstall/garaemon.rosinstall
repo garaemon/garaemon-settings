@@ -98,7 +98,9 @@
 - git:
     uri: https://github.com/tork-a/visualization_rwt.git
     local-name: visualization_rwt
-   
+# - git:
+#     uri: https://github.com/RobotWebTools/mjpeg_server.git
+#     local-name: mjpeg_server
 # nao
 # - git:
 #     uri: https://github.com/ahornung/nao_robot.git

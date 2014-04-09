@@ -491,3 +491,8 @@ git_pull_subdirs() {
     done
 }
 
+git_cleanup() {
+    git clean -xfd
+    git reset --hard
+}
+
