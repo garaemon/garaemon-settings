@@ -496,3 +496,11 @@ git_cleanup() {
     git reset --hard
 }
 
+until-success() {
+    $@
+    while [ $? != 0 ];
+    do
+        sleep 1;
+        $@
+    done
+}
