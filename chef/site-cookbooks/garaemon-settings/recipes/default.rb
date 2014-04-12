@@ -55,6 +55,16 @@ package "dropbox" do
   action :install
 end
 
+#docker
+apt_repository "docker" do
+  url "https://get.docker.io/main"
+  components ["main"]
+  distribution "docker"
+  action :add
+end
+package "lxc-docker"
+
+
 remote_file "/tmp/gyazo.deb" do
   source "https://github.com/downloads/kambara/Gyazo-for-Linux/gyazo_1.0-1_all.deb"
   mode 0644
