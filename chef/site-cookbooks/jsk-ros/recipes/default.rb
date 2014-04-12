@@ -20,7 +20,6 @@ end
    ros-hydro-collada-urdf ros-groovy-collada-urdf
    ros-hydro-rosbuild ros-groovy-rosbuild
    ros-hydro-catkin ros-groovy-catkin
-   drcsim-hydro
    python-wstool
    omniidl-python}.each do |pkg|
   package pkg do
@@ -80,7 +79,7 @@ node["jsk-ros"]["distributions"].each do |distro|
     user user
     workspace "#{catkin_ws}/#{distro}/src"
     action :update
-    parallel_jobs 1
+    parallel_jobs 8
   end
 
   rosdep do
