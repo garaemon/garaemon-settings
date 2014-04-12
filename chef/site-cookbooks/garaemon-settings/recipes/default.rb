@@ -57,7 +57,7 @@ end
 
 #docker
 apt_repository "docker" do
-  url "https://get.docker.io/main"
+  uri "https://get.docker.io/main"
   components ["main"]
   distribution "docker"
   action :add
