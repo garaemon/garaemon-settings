@@ -1,0 +1,15 @@
+---
+driver_plugin: docker
+driver_config:
+  require_chef_omnibus: true
+
+platforms:
+  - name: ubuntu-12.04
+    driver_config:
+      image: "ubuntu:12.04"
+      platform: "ubuntu"
+
+suites:
+  - name: default
+    run_list: [garaemon-settings]
+    attributes: {}
