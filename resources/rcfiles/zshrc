@@ -443,7 +443,7 @@ unalias history
 # export JAVA_HOME=/usr/lib/jvm/java-6-openjdk
 
 # added by travis gem
-[ -f /home/jskuser/.travis/travis.sh ] && source /home/jskuser/.travis/travis.sh
+[ -f $HOME/.travis/travis.sh ] && source $HOME/.travis/travis.sh
 
 function sine_wave() {
     i=0
@@ -473,7 +473,34 @@ add_garaemon_fork() {
     git fetch --all
 }
 
+git_clean_subdirs() {
+    local pkgs
+    pkgs=$(find . -name .git | xargs -n 1 dirname)
+    for pkg in $(echo $pkgs)
+    do
+        (cd $pkg && git clean -xfd)
+    done
+}
+
+git_pull_subdirs() {
+    local pkgs
+    pkgs=$(find . -name .git | xargs -n 1 dirname)
+    for pkg in $(echo $pkgs)
+    do
+        (cd $pkg && git pull)
+    done
+}
+
 git_cleanup() {
     git clean -xfd
     git reset --hard
+}
+
+until-success() {
+    $@
+    while [ $? != 0 ];
+    do
+        sleep 1;
+        $@
+    done
 }

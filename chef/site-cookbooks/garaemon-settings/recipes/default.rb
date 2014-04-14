@@ -24,6 +24,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
    sqlite3 libgdbm-dev bison libffi-dev dstat
    gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool
    gnome-panel compizconfig-settings-manager
+   apt-transport-https
    virtualbox}.each do |pkg|
   package pkg do
     action :install
@@ -54,6 +55,20 @@ end
 package "dropbox" do
   action :install
 end
+
+#docker
+execute "add coker key" do
+  command "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9"
+end
+apt_repository "docker" do
+  uri "https://get.docker.io/ubuntu"
+  components ["main"]
+  distribution "docker"
+  action :add
+end
+package "lxc-docker"
+# setting up docker
+execute "docker pull ubuntu:12.04"
 
 remote_file "/tmp/gyazo.deb" do
   source "https://github.com/downloads/kambara/Gyazo-for-Linux/gyazo_1.0-1_all.deb"
@@ -193,7 +208,7 @@ bash "install rvm" do
 end
 
 ruby_versions = node["garaemon-settings"]["ruby-versions"]
-gem_packages = %w{vagrant travis fluentd t fluent-plugin-dstat fluent-plugin-datacounter fluent-plugin-mongo bson_ext fluent-plugin-out-http}
+gem_packages = %w{travis fluentd t fluent-plugin-dstat fluent-plugin-datacounter fluent-plugin-mongo bson_ext fluent-plugin-out-http}
 ruby_versions.each do |version|
   bash "install ruby #{version}" do
     user user
