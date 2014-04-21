@@ -146,6 +146,17 @@ cmds.each do |cmd|
   end
 end
 
+# update gconf value
+[{type => "String",
+  key => "/desktop/gnome/interface/gtk_key_theme",
+  value => "Emacs"
+   }].each do |conf|
+  cmd = "gconftool --type #{conf.type} --set #{conf.key} #{conf.value}"
+  execute cmd do
+    user user
+  end
+end
+
 bash "git auto color" do
   user user
   code <<-EOH
