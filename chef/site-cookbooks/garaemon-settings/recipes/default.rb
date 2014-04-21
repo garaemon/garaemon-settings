@@ -44,6 +44,12 @@ package "google-chrome-stable" do
   action :install
 end
 
+# use ubuntu classic
+template "#{home}/.dmrc" do
+  source "dmrc.erb"
+  owner user
+end
+
 # dropbox
 apt_repository "dropbox" do
   uri "http://linux.dropbox.com/ubuntu"
