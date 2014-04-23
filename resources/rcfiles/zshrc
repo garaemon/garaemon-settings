@@ -464,13 +464,19 @@ fi
 export TERM=xterm-256color
 
 # utility
-add_garaemon_fork() {
+add_github_fork() {
     local repo
+    local user_name
+    user_name=$1
     repo=$(git remote show origin -n | grep 'Fetch URL' | cut -f5 -d" " \
         | xargs -n 1 -i basename {} .git)
-    echo adding git@github.com:garaemon/${repo}.git as garaemon
-    git remote add garaemon git@github.com:garaemon/${repo}.git
+    echo adding git@github.com:${user_name}/${repo}.git as ${user_name}
+    git remote add ${user_name} git@github.com:${user_name}/${repo}.git
     git fetch --all
+}
+
+add_garaemon_fork() {
+    add_github_fork garaemon
 }
 
 git_clean_subdirs() {
@@ -478,6 +484,7 @@ git_clean_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
+        echo '>>' cleaning $pkg
         (cd $pkg && git clean -xfd)
     done
 }
@@ -487,6 +494,7 @@ git_pull_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
+        echo '>>' updating $pkg
         (cd $pkg && git pull)
     done
 }
