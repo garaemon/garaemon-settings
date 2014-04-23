@@ -215,9 +215,9 @@ catmake() {
     orig_catmake $@
     local result=$?
     if [ "$result" = "0" ] ; then
-        t update "[success!!] catkin_make $* [`date`]" > /dev/null
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null 2>&1
     else
-        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null 2>&1
     fi
     return $result
 }
