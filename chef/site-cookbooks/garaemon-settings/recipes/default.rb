@@ -44,6 +44,12 @@ package "google-chrome-stable" do
   action :install
 end
 
+# use ubuntu classic
+template "#{home}/.dmrc" do
+  source "dmrc.erb"
+  owner user
+end
+
 # dropbox
 apt_repository "dropbox" do
   uri "http://linux.dropbox.com/ubuntu"
@@ -143,6 +149,17 @@ cmds.each do |cmd|
   execute cmd do
     user user
     command cmd
+  end
+end
+
+# update gconf value
+[{type => "String",
+  key => "/desktop/gnome/interface/gtk_key_theme",
+  value => "Emacs"
+   }].each do |conf|
+  cmd = "gconftool --type #{conf.type} --set #{conf.key} #{conf.value}"
+  execute cmd do
+    user user
   end
 end
 
