@@ -225,9 +225,9 @@ catmake() {
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
 
-if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
-    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
-fi
+# if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
+#     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
+# fi
 
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
@@ -489,7 +489,7 @@ git_clean_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
-        echo '>>' cleaning $pkg
+        echo -e "\e[1;31m" '>>' cleaning $pkg "\e[m"
         (cd $pkg && git clean -xfd)
     done
 }
@@ -499,7 +499,7 @@ git_pull_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
-        echo '>>' updating $pkg
+        echo -e "\e[1;31m" '>>' updating $pkg "\e[m"
         (cd $pkg && git pull)
     done
 }
