@@ -215,9 +215,9 @@ catmake() {
     orig_catmake $@
     local result=$?
     if [ "$result" = "0" ] ; then
-        t update "[success!!] catkin_make $* [`date`]" > /dev/null
+        t update "[success!!] catkin_make $* [`date`]" > /dev/null 2>&1
     else
-        t update "[failed!!] catkin_make $* [`date`]" > /dev/null
+        t update "[failed!!] catkin_make $* [`date`]" > /dev/null 2>&1
     fi
     return $result
 }
@@ -225,9 +225,9 @@ catmake() {
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
 
-if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
-    export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
-fi
+# if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
+#     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
+# fi
 
 export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
@@ -469,13 +469,19 @@ fi
 export TERM=xterm-256color
 
 # utility
-add_garaemon_fork() {
+add_github_fork() {
     local repo
+    local user_name
+    user_name=$1
     repo=$(git remote show origin -n | grep 'Fetch URL' | cut -f5 -d" " \
         | xargs -n 1 -i basename {} .git)
-    echo adding git@github.com:garaemon/${repo}.git as garaemon
-    git remote add garaemon git@github.com:garaemon/${repo}.git
+    echo adding git@github.com:${user_name}/${repo}.git as ${user_name}
+    git remote add ${user_name} git@github.com:${user_name}/${repo}.git
     git fetch --all
+}
+
+add_garaemon_fork() {
+    add_github_fork garaemon
 }
 
 git_clean_subdirs() {
@@ -483,6 +489,7 @@ git_clean_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
+        echo -e "\e[1;31m" '>>' cleaning $pkg "\e[m"
         (cd $pkg && git clean -xfd)
     done
 }
@@ -492,6 +499,7 @@ git_pull_subdirs() {
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
+        echo -e "\e[1;31m" '>>' updating $pkg "\e[m"
         (cd $pkg && git pull)
     done
 }
