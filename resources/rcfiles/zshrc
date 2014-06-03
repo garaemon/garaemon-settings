@@ -199,6 +199,9 @@ rosenv_use_hook() {
     if [ "$(rospack find roseus 2>/dev/null)" != "" ] ; then
         export PATH=`rospack find roseus`/bin:$PATH
     fi
+    if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
+        source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
+    fi
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
@@ -517,3 +520,4 @@ until-success() {
         $@
     done
 }
+
