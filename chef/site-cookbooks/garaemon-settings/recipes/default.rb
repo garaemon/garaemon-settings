@@ -145,19 +145,21 @@ cmds = ["git config --global --add merge.ff false",
         "git config --global alias.graph 'log --graph --decorate --oneline'",
         "git config --global alias.co checkout",
         "git config --global alias.st status"]
-cmds.each do |cmd| 
-  execute cmd do
+cmds.each do |cmd|
+  bash cmd do
     user user
-    command cmd
+    code <<-EOH
+#{cmd}
+EOH
   end
 end
 
 # update gconf value
-[{type => "String",
-  key => "/desktop/gnome/interface/gtk_key_theme",
-  value => "Emacs"
+[{:type => "string",
+  :key => "/desktop/gnome/interface/gtk_key_theme",
+  :value => "Emacs"
    }].each do |conf|
-  cmd = "gconftool --type #{conf.type} --set #{conf.key} #{conf.value}"
+  cmd = "gconftool --type #{conf[:type]} --set #{conf[:key]} #{conf[:value]}"
   execute cmd do
     user user
   end
@@ -192,7 +194,7 @@ end
 bash "install nvm" do
   user user
   code <<-EOH
-    curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+curl https://raw.githubusercontent.com/creationix/nvm/v0.7.0/install.sh | sh
   EOH
 end
 
