@@ -25,6 +25,7 @@ git_root_dir = node["garaemon-settings"]["git_root"]
    gawk g++ libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev autoconf libncurses5-dev automake libtool
    gnome-panel compizconfig-settings-manager
    apt-transport-https
+   libgnome-keyring-dev
    virtualbox}.each do |pkg|
   package pkg do
     action :install
@@ -38,6 +39,9 @@ apt_repository "google-chrome" do
   distribution "stable"
   components ["main"]
   action :add
+end
+execute "add chrome key" do
+  command "wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -"
 end
 
 package "google-chrome-stable" do
@@ -56,25 +60,25 @@ apt_repository "dropbox" do
   distribution node['lsb']['codename']
   components ["main"]
   keyserver "pgp.mit.edu"
-#  key "5044912E"
+  key "5044912E"
 end
 package "dropbox" do
   action :install
 end
 
 #docker
-execute "add coker key" do
-  command "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9"
-end
-apt_repository "docker" do
-  uri "https://get.docker.io/ubuntu"
-  components ["main"]
-  distribution "docker"
-  action :add
-end
-package "lxc-docker"
-# setting up docker
-execute "docker pull ubuntu:12.04"
+# execute "add coker key" do
+#   command "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9"
+# end
+# apt_repository "docker" do
+#   uri "https://get.docker.io/ubuntu"
+#   components ["main"]
+#   distribution "docker"
+#   action :add
+# end
+# package "lxc-docker"
+# # setting up docker
+# execute "docker pull ubuntu:12.04"
 
 remote_file "/tmp/gyazo.deb" do
   source "https://github.com/downloads/kambara/Gyazo-for-Linux/gyazo_1.0-1_all.deb"
@@ -108,7 +112,8 @@ github_packages = ["garaemon/garaemon-settings.git",
                    "seebi/dircolors-solarized.git",
                    "tomislav/osx-terminal.app-colors-solarized.git",
                    "yonchu/shell-color-pallet.git",
-                   "sigurdga/gnome-terminal-colors-solarized.git"]
+                   "sigurdga/gnome-terminal-colors-solarized.git",
+                   "atom/atom.git"]
 github_packages.each do |pkg|
   target_path = "#{home}/#{git_root_dir}/#{File.basename(pkg, ".git")}"
   git target_path do
@@ -320,4 +325,63 @@ end
 #     cd #{home}/gnome-terminal-colors-solarized
 #     ./install.sh
 #   EOH
+# end
+
+#################################################
+# install the latest node.js on system
+remote_file "/tmp/node-v0.10.28.tar.gz" do
+  not_if 'test $(node -v) = "v0.10.28"'
+  source "http://nodejs.org/dist/v0.10.28/node-v0.10.28.tar.gz"
+  mode 0644
+  #  shasum -a 256
+  checksum "abddc6441e0f208f6ed8a045e0293f713ea7f6dfb2d6a9a2024bf8b1b4617710"
+end
+bash "compile and install node.js" do
+  not_if 'test $(node -v) = "v0.10.28"'
+  code <<-EOH
+  cd /tmp/
+  tar xvzf node-v0.10.28.tar.gz
+  cd node-v0.10.28
+  ./configure && make -j`grep -c processor /proc/cpuinfo` && make install
+EOH
+end
+
+#################################################
+# atom
+# bash "set python for npm" do
+#   user user
+#   code <<-EOH
+#       source #{home}/.nvm/nvm.sh
+#       nvm use #{node["garaemon-settings"]["node-versions"][0]}
+#       npm config set python /user/bin/python2 -g
+#     EOH
+# end
+
+# bash "build atom" do
+#   user user
+#   not_if 'which atom'
+#   code <<-EOH
+#   source #{home}/.nvm/nvm.sh
+#   nvm use #{node["garaemon-settings"]["node-versions"][0]}
+#   cd #{home}/#{git_root_dir}/atom
+#   ./script/build
+# EOH
+# end
+
+# bash "grunt atom" do
+#   not_if 'which atom'
+#   code <<-EOH
+#   cd #{home}/#{git_root_dir}/atom
+#   ./script/grunt install
+# EOH
+# end
+
+# bash "install atom" do
+#   not_if 'which atom'
+#   code <<-EOH
+#   source #{home}/.nvm/nvm.sh
+#   nvm use #{node["garaemon-settings"]["node-versions"][0]}
+#   cd #{home}/#{git_root_dir}/atom
+#   ./script/grunt mkdeb
+# EOH
 # end
