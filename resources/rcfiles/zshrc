@@ -202,6 +202,8 @@ rosenv_use_hook() {
     if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
         source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
     fi
+    export EUSDIR=`rospack find euslisp`/jskeus/eus
+    alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
@@ -232,14 +234,11 @@ alias roseus="rlwrap rosrun roseus roseus"
 #     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 # fi
 
-export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
 export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
-
-alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 if [ -e /proc/cpuinfo ]; then
