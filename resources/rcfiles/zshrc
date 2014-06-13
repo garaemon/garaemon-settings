@@ -385,21 +385,23 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? = 0 ]; then
-    function percol-select-history() {
+    function percol-select-all() {
+        # history
         local tac
         if which tac > /dev/null; then
             tac="tac"
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | \
-            eval $tac | \
+        HISTORIES=$(history -n 1 | eval $tac)
+        DIRS=$(dirs -pl | xargs -n 1 echo cd)
+        BUFFER=$(echo $HISTORIES "\n" $DIRS | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
         zle clear-screen
     }
-    zle -N percol-select-history
-    bindkey '^r' percol-select-history
+    zle -N percol-select-all
+    bindkey '^r' percol-select-all
 
     function search-document-by-percol(){
         DOCUMENT_DIR="\
