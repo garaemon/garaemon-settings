@@ -142,13 +142,6 @@ elif [ "$OS" = "Darwin" ] ; then
     fi
 fi
 
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
-    source $HOME/.zshrc.mine
-fi
-
-
 #alias rm='trash-put -v'
 
 # export CC="ccache gcc"
@@ -544,3 +537,8 @@ until-success() {
 
 export PATH=$HOME/.local/bin:$PATH
 
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo loading customizing setup file ...
+    source $HOME/.zshrc.mine
+fi
