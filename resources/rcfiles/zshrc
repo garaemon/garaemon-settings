@@ -498,6 +498,16 @@ add_garaemon_fork() {
     add_github_fork garaemon
 }
 
+add_garaemon_fork_subdirs() {
+    local dirs
+    dirs=$(find . -name .git | xargs -n 1 dirname)
+    for d in $dirs
+    do
+        (cd $d; add_garaemon_fork)
+    done
+}
+
+
 git_clean_subdirs() {
     local pkgs
     pkgs=$(find . -name .git | xargs -n 1 dirname)
