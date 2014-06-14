@@ -282,9 +282,19 @@ PS1=$PS1_ORG
 # powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
-        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     else
-        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
@@ -488,6 +498,16 @@ add_garaemon_fork() {
     add_github_fork garaemon
 }
 
+add_garaemon_fork_subdirs() {
+    local dirs
+    dirs=$(find . -name .git | xargs -n 1 dirname)
+    for d in $(echo $dirs)
+    do
+        (cd $d; add_garaemon_fork)
+    done
+}
+
+
 git_clean_subdirs() {
     local pkgs
     pkgs=$(find . -name .git | xargs -n 1 dirname)
@@ -521,4 +541,6 @@ until-success() {
         $@
     done
 }
+
+export PATH=$HOME/.local/bin:$PATH
 
