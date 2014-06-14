@@ -172,8 +172,8 @@ alias titanium="$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/1.7.5/
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
-nvm use v0.10.21                  # for heroku
-export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
+nvm use v0.10.28                  # for heroku
+export NODE_PATH=~/.nvm/v0.10.28/lib/node_modules
 
 [ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
 
@@ -202,6 +202,8 @@ rosenv_use_hook() {
     if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
         source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
     fi
+    export EUSDIR=`rospack find euslisp`/jskeus/eus
+    alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
@@ -232,14 +234,11 @@ alias roseus="rlwrap rosrun roseus roseus"
 #     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 # fi
 
-export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
 export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
-
-alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 if [ -e /proc/cpuinfo ]; then
@@ -283,9 +282,19 @@ PS1=$PS1_ORG
 # powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
-        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     else
-        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
@@ -386,21 +395,23 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? = 0 ]; then
-    function percol-select-history() {
+    function percol-select-all() {
+        # history
         local tac
         if which tac > /dev/null; then
             tac="tac"
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | \
-            eval $tac | \
+        HISTORIES=$(history -n 1 | eval $tac)
+        DIRS=$(dirs -pl | xargs -n 1 echo cd)
+        BUFFER=$(echo $HISTORIES "\n" $DIRS | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
         zle clear-screen
     }
-    zle -N percol-select-history
-    bindkey '^r' percol-select-history
+    zle -N percol-select-all
+    bindkey '^r' percol-select-all
 
     function search-document-by-percol(){
         DOCUMENT_DIR="\
@@ -487,6 +498,16 @@ add_garaemon_fork() {
     add_github_fork garaemon
 }
 
+add_garaemon_fork_subdirs() {
+    local dirs
+    dirs=$(find . -name .git | xargs -n 1 dirname)
+    for d in $(echo $dirs)
+    do
+        (cd $d; add_garaemon_fork)
+    done
+}
+
+
 git_clean_subdirs() {
     local pkgs
     pkgs=$(find . -name .git | xargs -n 1 dirname)
@@ -520,4 +541,6 @@ until-success() {
         $@
     done
 }
+
+export PATH=$HOME/.local/bin:$PATH
 
