@@ -522,3 +522,5 @@ until-success() {
     done
 }
 
+export PATH=$HOME/.local/bin:$PATH
+
