@@ -500,6 +500,11 @@ add_garaemon_fork_subdirs() {
     done
 }
 
+update_garaemon_settings() {
+    (cd $HOME/gprog/garaemon-settings && git pull)
+    (cd $HOME/gprog/emacs.d && git pull && git submodule update --init)
+    (cd $HOME/gprog/rosenv && git pull)
+}
 
 git_clean_subdirs() {
     local pkgs
