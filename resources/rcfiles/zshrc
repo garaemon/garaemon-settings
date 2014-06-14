@@ -501,7 +501,7 @@ add_garaemon_fork() {
 add_garaemon_fork_subdirs() {
     local dirs
     dirs=$(find . -name .git | xargs -n 1 dirname)
-    for d in $dirs
+    for d in $(echo $dirs)
     do
         (cd $d; add_garaemon_fork)
     done
