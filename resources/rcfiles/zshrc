@@ -285,12 +285,14 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
         if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
             source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
         else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
             source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
         fi
     else
         if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
             source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
         else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
             source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
         fi
     fi
