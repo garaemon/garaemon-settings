@@ -172,8 +172,8 @@ alias titanium="$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/1.7.5/
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
-nvm use v0.10.21                  # for heroku
-export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
+nvm use v0.10.28                  # for heroku
+export NODE_PATH=~/.nvm/v0.10.28/lib/node_modules
 
 [ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
 
@@ -202,6 +202,8 @@ rosenv_use_hook() {
     if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
         source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
     fi
+    export EUSDIR=`rospack find euslisp`/jskeus/eus
+    alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
@@ -232,14 +234,11 @@ alias roseus="rlwrap rosrun roseus roseus"
 #     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 # fi
 
-export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
 export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
-
-alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 if [ -e /proc/cpuinfo ]; then
@@ -393,7 +392,7 @@ if [ $? = 0 ]; then
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | \
+        BUFFER=$(history -n 1 | uniq | \
             eval $tac | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
