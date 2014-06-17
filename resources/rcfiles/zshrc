@@ -392,7 +392,7 @@ if [ $? = 0 ]; then
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | \
+        BUFFER=$(history -n 1 | uniq | \
             eval $tac | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
