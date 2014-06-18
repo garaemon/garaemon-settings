@@ -142,13 +142,6 @@ elif [ "$OS" = "Darwin" ] ; then
     fi
 fi
 
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
-    source $HOME/.zshrc.mine
-fi
-
-
 #alias rm='trash-put -v'
 
 # export CC="ccache gcc"
@@ -282,9 +275,19 @@ PS1=$PS1_ORG
 # powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
-        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     else
-        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
@@ -385,22 +388,31 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? = 0 ]; then
-    function percol-select-history() {
+    function percol-select-all() {
+        # history
         local tac
         if which tac > /dev/null; then
             tac="tac"
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | uniq | \
-            eval $tac | \
+        HISTORIES=$(history -n 1 | eval $tac)
+        DIRS=$(dirs -pl | xargs -n 1 echo cd)
+        BUFFER=$(echo $HISTORIES "\n" $DIRS | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
         zle clear-screen
     }
-    zle -N percol-select-history
-    bindkey '^r' percol-select-history
+    zle -N percol-select-all
+    bindkey '^r' percol-select-all
 
+    function search-rostopic-by-percol(){
+        LBUFFER=$LBUFFER$(rostopic list | percol)
+        zle -R -c
+    }
+    zle -N search-rostopic-by-percol
+    bindkey '^[r' search-rostopic-by-percol
+        
     function search-document-by-percol(){
         DOCUMENT_DIR="\
 /path/to/doc/directory1
@@ -486,6 +498,21 @@ add_garaemon_fork() {
     add_github_fork garaemon
 }
 
+add_garaemon_fork_subdirs() {
+    local dirs
+    dirs=$(find . -name .git | xargs -n 1 dirname)
+    for d in $(echo $dirs)
+    do
+        (cd $d; add_garaemon_fork)
+    done
+}
+
+update_garaemon_settings() {
+    (cd $HOME/gprog/garaemon-settings && git pull)
+    (cd $HOME/gprog/emacs.d && git pull && git submodule update --init)
+    (cd $HOME/gprog/rosenv && git pull)
+}
+
 git_clean_subdirs() {
     local pkgs
     pkgs=$(find . -name .git | xargs -n 1 dirname)
@@ -520,3 +547,10 @@ until-success() {
     done
 }
 
+export PATH=$HOME/.local/bin:$PATH
+
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo loading customizing setup file ...
+    source $HOME/.zshrc.mine
+fi
