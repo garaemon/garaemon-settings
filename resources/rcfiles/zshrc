@@ -406,6 +406,13 @@ if [ $? = 0 ]; then
     zle -N percol-select-all
     bindkey '^r' percol-select-all
 
+    function search-rostopic-by-percol(){
+        LBUFFER=$LBUFFER$(rostopic list | percol)
+        zle -R -c
+    }
+    zle -N search-rostopic-by-percol
+    bindkey '^[r' search-rostopic-by-percol
+        
     function search-document-by-percol(){
         DOCUMENT_DIR="\
 /path/to/doc/directory1
