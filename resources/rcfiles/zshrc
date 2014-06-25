@@ -554,3 +554,8 @@ if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
+
+if [ $(which toilet) -a "$TERM" != "dumb" ]; then
+    toilet --font future welcome, master
+    toilet --font future "  " $USER@$(hostname)
+fi
