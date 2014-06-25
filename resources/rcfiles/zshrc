@@ -406,6 +406,13 @@ if [ $? = 0 ]; then
     zle -N percol-select-all
     bindkey '^r' percol-select-all
 
+    function search-rostopic-by-percol(){
+        LBUFFER=$LBUFFER$(rostopic list | percol)
+        zle -R -c
+    }
+    zle -N search-rostopic-by-percol
+    bindkey '^[r' search-rostopic-by-percol
+        
     function search-document-by-percol(){
         DOCUMENT_DIR="\
 /path/to/doc/directory1
@@ -546,4 +553,9 @@ export PATH=$HOME/.local/bin:$PATH
 if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
+fi
+
+if [ $(which toilet) -a "$TERM" != "dumb" ]; then
+    toilet --font future welcome, master
+    toilet --font future "  " $USER@$(hostname)
 fi
