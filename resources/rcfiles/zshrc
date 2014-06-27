@@ -560,3 +560,5 @@ if [ $? = 0 -a "$TERM" != "dumb" ]; then
     toilet --font future welcome, master
     toilet --font future "  " $(whoami)@$(hostname)
 fi
+
+function chpwd() { ls }
