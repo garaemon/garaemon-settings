@@ -559,3 +559,5 @@ if [ $(which toilet) -a "$TERM" != "dumb" ]; then
     toilet --font future welcome, master
     toilet --font future "  " $USER@$(hostname)
 fi
+
+function chpwd() { ls }
