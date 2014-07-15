@@ -554,3 +554,11 @@ if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
+
+which toilet > /dev/null 2>&1
+if [ $? = 0 -a "$TERM" != "dumb" ]; then
+    toilet --font future welcome, master
+    toilet --font future "  " $(whoami)@$(hostname)
+fi
+
+function chpwd() { ls }
