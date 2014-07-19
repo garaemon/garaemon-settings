@@ -200,7 +200,7 @@ rosenv_use_hook() {
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
-if [ "$ROSENV_CURRENT" = "" ]; then 
+if [ "$ROSENV_CURRENT" = "" ]; then
     rosenv use jsk.hydro
 else
     rosenv use
@@ -353,7 +353,7 @@ function restart-hadoop() {
     /usr/local/Cellar/hadoop/1.1.2/libexec/bin/stop-all.sh
     yes | hadoop namenode -format
     /usr/local/Cellar/hadoop/1.1.2/libexec/bin/start-all.sh
-    hadoop dfsadmin -safemode leave 
+    hadoop dfsadmin -safemode leave
 }
 
 
@@ -412,7 +412,7 @@ if [ $? = 0 ]; then
     }
     zle -N search-rostopic-by-percol
     bindkey '^[r' search-rostopic-by-percol
-        
+
     function search-document-by-percol(){
         DOCUMENT_DIR="\
 /path/to/doc/directory1
@@ -432,7 +432,7 @@ if [ $? = 0 ]; then
     }
     zle -N insert-file-by-percol
     bindkey '^[c' insert-file-by-percol
-    
+
     function percol_select_dirstack_entry() {
         BUFFER=$(dirs -pl | percol --query "$LBUFFER")
         CURSOR=$#BUFFER
@@ -440,7 +440,7 @@ if [ $? = 0 ]; then
     }
     zle -N percol_select_dirstack_entry
     bindkey '^[d' percol_select_dirstack_entry
-    
+
     alias p=percol
 fi
 
@@ -467,9 +467,9 @@ fi
 function sine_wave() {
     i=0
     for i in `seq 0 10`
-    do 
+    do
         SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
-        echo -ne $SIN\\r 
+        echo -ne $SIN\\r
         let i=i+1
         sleep 0.05
     done
@@ -503,14 +503,14 @@ add_garaemon_fork_subdirs() {
     dirs=$(find . -name .git | xargs -n 1 dirname)
     for d in $(echo $dirs)
     do
-        (cd $d; add_garaemon_fork)
+        (cd $d > /dev/null; add_garaemon_fork)
     done
 }
 
 update_garaemon_settings() {
-    (cd $HOME/gprog/garaemon-settings && git pull)
-    (cd $HOME/gprog/emacs.d && git pull && git submodule update --init)
-    (cd $HOME/gprog/rosenv && git pull)
+    (cd $HOME/gprog/garaemon-settings > /dev/null && git pull)
+    (cd $HOME/gprog/emacs.d > /dev/null && git pull && git submodule update --init)
+    (cd $HOME/gprog/rosenv > /dev/null && git pull)
 }
 
 git_clean_subdirs() {
@@ -519,7 +519,7 @@ git_clean_subdirs() {
     for pkg in $(echo $pkgs)
     do
         echo -e "\e[1;31m" '>>' cleaning $pkg "\e[m"
-        (cd $pkg && git clean -xfd)
+        (cd $pkg > /dev/null && git clean -xfd)
     done
 }
 
@@ -529,7 +529,7 @@ git_pull_subdirs() {
     for pkg in $(echo $pkgs)
     do
         echo -e "\e[1;31m" '>>' updating $pkg "\e[m"
-        (cd $pkg && git pull)
+        (cd $pkg > /dev/null && git pull)
     done
 }
 
