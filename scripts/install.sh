@@ -21,7 +21,8 @@ sudo apt-get install aptitude
 sudo aptitude install $APT_PACKAGES
 
 export GPROG_DIR=$HOME/gprog
-GITHUB_REPOSITORIES="icholy/ttygif.git garaemon/emacs.d.git \
+GITHUB_REPOSITORIES="icholy/ttygif.git \
+garaemon/emacs.d.git \
 garaemon/garaemon-settings.git garaemon/rosenv.git \
 holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
@@ -55,56 +56,48 @@ move $GPROG_DIR/ttygif
 make
 
 redecho ">> [linking vimrc]"
-#################################################
-# setting up vim
-#################################################
 ln -sf $GRPOG_DIR/garaemon-settings/resources/rcfiles/vimrc ~/.vimrc
 
+redecho ">> [linking tmux.conf]"
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/tmux.conf ~/.tmux.conf
 
 # #################################################
 # # setting up git
 # #################################################
-# echo installing commit-msg
-# sudo cp -fv resources/git/commit-msg /usr/share/git-core/templates/hooks
+redecho ">> [installing git commit-msg]"
+if [ ! -e /usr/share/git-core/templates/hooks/commit-msg ]; then
+    sudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
+fi
 
-# echo disabling git ff
-# git config --global --add merge.ff false
+redecho ">> [disabling git ff merge]"
+git config --global --add merge.ff false
 
-# #################################################
-# # setting up zsh
-# #################################################
+redecho ">> [installing oh-my-zsh]"
+if [ ! -e ~/.oh-my-zsh ]; then
+    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
+fi
 
-# # oh-my-zsh
-# curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-# if [ ! -e ~/.zshrc ]; then
-#     ln -sf $PWD/resources/rcfiles/zshrc ~/.zshrc
-# fi
+redecho ">> [linking zshrc]"
+if [ ! -e ~/.zshrc ]; then
+    ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc ~/.zshrc
+fi
 
-# #################################################
-# # setting up nvm
-# #################################################
-# curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+redecho ">> [installing nvm]"
+if [ ! -e ~/.nvm ]; then
+    curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+fi
 
-# #################################################
-# # setting up rvm
-# #################################################
-# curl -sSL https://get.rvm.io | bash -s stable
+redecho ">> [installing rvm]"
+if [ ! -e ~/.rvm ]; then
+    curl -sSL https://get.rvm.io | bash -s stable
+fi
 
-# #################################################
-# # setting up tmux
-# #################################################
-# echo installing .tmux.conf
-# cp -v resources/rcfiles/tmux.conf ~/.tmux.conf
-
-# #################################################
-# # setting up emacs
-# #################################################
-# cd ~/gprog
-# rm -rf ~/.emacs ~/.emacs.d     # uninstalling .emacs
-# if [ ! -d ~/gprog/emacs.d ]; then
-#     git clone https://github.com/garaemon/emacs.d.git
-# fi
-
-# cd emacs.d
-# git submodule update --init .
-# ./install.sh
+redecho ">> [settingup .emacs.d]"
+if [ ! -e ~/.emacs -o ! -L ~/.emacs ]; then
+    rm -rf ~/.emacs
+    ln -sf $GPROG_DIR/emacs.d/dot.emacs ~/.emacs
+fi
+if [ ! -e ~/.emacs.d -o ! -L ~/.emacs.d ]; then
+    rm -rf ~/.emacs
+    ln -sf $GPROG_DIR/emacs.d ~/.emacs.d
+fi
