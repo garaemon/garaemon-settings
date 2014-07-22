@@ -12,15 +12,33 @@ function redecho()
     echo -e "\e[1;31m" $1 "\e[m"
 }
 
+function cyanecho()
+{
+    echo -e "\e[36m" $1 "\e[m"
+}
+
+function yellowecho()
+{
+    echo -e "\e[33m" $1 "\e[m"
+}
+
+
+function runsudo()
+{
+    if [ "$NO_SUDO" != "true" ]; then
+        sudo $@
+    else
+        yellowecho "[NO_SUDO=true] skipping $@"
+    fi
+}
+
 export -f move
 export -f redecho
 
 RUN_APT=true
 APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop"
-if [ "$NO_SUDO" != "true" ]; then
-    sudo apt-get install aptitude
-    sudo aptitude install $APT_PACKAGES
-fi
+runsudo apt-get install aptitude
+runsudo aptitude install $APT_PACKAGES
 
 export GPROG_DIR=$HOME/gprog
 
@@ -72,9 +90,7 @@ ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/tmux.conf ~/.tmux.conf
 # #################################################
 redecho ">> [installing git commit-msg]"
 if [ ! -e /usr/share/git-core/templates/hooks/commit-msg ]; then
-    if [ "$NO_SUDO" != "true" ]; then
-        sudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
-    fi
+    runsudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
 fi
 
 redecho ">> [disabling git ff merge]"
