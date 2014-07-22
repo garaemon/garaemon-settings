@@ -17,10 +17,13 @@ export -f redecho
 
 RUN_APT=true
 APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop"
-sudo apt-get install aptitude
-sudo aptitude install $APT_PACKAGES
+if [ "$NO_SUDO" != "true" ]; then
+    sudo apt-get install aptitude
+    sudo aptitude install $APT_PACKAGES
+fi
 
 export GPROG_DIR=$HOME/gprog
+
 GITHUB_REPOSITORIES="icholy/ttygif.git \
 garaemon/emacs.d.git \
 garaemon/garaemon-settings.git garaemon/rosenv.git \
@@ -47,6 +50,9 @@ function github_update_clone()
 }
 export -f github_update_clone
 
+redecho ">> [setting up gprog]"
+mkdir -p $GPROG_DIR
+
 echo $GITHUB_REPOSITORIES | xargs -P $(grep -c processor /proc/cpuinfo) --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
 
 
@@ -66,7 +72,9 @@ ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/tmux.conf ~/.tmux.conf
 # #################################################
 redecho ">> [installing git commit-msg]"
 if [ ! -e /usr/share/git-core/templates/hooks/commit-msg ]; then
-    sudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
+    if [ "$NO_SUDO" != "true" ]; then
+        sudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
+    fi
 fi
 
 redecho ">> [disabling git ff merge]"
