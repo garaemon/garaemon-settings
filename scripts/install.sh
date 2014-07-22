@@ -113,10 +113,16 @@ if [ ! -e ~/.nvm ]; then
     curl https://raw.github.com/creationix/nvm/master/install.sh | sh
 fi
 
+redecho ">> [install node.js]"
+source ~/.nvm/nvm.sh; nvm install v0.10.28
+
 redecho ">> [installing rvm]"
 if [ ! -e ~/.rvm ]; then
     curl -sSL https://get.rvm.io | bash -s stable
 fi
+
+redecho ">> [installing current ruby]"
+rvm install current
 
 redecho ">> [settingup .emacs.d]"
 if [ ! -e ~/.emacs -o ! -L ~/.emacs ]; then
@@ -127,3 +133,5 @@ if [ ! -e ~/.emacs.d -o ! -L ~/.emacs.d ]; then
     rm -rf ~/.emacs
     ln -sf $GPROG_DIR/emacs.d ~/.emacs.d
 fi
+
+# powerline
