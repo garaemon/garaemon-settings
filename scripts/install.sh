@@ -26,9 +26,9 @@ function yellowecho()
 function runsudo()
 {
     if [ "$NO_SUDO" != "true" ]; then
-        sudo $@
+        sudo sh -c "$*"
     else
-        yellowecho "[NO_SUDO=true] skipping $@"
+        yellowecho "[NO_SUDO=true] skipping $*"
     fi
 }
 
@@ -36,7 +36,9 @@ export -f move
 export -f redecho
 
 RUN_APT=true
-APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop"
+APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom"
+runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
+runsudo apt-get update
 runsudo apt-get install aptitude
 runsudo aptitude install $APT_PACKAGES
 
