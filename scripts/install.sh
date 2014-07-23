@@ -36,7 +36,8 @@ export -f move
 export -f redecho
 
 RUN_APT=true
-APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom"
+APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom \
+toilet"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
 runsudo apt-get update
 runsudo apt-get install aptitude
@@ -104,22 +105,27 @@ if [ ! -e ~/.oh-my-zsh ]; then
 fi
 
 redecho ">> [linking zshrc]"
-if [ ! -e ~/.zshrc ]; then
+if [ ! -e ~/.zshrc -o ! -L ~/.zshrc ]; then
+    rm -f ~/.zshrc
     ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc ~/.zshrc
 fi
 
 redecho ">> [installing nvm]"
 if [ ! -e ~/.nvm ]; then
-    curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+    curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh
 fi
+source ~/.nvm/nvm.sh
 
-redecho ">> [install node.js]"
-source ~/.nvm/nvm.sh; nvm install v0.10.28
+redecho ">> [install node.js v0.10.28]"
+nvm install v0.10.28
 
 redecho ">> [installing rvm]"
 if [ ! -e ~/.rvm ]; then
     curl -sSL https://get.rvm.io | bash -s stable
+# else
+#     rvm get stable
 fi
+source ~/.rvm/scripts/rvm
 
 redecho ">> [installing current ruby]"
 rvm install current
@@ -135,3 +141,14 @@ if [ ! -e ~/.emacs.d -o ! -L ~/.emacs.d ]; then
 fi
 
 # powerline
+redecho ">> [installing powerline]"
+pip install --user git+git://github.com/Lokaltog/powerline
+
+redecho ">> [installing powerline font]"
+mkdir -p ~/.fonts
+wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf -O ~/.fonts/PowerlineSymbols.otf
+fc-cache -vf ~/.fonts
+mkdir -p ~/.fonts.conf.d
+wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf -O ~/.fonts.conf.d/10-powerline-symbols.conf
+mkdir -p ~/.config
+ln -sf $GRPOG_DIR/garaemon-settings/resources/powerline ~/.config/powerline
