@@ -105,7 +105,7 @@ if [ ! -e ~/.oh-my-zsh ]; then
 fi
 
 redecho ">> [linking zshrc]"
-if [ ! -e ~/.zshrc ! -L ~/.zshrc ]; then
+if [ ! -e ~/.zshrc -o ! -L ~/.zshrc ]; then
     rm -f ~/.zshrc
     ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc ~/.zshrc
 fi
