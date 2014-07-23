@@ -111,7 +111,7 @@ fi
 
 redecho ">> [installing nvm]"
 if [ ! -e ~/.nvm ]; then
-    curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+    curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh
 fi
 
 redecho ">> [install node.js]"
