@@ -113,14 +113,16 @@ redecho ">> [installing nvm]"
 if [ ! -e ~/.nvm ]; then
     curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh
 fi
+source ~/.nvm/nvm.sh
 
-redecho ">> [install node.js]"
-source ~/.nvm/nvm.sh; nvm install v0.10.28
+redecho ">> [install node.js v0.10.28]"
+nvm install v0.10.28
 
 redecho ">> [installing rvm]"
 if [ ! -e ~/.rvm ]; then
     curl -sSL https://get.rvm.io | bash -s stable
 fi
+source ~/.rvm/scripts/rvm
 
 redecho ">> [installing current ruby]"
 rvm install current
