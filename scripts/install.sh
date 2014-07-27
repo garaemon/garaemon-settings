@@ -37,7 +37,7 @@ export -f redecho
 
 RUN_APT=true
 APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom \
-toilet ffmpeg"
+toilet ffmpeg jq"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
 runsudo add-apt-repository -y ppa:jon-severinsson/ffmpeg
 runsudo apt-get update
