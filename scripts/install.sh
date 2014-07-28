@@ -13,34 +13,16 @@ function runscript()
     $cwd/install-scripts/$1
 }
 
-runscript apt.sh
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
 
+runscript apt.sh
 runscript github.sh
-
-# compiling ttygif
-redecho ">> [compiling ttygif...]"
-move $GPROG_DIR/ttygif
-make
-
-redecho ">> [linking vimrc]"
-ln -sf $GRPOG_DIR/garaemon-settings/resources/rcfiles/vimrc ~/.vimrc
-
-redecho ">> [linking tmux.conf]"
-ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/tmux.conf ~/.tmux.conf
-
-# #################################################
-# # setting up git
-# #################################################
-redecho ">> [installing git commit-msg]"
-if [ ! -e /usr/share/git-core/templates/hooks/commit-msg ]; then
-    runsudo cp -fv $GPROG_DIR/garaemon-settings/resources/git/commit-msg /usr/share/git-core/templates/hooks
-fi
-
-redecho ">> [disabling git ff merge]"
-git config --global --add merge.ff false
+runscript ttygif.sh
+runscript vimrc.sh
+runscript tmux.sh
+runscript git.sh
 
 redecho ">> [installing oh-my-zsh]"
 if [ ! -e ~/.oh-my-zsh ]; then
