@@ -2,6 +2,9 @@
 set -e
 # install.sh
 
+cwd=`dirname "${0}"`
+expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
+
 function move()
 {
     cd $1 > /dev/null
@@ -32,52 +35,26 @@ function runsudo()
     fi
 }
 
+function runscript()
+{
+    redecho ">> running [$1]"
+    $cwd/install-scripts/$1
+}
+
 export -f move
 export -f redecho
+export -f runsudo
 
-RUN_APT=true
-APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom \
-toilet ffmpeg"
-runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
-runsudo add-apt-repository -y ppa:jon-severinsson/ffmpeg
-runsudo apt-get update
-runsudo apt-get install aptitude
-runsudo aptitude upgrade
-runsudo aptitude install $APT_PACKAGES
+runscript apt.sh
 
 export GPROG_DIR=$HOME/gprog
 
-GITHUB_REPOSITORIES="icholy/ttygif.git \
-garaemon/emacs.d.git \
-garaemon/garaemon-settings.git garaemon/rosenv.git \
-holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
-tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
-sigurdga/gnome-terminal-colors-solarized.git \
-garaemon/ffmpeg-movie-builder"
 GIT_REPOSITORIS=""
-
-function github_update_clone()
-{
-    repo=$1
-    redecho ">> [installing and updating $repo]"
-    DIR_NAME=$(basename $repo .git)
-    if [ -e $GPROG_DIR/$DIR_NAME ]; then
-        move $GPROG_DIR/$DIR_NAME
-        git pull
-        git submodule update --init
-    else
-        move $GPROG_DIR
-        git clone git@github.com:$repo
-        move $DIR_NAME
-        git submodule update --init
-    fi
-}
-export -f github_update_clone
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
 
-echo $GITHUB_REPOSITORIES | xargs -P $(grep -c processor /proc/cpuinfo) --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
+runscript github.sh
 
 
 # compiling ttygif
