@@ -23,26 +23,10 @@ runscript ttygif.sh
 runscript vimrc.sh
 runscript tmux.sh
 runscript git.sh
-
-redecho ">> [installing oh-my-zsh]"
-if [ ! -e ~/.oh-my-zsh ]; then
-    curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-fi
-
-redecho ">> [linking zshrc]"
-if [ ! -e ~/.zshrc -o ! -L ~/.zshrc ]; then
-    rm -f ~/.zshrc
-    ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc ~/.zshrc
-fi
-
-redecho ">> [installing nvm]"
-if [ ! -e ~/.nvm ]; then
-    curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh
-fi
+runscript zsh.sh
+runscript node.sh
 source ~/.nvm/nvm.sh
 
-redecho ">> [install node.js v0.10.28]"
-nvm install v0.10.28
 
 redecho ">> [installing rvm]"
 if [ ! -e ~/.rvm ]; then
