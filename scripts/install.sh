@@ -5,35 +5,7 @@ set -e
 cwd=`dirname "${0}"`
 expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
-function move()
-{
-    cd $1 > /dev/null
-}
-
-function redecho()
-{
-    echo -e "\e[1;31m" $1 "\e[m"
-}
-
-function cyanecho()
-{
-    echo -e "\e[36m" $1 "\e[m"
-}
-
-function yellowecho()
-{
-    echo -e "\e[33m" $1 "\e[m"
-}
-
-
-function runsudo()
-{
-    if [ "$NO_SUDO" != "true" ]; then
-        sudo sh -c "$*"
-    else
-        yellowecho "[NO_SUDO=true] skipping $*"
-    fi
-}
+. $cwd/lib.sh
 
 function runscript()
 {
@@ -41,21 +13,12 @@ function runscript()
     $cwd/install-scripts/$1
 }
 
-export -f move
-export -f redecho
-export -f runsudo
-
 runscript apt.sh
-
-export GPROG_DIR=$HOME/gprog
-
-GIT_REPOSITORIS=""
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
 
 runscript github.sh
-
 
 # compiling ttygif
 redecho ">> [compiling ttygif...]"
