@@ -23,7 +23,11 @@ function github_update_clone()
         git submodule update --init
     else
         move $GPROG_DIR
-        git clone git@github.com:$repo
+        if [ "$USE_HTTPS_FOR_GIT" = "true" ]; then
+            git clone https://github.com/$repo
+        else
+            git clone git@github.com:$repo
+        fi
         move $DIR_NAME
         git submodule update --init
     fi
