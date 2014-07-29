@@ -12,4 +12,5 @@ notifications:
     on_success: change #[always|never|change] # default: change
     on_failure: change #[always|never|change] # default: always
 install:
+  - sudo /etc/init.d/postgresql stop
   - ./scripts/install.sh
