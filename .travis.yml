@@ -13,4 +13,5 @@ notifications:
     on_failure: change #[always|never|change] # default: always
 install:
   - sudo apt-get remove postgresql*
+  - export GPROG_DIR=$PWD/gprog
   - ./scripts/install.sh
