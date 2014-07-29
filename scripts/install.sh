@@ -18,6 +18,7 @@ redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
 
 runscript apt.sh
+runscript ssh.sh
 runscript github.sh
 runscript ttygif.sh
 runscript vimrc.sh

@@ -11,12 +11,6 @@ cd garaemon-settings/scripts
 ./install.sh
 ```
 
-Set up ssh
----
-```sh
-curl https://raw.github.com/garaemon/garaemon-settings/master/scripts/ssh.sh | sh
-```
-
 Setting up chef master
 ---
 ```sh
