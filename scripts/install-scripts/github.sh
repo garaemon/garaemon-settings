@@ -1,3 +1,9 @@
+#!/bin/bash
+cwd=`dirname "${0}"`
+expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
+
+. $cwd/../lib.sh
+
 GITHUB_REPOSITORIES="icholy/ttygif.git \
 garaemon/emacs.d.git \
 garaemon/garaemon-settings.git garaemon/rosenv.git \
@@ -9,7 +15,7 @@ garaemon/ffmpeg-movie-builder"
 function github_update_clone()
 {
     repo=$1
-    redecho ">> [installing and updating $repo]"
+    cyanecho ">>>> [installing and updating $repo]"
     DIR_NAME=$(basename $repo .git)
     if [ -e $GPROG_DIR/$DIR_NAME ]; then
         move $GPROG_DIR/$DIR_NAME
