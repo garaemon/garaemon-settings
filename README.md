@@ -6,7 +6,9 @@ some script to setup garaemon's environment
 INSTALL and UPDATE
 ---
 ```sh
-curl https://raw.githubusercontent.com/garaemon/garaemon-settings/master/scripts/install.sh | bash
+git clone git@github.com:garaemon/garaemon-settings.git
+cd garaemon-settings/scripts
+./install.sh
 ```
 
 Set up ssh
