@@ -568,3 +568,8 @@ if [ $? = 0 -a "$TERM" != "dumb" ]; then
 fi
 
 function chpwd() { ls }
+
+function ev() {
+    # use C-xC-q to toggle read only
+    emacsclient -e "(find-file-read-only \"$1\")"
+}

@@ -36,4 +36,6 @@ export -f runsudo
 export -f yellowecho
 export -f cyanecho
 
-export GPROG_DIR=$HOME/gprog
+if [ "$GPROG_DIR" = "" ]; then
+    export GPROG_DIR=$HOME/gprog
+fi

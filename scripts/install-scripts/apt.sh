@@ -5,7 +5,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 APT_PACKAGES="ttyrec git-core emacs vim tmux anthy-el ssh zsh curl htop atom \
-toilet ffmpeg jq"
+toilet ffmpeg jq tcpflow"
 
 cyanecho ">>>> [add apt repository for atom]"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
