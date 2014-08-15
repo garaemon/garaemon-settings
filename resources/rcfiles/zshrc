@@ -112,6 +112,9 @@ if [ "$TERM" != "dumb" ]; then
 fi
 
 
+# PATH to ttygif
+export PATH=$PATH:$PATH/gprog/ttygif
+
 # PATH setup
 export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
 export PATH=$PATH:$HOME/gprog/scan-scripts/bin
@@ -142,13 +145,6 @@ elif [ "$OS" = "Darwin" ] ; then
     fi
 fi
 
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
-    source $HOME/.zshrc.mine
-fi
-
-
 #alias rm='trash-put -v'
 
 # export CC="ccache gcc"
@@ -160,6 +156,7 @@ alias eclient='emacsclient -n'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
+export PATH=$PATH:$HOME/gprog/spark-ping
 export PATH=$PATH:$HOME/gprog/shell-color-pallet
 #alias jbibtex=bibtex
 
@@ -172,8 +169,8 @@ alias titanium="$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/1.7.5/
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
-nvm use v0.10.21                  # for heroku
-export NODE_PATH=~/.nvm/v0.10.3/lib/node_modules
+nvm use v0.10.28                  # for heroku
+export NODE_PATH=~/.nvm/v0.10.28/lib/node_modules
 
 [ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
 
@@ -199,10 +196,15 @@ rosenv_use_hook() {
     if [ "$(rospack find roseus 2>/dev/null)" != "" ] ; then
         export PATH=`rospack find roseus`/bin:$PATH
     fi
+    if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
+        source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
+    fi
+    export EUSDIR=`rospack find euslisp`/jskeus/eus
+    alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
-if [ "$ROSENV_CURRENT" = "" ]; then 
+if [ "$ROSENV_CURRENT" = "" ]; then
     rosenv use jsk.hydro
 else
     rosenv use
@@ -229,14 +231,11 @@ alias roseus="rlwrap rosrun roseus roseus"
 #     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 # fi
 
-export EUSDIR=`rospack find euslisp`/jskeus/eus
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
 export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
-
-alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 if [ -e /proc/cpuinfo ]; then
@@ -280,9 +279,19 @@ PS1=$PS1_ORG
 # powerline
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
-        source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     else
-        source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
+            source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
+        else
+            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+        fi
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
@@ -348,7 +357,7 @@ function restart-hadoop() {
     /usr/local/Cellar/hadoop/1.1.2/libexec/bin/stop-all.sh
     yes | hadoop namenode -format
     /usr/local/Cellar/hadoop/1.1.2/libexec/bin/start-all.sh
-    hadoop dfsadmin -safemode leave 
+    hadoop dfsadmin -safemode leave
 }
 
 
@@ -383,21 +392,30 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? = 0 ]; then
-    function percol-select-history() {
+    function percol-select-all() {
+        # history
         local tac
         if which tac > /dev/null; then
             tac="tac"
         else
             tac="tail -r"
         fi
-        BUFFER=$(history -n 1 | \
-            eval $tac | \
+        HISTORIES=$(history -n 1 | eval $tac)
+        DIRS=$(dirs -pl | xargs -n 1 echo cd)
+        BUFFER=$(echo $HISTORIES "\n" $DIRS | \
             percol --match-method regex --query "$LBUFFER")
         CURSOR=$#BUFFER
         zle clear-screen
     }
-    zle -N percol-select-history
-    bindkey '^r' percol-select-history
+    zle -N percol-select-all
+    bindkey '^r' percol-select-all
+
+    function search-rostopic-by-percol(){
+        LBUFFER=$LBUFFER$(rostopic list | percol)
+        zle -R -c
+    }
+    zle -N search-rostopic-by-percol
+    bindkey '^[r' search-rostopic-by-percol
 
     function search-document-by-percol(){
         DOCUMENT_DIR="\
@@ -418,7 +436,7 @@ if [ $? = 0 ]; then
     }
     zle -N insert-file-by-percol
     bindkey '^[c' insert-file-by-percol
-    
+
     function percol_select_dirstack_entry() {
         BUFFER=$(dirs -pl | percol --query "$LBUFFER")
         CURSOR=$#BUFFER
@@ -426,7 +444,7 @@ if [ $? = 0 ]; then
     }
     zle -N percol_select_dirstack_entry
     bindkey '^[d' percol_select_dirstack_entry
-    
+
     alias p=percol
 fi
 
@@ -437,6 +455,8 @@ preexec_functions=(preexec_fluent)
 
 export PATH=/usr/local/bin:/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
+export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
+
 
 # oh-my-zsh overwrite history
 unalias history
@@ -453,9 +473,9 @@ fi
 function sine_wave() {
     i=0
     for i in `seq 0 10`
-    do 
+    do
         SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
-        echo -ne $SIN\\r 
+        echo -ne $SIN\\r
         let i=i+1
         sleep 0.05
     done
@@ -484,13 +504,28 @@ add_garaemon_fork() {
     add_github_fork garaemon
 }
 
+add_garaemon_fork_subdirs() {
+    local dirs
+    dirs=$(find . -name .git | xargs -n 1 dirname)
+    for d in $(echo $dirs)
+    do
+        (cd $d > /dev/null; add_garaemon_fork)
+    done
+}
+
+update_garaemon_settings() {
+    (cd $HOME/gprog/garaemon-settings > /dev/null && git pull)
+    (cd $HOME/gprog/emacs.d > /dev/null && git pull && git submodule update --init)
+    (cd $HOME/gprog/rosenv > /dev/null && git pull)
+}
+
 git_clean_subdirs() {
     local pkgs
     pkgs=$(find . -name .git | xargs -n 1 dirname)
     for pkg in $(echo $pkgs)
     do
         echo -e "\e[1;31m" '>>' cleaning $pkg "\e[m"
-        (cd $pkg && git clean -xfd)
+        (cd $pkg > /dev/null && git clean -xfd)
     done
 }
 
@@ -500,7 +535,7 @@ git_pull_subdirs() {
     for pkg in $(echo $pkgs)
     do
         echo -e "\e[1;31m" '>>' updating $pkg "\e[m"
-        (cd $pkg && git pull)
+        (cd $pkg > /dev/null && git pull)
     done
 }
 
@@ -516,4 +551,25 @@ until-success() {
         sleep 1;
         $@
     done
+}
+
+export PATH=$HOME/.local/bin:$PATH
+
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo loading customizing setup file ...
+    source $HOME/.zshrc.mine
+fi
+
+which toilet > /dev/null 2>&1
+if [ $? = 0 -a "$TERM" != "dumb" ]; then
+    toilet --font future welcome, master
+    toilet --font future "  " $(whoami)@$(hostname)
+fi
+
+function chpwd() { ls }
+
+function ev() {
+    # use C-xC-q to toggle read only
+    emacsclient -e "(find-file-read-only \"$1\")"
 }

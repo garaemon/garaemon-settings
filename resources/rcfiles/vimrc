@@ -12,3 +12,5 @@ match WhitespaceEOL /\s\+$/
 set hlsearch  " マッチした箇所をハイライトする
 set incsearch  " インクリメンタルサーチ
 set smartcase  " 大文字小文字をいい具合に区別する
+set showmatch
+
