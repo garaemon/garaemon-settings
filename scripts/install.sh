@@ -31,3 +31,4 @@ source ~/.rvm/scripts/rvm
 runscript emacs.sh
 # powerline
 runscript powerline.sh
+runscript ros.sh
