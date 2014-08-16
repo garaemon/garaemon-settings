@@ -152,7 +152,8 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
-alias eclient='emacsclient -n'
+#alias eclient='emacsclient -n'
+alias eclient='emacsclient'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
