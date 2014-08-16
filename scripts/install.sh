@@ -25,10 +25,12 @@ runscript vimrc.sh
 runscript tmux.sh
 runscript git.sh
 runscript zsh.sh
+
 runscript node.sh
 source ~/.nvm/nvm.sh
+
 runscript ruby.sh
 source ~/.rvm/scripts/rvm
+
 runscript emacs.sh
-# powerline
 runscript powerline.sh
