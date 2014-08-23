@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 umask 022
 
-export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+# export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
 
 
 export LC_ALL=en_US.UTF-8
@@ -112,8 +113,8 @@ if [ "$TERM" != "dumb" ]; then
 fi
 
 
-# PATH to ttygif
-export PATH=$PATH:$PATH/gprog/ttygif
+export PATH=$PATH:$HOME/gprog/ttygif
+export PATH=$PATH:$HOME/gprog/seq2gif
 
 # PATH setup
 export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
@@ -152,12 +153,15 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
-alias eclient='emacsclient -n'
+alias e='emacsclient -n'
+alias en='emacsclient -nw'
+alias eclient='emacsclient'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
 export PATH=$PATH:$HOME/gprog/spark-ping
 export PATH=$PATH:$HOME/gprog/shell-color-pallet
+export PATH=$PATH:$HOME/gprog/wakatime
 #alias jbibtex=bibtex
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
@@ -331,7 +335,6 @@ export PATH="$PATH":/usr/local/share/python
 export BASIC_USER="garaemon"
 export BASIC_PASS="sakuchan"
 
-export PATH=/usr/local/bin:$PATH
 export PATH=/usr/local/mahout/bin:$PATH
 
 # export JAVA_HOME=/Library/Java/Home
@@ -453,7 +456,7 @@ function preexec_fluent() {
 }
 preexec_functions=(preexec_fluent)
 
-export PATH=/usr/local/bin:/usr/local/share/python:$PATH
+export PATH=/usr/local/share/python:$PATH
 export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
 
@@ -544,6 +547,10 @@ git_cleanup() {
     git reset --hard
 }
 
+git_delete_all_branched() {
+    git branch -D `git branch --merged | grep -v \* | xargs`
+}
+
 until-success() {
     $@
     while [ $? != 0 ];
@@ -573,3 +580,6 @@ function ev() {
     # use C-xC-q to toggle read only
     emacsclient -e "(find-file-read-only \"$1\")"
 }
+
+# added by travis gem
+[ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
