@@ -10,7 +10,9 @@ garaemon/garaemon-settings.git garaemon/rosenv.git \
 holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
-garaemon/ffmpeg-movie-builder.git saitoha/seq2gif.git"
+garaemon/ffmpeg-movie-builder.git saitoha/seq2gif.git \
+wakatime/wakatime.git \
+garaemon/madmagazine-blog-watcher.git"
 
 function github_update_clone()
 {
@@ -34,4 +36,4 @@ function github_update_clone()
 }
 
 export -f github_update_clone
-echo $GITHUB_REPOSITORIES | xargs -P $(grep -c processor /proc/cpuinfo) --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
+echo $GITHUB_REPOSITORIES | xargs -P 0 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
