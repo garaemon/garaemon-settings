@@ -574,7 +574,7 @@ if [ $? = 0 -a "$TERM" != "dumb" ]; then
     toilet --font future "  " $(whoami)@$(hostname)
 fi
 
-function chpwd() { ls }
+# function chpwd() { ls }
 
 function ev() {
     # use C-xC-q to toggle read only
