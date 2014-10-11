@@ -281,30 +281,29 @@ PS1=$PS1_ORG
 
 ################################################################################
 # powerline
+export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages:$PYTHONPATH
+export PATH=$HOME/.local/bin/:$PATH
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
         if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
             source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
         else
-            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
-            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+            export POWERLINE_COMMAND=$HOME/.local/bin/powerline
+            source $HOME/.local/lib/python2.7/site-epackages/powerline/bindings/zsh/powerline.zsh
         fi
     else
-        if [ -e /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh ]; then
-            source /usr/local/lib/python2.7/dist-packages/powerline/bindings/zsh/powerline.zsh
-        else
-            export POWERLINE_COMMAND=$HOME//.local/bin/powerline
-            source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
-        fi
+        #export POWERLINE_COMMAND=$HOME/.local/bin/powerline
+        source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     fi
     newline_replacer="s@__NEWLINE__@\n@g"
     POWERLINE_LOADED=true
     if [ `uname` = Darwin ]; then
-        export PROMPT="`echo $PROMPT | gsed 's/)/ | gsed $newline_replacer )/g'`
+        export PROMPT="`echo $PROMPT | gsed 's/)))/)) | gsed $newline_replacer )/g'`
 \$ "
     else
-        export PROMPT="`echo $PROMPT | sed 's/)/ | sed $newline_replacer )/g'`
+        export PROMPT="`echo $PROMPT | sed 's/)))/)) | sed $newline_replacer )/g'`
 \$ "
+        export PROMPT="`echo $PROMPT | sed 's/_fallback)}/_fallback)} * 3/g'`"
     fi
 fi
 PROMPT2="%_%% "
@@ -328,7 +327,6 @@ export PATH=/Library/Haskell/bin:$PATH
 alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t pdf"
 
 export COOKIE_SECRET="hkfc-sakuchan"
-export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH="$PATH":/usr/local/share/python
 
 
@@ -457,7 +455,6 @@ function preexec_fluent() {
 preexec_functions=(preexec_fluent)
 
 export PATH=/usr/local/share/python:$PATH
-export PYTHONPATH="/usr/local/lib/python2.7/site-packages:$PYTHONPATH"
 export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
 export PATH=$PATH:$HOME/.bin
 
