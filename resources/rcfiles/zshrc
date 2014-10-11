@@ -583,3 +583,6 @@ function ev() {
 
 # added by travis gem
 [ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
+
+alias rviz="rosrun rviz rviz"
+alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
