@@ -1,28 +1,26 @@
 {
-	"default_module": "powerline.segments.common",
-	"segment_data": {
-		"date": {
-			"before": "⌚ "
-		}
-	},
 	"segments": {
 		"right": [
+      {
+        "function": "powerline.segments.common.net.network_load"
+      },
 			{
-				"name": "system_load",
+				"function": "powerline.segments.common.sys.system_load",
 				"priority": 50
 			},
 			{
-				"name": "date"
+				"function": "powerline.segments.common.time.date"
 			},
 			{
-				"name": "date",
+				"function": "powerline.segments.common.time.date",
+				"name": "time",
 				"args": {
 					"format": "%H:%M",
 					"istime": true
 				}
 			},
 			{
-				"name": "hostname"
+				"function": "powerline.segments.common.net.hostname"
 			}
 		]
 	}

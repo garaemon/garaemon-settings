@@ -1,9 +1,10 @@
 {
+
 	"default_module": "powerline.segments.shell",
 	"segments": {
 		"left": [
 			{
-				"name": "continuation"
+				"function": "continuation"
 			}
 		],
 		"right": [
