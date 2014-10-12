@@ -13,6 +13,7 @@ function runscript()
     $cwd/install-scripts/$1
 }
 
+# need to install sudo and apt-utils python-software-properties
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
