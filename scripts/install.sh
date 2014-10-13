@@ -33,7 +33,7 @@ source ~/.nvm/nvm.sh
 # runscript ruby.sh
 # source ~/.rvm/scripts/rvm
 # runscript gem.sh
-
+runscript ispell.sh
 runscript emacs.sh
 runscript powerline.sh
 
