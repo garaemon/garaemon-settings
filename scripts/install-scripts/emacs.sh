@@ -8,7 +8,7 @@ if [ ! -e $HOME/.local/bin/emacs ]; then
     cyanecho ">>>> [compiling emacs]"
     cd $GPROG_DIR/emacs
     ./autogen.sh
-    ./confiugre --prefix $HOME/.local
+    ./configure --prefix=$HOME/.local
     make -j$(grep -c processor /proc/cpuinfo)
     make install
 fi
