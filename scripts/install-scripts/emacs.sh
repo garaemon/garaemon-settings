@@ -4,7 +4,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 
-if [ ! -e $HOME/.local/emacs ]; then
+if [ ! -e $HOME/.local/bin/emacs ]; then
     cyanecho ">>>> [compiling emacs]"
     cd $GPROG_DIR
     ./autogen.sh
