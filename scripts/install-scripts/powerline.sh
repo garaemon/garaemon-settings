@@ -19,4 +19,4 @@ if [ ! -e ~/.fonts.conf.d/10-powerline-symbols.conf ]; then
 fi
 
 mkdir -p ~/.config
-ln -sf $GRPOG_DIR/garaemon-settings/resources/powerline ~/.config/powerline
+ln -sf $GPROG_DIR/garaemon-settings/resources/powerline ~/.config/powerline
