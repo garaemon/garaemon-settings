@@ -1,0 +1,26 @@
+{
+  "name": "atom-solo-dark-ui",
+  "theme": "ui",
+  "version": "1.2.0",
+  "description": "Theme for the solarized syntax",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soloman1124/atom-solo-dark-ui"
+  },
+  "engines": {
+    "atom": ">0.40.0"
+  },
+  "readme": "# Atom Solo Dark UI theme\n\nTheme for the Solarized dark syntax.\n\n\n![](https://cloud.githubusercontent.com/assets/2509619/3027240/df2f0af6-e020-11e3-8fd2-4779ab1714e4.png)\n\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/soloman1124/atom-solo-dark-ui/issues"
+  },
+  "homepage": "https://github.com/soloman1124/atom-solo-dark-ui",
+  "_id": "atom-solo-dark-ui@1.2.0",
+  "dist": {
+    "shasum": "b3906f61b3fc2374f6ac10ac8eaeffd16ff36a06"
+  },
+  "_resolved": "/tmp/d-114628-4336-bk4ixn/package.tgz",
+  "_from": "/tmp/d-114628-4336-bk4ixn/package.tgz"
+}

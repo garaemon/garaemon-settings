@@ -1,0 +1,20 @@
+'body':
+  'ctrl-g': 'core:cancel'
+'.editor':
+  'ctrl-g': 'core:cancel'
+  'ctrl-m': 'editor:newline'
+  'ctrl-i': 'editor:indent'
+  'ctrl-v': 'core:page-down'
+  'cmd-v': 'core:page-up'
+  'ctrl-y': 'core:paste'
+  'ctrl-d': 'core:delete'
+'.platform-win32 .editor, .platform-linux .editor':
+  'ctrl-d': 'core:delete'
+'.workspace .editor':
+  'ctrl-a': 'editor:move-to-first-character-of-line'
+  'ctrl-e': 'editor:move-to-end-of-line'
+'body':
+  'ctrl-h': 'core:backspace'
+  'ctrl-x 0': 'pane:close'
+  'ctrl-x 2': 'pane:split-down'
+  'ctrl-x 3': 'pane:split-right'

@@ -1,0 +1,30 @@
+{
+  "name": "transient-emacs",
+  "main": "./lib/transient-emacs",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Emacs mode using transient mark",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yasuyuky/transient-emacs"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {
+    "underscore-plus": "1.x"
+  },
+  "readme": "Transient Emacs for Atom Editor\n===============================\n\nEmacs (transient mark mode) for Atom Editor.\n\nThis package emulate Emacs'\n[transient-mark-mode](http://www.emacswiki.org/emacs/TransientMarkMode).\n\nFeatures\n========\n\n- [x] emacs like keybindings\n- [x] kill-ring with multiple cursors\n- [x] sync kill-ring with clipboard\n- [ ] yank text selected from kill-ring history\n- [ ] emacs like incremental search\n\nKeybindings\n===========\n\nSee keymaps/transient-emacs.cson for detailed keybindings\n\n```coffee-script\n'ctrl-@':'emacs:set-mark'\n'ctrl-space':'emacs:set-mark'\n'ctrl-y':'emacs:yank'\n'ctrl-k':'emacs:kill'\n'ctrl-w':'emacs:kill-region-or-backward-word'\n'alt-w':'emacs:copy-region'\n'escape w':'emacs:copy-region'\n\n'ctrl-a':'editor:move-to-first-character-of-line'\n'ctrl-e':'editor:move-to-end-of-line'\n'ctrl-right':'editor:move-to-beginning-of-next-word'\n'ctrl-left':'editor:move-to-beginning-of-word'\n'ctrl-up':'emacs:move-to-prev-empty-line'\n'ctrl-down':'emacs:move-to-next-empty-line'\n'ctrl-v':'core:page-down'\n'alt-v':'core:page-up'\n'escape v':'core:page-up'\n'alt-<':'core:move-to-top'\n'escape <':'core:move-to-top'\n'alt->':'core:move-to-bottom'\n'escape >':'core:move-to-bottom'\n\n'ctrl-s':'find-and-replace:find-next'\n\n'ctrl-x ctrl-s':'core:save'\n'ctrl-x ctrl-f':'application:open'\n'ctrl-x ctrl-c':'application:quit'\n'ctrl-x u':'core:undo'\n'ctrl-x k':'core:close'\n\n'alt-x':'command-palette:toggle'\n'escape x':'command-palette:toggle'\n'alt-/':'autocomplete:toggle'\n```\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/yasuyuky/transient-emacs/issues"
+  },
+  "homepage": "https://github.com/yasuyuky/transient-emacs",
+  "_id": "transient-emacs@0.2.0",
+  "dist": {
+    "shasum": "5fa815772704e5e213a26793dd96a58cd903aaff"
+  },
+  "_resolved": "/tmp/d-114917-5766-1rtzfzl/package.tgz",
+  "_from": "/tmp/d-114917-5766-1rtzfzl/package.tgz"
+}
