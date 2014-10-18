@@ -11,7 +11,8 @@ holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
 garaemon/ffmpeg-movie-builder.git saitoha/seq2gif.git \
-wakatime/wakatime.git"
+wakatime/wakatime.git \
+garaemon/madmagazine-blog-watcher.git emacs-mirror/emacs.git"
 
 function github_update_clone()
 {

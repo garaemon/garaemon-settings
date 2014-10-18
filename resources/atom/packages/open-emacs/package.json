@@ -1,0 +1,30 @@
+{
+  "name": "open-emacs",
+  "main": "./lib/open-emacs",
+  "version": "0.1.2",
+  "description": "Open a current file in Emacs",
+  "activationEvents": [
+    "open-emacs:open"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yoshiori/open-emacs"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {},
+  "readme": "# open-emacs - Atom package Beta\nOpen a current file in Emacs.\n\n![](https://raw.githubusercontent.com/yoshiori/open-emacs/master/open-emacs.gif)\n\n## Installation\n\n```\n$ apm install open-emacs\n```\n\n## Usage\nThe following commands are available for you to remap and/or run via the command palette.\n\n* `open-emacs:open` - Open a current file in Emacs.\n\n## Back To The Future\n\n```list\n(defun open-atom ()\n  (interactive)\n  (call-process\n   \"atom\" nil t nil buffer-file-name))\n```\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/yoshiori/open-emacs/issues"
+  },
+  "homepage": "https://github.com/yoshiori/open-emacs",
+  "_id": "open-emacs@0.1.2",
+  "dist": {
+    "shasum": "7f10015b73defc507a58428ad588578ccb977118"
+  },
+  "_resolved": "/tmp/d-114913-31814-1lk4a35/package.tgz",
+  "_from": "/tmp/d-114913-31814-1lk4a35/package.tgz"
+}

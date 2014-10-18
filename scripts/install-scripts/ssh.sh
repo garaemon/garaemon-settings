@@ -4,7 +4,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 
-mkdir -p .ssh
+mkdir -p $HOME/.ssh
 cyanecho ">>>> [setting up authorized_keys]"
 touch ~/.ssh/authorized_keys
 curl https://github.com/garaemon.keys >> ~/.ssh/authorized_keys
