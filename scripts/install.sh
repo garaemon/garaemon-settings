@@ -13,6 +13,7 @@ function runscript()
     $cwd/install-scripts/$1
 }
 
+# need to install sudo and apt-utils python-software-properties
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
@@ -29,10 +30,10 @@ runscript zsh.sh
 runscript node.sh
 source ~/.nvm/nvm.sh
 
-runscript ruby.sh
-source ~/.rvm/scripts/rvm
-runscript gem.sh
-
+# runscript ruby.sh
+# source ~/.rvm/scripts/rvm
+# runscript gem.sh
+runscript ispell.sh
 runscript emacs.sh
 runscript powerline.sh
 
