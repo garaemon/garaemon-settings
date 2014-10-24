@@ -1,0 +1,34 @@
+{
+  "name": "graphviz-preview",
+  "main": "./lib/graphviz-preview",
+  "version": "0.1.2",
+  "description": "Open a rendered version of the DOT in the current editor with `ctrl-d`.",
+  "activationEvents": [
+    "graphviz-preview:toggle"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jumpkick/graphviz-preview.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "bugs": {
+    "url": "https://github.com/jumpkick/graphviz-preview/issues"
+  },
+  "keywords": [
+    "atom",
+    "graphviz",
+    "dot"
+  ],
+  "readmeFilename": "README.md",
+  "readme": "# graphviz-preview package\n\nGraphviz Preview renders <a href='http://en.wikipedia.org/wiki/DOT_(graph_description_language)'>DOT language</a> editor buffers into DOT graphs the same way Graphviz would.\n\n![screenshot of GraphViz Preview for Atom](https://raw.githubusercontent.com/jumpkick/graphviz-preview/master/assets/graphviz-preview-screenshot.png)\n\nPictured with syntax highlighting by the [Language-Dot](https://atom.io/packages/language-dot) Atom package \n",
+  "homepage": "https://github.com/jumpkick/graphviz-preview",
+  "_id": "graphviz-preview@0.1.2",
+  "dist": {
+    "shasum": "d74f1f316df0eafd7c21b777d24a9a448d2fecc4"
+  },
+  "_resolved": "/tmp/d-114923-19316-qqv2fm/package.tgz",
+  "_from": "/tmp/d-114923-19316-qqv2fm/package.tgz"
+}
