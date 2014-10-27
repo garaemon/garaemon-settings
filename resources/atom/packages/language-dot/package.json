@@ -1,0 +1,26 @@
+{
+  "name": "language-dot",
+  "version": "1.5.0",
+  "description": "Dot language (graphviz) support for atom",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdoPi/language-dot"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {},
+  "readme": "# Dot language (GraphViz) support for Atom\n\nThis package adds syntax highlighting and snippets to Dot files in Atom.\n\nThe snippets are the representation of what I find useful.\nYou can add them by using a pull request.\n\nObviously, you can also add grammar tweaks (for colorschemes) and report issues.\n\n## Installing\n\nIt is available at atom package, you can install it by using the apm manager.\n\n## Licence\n\n[MIT Licence](http://adopi.mit-license.org/)\n\n## Thanks\n\n[Atom](https://github.com/atom/atom)\n\n[texmate repository](https://github.com/textmate/graphviz.tmbundle)\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/AdoPi/language-dot/issues"
+  },
+  "homepage": "https://github.com/AdoPi/language-dot",
+  "_id": "language-dot@1.5.0",
+  "dist": {
+    "shasum": "34e6d35f66b7e5794f2965461e5dc639bcdb4a1c"
+  },
+  "_resolved": "/tmp/d-114923-19357-56h6ea/package.tgz",
+  "_from": "/tmp/d-114923-19357-56h6ea/package.tgz"
+}
