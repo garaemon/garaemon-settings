@@ -36,5 +36,5 @@ source ~/.nvm/nvm.sh
 runscript ispell.sh
 runscript emacs.sh
 runscript powerline.sh
-
+runscript pip.sh
 runscript ros.sh
