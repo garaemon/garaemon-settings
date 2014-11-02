@@ -584,3 +584,5 @@ function ev() {
 
 alias rviz="rosrun rviz rviz"
 alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
+
+xset mouse 3 0
