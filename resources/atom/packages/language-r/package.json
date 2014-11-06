@@ -1,0 +1,26 @@
+{
+  "name": "language-r",
+  "version": "0.1.1",
+  "description": "A language description and snippets for R",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lee-dohm/language-r"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {},
+  "readme": "# R Language\n\nA language package for [R](http://www.r-project.org).\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/lee-dohm/language-r/issues"
+  },
+  "homepage": "https://github.com/lee-dohm/language-r",
+  "_id": "language-r@0.1.1",
+  "dist": {
+    "shasum": "b1dc4d8c53432bd28eba9b85380018c4e1d8726f"
+  },
+  "_resolved": "/tmp/d-114924-22031-8axcbu/package.tgz",
+  "_from": "/tmp/d-114924-22031-8axcbu/package.tgz"
+}
