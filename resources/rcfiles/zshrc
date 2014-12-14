@@ -191,6 +191,13 @@ export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
 export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 export PATH=$PATH:$HOME/gprog/jq
 
+# update roszsh
+wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q > /dev/null
+if [ -e $HOME/.roszsh ]; then
+    source $HOME/.roszsh
+fi
+
+
 ################################################################################
 # ros
 rosenv_use_hook() {
@@ -200,8 +207,8 @@ rosenv_use_hook() {
     if [ "$(rospack find roseus 2>/dev/null)" != "" ] ; then
         export PATH=`rospack find roseus`/bin:$PATH
     fi
-    if [ -e $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh ]; then
-        source $HOME/gprog/garaemon-settings/resources/rcfiles/roszsh
+    if [ -e $HOME/.roszsh ]; then
+        source $HOME/.roszsh
     fi
     export EUSDIR=`rospack find euslisp`/jskeus/eus
     alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
