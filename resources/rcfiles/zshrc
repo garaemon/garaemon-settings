@@ -591,3 +591,6 @@ function ev() {
 
 alias rviz="rosrun rviz rviz"
 alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
+alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
+# xset mouse 3 0
+alias v="view"
