@@ -581,6 +581,35 @@ fi
 
 # function chpwd() { ls }
 
+function git-branch-remove-all-local() {
+    git branch --merged master | grep -v '*' |xargs -I % echo git branch -d %
+}
+
+function git-branch-remove-all-local-exec() {
+    git branch --merged master | grep -v '*' | xargs -I % git branch -d %
+}
+
+function git-branch-remove-all-remote() {
+    # dryrun
+    local remote=$1
+    if [ "$remote" = "" ]; then
+        echo "Specify remote branch"
+    else
+        git remote prune $remote
+        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% echo git push $remote :%
+    fi
+}
+
+function git-branch-remove-all-remote-exec() {
+    local remote=$1
+    if [ "$remote" = "" ]; then
+        echo "Specify remote branch"
+    else
+        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% git push $remote :%
+    fi
+}
+
+
 function ev() {
     # use C-xC-q to toggle read only
     emacsclient -e "(find-file-read-only \"$1\")"
