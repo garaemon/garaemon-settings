@@ -11,7 +11,7 @@ texinfo libncurses5-dev libgtk2.0-dev libgif-dev \
 libjpeg-dev libpng-dev libxpm-dev libtiff4-dev \
 libxml2-dev librsvg2-dev libotf-dev libm17n-dev \
 libgpm-dev libgnutls-dev libgconf2-dev libdbus-1-dev glc \
-r-base ess rlwrap"
+r-base ess rlwrap golang"
 
 cyanecho ">>>> [add apt repository for atom]"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
@@ -20,7 +20,9 @@ runsudo add-apt-repository -y ppa:jon-severinsson/ffmpeg
 cyanecho ">>>> [add emacs24 repository]"
 runsudo add-apt-repository -y ppa:cassou/emacs
 cyanecho ">>>> [add glc repository]"
-sudo add-apt-repository -y ppa:arand/ppa
+runsudo add-apt-repository -y ppa:arand/ppa
+cyanecho ">>>> [add golang repository]"
+runsudo add-apt-repository -y ppa:duh/golang
 
 
 runsudo apt-get --quiet update
