@@ -30,6 +30,9 @@ runscript zsh.sh
 runscript node.sh
 source ~/.nvm/nvm.sh
 
+runscript go.sh
+runscript hub.sh
+
 # runscript ruby.sh
 # source ~/.rvm/scripts/rvm
 # runscript gem.sh

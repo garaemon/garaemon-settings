@@ -9,6 +9,7 @@ export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/loca
 export LC_ALL=en_US.UTF-8
 
 #zsh
+fpath=(~/.zsh_fpath $fpath)
 autoload -U colors
 colors
 autoload -U compinit
@@ -623,3 +624,10 @@ alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
 alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
 alias v="view"
+
+if [ -e ~/.gvm/scripts/gvm ] ; then
+    source ~/.gvm/scripts/gvm
+    gvm install go1.4
+fi
+
+eval "$(hub alias -s)"
