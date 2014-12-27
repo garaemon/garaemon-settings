@@ -12,7 +12,7 @@ tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
 garaemon/ffmpeg-movie-builder.git saitoha/seq2gif.git \
 wakatime/wakatime.git \
-garaemon/madmagazine-blog-watcher.git emacs-mirror/emacs.git"
+garaemon/madmagazine-blog-watcher.git"
 
 function github_update_clone()
 {
@@ -35,5 +35,27 @@ function github_update_clone()
     fi
 }
 
+function github_update_clone_depth1()
+{
+    repo=$1
+    cyanecho ">>>> [installing and updating $repo]"
+    DIR_NAME=$(basename $repo .git)
+    if [ -e $GPROG_DIR/$DIR_NAME ]; then
+        move $GPROG_DIR/$DIR_NAME
+        git pull
+        git submodule update --init
+    else
+        move $GPROG_DIR
+        if [ "$USE_HTTPS_FOR_GIT" = "true" ]; then
+            git clone https://github.com/$repo --depth=1
+        else
+            git clone git@github.com:$repo --depth=1
+        fi
+        move $DIR_NAME
+        git submodule update --init
+    fi
+}
+
 export -f github_update_clone
 echo $GITHUB_REPOSITORIES | xargs -P 0 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
+github_update_clone_depth1 emacs-mirror/emacs.git
