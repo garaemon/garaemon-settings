@@ -33,9 +33,9 @@ source ~/.nvm/nvm.sh
 runscript go.sh
 runscript hub.sh
 
-# runscript ruby.sh
-# source ~/.rvm/scripts/rvm
-# runscript gem.sh
+runscript ruby.sh
+source ~/.rvm/scripts/rvm
+
 runscript ispell.sh
 runscript emacs.sh
 runscript powerline.sh
