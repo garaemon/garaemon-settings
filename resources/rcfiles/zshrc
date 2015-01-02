@@ -114,8 +114,8 @@ if [ "$TERM" != "dumb" ]; then
 fi
 
 
-export PATH=$PATH:$HOME/gprog/ttygif
-export PATH=$PATH:$HOME/gprog/seq2gif
+#export PATH=$PATH:$HOME/gprog/ttygif
+#export PATH=$PATH:$HOME/gprog/seq2gif
 
 # PATH setup
 export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
@@ -177,15 +177,11 @@ export PATH=/opt/android-sdk/tools:$PATH
 nvm use v0.10.28                  # for heroku
 export NODE_PATH=~/.nvm/v0.10.28/lib/node_modules
 
-[ -s ${HOME}/.rvm/scripts/rvm ] && source ${HOME}/.rvm/scripts/rvm
-
-
 export PATH=$PATH:$HOME/gprog/git-your-emacs
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
 export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin
 
 fpath=($HOME/.zsh/functions/ $fpath) # not work?
-# export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 export PATH=$PATH:$HOME/gprog/minify-make
 export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
@@ -331,8 +327,6 @@ fi
 
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
-
-# rvm use 1.9.2
 
 export PATH=/Library/Haskell/bin:$PATH
 alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t pdf"
@@ -628,3 +622,6 @@ if [ -e ~/.gvm/scripts/gvm ] ; then
 fi
 
 eval "$(hub alias -s)"
+
+source ~/.rvm/scripts/rvm
+rvm use ruby-v2.2.0
