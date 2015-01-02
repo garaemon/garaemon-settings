@@ -5,7 +5,11 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 cyanecho ">>>> [installing powerline]"
-pip install --user git+git://github.com/Lokaltog/powerline
+if [ `uname` == "Darwin" ]; then
+    sudo pip install git+git://github.com/Lokaltog/powerline
+else
+    pip install --user git+git://github.com/Lokaltog/powerline
+fi
 
 cyanecho ">>>> [installing powerline font]"
 mkdir -p ~/.fonts

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# replace echo if it runs on mac
+
+if [ `uname` == "Darwin" ]; then
+    function echo() {
+        gecho $@
+    }
+    export -f echo
+fi
+
 function move()
 {
     cd $1 > /dev/null
