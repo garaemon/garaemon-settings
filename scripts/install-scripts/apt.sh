@@ -11,7 +11,7 @@ texinfo libncurses5-dev libgtk2.0-dev libgif-dev \
 libjpeg-dev libpng-dev libxpm-dev libtiff4-dev \
 libxml2-dev librsvg2-dev libotf-dev libm17n-dev \
 libgpm-dev libgnutls-dev libgconf2-dev libdbus-1-dev glc \
-r-base ess rlwrap golang silversearcher-ag"
+r-base ess rlwrap golang xclip"
 
 cyanecho ">>>> [add apt repository for atom]"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
@@ -23,8 +23,8 @@ cyanecho ">>>> [add glc repository]"
 runsudo add-apt-repository -y ppa:arand/ppa
 cyanecho ">>>> [add golang repository]"
 runsudo add-apt-repository -y ppa:duh/golang
-cyanecho ">>>> [add ag repository]"
-runsudo apt-add-repository -y ppa:mizuno-as/silversearcher-ag
+# cyanecho ">>>> [add ag repository]"
+# runsudo apt-add-repository -y ppa:mizuno-as/silversearcher-ag
 
 runsudo apt-get --quiet update
 runsudo apt-get --quiet install aptitude
