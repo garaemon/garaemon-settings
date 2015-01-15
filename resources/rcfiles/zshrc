@@ -629,3 +629,4 @@ rvm use ruby-v2.2.0
 if [ "$OS" != "Darwin" ] ; then
     tmux source-file ~/.tmux.conf
 fi
+$GPROG/garaemon-settings/scripts/set_wallpaper.sh
