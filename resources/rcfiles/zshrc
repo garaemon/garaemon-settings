@@ -624,7 +624,7 @@ fi
 eval "$(hub alias -s)"
 
 source ~/.rvm/scripts/rvm
-rvm use ruby-v2.2.0
+rvm use ruby-2.2.0
 
 if [ "$OS" != "Darwin" ] ; then
     tmux source-file ~/.tmux.conf
