@@ -11,7 +11,7 @@ texinfo libncurses5-dev libgtk2.0-dev libgif-dev \
 libjpeg-dev libpng-dev libxpm-dev libtiff4-dev \
 libxml2-dev librsvg2-dev libotf-dev libm17n-dev \
 libgpm-dev libgnutls-dev libgconf2-dev libdbus-1-dev glc \
-r-base ess rlwrap golang xclip w3m libzlma-dev"
+r-base ess rlwrap golang xclip w3m libzlma-dev quicksynergy"
 
 cyanecho ">>>> [add apt repository for atom]"
 runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
