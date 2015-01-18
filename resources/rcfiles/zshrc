@@ -630,6 +630,8 @@ if [ "$OS" != "Darwin" ] ; then
     tmux source-file ~/.tmux.conf
 fi
 
+export PATH=$PATH:$HOME/.local/toggl
+
 $HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
 # fix ~/Pictures directory
 if [ -e ~/Dropbox ]; then
