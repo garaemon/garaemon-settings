@@ -631,3 +631,12 @@ if [ "$OS" != "Darwin" ] ; then
 fi
 
 $HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
+# fix ~/Pictures directory
+if [ -e ~/Dropbox ]; then
+    if [ -e ~/Pictures -a ! -L ~/Pictures ]; then
+        mkdir -p ~/Dropbox/Pictures/$(hostname)
+        cp -r ~/Pictures/* ~/Dropbox/Pictures/$(hostname)/
+        rm -rf ~/Pictures
+        ln -sf ~/Dropbox/Pictures/$(hostname) ~/Pictures
+    fi
+fi
