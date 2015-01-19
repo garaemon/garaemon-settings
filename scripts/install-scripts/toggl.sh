@@ -27,5 +27,6 @@ Name=Toggl
 Icon=gnome-panel-clock
 
 EOF
+        chmod +x $HOME/.config/gnome-panel/launchers/TogglDesktop.desktop
     fi
 fi
