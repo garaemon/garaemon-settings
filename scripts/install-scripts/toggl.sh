@@ -11,4 +11,21 @@ if [ $(uname) = "Linux" ]; then
         tar xvzf /tmp/toggle.tar.gz -C /tmp
         mv /tmp/toggldesktop ~/.local/toggl
     fi
+    # generate .desktop
+    if [ ! -e "$HOME/.config/gnome-panel/launchers/TogglDesktop.desktop" ]; then
+        cyanecho ">>>> [generating toggl desktop]"
+        cat <<EOF > $HOME/.config/gnome-panel/launchers/TogglDesktop.desktop
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Icon[en_US]=gnome-panel-clock
+Name[en_US]=Toggl
+Exec=~/.local/toggl/TogglDesktop
+Name=Toggl
+Icon=gnome-panel-clock
+
+EOF
+    fi
 fi
