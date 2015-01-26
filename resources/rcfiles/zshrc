@@ -449,6 +449,28 @@ if [ $? = 0 ]; then
     zle -N percol_select_dirstack_entry
     bindkey '^[d' percol_select_dirstack_entry
 
+    function rosn() {
+        if [ "$1" = "" ]; then
+            topic=$(rosnode list | percol | xargs -n 1 rosnode info | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+        else
+            topic=$(rosnode info $1 | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+        fi
+        if [ "$topic" != "" ] ; then
+            rost $topic
+        fi
+    }
+    function rost() {
+        if [ "$1" = "" ]; then
+            node=$(rostopic list | percol | xargs -n 1 rostopic info | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+        else
+            node=$(rostopic info $1 | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+        fi
+        if [ "$node" != "" ] ; then
+            rosn $node
+        fi
+    }
+
+
     alias p=percol
 fi
 
