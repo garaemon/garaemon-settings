@@ -451,9 +451,9 @@ if [ $? = 0 ]; then
 
     function rosn() {
         if [ "$1" = "" ]; then
-            topic=$(rosnode list | percol | xargs -n 1 rosnode info | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+            topic=$(rosnode list | percol | xargs -n 1 rosnode info | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
         else
-            topic=$(rosnode info $1 | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+            topic=$(rosnode info $1 | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
         fi
         if [ "$topic" != "" ] ; then
             rost $topic
@@ -461,9 +461,9 @@ if [ $? = 0 ]; then
     }
     function rost() {
         if [ "$1" = "" ]; then
-            node=$(rostopic list | percol | xargs -n 1 rostopic info | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+            node=$(rostopic list | percol | xargs -n 1 rostopic info | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
         else
-            node=$(rostopic info $1 | percol | sed -e 's%.*\(/[/a-zA-Z0-9_]*\) .*%\1%')
+            node=$(rostopic info $1 | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
         fi
         if [ "$node" != "" ] ; then
             rosn $node
