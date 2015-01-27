@@ -470,7 +470,7 @@ if [ $? = 0 ]; then
         fi
     }
     function grepe() {
-        grep $@ | percol |  sed -e 's/^\([^:]*\):.*$'/\\1/ | xargs -n 1 emacsclient
+        grep $@ | percol |  sed -e 's/^\([^:]*\):.*$'/\\1/ | xargs -n 1 emacsclient -n
     }
 
     alias p=percol
