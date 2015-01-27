@@ -469,7 +469,9 @@ if [ $? = 0 ]; then
             rosn $node
         fi
     }
-
+    function grepe() {
+        grep $@ | percol |  sed -e 's/^\([^:]*\):.*$'/\\1/ | xargs -n 1 emacsclient
+    }
 
     alias p=percol
 fi
