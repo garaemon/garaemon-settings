@@ -473,6 +473,10 @@ if [ $? = 0 ]; then
         grep $@ | percol |  sed -e 's/^\([^:]*\):.*$'/\\1/ | xargs -n 1 emacsclient -n
     }
 
+    function rosm() {
+        rosmsg list | percol | xargs -n 1 rosmsg show
+    }
+
     alias p=percol
 fi
 
