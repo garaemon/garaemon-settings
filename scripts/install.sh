@@ -41,4 +41,5 @@ runscript emacs.sh
 runscript powerline.sh
 runscript pip.sh
 runscript percol.sh
+runscript font.sh
 runscript ros.sh
