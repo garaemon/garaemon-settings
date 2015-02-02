@@ -12,7 +12,7 @@ tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
 github/hub.git \
 garaemon/ffmpeg-movie-builder.git \
-ggreer/the_silver_searcher.git"
+ggreer/the_silver_searcher.git yascentur/RictyDiminished.git"
 
 function github_update_clone()
 {
