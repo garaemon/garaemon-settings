@@ -149,8 +149,8 @@ fi
 
 #alias rm='trash-put -v'
 
-# export CC="ccache gcc"
-# export CXX="ccache g++"
+export CC="ccache gcc"
+export CXX="ccache g++"
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
@@ -207,7 +207,6 @@ rosenv_use_hook() {
     if [ -e $HOME/.roszsh ]; then
         source $HOME/.roszsh
     fi
-    export EUSDIR=`rospack find euslisp`/jskeus/eus
     alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
 }
 
