@@ -1,0 +1,30 @@
+{
+  "name": "git-history",
+  "main": "./lib/git-history",
+  "version": "1.1.2",
+  "description": "View previous versions of any file known to git.",
+  "activationEvents": [
+    "git-history:show-file-history"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakesankey/git-history"
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {},
+  "readme": "# Git History Package for Atom [![Build Status](http://img.shields.io/travis/jakesankey/git-history.svg?style=flat)](https://travis-ci.org/jakesankey/git-history)\n\nView previous versions of any file known to git.\n\n`apm install git-history`\n\n![](https://raw.githubusercontent.com/jakesankey/git-history/master/resources/screenshot.gif)\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/jakesankey/git-history/issues"
+  },
+  "homepage": "https://github.com/jakesankey/git-history",
+  "_id": "git-history@1.1.2",
+  "dist": {
+    "shasum": "962fa1c3d7a1b97fc80708ee40d0030fd1c2e628"
+  },
+  "_resolved": "/tmp/d-114917-16941-eeytyi/package.tgz",
+  "_from": "/tmp/d-114917-16941-eeytyi/package.tgz"
+}

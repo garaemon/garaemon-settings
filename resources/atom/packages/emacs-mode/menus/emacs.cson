@@ -1,0 +1,11 @@
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Emacs Mode'
+      'submenu': [
+        { 'label': 'Toggle', 'command': 'emacs-mode:toggle' }
+      ]
+    ]
+  }
+]

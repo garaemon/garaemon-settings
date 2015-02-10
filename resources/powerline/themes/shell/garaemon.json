@@ -1,69 +1,66 @@
 {
-  "default_module": "powerline.segments.common",
-  "segment_data": {
-    "hostname": {
-      "before": "@",
-      "after": ":",
-      "args": {
-        "only_if_ssh": false
-      }
-    },
-    "branch": {
-      "before": " "
-    }
-  },
   "segments": {
     "left": [
       {
-        "module": "powerline.segments.shell",
-        "name": "last_pipe_status"
+        "function": "powerline.segments.shell.last_pipe_status"
       },
       {
-        "name": "branch"
+        "function": "powerline.segments.common.vcs.branch",
+        "before": " "
       },
       {
-        "name": "environment",
+        "function": "powerline.segments.common.env.environment",
         "args": {
           "variable": "ROSENV_CURRENT"
         }
       },
       {
-        "name": "environment",
+        "function": "powerline.segments.common.env.environment",
         "args": {
           "variable": "ROS_DISTRO"
         }
       },
       {
-        "name": "environment",
+        "function": "powerline.segments.common.env.environment",
         "args": {
           "variable": "ROS_MASTER_URI"
         }
       },
       {
         "type": "string",
-        "name": "newline",
+        "highlight_group": ["newline"],
         "contents": "__NEWLINE__"
       },
       {
-        "name": "user"
+        "function": "powerline.segments.shell.cwd",
+        "use_path_separator": true
       },
       {
-        "name": "hostname"
+        "type": "string",
+        "highlight_group": ["newline"],
+        "contents": "__NEWLINE__"
       },
       {
-        "name": "cwd",
+        "function": "powerline.segments.common.env.user",
+        "priority": 10
+      },
+      {
+        "function": "powerline.segments.common.net.hostname",
+        "priority": 10,
+        "before": "@",
+        "after": ":",
         "args": {
-          "dir_limit_depth": 3
+          "only_if_ssh": false
         }
       },
       {
-        "name": "prompt",
+        "highlight_group": ["prompt"],
         "type": "string",
         "contents": "Yes, Master?"
       },
       {
-        "module": "powerline.segments.shell",
-        "name": "jobnum"
+        "function": "powerline.segments.shell.jobnum",
+        "priority": 10
       }
     ]
   }

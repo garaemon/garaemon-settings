@@ -1,0 +1,22 @@
+'global':
+  'exception-reporting':
+    'userId': 'afba4fb3-1662-e937-f6ed-4eea8a22490a'
+  'welcome':
+    'showOnStartup': false
+  'metrics':
+    'userId': '5afe01d925f56ca54ea8945b2cce677f8755be3a'
+  'core':
+    'themes': [
+      'atom-solo-dark-ui'
+      'solarized-dark-syntax'
+    ]
+    'projectHome': '/home/garaemon/gprog'
+  'editor':
+    'softWrap': true
+    'invisibles': {}
+  'emacs-mode':
+    'hideTabs': false
+    'hideSidebar': false
+    'useEmacsCursor': true
+    'useFuzzyFileFinder': false
+    'useFuzzyBufferFinder': false

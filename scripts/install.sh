@@ -2,60 +2,44 @@
 set -e
 # install.sh
 
-# packages
-sudo apt-get install aptitude
-sudo aptitude install git-core emacs vim tmux anthy-el ssh zsh curl htop
+cwd=`dirname "${0}"`
+expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
-#################################################
-# setting up vim
-#################################################
-ln -sf $PWD/resources/rcfiles/vimrc ~/.vimrc
+. $cwd/lib.sh
 
+function runscript()
+{
+    redecho ">> running [$1]"
+    $cwd/install-scripts/$1
+}
 
-#################################################
-# setting up git
-#################################################
-echo installing commit-msg
-sudo cp -fv resources/git/commit-msg /usr/share/git-core/templates/hooks
+# need to install sudo and apt-utils python-software-properties
 
-echo disabling git ff
-git config --global --add merge.ff false
+redecho ">> [setting up gprog]"
+mkdir -p $GPROG_DIR
 
-#################################################
-# setting up zsh
-#################################################
+runscript apt.sh
+runscript ssh.sh
+runscript github.sh
+runscript ttygif.sh
+runscript vimrc.sh
+runscript tmux.sh
+runscript git.sh
+runscript zsh.sh
 
-# oh-my-zsh
-curl -L https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh | sh
-if [ ! -e ~/.zshrc ]; then
-    ln -sf $PWD/resources/rcfiles/zshrc ~/.zshrc
-fi
+runscript node.sh
+source ~/.nvm/nvm.sh
 
-#################################################
-# setting up nvm
-#################################################
-curl https://raw.github.com/creationix/nvm/master/install.sh | sh
+runscript go.sh
+runscript hub.sh
 
-#################################################
-# setting up rvm
-#################################################
-curl -sSL https://get.rvm.io | bash -s stable
+runscript ruby.sh
+source ~/.rvm/scripts/rvm
 
-#################################################
-# setting up tmux
-#################################################
-echo installing .tmux.conf
-cp -v resources/rcfiles/tmux.conf ~/.tmux.conf
-
-#################################################
-# setting up emacs
-#################################################
-cd ~/gprog
-rm -rf ~/.emacs ~/.emacs.d     # uninstalling .emacs
-if [ ! -d ~/gprog/emacs.d ]; then
-    git clone https://github.com/garaemon/emacs.d.git
-fi
-cd emacs.d
-git submodule update --init .
-./install.sh
-
+runscript ispell.sh
+runscript emacs.sh
+runscript powerline.sh
+runscript pip.sh
+runscript percol.sh
+runscript font.sh
+runscript ros.sh
