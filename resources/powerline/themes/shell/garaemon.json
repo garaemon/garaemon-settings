@@ -28,7 +28,7 @@
       },
       {
         "type": "string",
-        "highlight_group": ["newline"],
+        "highlight_groups": ["newline"],
         "contents": "__NEWLINE__"
       },
       {
@@ -37,7 +37,7 @@
       },
       {
         "type": "string",
-        "highlight_group": ["newline"],
+        "highlight_groups": ["newline"],
         "contents": "__NEWLINE__"
       },
       {
@@ -54,7 +54,8 @@
         }
       },
       {
-        "highlight_group": ["prompt"],
+ "highlight_groups": ["prompt"],
+
         "type": "string",
         "contents": "Yes, Master?"
       },
