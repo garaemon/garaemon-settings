@@ -23,3 +23,6 @@ rvm use $RUBY_VERSION
 
 cyanecho ">>>> [installing $PACKAGES]"
 gem install $PACKAGES
+
+gem install rack -v 1.5.2
+gem install gollum
