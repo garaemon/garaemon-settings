@@ -669,3 +669,5 @@ if [ -e ~/Dropbox ]; then
         ln -sf ~/Dropbox/Pictures/$(hostname) ~/Pictures
     fi
 fi
+
+export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
