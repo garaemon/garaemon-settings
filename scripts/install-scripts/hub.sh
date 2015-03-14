@@ -4,12 +4,10 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 
-source ~/.gvm/scripts/gvm
-cyanecho ">>>> [building hub]"
-
-gvm use go1.4
-(cd $GPROG_DIR/hub && ./script/build && mkdir -p ~/.bin && cp hub ~/.bin)
-
-cyanecho ">>>> [building setup completion]"
-mkdir -p ~/.zsh_fpath/
-cp ~/gprog/hub/etc/hub.zsh_completion ~/.zsh_fpath/_hub
+if [ ! -e ~/.local/bin/hub ]; then
+    cyanecho ">>>> [installing hub binary]"
+    wget https://github.com/github/hub/releases/download/v2.2.0/hub-linux-amd64-2.2.0.tar.gz -O /tmp/hub.tar.gz
+    cd /tmp
+    tar xvzf hub.tar.gz
+    mv hub-linux*/hub ~/.local/bin/hub
+fi
