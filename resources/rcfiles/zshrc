@@ -149,8 +149,8 @@ fi
 
 #alias rm='trash-put -v'
 
-export CC="ccache gcc"
-export CXX="ccache g++"
+# export CC="ccache gcc"
+# export CXX="ccache g++"
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
@@ -243,6 +243,7 @@ export OPENHRPHOME=$HOME/prog/OpenHRP
 export ROBOT=HRP2JSKNT
 export HRP2NO=16
 export ARCHDIR=Linux64
+export SSH_USER=ueda
 
 #export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
 if [ -e /proc/cpuinfo ]; then
@@ -671,3 +672,5 @@ if [ -e ~/Dropbox ]; then
 fi
 
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
+
+export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
