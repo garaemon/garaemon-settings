@@ -14,3 +14,8 @@ if [ ! -e ~/.zshrc -o ! -L ~/.zshrc ]; then
     rm -f ~/.zshrc
     ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc ~/.zshrc
 fi
+
+cyanecho ">>>> [installing auto-fu.zsh]"
+if [ ! -e ~/.auto-fu ]; then
+    git clone https://github.com/hchbaw/auto-fu.zsh.git ~/.auto-fu
+fi

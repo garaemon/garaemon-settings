@@ -4,8 +4,6 @@ umask 022
 
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
-
-
 export LC_ALL=en_US.UTF-8
 
 #zsh
@@ -25,6 +23,24 @@ setopt auto_cd
 setopt auto_param_keys
 setopt pushd_ignore_dups
 setopt auto_pushd
+setopt interactive_comments # ignore hash in command line
+setopt magic_equal_subst # complete after = like --prefix=/usr/locl
+zstyle ':completion:*' menu select interactive
+setopt menu_complete
+
+# auto-fu.zsh
+# do not work?
+if [ -f ~/.auto-fu ]; then
+    source ~/.auto-fu/auto-fu.zsh
+    function zle-line-init () {
+        auto-fu-init
+    }
+    zle -N zle-line-init
+    zstyle ':completion:*' completer _oldlist _complete
+else
+    echo -e "Need to install auto-fu.zsh"
+fi
+
 
 watch="all"
 log
@@ -44,7 +60,6 @@ setopt share_history        # share command history data
 bindkey -e
 
 #alias
-
 alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
@@ -189,9 +204,11 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 export PATH=$PATH:$HOME/gprog/jq
 
 # update roszsh
-wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q > /dev/null
-if [ -e $HOME/.roszsh ]; then
-    source $HOME/.roszsh
+if [ ! -e $HOME/.roszsh ] ; then
+    wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q > /dev/null
+    if [ -e $HOME/.roszsh ]; then
+        source $HOME/.roszsh
+    fi
 fi
 
 
