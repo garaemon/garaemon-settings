@@ -211,10 +211,12 @@ if [ ! -e $HOME/.roszsh ] ; then
     fi
 fi
 
+export NO_ROS_PROMPT=true
 
 ################################################################################
 # ros
 rosenv_use_hook() {
+    source $(rospack find jsk_tools)/src/zshrc.ros
     if [ "$(rospack find hrpsys_gazebo_tutorials 2>/dev/null)" != "" ] ; then
         source `rospack find hrpsys_gazebo_tutorials`/setup.sh
     fi
@@ -257,8 +259,8 @@ alias roseus="rlwrap rosrun roseus roseus"
 
 export CVSDIR=$HOME/prog
 export OPENHRPHOME=$HOME/prog/OpenHRP
-export ROBOT=HRP2JSKNT
-export HRP2NO=16
+# export ROBOT=HRP2JSKNT
+# export HRP2NO=16
 export ARCHDIR=Linux64
 export SSH_USER=ueda
 
@@ -602,12 +604,6 @@ until-success() {
 
 export PATH=$HOME/.local/bin:$PATH
 
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
-    source $HOME/.zshrc.mine
-fi
-
 if [ "$EMACS" != "t" ]; then
     which toilet > /dev/null 2>&1
     if [ $? = 0 -a "$TERM" != "dumb" ]; then
@@ -691,3 +687,9 @@ fi
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo loading customizing setup file ...
+    source $HOME/.zshrc.mine
+fi
