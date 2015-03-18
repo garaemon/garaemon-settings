@@ -28,19 +28,6 @@ setopt magic_equal_subst # complete after = like --prefix=/usr/locl
 zstyle ':completion:*' menu select interactive
 setopt menu_complete
 
-# auto-fu.zsh
-# do not work?
-if [ -f ~/.auto-fu ]; then
-    source ~/.auto-fu/auto-fu.zsh
-    function zle-line-init () {
-        auto-fu-init
-    }
-    zle -N zle-line-init
-    zstyle ':completion:*' completer _oldlist _complete
-else
-    echo -e "Need to install auto-fu.zsh"
-fi
-
 
 watch="all"
 log
