@@ -28,6 +28,8 @@ setopt magic_equal_subst # complete after = like --prefix=/usr/locl
 zstyle ':completion:*' menu select interactive
 setopt menu_complete
 
+compdef -d scp
+compdef -d rsync
 
 watch="all"
 log
@@ -674,6 +676,14 @@ fi
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+
+if [ ! -e $HOME/.incr.zsh ] ; then
+    wget -q http://mimosa-pudica.net/src/incr-0.2.zsh -O $HOME/.incr.zsh
+fi
+if [ -e $HOME/.incr.zsh ] ; then
+    source $HOME/.incr.zsh
+fi
+
 
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
