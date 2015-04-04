@@ -677,12 +677,12 @@ export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 
-if [ ! -e $HOME/.incr.zsh ] ; then
-    wget -q http://mimosa-pudica.net/src/incr-0.2.zsh -O $HOME/.incr.zsh
-fi
-if [ -e $HOME/.incr.zsh ] ; then
-    source $HOME/.incr.zsh
-fi
+# if [ ! -e $HOME/.incr.zsh ] ; then
+#     wget -q http://mimosa-pudica.net/src/incr-0.2.zsh -O $HOME/.incr.zsh
+# fi
+# if [ -e $HOME/.incr.zsh ] ; then
+#     source $HOME/.incr.zsh
+# fi
 
 
 # customizing zshrc?
