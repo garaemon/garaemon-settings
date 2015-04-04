@@ -253,33 +253,6 @@ export OPENHRPHOME=$HOME/prog/OpenHRP
 export ARCHDIR=Linux64
 export SSH_USER=ueda
 
-#export ROS_PARALLEL_JOBS=`grep -c processor /proc/cpuinfo`
-if [ -e /proc/cpuinfo ]; then
-    alias rosmake="rosmake --pjobs=`grep -c processor /proc/cpuinfo`"
-fi
-
-function rossetrobot() {
-    local hostname=${1-"pr1012"}
-    local ros_port=${2-"11311"}
-    export ROS_MASTER_URI=http://$hostname:$ros_port
-    echo -e "\e[1;31mset ROS_MASTER_URI to $ROS_MASTER_URI\e[m"
-    rossetip
-}
-function rossetlocal() {
-    rossetrobot localhost
-    unset ROS_HOSTNAME
-    unset ROS_IP
-}
-
-function rossetip() {
-    export ROS_IP=`LANGUAGE=en LANG=C ifconfig | grep 'wlan|eth' -E -A 7 | grep inet\  | grep -v 127.0.0.1 | sed 's/.*inet addr:\([0-9\.]*\).*/\1/' | head -1`
-    export ROS_HOSTNAME=$ROS_IP
-    echo -e "\e[1;31mset ROS_IP and ROS_HOSTNAME to $ROS_IP\e[m"
-}
-if [ `which sw_vers > /dev/null 2>&1` ]; then
-    rossetlocal
-fi
-
 ################################################################################
 # oh my zsh
 ZSH=$HOME/.oh-my-zsh
@@ -404,23 +377,17 @@ alias git-graph="git log --graph --decorate --oneline"
 
 which percol > /dev/null
 if [ $? = 0 ]; then
-    function percol-select-all() {
-        # history
+    function percol_select_history() {
         local tac
-        if which tac > /dev/null; then
-            tac="tac"
-        else
-            tac="tail -r"
-        fi
-        HISTORIES=$(history -n 1 | eval $tac)
-        DIRS=$(dirs -pl | xargs -n 1 echo cd)
-        BUFFER=$(echo $HISTORIES "\n" $DIRS | \
-            percol --match-method regex --query "$LBUFFER")
-        CURSOR=$#BUFFER
-        zle clear-screen
+        which gtac && tac="gtac" || { which tac && tac="tac" || { tac="tail -r" } }
+        BUFFER=$(fc -l -n 1 | eval $tac | percol --query "$LBUFFER")
+        CURSOR=$#BUFFER         # move cursor
+        zle -R -c               # refresh
     }
-    zle -N percol-select-all
-    bindkey '^r' percol-select-all
+
+    zle -N percol_select_history
+    bindkey '^R' percol_select_history
+
 
     function search-rostopic-by-percol(){
         LBUFFER=$LBUFFER$(rostopic list | percol)
@@ -646,10 +613,10 @@ alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
 alias v="view"
 
-if [ -e ~/.gvm/scripts/gvm ] ; then
-    source ~/.gvm/scripts/gvm
-    gvm use go1.4
-fi
+# if [ -e ~/.gvm/scripts/gvm ] ; then
+#     source ~/.gvm/scripts/gvm
+#     gvm use go1.4
+# fi
 
 eval "$(hub alias -s)"
 
