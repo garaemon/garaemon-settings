@@ -13,7 +13,7 @@ sigurdga/gnome-terminal-colors-solarized.git \
 github/hub.git \
 garaemon/ffmpeg-movie-builder.git \
 ggreer/the_silver_searcher.git yascentur/RictyDiminished.git \
-garaemon/garaemon-private.wiki"
+garaemon/garaemon-private.wiki circumjacence/ConkyInfinitySVG"
 
 function github_update_clone()
 {
