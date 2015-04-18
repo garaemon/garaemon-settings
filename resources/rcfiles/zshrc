@@ -424,6 +424,10 @@ if [ $? = 0 ]; then
     zle -N percol_select_dirstack_entry
     bindkey '^[d' percol_select_dirstack_entry
 
+    function pk() {
+        ps aux | percol | awk '{ print $2 }' | xargs kill
+    }
+
     function rosn() {
         if [ "$1" = "" ]; then
             topic=$(rosnode list | percol | xargs -n 1 rosnode info | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
