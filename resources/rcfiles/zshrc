@@ -206,12 +206,6 @@ export NO_ROS_PROMPT=true
 # ros
 rosenv_use_hook() {
     source $(rospack find jsk_tools)/src/zshrc.ros
-    if [ "$(rospack find hrpsys_gazebo_tutorials 2>/dev/null)" != "" ] ; then
-        source `rospack find hrpsys_gazebo_tutorials`/setup.sh
-    fi
-    if [ "$(rospack find roseus 2>/dev/null)" != "" ] ; then
-        export PATH=`rospack find roseus`/bin:$PATH
-    fi
     if [ -e $HOME/.roszsh ]; then
         source $HOME/.roszsh
     fi
