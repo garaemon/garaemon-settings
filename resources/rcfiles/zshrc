@@ -159,8 +159,6 @@ fi
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
 alias e='emacsclient -n'
-alias en='emacsclient -nw'
-alias eclient='emacsclient'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
@@ -264,7 +262,7 @@ PS1=$PS1_ORG
 ################################################################################
 # powerline
 export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages:$PYTHONPATH
-export PATH=$HOME/.local/bin:$PATH
+export PATH=$HOME/.local/bin:$HOME/.cabal/bin:$PATH
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; then
     if [ "$OS" = "Darwin" ]; then # if osx
         if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
