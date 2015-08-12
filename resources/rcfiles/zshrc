@@ -166,6 +166,10 @@ export PATH=$PATH:$HOME/gprog/spark-ping
 export PATH=$PATH:$HOME/gprog/shell-color-pallet
 export PATH=$PATH:$HOME/gprog/wakatime
 #alias jbibtex=bibtex
+# for bibtex
+# from http://qiita.com/amayaw9/items/01d626ce1ae18c27df8b
+export BSTINPUTS=$BSTINPUTS:/usr/share/texmf/jbibtex/bst
+
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
 
@@ -654,3 +658,12 @@ if [ -e $HOME/.zshrc.mine ]; then
     source $HOME/.zshrc.mine
 fi
 export ROSLAUNCH_SSH_UNKNOWN=1
+rossetlocal
+# export ROBOT=JAXON
+
+# rossetmaster 10.20.2.31
+# rossetip
+# enhancd
+if [ -f "/home/garaemon/.enhancd/zsh/enhancd.zsh" ]; then
+    source "/home/garaemon/.enhancd/zsh/enhancd.zsh"
+fi
