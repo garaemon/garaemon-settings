@@ -207,11 +207,17 @@ export NO_ROS_PROMPT=true
 ################################################################################
 # ros
 rosenv_use_hook() {
-    source $(rospack find jsk_tools)/src/zshrc.ros
-    if [ -e $HOME/.roszsh ]; then
-        source $HOME/.roszsh
+    rospack find jsk_tools >/dev/null 2>&1
+    if [ $? = 0 ]; then
+        source $(rospack find jsk_tools)/src/zshrc.ros
+        if [ -e $HOME/.roszsh ]; then
+            source $HOME/.roszsh
+        fi
     fi
-    alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
+    rospack find hrpsys_ros_bridge >/dev/null 2>&1
+    if [ $? = 0 ]; then
+        alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
+    fi
 }
 
 source $HOME/gprog/rosenv/rosenv.sh
