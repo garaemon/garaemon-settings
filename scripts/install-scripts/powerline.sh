@@ -6,7 +6,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 cyanecho ">>>> [installing powerline]"
 if [ `uname` == "Darwin" ]; then
-    sudo pip install git+git://github.com/Lokaltog/powerline
+    pip install git+git://github.com/Lokaltog/powerline
 else
     pip install --user git+git://github.com/Lokaltog/powerline
 fi
