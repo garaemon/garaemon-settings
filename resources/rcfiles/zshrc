@@ -618,31 +618,38 @@ alias v="view"
 #     gvm use go1.4
 # fi
 
-eval "$(hub alias -s)"
+which hub 2>&1 >/dev/null
+if [ $? == 0 ]; then
+    eval "$(hub alias -s)"
+fi
 
-source ~/.rvm/scripts/rvm
-rvm use ruby-2.2.0
+if [ -e $HOME/.rvm ]; then
+    source ~/.rvm/scripts/rvm
+    rvm use ruby-2.2.0
+    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+fi
 
 if [ "$OS" != "Darwin" ] ; then
     tmux source-file ~/.tmux.conf
 fi
 
-export PATH=$PATH:$HOME/.local/toggl
+if [ "$OS" != "Darwin" ] ; then
+    $HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
+fi
 
-$HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
 # fix ~/Pictures directory
-if [ -e ~/Dropbox ]; then
-    if [ -e ~/Pictures -a ! -L ~/Pictures ]; then
-        mkdir -p ~/Dropbox/Pictures/$(hostname)
-        cp -r ~/Pictures/* ~/Dropbox/Pictures/$(hostname)/
-        rm -rf ~/Pictures
-        ln -sf ~/Dropbox/Pictures/$(hostname) ~/Pictures
+if [ "$OS" != "Darwin" ] ; then
+    if [ -e ~/Dropbox ]; then
+        if [ -e ~/Pictures -a ! -L ~/Pictures ]; then
+            mkdir -p ~/Dropbox/Pictures/$(hostname)
+            cp -r ~/Pictures/* ~/Dropbox/Pictures/$(hostname)/
+            rm -rf ~/Pictures
+            ln -sf ~/Dropbox/Pictures/$(hostname) ~/Pictures
+        fi
     fi
 fi
 
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
-
-export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 
 # if [ ! -e $HOME/.incr.zsh ] ; then
 #     wget -q http://mimosa-pudica.net/src/incr-0.2.zsh -O $HOME/.incr.zsh
@@ -658,11 +665,7 @@ if [ -e $HOME/.zshrc.mine ]; then
     source $HOME/.zshrc.mine
 fi
 export ROSLAUNCH_SSH_UNKNOWN=1
-rossetlocal
-# export ROBOT=JAXON
-
-# rossetmaster 10.20.2.31
-# rossetip
+rossetlocal >/dev/null 2>&1
 # enhancd
 if [ -f "/home/garaemon/.enhancd/zsh/enhancd.zsh" ]; then
     source "/home/garaemon/.enhancd/zsh/enhancd.zsh"
