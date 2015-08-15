@@ -3,6 +3,7 @@ import os
 import sys
 import textwrap
 import subprocess
+from colorama import Fore, Style
 
 TEXT="""
                 ___________ 
@@ -37,7 +38,7 @@ def say(text):
     text_lines_num = len(text_lines)
     for line, i, t in zip(lines, range(len(lines)), appended_text_lines):
         print line.ljust(max_line_width),
-        print t
+        print Fore.CYAN + t + Fore.RESET
         ret = ret + line.ljust(max_line_width) + t + "\n"
     return ret
 ret = say(" ".join(sys.argv[1:]))
