@@ -559,13 +559,10 @@ until-success() {
 }
 
 export PATH=$HOME/.local/bin:$PATH
+export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 
 if [ "$EMACS" != "t" ]; then
-    which toilet > /dev/null 2>&1
-    if [ $? = 0 -a "$TERM" != "dumb" ]; then
-        toilet --font future welcome, master
-        toilet --font future "  " $(whoami)@$(hostname)
-    fi
+    aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
 fi
 
 # function chpwd() { ls }
@@ -648,8 +645,6 @@ if [ "$OS" != "Darwin" ] ; then
         fi
     fi
 fi
-
-export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 
 # if [ ! -e $HOME/.incr.zsh ] ; then
 #     wget -q http://mimosa-pudica.net/src/incr-0.2.zsh -O $HOME/.incr.zsh
