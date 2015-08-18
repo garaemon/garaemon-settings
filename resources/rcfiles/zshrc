@@ -675,3 +675,8 @@ rossetlocal >/dev/null 2>&1
 if [ -f "/home/garaemon/.enhancd/zsh/enhancd.zsh" ]; then
     source "/home/garaemon/.enhancd/zsh/enhancd.zsh"
 fi
+
+# for emacs
+perl -wle \
+    'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
+    PATH > ~/.emacs.d/shellenv.el
