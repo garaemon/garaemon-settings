@@ -165,6 +165,7 @@ export PATH=$PATH:$HOME/gprog/spark
 export PATH=$PATH:$HOME/gprog/spark-ping
 export PATH=$PATH:$HOME/gprog/shell-color-pallet
 export PATH=$PATH:$HOME/gprog/wakatime
+export PATH=$PATH:$HOME/gprog/multi_crop
 #alias jbibtex=bibtex
 # for bibtex
 # from http://qiita.com/amayaw9/items/01d626ce1ae18c27df8b
