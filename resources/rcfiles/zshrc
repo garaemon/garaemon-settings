@@ -216,7 +216,7 @@ rosenv_use_hook() {
     fi
     rospack find hrpsys_ros_bridge >/dev/null 2>&1
     if [ $? = 0 ]; then
-        alias rtmlaunch='`rospack find hrpsys_ros_bridge`/scripts/rtmlaunch'
+        alias rtmlaunch='`rospack find openrtm_tools`/scripts/rtmlaunch'
     fi
 }
 
