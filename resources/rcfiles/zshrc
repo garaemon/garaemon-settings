@@ -203,6 +203,27 @@ if [ ! -e $HOME/.roszsh ] ; then
     fi
 fi
 
+function record_time_start {
+    set +x
+    RECORD_START_TIME=$(date +%s%N)
+    RECORD_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+    RECORD_FOLD_NAME=$1
+    echo -e "\e[0Ktraivs_fold:start:$RECORD_FOLD_NAME"
+    echo -e "\e[0Ktraivs_time:start:$RECORD_TIME_ID"
+    set -x
+}
+function record_time_end {
+    set +x
+    _COLOR=${1:-32}
+    RECORD_END_TIME=$(date +%s%N)
+    TIME_ELAPSED_SECONDS=$(( ($RECORD_END_TIME - $RECORD_START_TIME)/1000000000 ))
+    echo -e "traivs_time:end:$RECORD_TIME_ID:start=$RECORD_START_TIME,finish=$RECORD_END_TIME,duration=$(($RECORD_END_TIME - $RECORD_START_TIME))\n\e[0K"
+    echo -e "traivs_fold:end:$RECORD_FOLD_NAME"
+    echo -e "\e[0K\e[${_COLOR}mFunction $RECORD_FOLD_NAME takes $(( $TIME_ELAPSED_SECONDS / 60 )) min $(( $TIME_ELAPSED_SECONDS % 60 )) sec\e[0m"
+    set -x
+}
+
+
 export NO_ROS_PROMPT=true
 
 ################################################################################
@@ -231,20 +252,6 @@ else
         rosenv use
     fi
 fi
-
-
-# rename catmake to orig_catmake
-eval "$(echo "orig_catmake() {"; declare -f catmake | tail -n +2)"
-catmake() {
-    orig_catmake $@
-    local result=$?
-    if [ "$result" = "0" ] ; then
-        t update "[success!!] catkin_make $* [`date`]" > /dev/null 2>&1
-    else
-        t update "[failed!!] catkin_make $* [`date`]" > /dev/null 2>&1
-    fi
-    return $result
-}
 
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
@@ -339,45 +346,11 @@ if [ -d $HOME/.rbenv/bin ]; then
     export PATH=$HOME/.rbenv/versions/1.9.3-p448/bin:$PATH
 fi
 
-
 export PATH=$PATH:$HOME/gprog/snapshotter/bin
 export PATH=$PATH:$HOME/gprog/s3sync
 
-alias hdfs="hadoop fs"
-export HADOOP_HEAPSIZE=2000
-function restart-hadoop() {
-    /usr/local/Cellar/hadoop/1.1.2/libexec/bin/stop-all.sh
-    yes | hadoop namenode -format
-    /usr/local/Cellar/hadoop/1.1.2/libexec/bin/start-all.sh
-    hadoop dfsadmin -safemode leave
-}
-
-
-function do_enter() {
-    if [ -n "$BUFFER" ]; then
-        zle accept-line
-        return 0
-    fi
-    echo
-    ls
-    # ls_abbrev
-    if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = 'true' ]; then
-        echo
-        echo -e "\e[0;33m--- git status ---\e[0m"
-        git status --short --branch
-        echo
-        echo
-    fi
-    zle reset-prompt
-    return 0
-}
-# zle -N do_enter
-# bindkey '^m' do_enter
-
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
-
 source $HOME/.emacs.d/check_for_upgrade.sh
-
 alias git-graph="git log --graph --decorate --oneline"
 
 #percol settings
@@ -466,11 +439,6 @@ if [ $? = 0 ]; then
     alias p=percol
 fi
 
-function preexec_fluent() {
-    curl -X POST -d 'json={"command":"'${1%% *}'"}' localhost:9880/zsh > /dev/null 2>&1
-}
-preexec_functions=(preexec_fluent)
-
 export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
 export PATH=$PATH:$HOME/.bin
 
@@ -493,10 +461,6 @@ function sine_wave() {
     done
     echo
 }
-which sine > /dev/null
-if [ $? = 0 -a "$TERM" != "dumb" ] ; then
-    sine_wave
-fi
 
 export TERM=xterm-256color
 
@@ -678,10 +642,6 @@ if [ -e $HOME/.zshrc.mine ]; then
 fi
 export ROSLAUNCH_SSH_UNKNOWN=1
 rossetlocal >/dev/null 2>&1
-# enhancd
-if [ -f "/home/garaemon/.enhancd/zsh/enhancd.zsh" ]; then
-    source "/home/garaemon/.enhancd/zsh/enhancd.zsh"
-fi
 
 # for emacs
 perl -wle \
