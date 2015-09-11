@@ -607,6 +607,11 @@ function git-branch-remove-all-remote-exec() {
     fi
 }
 
+function rename-spaces() {
+    # Replace spaces in file with underscores
+    mv -i "$*" "$(echo $* | sed -e 's/\s\+/_/g')"
+}
+
 
 function ev() {
     # use C-xC-q to toggle read only
