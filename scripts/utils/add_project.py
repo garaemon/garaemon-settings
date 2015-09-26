@@ -27,8 +27,8 @@ def main(repository_url):
     logger.debug("directory name will be %s" % (basename))
     output_dirname = os.path.join(os.environ["HOME"], 'gprog', basename)
     if os.path.exists(output_dirname):
-        logger.error("You've already checked out %s" % repository_url)
-        logger.error("cd %s && git pull" % (output_dirname))
+        logger.warn("You've already checked out %s" % repository_url)
+        logger.warn("cd %s && git pull" % (output_dirname))
     else:
         logger.info("Checking out %s" % (repository_url))
         try:
@@ -44,7 +44,12 @@ def usage():
     
 if __name__ == "__main__":
     logger = logging.getLogger('logging')
-    logger.setLevel(logging.DEBUG)
+    if "-q" in sys.argv:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.DEBUG)
+    # remove -q from argv
+    sys.argv.remove("-q")
     handler = RainbowLoggingHandler(sys.stderr)
     logger.addHandler(handler)
     if len(sys.argv) != 2:

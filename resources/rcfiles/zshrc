@@ -242,7 +242,10 @@ rosenv_use_hook() {
     fi
 }
 
-source $HOME/gprog/rosenv/rosenv.sh
+if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
+    source $HOME/gprog/rosenv/rosenv.sh
+fi
+
 if [ "$OS" = "Darwin" ] ; then
     rosenv use indigo
 else
@@ -647,3 +650,8 @@ rossetlocal >/dev/null 2>&1
 perl -wle \
     'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
     PATH > ~/.emacs.d/shellenv.el
+
+# automatically clone repositories
+if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
+    $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
+fi
