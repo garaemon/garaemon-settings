@@ -539,6 +539,7 @@ until-success() {
 export PATH=$HOME/.local/bin:$PATH
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 export PATH=$PATH:$HOME/gprog/pltcli/bin
+export PATH=$PATH:$HOME/gprog/simpler-dot
 
 if [ "$EMACS" != "t" ]; then
     aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
