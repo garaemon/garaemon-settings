@@ -589,7 +589,8 @@ function ev() {
 function dropbox-share() {
     target=$(md5sum $1 | cut -f1 -d ' ').${1##*.}
     cp $1 ~/Dropbox/Public/tmp/$target
-    echo "File is available on" $(dropbox puburl ~/Dropbox/Public/tmp/$target)
+    echo -e "File is available on $fg[cyan] $(dropbox puburl ~/Dropbox/Public/tmp/$target)$reset_color"
+    echo -e $'\U1F61D' $'\U1F61D' $'\U1F61D' $'\U1F61D'
 }
 
 # added by travis gem
