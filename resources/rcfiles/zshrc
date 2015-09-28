@@ -586,6 +586,12 @@ function ev() {
     emacsclient -e "(find-file-read-only \"$1\")"
 }
 
+function dropbox-share() {
+    target=$(md5sum $1 | cut -f1 -d ' ').${1##*.}
+    cp $1 ~/Dropbox/Public/tmp/$target
+    echo "File is available on" $(dropbox puburl ~/Dropbox/Public/tmp/$target)
+}
+
 # added by travis gem
 [ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
 
