@@ -540,6 +540,7 @@ export PATH=$HOME/.local/bin:$PATH
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 export PATH=$PATH:$HOME/gprog/pltcli/bin
 export PATH=$PATH:$HOME/gprog/simpler-dot
+export PATH=$PATH:$HOME/gprog/tidier-pdfimages
 
 if [ "$EMACS" != "t" ]; then
     aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
