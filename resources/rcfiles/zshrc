@@ -647,11 +647,6 @@ fi
 # fi
 
 
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
-    source $HOME/.zshrc.mine
-fi
 export ROSLAUNCH_SSH_UNKNOWN=1
 rossetlocal >/dev/null 2>&1
 
@@ -663,4 +658,10 @@ perl -wle \
 # automatically clone repositories
 if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
+fi
+
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo loading customizing setup file ...
+    source $HOME/.zshrc.mine
 fi
