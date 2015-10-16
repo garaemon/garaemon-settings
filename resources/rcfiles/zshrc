@@ -612,6 +612,7 @@ alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
 alias v="view"
 alias c="catkin bt --no-deps"
+alias s="source ~/.zshrc"
 
 # if [ -e ~/.gvm/scripts/gvm ] ; then
 #     source ~/.gvm/scripts/gvm
