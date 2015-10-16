@@ -440,6 +440,14 @@ if [ $? = 0 ]; then
         rosmsg list | percol | xargs -n 1 rosmsg show
     }
 
+    function rostopic_echo_p () {
+        rostopic echo $(rostopic list | p)
+    }
+
+    function rostopic_info_p () {
+        rostopic info $(rostopic list | p)
+    }
+
     alias p=percol
 fi
 
