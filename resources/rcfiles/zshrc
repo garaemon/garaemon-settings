@@ -624,6 +624,9 @@ which hub 2>&1 >/dev/null
 if [ $? = 0 ]; then
     eval "$(hub alias -s)"
 fi
+# git aliases
+git config --global alias.see browse
+git config --global alias.pr pull-request
 
 if [ -e $HOME/.rvm ]; then
     source ~/.rvm/scripts/rvm
