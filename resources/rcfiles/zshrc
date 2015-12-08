@@ -628,6 +628,7 @@ fi
 git config --global alias.see browse
 git config --global alias.pr pull-request
 git config --global alias.co checkout
+git config --global alias.st status
 
 if [ -e $HOME/.rvm ]; then
     source ~/.rvm/scripts/rvm
