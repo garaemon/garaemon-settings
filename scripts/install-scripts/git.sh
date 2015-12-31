@@ -19,6 +19,7 @@ if [ ! -e $HOME/.local/bin/git ]; then
     cd $GPROG_DIR
     git clone https://github.com/git/git.git
     cd git
+    make configure
     ./configure --prefix=$HOME/.local
     make all -j8
     make install
