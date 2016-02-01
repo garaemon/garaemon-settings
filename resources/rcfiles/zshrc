@@ -158,7 +158,11 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
-alias e='emacsclient -n'
+if [ "$OS" = "Darwin" ] ; then
+    alias e='$(brew --prefix emacs)/bin/emacsclient -n'
+else
+    alias e='emacsclient -n'
+fi
 alias l='less'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
@@ -255,6 +259,11 @@ if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
         fi
     fi
 fi
+
+#if [ "$OS" = "Darwin" ]; then # if osx
+#    source $HOME/ros_catkin_ws/install_isolated/setup.zsh
+#fi
+
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
 
