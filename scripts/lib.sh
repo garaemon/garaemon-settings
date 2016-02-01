@@ -2,12 +2,12 @@
 
 # replace echo if it runs on mac
 
-if [ `uname` == "Darwin" ]; then
-    function echo() {
-        gecho $@
-    }
-    export -f echo
-fi
+# if [ `uname` == "Darwin" ]; then
+#     function echo() {
+#         gecho $@
+#     }
+#     export -f echo
+# fi
 
 function move()
 {
@@ -16,12 +16,20 @@ function move()
 
 function redecho()
 {
-    echo -e "\e[1;31m" $1 "\e[m"
+    if [ `uname` == "Darwin" ]; then
+	echo $'\e[1;31m' $1 $'\e[m'
+    else
+	echo -e "\e[1;31m" $1 "\e[m"
+    fi
 }
 
 function cyanecho()
 {
-    echo -e "\e[36m" $1 "\e[m"
+    if [ `uname` == "Darwin" ]; then
+	echo $'\e[36m' $1 $'\e[m'
+    else
+	echo -e "\e[36m" $1 "\e[m"
+    fi
 }
 
 function yellowecho()

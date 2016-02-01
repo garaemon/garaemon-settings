@@ -12,14 +12,16 @@ else
 fi
 
 cyanecho ">>>> [installing powerline font]"
-mkdir -p ~/.fonts
-if [ ! -e ~/.fonts/PowerlineSymbols.otf ]; then
-    wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf -O ~/.fonts/PowerlineSymbols.otf
-    fc-cache -vf ~/.fonts
-fi
-if [ ! -e ~/.fonts.conf.d/10-powerline-symbols.conf ]; then
-    mkdir -p ~/.fonts.conf.d
-    wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf -O ~/.fonts.conf.d/10-powerline-symbols.conf
+if [ `uname` == "Linux" ]; then
+    mkdir -p ~/.fonts
+    if [ ! -e ~/.fonts/PowerlineSymbols.otf ]; then
+        wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf -O ~/.fonts/PowerlineSymbols.otf
+        fc-cache -vf ~/.fonts
+    fi
+    if [ ! -e ~/.fonts.conf.d/10-powerline-symbols.conf ]; then
+        mkdir -p ~/.fonts.conf.d
+        wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf -O ~/.fonts.conf.d/10-powerline-symbols.conf
+    fi
 fi
 
 mkdir -p ~/.config

@@ -17,24 +17,25 @@ function runscript()
 
 redecho ">> [setting up gprog]"
 mkdir -p $GPROG_DIR
-
-runscript apt.sh
+if [ `uname` == "Linux" ]; then
+    runscript apt.sh
+fi
 runscript ssh.sh
 runscript github.sh
-runscript ttygif.sh
+if [ `uname` == "Linux" ]; then
+    runscript ttygif.sh
+fi
 runscript vimrc.sh
 runscript tmux.sh
 runscript git.sh
 runscript zsh.sh
 
-runscript node.sh
-source ~/.nvm/nvm.sh
-
 #runscript go.sh
 # runscript hub.sh
-
-runscript ruby.sh
-source ~/.rvm/scripts/rvm
+if [ `uname` == "Linux" ]; then
+    runscript ruby.sh
+    source ~/.rvm/scripts/rvm
+fi
 
 runscript ispell.sh
 runscript emacs.sh
@@ -42,4 +43,8 @@ runscript powerline.sh
 runscript pip.sh
 runscript percol.sh
 runscript font.sh
-runscript ros.sh
+if [ `uname` == "Linux" ]; then
+    runscript ros.sh
+fi
+runscript node.sh
+source ~/.nvm/nvm.sh

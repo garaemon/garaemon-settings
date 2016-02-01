@@ -3,7 +3,11 @@ import os
 import sys
 import textwrap
 import subprocess
-from colorama import Fore, Style
+try:
+    from colorama import Fore, Style
+except:
+    print >> sys.stderr, "Install colorama"
+    sys.exit(1)
 
 TEXT="""
                 ___________ 

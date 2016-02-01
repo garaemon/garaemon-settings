@@ -58,5 +58,11 @@ function github_update_clone_depth1()
 }
 
 export -f github_update_clone
-echo $GITHUB_REPOSITORIES | xargs -P 0 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
-github_update_clone_depth1 emacs-mirror/emacs.git
+if [ `uname` == "Linux" ]; then
+    echo $GITHUB_REPOSITORIES | xargs -P 8 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
+else
+    echo $GITHUB_REPOSITORIES | gxargs -P 8 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
+fi
+if [ `uname` == "Linux" ]; then
+    github_update_clone_depth1 emacs-mirror/emacs.git
+fi

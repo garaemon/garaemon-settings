@@ -245,18 +245,16 @@ rosenv_use_hook() {
 
 if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
     source $HOME/gprog/rosenv/rosenv.sh
-fi
-
-if [ "$OS" = "Darwin" ] ; then
-    rosenv use indigo
-else
-    if [ "$ROSENV_CURRENT" = "" ]; then
-        rosenv use jsk.hydro
+    if [ "$OS" = "Darwin" ] ; then
+        rosenv use indigo
     else
-        rosenv use
+        if [ "$ROSENV_CURRENT" = "" ]; then
+            rosenv use jsk.hydro
+        else
+            rosenv use
+        fi
     fi
 fi
-
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
 
@@ -634,10 +632,10 @@ git config --global alias.see browse
 git config --global alias.pr pull-request
 git config --global alias.co checkout
 git config --global alias.st status
-git config --global commit.template ~/.gitmessage.txt
+#git config --global commit.template ~/.gitmessage.txt
 
 
-if [ -e $HOME/.rvm ]; then
+if [ -e $HOME/.rvm/scripts/rvm ]; then
     source ~/.rvm/scripts/rvm
     rvm use ruby-2.2.0
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting

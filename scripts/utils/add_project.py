@@ -6,8 +6,11 @@ import sys
 import subprocess
 import logging
 import os
-
-from colorama import Fore
+try:
+    from colorama import Fore
+except:
+    print >>sys.stderr, "pip install colorama"
+    sys.exit(1)
 
 try:
     from rainbow_logging_handler import RainbowLoggingHandler

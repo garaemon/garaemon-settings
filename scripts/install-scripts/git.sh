@@ -13,16 +13,17 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 # git config branch.master.rebase true
 # git config --global pull.rebase true
 # #git config --global pull.rebase preserve
-
-if [ ! -e $HOME/.local/bin/git ]; then
-    cyanecho ">>>> [cloning git]"
-    cd $GPROG_DIR
-    git clone https://github.com/git/git.git
-    cd git
-    make configure
-    ./configure --prefix=$HOME/.local
-    make all -j8
-    make install
+if [ `uname` == "Linux" ]; then
+    if [ ! -e $HOME/.local/bin/git ]; then
+	cyanecho ">>>> [cloning git]"
+	cd $GPROG_DIR
+	git clone https://github.com/git/git.git
+	cd git
+	make configure
+	./configure --prefix=$HOME/.local
+	make all -j8
+	make install
+    fi
 fi
 
 cyanecho ">>>> [setting up git user.name]"

@@ -7,7 +7,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 cyanecho ">>>> install gnu utilities"
 brew install gnu-sed coreutils
 
-brew install tmux
+brew install tmux wget w3m findutils
 
 cyanecho ">>>> install emacs"
 brew install emacs --cocoa
