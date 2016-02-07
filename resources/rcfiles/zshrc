@@ -186,8 +186,8 @@ alias titanium="$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/1.7.5/
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
-nvm use v0.10.28                  # for heroku
-export NODE_PATH=~/.nvm/v0.10.28/lib/node_modules
+nvm use v0.12.9                  # for heroku
+export NODE_PATH=~/.nvm/v0.12.9/lib/node_modules
 
 export PATH=$PATH:$HOME/gprog/git-your-emacs
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
