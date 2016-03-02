@@ -187,6 +187,9 @@ export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
 nvm use v0.12.9                  # for heroku
+if [ $? = 1 ]; then
+    nvm install v0.12.9
+fi
 export NODE_PATH=~/.nvm/v0.12.9/lib/node_modules
 
 export PATH=$PATH:$HOME/gprog/git-your-emacs
