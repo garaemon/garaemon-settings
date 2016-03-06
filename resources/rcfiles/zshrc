@@ -296,20 +296,19 @@ if [ "$EMACS" != "t" ]; then
 fi
 PS1=$PS1_ORG
 
+# setup pyenv
+export PYENV_ROOT=$HOME/.pyenv
+export PATH=$PYENV_ROOT/bin:$PATH
+eval "$(pyenv init -)"
+
 ################################################################################
 # powerline
 export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$HOME/.local/bin:$HOME/.cabal/bin:$PATH
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; then
-    if [ "$OS" = "Darwin" ]; then # if osx
-        if [ -e /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
-            source /usr/local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
-        else
-            export POWERLINE_COMMAND=$HOME/.local/bin/powerline
-            source $HOME/.local/lib/python2.7/site-epackages/powerline/bindings/zsh/powerline.zsh
-        fi
+    if [ -e $HOME/.pyenv/versions/2.7.10/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+        source $HOME/.pyenv/versions/2.7.10/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     else
-        #export POWERLINE_COMMAND=$HOME/.local/bin/powerline
         source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     fi
     newline_replacer="s@__NEWLINE__@\n@g"

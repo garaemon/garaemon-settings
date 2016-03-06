@@ -5,11 +5,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 cyanecho ">>>> [installing powerline]"
-if [ `uname` == "Darwin" ]; then
-    pip install git+git://github.com/Lokaltog/powerline
-else
-    pip install --user git+git://github.com/Lokaltog/powerline
-fi
+pip install --user git+git://github.com/Lokaltog/powerline
 
 cyanecho ">>>> [installing powerline font]"
 if [ `uname` == "Linux" ]; then
