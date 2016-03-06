@@ -12,3 +12,8 @@ brew install tmux wget w3m findutils
 cyanecho ">>>> install emacs"
 brew install emacs --cocoa
 brew linkapps emacs
+
+cyanecho ">>>> enabling cask"
+brew tap caskroom/cask
+
+brew cask install hypweswitch google-chrome kindle
