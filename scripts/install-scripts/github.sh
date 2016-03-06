@@ -11,7 +11,7 @@ garaemon/til.git \
 holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
-github/hub.git \
+saitoha/seq2gif.git \
 garaemon/ffmpeg-movie-builder.git \
 ggreer/the_silver_searcher.git yascentur/RictyDiminished.git \
 garaemon/garaemon-private.wiki circumjacence/ConkyInfinitySVG"
