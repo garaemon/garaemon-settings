@@ -306,8 +306,8 @@ eval "$(pyenv init -)"
 export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$HOME/.local/bin:$HOME/.cabal/bin:$PATH
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; then
-    if [ -e $HOME/.pyenv/versions/2.7.10/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
-        source $HOME/.pyenv/versions/2.7.10/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+    if [ -e $(pyenv prefix)/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]; then
+        source $(pyenv prefix)/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     else
         source $HOME/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
     fi
