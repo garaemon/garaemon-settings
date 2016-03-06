@@ -4,10 +4,14 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 
-cyanecho ">>>> install gnu utilities"
-brew install gnu-sed coreutils
+# install homebrew itself
+which brew > /dev/null
+if [ -n $? ] ; then
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+fi
 
-brew install tmux wget w3m findutils
+cyanecho ">>>> install homebrew software"
+brew install tmux wget w3m findutils imagemagick gnu-sed coreutils
 
 cyanecho ">>>> install emacs"
 brew install emacs --with-cocoa
