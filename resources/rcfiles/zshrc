@@ -119,8 +119,8 @@ if [ "$TERM" != "dumb" ]; then
 fi
 
 
-#export PATH=$PATH:$HOME/gprog/ttygif
-#export PATH=$PATH:$HOME/gprog/seq2gif
+export PATH=$PATH:$HOME/gprog/ttygif
+export PATH=$PATH:$HOME/gprog/seq2gif
 
 # PATH setup
 export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
