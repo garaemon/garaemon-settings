@@ -7,6 +7,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 GITHUB_REPOSITORIES="icholy/ttygif.git \
 garaemon/emacs.d.git \
 garaemon/garaemon-settings.git garaemon/rosenv.git \
+garaemon/til.git \
 holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
@@ -63,6 +64,4 @@ if [ `uname` == "Linux" ]; then
 else
     echo $GITHUB_REPOSITORIES | gxargs -P 8 --delimiter ' ' -n 1 -I % bash -c "github_update_clone %"
 fi
-if [ `uname` == "Linux" ]; then
-    github_update_clone_depth1 emacs-mirror/emacs.git
-fi
+github_update_clone_depth1 emacs-mirror/emacs.git
