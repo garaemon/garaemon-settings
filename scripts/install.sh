@@ -20,6 +20,9 @@ mkdir -p $GPROG_DIR
 if [ `uname` == "Linux" ]; then
     runscript apt.sh
 fi
+if [ `uname` == "Darwin" ]; then
+    runscript brew.sh
+fi
 runscript ssh.sh
 runscript github.sh
 if [ `uname` == "Linux" ]; then
