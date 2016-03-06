@@ -3,7 +3,8 @@
 umask 022
 
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
-export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
+# export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
+export PATH=/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin
 export LC_ALL=en_US.UTF-8
 
 #zsh
