@@ -20,4 +20,4 @@ brew linkapps emacs
 cyanecho ">>>> enabling cask"
 brew tap caskroom/cask
 
-brew cask install hyperswitch google-chrome kindle dropbox
+brew cask install hyperswitch google-chrome kindle dropbox unity
