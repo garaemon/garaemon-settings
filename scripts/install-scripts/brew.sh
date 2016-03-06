@@ -10,10 +10,10 @@ brew install gnu-sed coreutils
 brew install tmux wget w3m findutils
 
 cyanecho ">>>> install emacs"
-brew install emacs --cocoa
+brew install emacs --with-cocoa
 brew linkapps emacs
 
 cyanecho ">>>> enabling cask"
 brew tap caskroom/cask
 
-brew cask install hyperswitch google-chrome kindle
+brew cask install hyperswitch google-chrome kindle dropbox
