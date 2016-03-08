@@ -22,6 +22,7 @@ if [ `uname` == "Linux" ]; then
 fi
 if [ `uname` == "Darwin" ]; then
     runscript brew.sh
+    runscript pyenv.sh
 fi
 runscript ssh.sh
 runscript github.sh
