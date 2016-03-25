@@ -5,7 +5,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 cyanecho ">>>> [installing powerline]"
-if [ -e $HOME/.pyenv ]; then
+if [ ! -e $HOME/.pyenv ]; then
     pip install --user git+git://github.com/Lokaltog/powerline
 else
     pip install git+git://github.com/Lokaltog/powerline
