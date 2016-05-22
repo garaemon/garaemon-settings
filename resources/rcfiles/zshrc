@@ -703,3 +703,9 @@ if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
+
+export CMAKE_MODULE_PATH=/usr/local/Cellar/ogre/1.7.4/CMake/:$CMAKE_MODULE_PATH
+export OGRE_HOME=/usr/local/Cellar/ogre/1.7.4
+# export PKG_CONFIG_PATH=${OGRE_HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+
+source $HOME/gprog/cdplus/cdplus.sh
