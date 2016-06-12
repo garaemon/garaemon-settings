@@ -717,6 +717,12 @@ perl -wle \
 #     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
 # fi
 
+# zplug
+if [ -e $HOME/.zshrc.zplug ]; then
+    echo loading customizing setup file for zplug...
+    source $HOME/.zshrc.zplug
+fi
+
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
