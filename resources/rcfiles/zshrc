@@ -301,20 +301,6 @@ export OPENHRPHOME=$HOME/prog/OpenHRP
 export ARCHDIR=Linux64
 export SSH_USER=ueda
 
-################################################################################
-# oh my zsh
-ZSH=$HOME/.oh-my-zsh
-ZSH_THEME=""
-COMPLETION_WAITING_DOTS="true"
-plugins=(git brew osx bower bundler mvn npm pip svn web-search)
-# keep PS1
-PS1_ORG=$PS1
-if [ "$EMACS" != "t" ]; then
-    source $ZSH/oh-my-zsh.sh
-    unalias history
-fi
-PS1=$PS1_ORG
-
 # setup pyenv
 if [ -e $HOME/.pyenv ]; then
     export PYENV_ROOT=$HOME/.pyenv
