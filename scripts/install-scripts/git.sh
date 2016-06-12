@@ -17,6 +17,7 @@ if [ `uname` == "Linux" ]; then
     if [ ! -e $HOME/.local/bin/git ]; then
 	cyanecho ">>>> [cloning git]"
 	cd $GPROG_DIR
+  runsudo apt-get build-dep git # for 14.04
 	git clone https://github.com/git/git.git
 	cd git
 	make configure

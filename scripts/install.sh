@@ -47,8 +47,8 @@ runscript powerline.sh
 runscript pip.sh
 runscript percol.sh
 runscript font.sh
-if [ `uname` == "Linux" ]; then
-    runscript ros.sh
-fi
+#if [ `uname` == "Linux" ]; then
+#    runscript ros.sh
+#fi
 runscript node.sh
 source ~/.nvm/nvm.sh

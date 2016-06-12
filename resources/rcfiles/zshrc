@@ -2,6 +2,16 @@
 # -*- coding: utf-8 -*-
 umask 022
 
+# for emacs tramp
+case "$TERM" in
+  dumb | emacs)
+    PROMPT="%m:%~> "
+    unsetopt zle
+    return
+    ;;
+esac
+
+
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 # export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
 export PATH=/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin
@@ -15,6 +25,7 @@ autoload -U compinit
 compinit
 setopt correct
 setopt beep
+autoload -Uz add-zsh-hook
 
 setopt list_types
 setopt auto_list
@@ -50,7 +61,7 @@ setopt share_history        # share command history data
 bindkey -e
 
 #alias
-alias cp='cp -v'
+# alias cp='cp -v'
 alias mv='mv -v'
 alias grep='grep --color=auto'
 
@@ -107,16 +118,18 @@ update_ssh_agent_ () {
 
 
 # X Window Setup
-if [ "$TERM" != "dumb" ]; then
-    PID=`pgrep -n -u $USER gnome-session`
-    if [ -n "$PID" ]; then
-        export DISPLAY=`awk 'BEGIN{FS="="; RS="\0"}  $1=="DISPLAY" {print $2; exit}' /proc/$PID/environ`
-        echo "DISPLAY set to $DISPLAY"
-    else
-        echo "Could not set DISPLAY"
-    fi
-    unset PID
-fi
+#if [ "$TERM" != "dumb" ]; then
+#    PID=`pgrep -n -u $USER gnome-session`
+#    if [ -n "$PID" ]; then
+#        export DISPLAY=`awk 'BEGIN{FS="="; RS="\0"}  $1=="DISPLAY" {print $2; exit}' /proc/$PID/environ`
+#        echo "DISPLAY set to $DISPLAY"
+#    else
+#        echo "Could not set DISPLAY"
+#    fi
+#    unset PID
+#fi
+export DISPLAY=:0
+
 
 
 export PATH=$PATH:$HOME/gprog/ttygif
@@ -160,10 +173,17 @@ fi
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 #alias pygmentize="pygmentize-2.7"
 if [ "$OS" = "Darwin" ] ; then
-    alias e='$(brew --prefix emacs)/bin/emacsclient -n'
+    # alias e='$(brew --prefix emacs)/bin/emacsclient -n'
+    :
 else
-    alias e='emacsclient -n'
+    # alias e='emacsclient -n'
+    alias emacs='emacs-snapshot'
 fi
+
+function e() {
+    emacsclient -n $(echo $1 | cut -f1 -d:)
+}
+
 alias l='less'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
@@ -327,7 +347,7 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; t
     fi
 fi
 PROMPT2="%_%% "
-SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
+# SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 
 if [ `uname` != Darwin ]; then
     eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-dark`
@@ -499,6 +519,8 @@ add_github_fork() {
         | xargs -n 1 -i basename {} .git)
     echo adding git@github.com:${user_name}/${repo}.git as ${user_name}
     git remote add ${user_name} git@github.com:${user_name}/${repo}.git
+    # echo adding https://github.com/${user_name}/${repo}.git as ${user_name}
+    # git remote add ${user_name} https://github.com/${user_name}/${repo}.git
     git fetch --all
 }
 
@@ -518,7 +540,9 @@ add_garaemon_fork_subdirs() {
 update_garaemon_settings() {
     (cd $HOME/gprog/garaemon-settings > /dev/null && git pull)
     (cd $HOME/gprog/emacs.d > /dev/null && git pull && git submodule update --init)
-    (cd $HOME/gprog/rosenv > /dev/null && git pull)
+    if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
+	(cd $HOME/gprog/rosenv > /dev/null && git pull)
+    fi
 }
 
 git_clean_subdirs() {
@@ -648,6 +672,15 @@ git config --global alias.see browse
 git config --global alias.pr pull-request
 git config --global alias.co checkout
 git config --global alias.st status
+git config --global alias.unstage "reset -q HEAD --"
+#git config --global alias.discard "checkout --"
+git config --global alias.uncommit "reset --mixed HEAD~"
+#git config --global alias.amend "commit --amend"
+git config --global alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
+git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
+git config --global alias.unmerged "diff --name-only --diff-filter=U"
+git config --global alias.remotes "remotes = remote -v"
+alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 #git config --global commit.template ~/.gitmessage.txt
 
 
@@ -657,9 +690,9 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
-if [ "$OS" != "Darwin" ] ; then
-    tmux source-file ~/.tmux.conf
-fi
+# if [ "$OS" != "Darwin" ] ; then
+#     tmux source-file ~/.tmux.conf
+# fi
 
 if [ "$OS" != "Darwin" ] ; then
     $HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
@@ -684,9 +717,9 @@ fi
 #     source $HOME/.incr.zsh
 # fi
 
-
-export ROSLAUNCH_SSH_UNKNOWN=1
-rossetlocal >/dev/null 2>&1
+# no ROS environment
+# export ROSLAUNCH_SSH_UNKNOWN=1
+# rossetlocal >/dev/null 2>&1
 
 # for emacs
 perl -wle \
@@ -694,12 +727,24 @@ perl -wle \
     PATH > ~/.emacs.d/shellenv.el
 
 # automatically clone repositories
-if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
-    $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
-fi
+# if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
+#     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
+# fi
 
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
+
+export PATH=$HOME/bin/:$PATH
+
+function clang-format-view {
+    local fname=$(mktemp)
+    clang-format $1 > $fname
+    colordiff -W 200 -y $1 $fname | less
+}
+
+function tmux-broadcast-command {
+
+}
