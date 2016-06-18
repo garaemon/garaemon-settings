@@ -32,7 +32,7 @@
 			{
 				"name": "cwd",
 				"args": {
-					"dir_limit_depth": 3
+					"dir_limit_depth": 4
 				}
 			},
 			{

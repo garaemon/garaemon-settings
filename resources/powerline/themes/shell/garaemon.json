@@ -11,19 +11,7 @@
       {
         "function": "powerline.segments.common.env.environment",
         "args": {
-          "variable": "ROSENV_CURRENT"
-        }
-      },
-      {
-        "function": "powerline.segments.common.env.environment",
-        "args": {
-          "variable": "ROS_DISTRO"
-        }
-      },
-      {
-        "function": "powerline.segments.common.env.environment",
-        "args": {
-          "variable": "ROS_MASTER_URI"
+          "variable": "ROBOT"
         }
       },
       {
@@ -33,7 +21,11 @@
       },
       {
         "function": "powerline.segments.shell.cwd",
-        "use_path_separator": true
+        "use_path_separator": true,
+        "args": {
+          "dir_limit_depth": 4
+        }
+
       },
       {
         "type": "string",
