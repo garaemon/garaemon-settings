@@ -13,6 +13,7 @@ tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
 sigurdga/gnome-terminal-colors-solarized.git \
 saitoha/seq2gif.git \
 garaemon/ffmpeg-movie-builder.git \
+possatti/pokemonsay.git \
 ggreer/the_silver_searcher.git yascentur/RictyDiminished.git \
 garaemon/garaemon-private.wiki circumjacence/ConkyInfinitySVG"
 

@@ -343,6 +343,13 @@ else
     alias ls="gls -AF --color=auto"
 fi
 
+# shuf
+# if [ "$OS" = "Darwin" ] ; then
+#     which shuf > /dev/null
+#     if [ $@ != 0 ] ; then
+#         ln -sf $(which gshuf) ~/bin/shuf # for pokemonsay
+#     fi
+# fi
 
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
@@ -574,9 +581,11 @@ export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 export PATH=$PATH:$HOME/gprog/pltcli/bin
 export PATH=$PATH:$HOME/gprog/simpler-dot
 export PATH=$PATH:$HOME/gprog/tidier-pdfimages
+export PATH=$HOME/bin/:$PATH
 
 if [ "$EMACS" != "t" ]; then
-    aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
+    #aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
+    pokemonsay "welcome, master                                   $(whoami)@$(hostname)"
 fi
 
 # function chpwd() { ls }
@@ -728,8 +737,6 @@ if [ -e $HOME/.zshrc.mine ]; then
     echo loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
-
-export PATH=$HOME/bin/:$PATH
 
 function clang-format-view {
     local fname=$(mktemp)
