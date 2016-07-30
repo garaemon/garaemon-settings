@@ -38,7 +38,7 @@ setopt auto_pushd
 setopt interactive_comments # ignore hash in command line
 setopt magic_equal_subst # complete after = like --prefix=/usr/locl
 zstyle ':completion:*' menu select interactive
-setopt menu_complete
+#setopt menu_complete
 
 compdef -d scp
 compdef -d rsync
