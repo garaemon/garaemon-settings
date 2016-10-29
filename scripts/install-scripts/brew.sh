@@ -5,8 +5,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 # install homebrew itself
-which brew > /dev/null
-if [ -n $? ] ; then
+if ! which brew > /dev/null ; then
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
 
@@ -24,4 +23,7 @@ brew linkapps emacs
 cyanecho ">>>> enabling cask"
 brew tap caskroom/cask
 
-brew cask install hyperswitch google-chrome kindle dropbox unity vlc karabiner skype google-japanese-ime libreoffice
+if [ ! $(sw_vers -productVersion | grep 10.12)] ; then
+    brew cask install karabiner hyperswitch
+fi
+brew cask install google-chrome kindle dropbox vlc skype google-japanese-ime libreoffice
