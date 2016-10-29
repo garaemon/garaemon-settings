@@ -10,7 +10,7 @@ if ! which brew > /dev/null ; then
 fi
 
 cyanecho ">>>> install homebrew software"
-brew install tmux wget w3m findutils imagemagick gnu-sed coreutils cowsay
+brew install tmux wget w3m findutils imagemagick gnu-sed coreutils cowsay hub
 
 cyanecho ">>>> install ffmpeg on homebrew"
 brew install ffmpeg --with-fdk-aac --with-ffplay --with-freetype --with-libass --with-libquvi --with-libvorbis --with-libvpx --with-opus --with-x265
