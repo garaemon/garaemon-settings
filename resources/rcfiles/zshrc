@@ -585,7 +585,8 @@ export PATH=$HOME/bin/:$PATH
 
 if [ "$EMACS" != "t" ]; then
     #aa_say.py "welcome, master                                   $(whoami)@$(hostname)"
-    pokemonsay "welcome, master                                   $(whoami)@$(hostname)"
+    #pokemonsay "welcome, master                                   $(whoami)@$(hostname)"
+	:
 fi
 
 # function chpwd() { ls }
