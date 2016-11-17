@@ -4,13 +4,15 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 
+HOMEBREW_RB_PATH="https://raw.githubusercontent.com/Homebrew/install/master/install"
+
 # install homebrew itself
 if ! which brew > /dev/null ; then
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /usr/bin/ruby -e "$(curl -fsSL ${HOMEBREW_RB_PATH})"
 fi
 
 cyanecho ">>>> install homebrew software"
-brew install tmux wget w3m findutils imagemagick gnu-sed coreutils cowsay hub ag hg
+brew install tmux wget w3m findutils imagemagick gnu-sed coreutils cowsay hub ag hg clang-format
 
 cyanecho ">>>> install ffmpeg on homebrew"
 brew install ffmpeg --with-fdk-aac --with-ffplay --with-freetype --with-libass --with-libquvi --with-libvorbis --with-libvpx --with-opus --with-x265
