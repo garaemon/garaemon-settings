@@ -1,8 +1,9 @@
 #!/bin/bash
-cwd=`dirname "${0}"`
-expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
+cwd=$(dirname "${0}")
+expr "${0}" : "/.*" > /dev/null || cwd=$(cd "${cwd}" && pwd)
 
-. $cwd/../lib.sh
+# shellcheck source=../lib.sh disable=SC1091
+source "${cwd}"/../lib.sh
 
 APT_PACKAGES="ttyrec git-core vim tmux anthy-el ssh zsh curl htop \
 toilet ffmpeg jq tcpflow quicksynergy \
@@ -14,21 +15,8 @@ libgpm-dev libgnutls-dev libgconf2-dev libdbus-1-dev glc \
 r-base ess rlwrap golang xclip w3m libzlma-dev quicksynergy \
 compizconfig-settings-manager imagemagick libicu-dev conky conky-all"
 
-#cyanecho ">>>> [add apt repository for atom]"
-#runsudo add-apt-repository -y ppa:webupd8team/atom # for atom
-# cyanecho ">>>> [add apt repository for ffmpeg]"
-# runsudo add-apt-repository -y ppa:jon-severinsson/ffmpeg
-#cyanecho ">>>> [add emacs24 repository]"
-#runsudo add-apt-repository -y ppa:cassou/emacs
-#cyanecho ">>>> [add glc repository]"
-#runsudo add-apt-repository -y ppa:arand/ppa
-#cyanecho ">>>> [add golang repository]"
-#runsudo add-apt-repository -y ppa:duh/golang
-# cyanecho ">>>> [add ag repository]"
-# runsudo apt-add-repository -y ppa:mizuno-as/silversearcher-ag
-
 runsudo apt-get --quiet update
 runsudo apt-get --quiet install aptitude
 runsudo aptitude -q -y upgrade
 cyanecho ">>>> [instal packages]"
-runsudo aptitude -q -y install $APT_PACKAGES
+runsudo aptitude -q -y install "$APT_PACKAGES"
