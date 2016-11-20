@@ -3,7 +3,7 @@ cwd=`dirname "${0}"`
 expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
-target_node_version=v5.7.0
+target_node_version=v6.9.0
 packages="shiba prettyjson npm-check yo bower grunt-cli gulp generator-electron babel-cli"
 
 cyanecho ">>>> [installing nvm]"
