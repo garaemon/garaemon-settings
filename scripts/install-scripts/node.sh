@@ -6,7 +6,8 @@ expr "${0}" : "/.*" > /dev/null || cwd=$(cd "${cwd}" && pwd)
 source "${cwd}"/../lib.sh
 
 target_node_version=v6.9.0
-packages="shiba prettyjson npm-check yo bower grunt-cli gulp generator-electron babel-cli"
+packages="shiba prettyjson npm-check yo bower grunt-cli gulp generator-electron babel-cli\
+                generator-python"
 
 cyanecho ">>>> [installing nvm]"
 if [ ! -e ~/.nvm ]; then
