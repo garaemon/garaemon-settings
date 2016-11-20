@@ -165,13 +165,7 @@ elif [ "$OS" = "Darwin" ] ; then
     fi
 fi
 
-#alias rm='trash-put -v'
-
-# export CC="ccache gcc"
-# export CXX="ccache g++"
-
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
-#alias pygmentize="pygmentize-2.7"
 if [ "$OS" = "Darwin" ] ; then
     # alias e='$(brew --prefix emacs)/bin/emacsclient -n'
     :
@@ -183,8 +177,6 @@ fi
 function e() {
     emacsclient -n $(echo $1 | cut -f1 -d:)
 }
-
-alias l='less'
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
@@ -203,7 +195,6 @@ export PATH=$PATH:$HOME/gprog/emacs-settings
 export CC=gcc
 source $HOME/.nvm/nvm.sh
 
-alias titanium="$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/1.7.5/titanium.py"
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
@@ -645,9 +636,7 @@ alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
 alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
 alias v="view"
-alias c="catkin bt --no-deps"
 alias s="source ~/.zshrc"
-alias gis="git status"
 
 # if [ -e ~/.gvm/scripts/gvm ] ; then
 #     source ~/.gvm/scripts/gvm
