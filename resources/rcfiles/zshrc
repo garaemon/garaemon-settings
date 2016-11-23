@@ -748,3 +748,8 @@ function clang-format-view {
 function tmux-broadcast-command {
 
 }
+
+# wrapping tip command to use virtualenv
+function tip {
+    (cd ~/gprog/tip && source .venv/bin/activate && ./bin/tip $@)
+}
