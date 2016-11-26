@@ -753,3 +753,14 @@ function tmux-broadcast-command {
 function tip {
     (cd ~/gprog/tip && source .venv/bin/activate && ./bin/tip $@)
 }
+
+function restart-dns {
+    # Restart DNS Cache. It is only available on mac os.
+    if [ "$(uname)" = "Darwin" ] ; then
+        echo Restarting dns ...
+        sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+        sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+    else
+        echo "It's not mac os, skip"
+    fi
+}
