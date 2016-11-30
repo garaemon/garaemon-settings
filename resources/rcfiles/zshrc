@@ -750,8 +750,8 @@ function tmux-broadcast-command {
 }
 
 # wrapping tip command to use virtualenv
-function tip {
-    (cd ~/gprog/tip && source .venv/bin/activate && ./bin/tip $@)
+function tips {
+    (cd ~/gprog/tips && source .venv/bin/activate && ./bin/tips $@)
 }
 
 function restart-dns {
