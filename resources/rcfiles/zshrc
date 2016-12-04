@@ -65,6 +65,17 @@ bindkey -e
 alias mv='mv -v'
 alias grep='grep --color=auto'
 
+# for ttyrec environment.
+# This zshrc expects using ttyrec with IS_TTYREC=true like
+# `IS_TTYREC=true ttyrec terminal.log`.
+function echo-ttyrec-safe {
+    if [ "${IS_TTYREC}" = "true" ]; then
+        :
+    else
+        echo $@
+    fi
+}
+
 #ssh-agent
 # you always need to cal init_ssh_agent when you want to activate ssh-agent
 init_ssh_agent () {
@@ -198,7 +209,7 @@ source $HOME/.nvm/nvm.sh
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
-nvm use v6.9.0                  # for heroku
+nvm use v6.9.0 > /dev/null                 # for heroku
 if [ $? = 1 ]; then
     nvm install v6.9.0
 fi
@@ -264,12 +275,12 @@ rosenv_use_hook() {
 if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
     source $HOME/gprog/rosenv/rosenv.sh
     if [ "$OS" = "Darwin" ] ; then
-        rosenv use indigo
+        rosenv use indigo >/dev/null
     else
         if [ "$ROSENV_CURRENT" = "" ]; then
-            rosenv use jsk.hydro
+            rosenv use jsk.hydro >/dev/null
         else
-            rosenv use
+            rosenv use >/dev/null
         fi
     fi
 fi
@@ -304,6 +315,7 @@ fi
 
 ################################################################################
 # powerline
+if [ "${IS_TTYREC}" != "true" ]; then
 export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$HOME/.local/bin:$HOME/.cabal/bin:$PATH
 if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; then
@@ -322,6 +334,9 @@ if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; t
 \$ "
         export PROMPT="`echo $PROMPT | sed 's/_fallback)}/_fallback)} * 3/g'`"
     fi
+fi
+else
+    export PROMPT="$ "
 fi
 PROMPT2="%_%% "
 # SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
@@ -682,7 +697,7 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     if ! rvm list | grep ${ruby_version} >/dev/null ; then
         rvm install ruby-${ruby_version}
     fi
-    rvm use ruby-${ruby_version}
+    rvm use ruby-${ruby_version} >/dev/null
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
@@ -729,13 +744,13 @@ perl -wle \
 
 # zplug
 if [ -e $HOME/.zshrc.zplug ]; then
-    echo loading customizing setup file for zplug...
+    echo-ttyrec-safe loading customizing setup file for zplug...
     source $HOME/.zshrc.zplug
 fi
 
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
-    echo loading customizing setup file ...
+    echo-ttyrec-safe loading customizing setup file ...
     source $HOME/.zshrc.mine
 fi
 
