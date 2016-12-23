@@ -20,10 +20,6 @@ brew install ffmpeg --with-fdk-aac --with-ffplay --with-freetype \
      --with-libass --with-libquvi --with-libvorbis --with-libvpx --with-opus --with-x265
 
 
-cyanecho ">>>> install emacs"
-brew install emacs --with-cocoa
-brew linkapps emacs
-
 cyanecho ">>>> enabling cask"
 brew tap caskroom/cask
 
@@ -31,4 +27,4 @@ if [ ! $(sw_vers -productVersion | grep 10.12)] ; then
     brew cask install karabiner hyperswitch
 fi
 brew cask install google-chrome kindle dropbox vlc skype google-japanese-ime libreoffice \
-     meshlab
+     meshlab emacs
