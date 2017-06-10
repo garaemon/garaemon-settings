@@ -20,4 +20,4 @@ cyanecho ">>>> [install node.js ${target_node_version}]"
 nvm install ${target_node_version}
 
 cyanecho ">>>> [install npm packages]"
-npm install -g "${packages}"
+npm install -g ${packages}
