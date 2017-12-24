@@ -5,7 +5,7 @@ expr "${0}" : "/.*" > /dev/null || cwd=$(cd "${cwd}" && pwd)
 # shellcheck source=../lib.sh disable=SC1091
 source "${cwd}"/../lib.sh
 
-target_node_version=v6.9.0
+target_node_version=v8.9.3
 packages="shiba prettyjson npm-check yo bower grunt-cli gulp generator-electron babel-cli\
                 generator-python"
 

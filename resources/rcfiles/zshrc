@@ -63,7 +63,7 @@ bindkey -e
 if [ -e "${HOME}/.nvm/nvm.sh" ]; then
     echo sourcing nvm.sh
     source ${HOME}/.nvm/nvm.sh
-    nvm use v6.9.0 > /dev/null
+    nvm use v8.9.3 > /dev/null
 fi
 
 # setup pyenv
