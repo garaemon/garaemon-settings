@@ -571,16 +571,6 @@ alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 alias v="view"
 alias s="source ~/.zshrc"
 
-# if [ -e ~/.gvm/scripts/gvm ] ; then
-#     source ~/.gvm/scripts/gvm
-#     gvm use go1.4
-# fi
-
-export GOVM_ROOT=~/.govm
-export GOROOT=$GOVM_ROOT/versions/current
-export PATH=$GOROOT/bin:$PATH
-
-
 which hub 2>&1 >/dev/null
 if [ $? = 0 ]; then
     eval "$(hub alias -s)"
@@ -695,3 +685,5 @@ if [ -e $HOME/google-cloud-sdk/path.zsh.inc ]; then
 fi
 
 # export PATH=$PATH:Library/Frameworks/Mono.framework/Versions/Current/bin
+
+[[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
