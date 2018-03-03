@@ -251,42 +251,18 @@ alias roseus="rlwrap rosrun roseus roseus"
 # if [ -e $HOME/prog/jsk-ros-pkg-unreleased ]; then
 #     export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$HOME/prog/jsk-ros-pkg-unreleased
 # fi
-
-################################################################################
-# powerline
-if [ "${IS_TTYREC}" != "true" ]; then
-    PYTHON_SITE_DIR=$(python -c \
-                             "from distutils.sysconfig import get_python_lib; \
-print(get_python_lib())")
-    PYTHON_VERSION=$(python -c \
-                             "from distutils.sysconfig import get_python_version; \
-print(get_python_version())")
-    PYTHON_LOCAL_SITE_DIR="${HOME}/.local/lib/python${PYTHON_VERSION}/site-package"
-    POWERLINE_PATH_SUFFIX_FOR_ZSH="powerline/bindings/zsh/powerline.zsh"
-    if [ -e "${PYTHON_SITE_DIR}/${POWERLINE_PATH_SUFFIX_FOR_ZSH}" ]; then
-        POWERLINE_ZSH="${PYTHON_SITE_DIR}/${POWERLINE_PATH_SUFFIX_FOR_ZSH}"
-    elif [ -e "${PYTHON_LOCAL_SITE_DIR}/${POWERLINE_PATH_SUFFIX_FOR_ZSH}" ]; then
-        POWERLINE_ZSH="${PYTHON_LOCAL_SITE_DIR}/${POWERLINE_PATH_SUFFIX_FOR_ZSH}"
-    fi
-    if [ "$TERM" != "dumb" -a "$POWERLINE_LOADED" != "true" -a "$EMACS" != "t" ] ; then
-        source "${POWERLINE_ZSH}"
-    fi
-
-    newline_replacer="s@__NEWLINE__@\n@g"
-    POWERLINE_LOADED=true
-    if [ `uname` = Darwin ]; then
-        export PROMPT="`echo $PROMPT | gsed 's/)))/)) | gsed $newline_replacer )/g'`
-\$ "
-    else
-        export PROMPT="`echo $PROMPT | sed 's/)))/)) | sed $newline_replacer )/g'`
-\$ "
-        export PROMPT="`echo $PROMPT | sed 's/_fallback)}/_fallback)} * 3/g'`"
-    fi
-else
-    export PROMPT="\$ "
+# install by
+if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
+    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 fi
+if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+    # Edit zpreztorc to change prezto theme
+#    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
+    # Clear RPROMPT in order to increase copy-ability of console
+    RPROMPT=
+fi
+
 PROMPT2="%_%% "
-# SPROMPT="%r? べ, 別にあんたのために修正したんじゃないからね! [n,y,a,e]:"
 
 if [ `uname` != Darwin ]; then
     eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
