@@ -255,14 +255,20 @@ alias roseus="rlwrap rosrun roseus roseus"
 if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
     git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 fi
-if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-    # Edit zpreztorc to change prezto theme
-#    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
-    # Clear RPROMPT in order to increase copy-ability of console
-    RPROMPT=
+if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
+    prompt giddie
+    zstyle ':prezto:module:utility' safe-ops 'no'
 fi
-
 PROMPT2="%_%% "
+# re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
+# command line. It should be after `prompt giddie` command.
+function +vi-set_novcs_prompt_symbol {
+    _prompt_giddie_symbol='$'
+}
+function +vi-set_vcs_prompt_symbol {
+    _prompt_giddie_symbol='$'
+}
 
 if [ `uname` != Darwin ]; then
     eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
