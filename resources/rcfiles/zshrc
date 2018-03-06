@@ -11,6 +11,8 @@ case "$TERM" in
     ;;
 esac
 
+EDITOR=vim
+VISUAL=vim
 
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 # export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
