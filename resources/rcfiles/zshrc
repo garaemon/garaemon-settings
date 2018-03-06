@@ -259,6 +259,8 @@ if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
     source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
     prompt giddie
     zstyle ':prezto:module:utility' safe-ops 'no'
+    setopt hist_ignore_dups     # ignore duplication command history list
+    setopt share_history        # share command history data
 fi
 PROMPT2="%_%% "
 # re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
