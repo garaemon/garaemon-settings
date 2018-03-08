@@ -315,7 +315,8 @@ export PATH=$PATH:$HOME/gprog/snapshotter/bin
 export PATH=$PATH:$HOME/gprog/s3sync
 
 export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
-source $HOME/.emacs.d/check_for_upgrade.sh
+# update emacs.d
+# source $HOME/.emacs.d/check_for_upgrade.sh
 alias git-graph="git log --graph --decorate --oneline"
 
 #percol settings
