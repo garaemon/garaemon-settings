@@ -272,6 +272,12 @@ function +vi-set_vcs_prompt_symbol {
     _prompt_giddie_symbol='$'
 }
 
+if [[ ! -e ${HOME}/.zsh ]]; then
+    git clone https://github.com/rupa/z.git $HOME/.zsh
+fi
+source $HOME/.zsh/z.sh
+compctl -U -K _z_zsh_tab_completion z
+
 if [ `uname` != Darwin ]; then
     eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
     alias ls="ls -AF --color=auto"
