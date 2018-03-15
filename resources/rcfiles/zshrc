@@ -78,16 +78,6 @@ else
     export PYTHON_ROOT=""
 fi
 
-ruby_version="2.2.0"
-if [ -e $HOME/.rvm/scripts/rvm ]; then
-    source ~/.rvm/scripts/rvm
-    if ! rvm list | grep ${ruby_version} >/dev/null ; then
-        rvm install ruby-${ruby_version}
-    fi
-    rvm use ruby-${ruby_version} >/dev/null
-    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
-fi
-
 #alias
 # alias cp='cp -v'
 alias mv='mv -v'
@@ -286,43 +276,6 @@ else
     alias ls="gls -AF --color=auto"
 fi
 
-# shuf
-# if [ "$OS" = "Darwin" ] ; then
-#     which shuf > /dev/null
-#     if [ $@ != 0 ] ; then
-#         ln -sf $(which gshuf) ~/bin/shuf # for pokemonsay
-#     fi
-# fi
-
-### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
-
-export PATH=/Library/Haskell/bin:$PATH
-alias pandocpdf="pandoc -V documentclass=ltjarticle --latex-engine=lualatex -t pdf"
-
-export COOKIE_SECRET="hkfc-sakuchan"
-
-export BASIC_USER="garaemon"
-export BASIC_PASS="sakuchan"
-
-export PATH=/usr/local/mahout/bin:$PATH
-
-if [ -d $HOME/.rbenv/bin ]; then
-    export RBENV_ROOT=$HOME/.rbenv
-    export PATH="$RBENV_ROOT/bin:$PATH"
-    eval "$(rbenv init -)"
-    rbenv global 1.9.3-p448
-    export PATH=$HOME/.rbenv/versions/1.9.3-p448/bin:$PATH
-fi
-
-export PATH=$PATH:$HOME/gprog/snapshotter/bin
-export PATH=$PATH:$HOME/gprog/s3sync
-
-export PATH=$HOME/gprog/elastic-mapreduce-ruby:$PATH
-# update emacs.d
-# source $HOME/.emacs.d/check_for_upgrade.sh
-alias git-graph="git log --graph --decorate --oneline"
-
 #percol settings
 
 which percol > /dev/null
@@ -414,14 +367,51 @@ if [ $? = 0 ]; then
         rostopic info $(rostopic list | p)
     }
 
+    # code from http://stillpedant.hatenablog.com/entry/percol-cd-history
+    typeset -U chpwd_functions
+    CD_HISTORY_FILE=${HOME}/.cd_history_file # cd 履歴の記録先ファイル
+    function chpwd_record_history() {
+        echo $PWD >> ${CD_HISTORY_FILE}
+    }
+    chpwd_functions=($chpwd_functions chpwd_record_history)
+
+    # Chose directory using percol based on history.
+    # As the number of visits in the past increases, it comes to the top of the selection candidate
+    function percol_get_destination_from_history() {
+        sort ${CD_HISTORY_FILE} | uniq -c | sort -r | \
+            sed -e 's/^[ ]*[0-9]*[ ]*//' | \
+            sed -e s"/^${HOME//\//\\/}/~/" | \
+            percol | xargs echo
+    }
+
+    # widget to cd to the directory using percol based on history
+    function percol_cd_history() {
+        local destination=$(percol_get_destination_from_history)
+        [ -n $destination ] && cd ${destination/#\~/${HOME}}
+        #zle reset-prompt
+        zle accept-line
+    }
+    zle -N percol_cd_history
+
+    # insert directory based on history using percol
+    function percol_insert_history() {
+        local destination=$(percol_get_destination_from_history)
+        if [ $? -eq 0 ]; then
+            local new_left="${LBUFFER} ${destination} "
+            BUFFER=${new_left}${RBUFFER}
+            CURSOR=${#new_left}
+        fi
+        zle reset-prompt
+    }
+    zle -N percol_insert_history
+
+    bindkey '^[' percol_cd_history
+    alias j=percol_cd_history
     alias p=percol
 fi
 
 export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
 export PATH=$PATH:$HOME/.bin
-
-# added by travis gem
-[ -f $HOME/.travis/travis.sh ] && source $HOME/.travis/travis.sh
 
 if [ -f $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
     source $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
@@ -439,8 +429,6 @@ function sine_wave() {
     done
     echo
 }
-
-export TERM=xterm-256color
 
 # utility
 add_github_fork() {
@@ -585,6 +573,7 @@ alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
 alias v="view"
 alias s="source ~/.zshrc"
+alias git-graph="git log --graph --decorate --oneline"
 
 which hub 2>&1 >/dev/null
 if [ $? = 0 ]; then
@@ -604,36 +593,6 @@ git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
 git config --global alias.unmerged "diff --name-only --diff-filter=U"
 git config --global alias.remotes "remotes = remote -v"
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
-#git config --global commit.template ~/.gitmessage.txt
-
-ruby_version="2.2.0"
-rvm_gpg_key="409B6B1796C275462A1703113804BB82D39DC0E3"
-if [ ! -e $HOME/.rvm ]; then
-    if [ "$OS" != "Darwin" ] ; then
-        gpg --keyserver hkp://keys.gnupg.net --recv-keys ${rvm_gpg_key}
-    fi
-    \curl -sSL https://get.rvm.io | bash -s stable
-fi
-
-# if [ "$OS" != "Darwin" ] ; then
-#     tmux source-file ~/.tmux.conf
-# fi
-
-if [ "$OS" != "Darwin" ] ; then
-    $HOME/gprog/garaemon-settings/scripts/set_wallpaper.sh
-fi
-
-# fix ~/Pictures directory
-if [ "$OS" != "Darwin" ] ; then
-    if [ -e ~/Dropbox ]; then
-        if [ -e ~/Pictures -a ! -L ~/Pictures ]; then
-            mkdir -p ~/Dropbox/Pictures/$(hostname)
-            cp -r ~/Pictures/* ~/Dropbox/Pictures/$(hostname)/
-            rm -rf ~/Pictures
-            ln -sf ~/Dropbox/Pictures/$(hostname) ~/Pictures
-        fi
-    fi
-fi
 
 # no ROS environment
 # export ROSLAUNCH_SSH_UNKNOWN=1
@@ -683,10 +642,6 @@ function restart-dns {
     fi
 }
 
-
-# export LUA_PATH="$LUA_PATH";"$HOME"/gprog/torch-toolbox/demo-core
-# . /Users/ryohei/gprog/torch/install/bin/torch-activate
-
 export PATH=$PATH:$HOME/gprog/depot_tools
 export PATH=$PATH:$HOME/Library/Android/sdk/tools
 
@@ -699,6 +654,20 @@ if [ -e $HOME/google-cloud-sdk/path.zsh.inc ]; then
     source $HOME/google-cloud-sdk/path.zsh.inc
 fi
 
-# export PATH=$PATH:Library/Frameworks/Mono.framework/Versions/Current/bin
-
 [[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
+
+ruby_version="2.2.0"
+if [ -e $HOME/.rvm/scripts/rvm ]; then
+    source ~/.rvm/scripts/rvm
+    if ! rvm list | grep "${ruby_version}" >/dev/null ; then
+        rvm install "ruby-${ruby_version}"
+    fi
+    rvm use ruby-${ruby_version} >/dev/null
+    # update ~/.rvmrc to supress warning message
+    echo rvm_silence_path_mismatch_check_flag=1 > ~/.rvmrc
+    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+fi
+
+
+# hack to return 0 from `source ~/.zshrc`
+echo -n
