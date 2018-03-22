@@ -1,0 +1,107 @@
+{
+    "title": "Command as option in Terminal Apps",
+    "rules": [
+        {
+            "description": "⌘ as option in terminal",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "left_command",
+                        "modifiers": {
+                            "optional": [
+                                "any"
+                            ]
+                        }
+                    },
+                    "to": [
+                        {
+                            "key_code": "left_option"
+                        }
+                    ],
+                    "conditions": [
+                        {
+                            "type": "frontmost_application_if",
+                            "bundle_identifiers": [
+                                "^com\\.apple\\.Terminal$",
+                                "^com\\.googlecode\\.iterm2$",
+                                "^co\\.zeit\\.hyperterm$",
+                                "^co\\.zeit\\.hyper$",
+                                "^io\\.alacritty$",
+                                "^net\\.kovidgoyal\\.kitty$"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "eisu as option in terminal",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "japanese_eisuu",
+                        "modifiers": {
+                            "optional": [
+                                "any"
+                            ]
+                        }
+                    },
+                    "to": [
+                        {
+                            "key_code": "left_option"
+                        }
+                    ],
+                    "conditions": [
+                        {
+                            "type": "frontmost_application_if",
+                            "bundle_identifiers": [
+                                "^com\\.apple\\.Terminal$",
+                                "^com\\.googlecode\\.iterm2$",
+                                "^co\\.zeit\\.hyperterm$",
+                                "^co\\.zeit\\.hyper$",
+                                "^io\\.alacritty$",
+                                "^net\\.kovidgoyal\\.kitty$"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "eisu as command in not terminal",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "japanese_eisuu",
+                        "modifiers": {
+                            "optional": [
+                                "any"
+                            ]
+                        }
+                    },
+                    "to": [
+                        {
+                            "key_code": "left_command"
+                        }
+                    ],
+                    "conditions": [
+                        {
+                            "type": "frontmost_application_unless",
+                            "bundle_identifiers": [
+                                "^com\\.apple\\.Terminal$",
+                                "^com\\.googlecode\\.iterm2$",
+                                "^co\\.zeit\\.hyperterm$",
+                                "^co\\.zeit\\.hyper$",
+                                "^io\\.alacritty$",
+                                "^net\\.kovidgoyal\\.kitty$"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
