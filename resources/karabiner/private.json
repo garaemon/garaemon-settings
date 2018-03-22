@@ -87,6 +87,11 @@
                             "key_code": "left_command"
                         }
                     ],
+                    "to_if_alone": [
+                        {
+                            "key_code": "japanese_eisuu"
+                        }
+                    ],
                     "conditions": [
                         {
                             "type": "frontmost_application_unless",
