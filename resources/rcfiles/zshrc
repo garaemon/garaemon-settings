@@ -579,7 +579,13 @@ which hub 2>&1 >/dev/null
 if [ $? = 0 ]; then
     eval "$(hub alias -s)"
 fi
+if [[ ! -e $HOME/.local/share/diff-so-fancy ]] ; then
+    git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
+fi
+export PATH=$PATH:$HOME/.local/share/diff-so-fancy
+
 # git aliases
+git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
 git config --global alias.see browse
 git config --global alias.pr pull-request
 git config --global alias.co checkout
