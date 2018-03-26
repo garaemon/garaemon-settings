@@ -130,17 +130,6 @@ elif [ "$OS" = "Darwin" ] ; then
 fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
-if [ "$OS" = "Darwin" ] ; then
-    alias e='$(brew --prefix emacs)/bin/emacsclient -n'
-    :
-else
-    alias e='emacsclient -n'
-    alias emacs='emacs-snapshot'
-fi
-
-function e() {
-    emacsclient -n $(echo $1 | cut -f1 -d:)
-}
 
 export PATH=$PATH:$HOME/gprog/platex-create-pkg
 export PATH=$PATH:$HOME/gprog/spark
@@ -673,6 +662,18 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     echo rvm_silence_path_mismatch_check_flag=1 > ~/.rvmrc
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
+
+if [ "$OS" = "Darwin" ] ; then
+    alias e='$(brew --prefix emacs)/bin/emacsclient -n'
+    :
+else
+    alias e='emacsclient -n'
+    alias emacs='emacs-snapshot'
+fi
+
+function e() {
+    emacsclient -n $(echo $1 | cut -f1 -d:)
+}
 
 
 # hack to return 0 from `source ~/.zshrc`
