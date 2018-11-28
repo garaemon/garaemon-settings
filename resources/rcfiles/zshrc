@@ -664,7 +664,7 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
 fi
 
 if [ "$OS" = "Darwin" ] ; then
-    alias e='$(brew --prefix emacs)/bin/emacsclient -n'
+    alias e='emacsclient -n'
     :
 else
     alias e='emacsclient -n'
@@ -674,7 +674,6 @@ fi
 function e() {
     emacsclient -n $(echo $1 | cut -f1 -d:)
 }
-
 
 # hack to return 0 from `source ~/.zshrc`
 echo -n
