@@ -674,5 +674,9 @@ function e() {
     emacsclient -n $(echo $1 | cut -f1 -d:)
 }
 
+if [ -e $HOME/catkin_ws/devel/setup.zsh ]; then
+    source ~/catkin_ws/devel/setup.zsh
+fi
+
 # hack to return 0 from `source ~/.zshrc`
 echo -n
