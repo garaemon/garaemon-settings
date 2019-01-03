@@ -668,7 +668,6 @@ if [ "$OS" = "Darwin" ] ; then
     :
 else
     alias e='emacsclient -n'
-    alias emacs='emacs-snapshot'
 fi
 
 function e() {
