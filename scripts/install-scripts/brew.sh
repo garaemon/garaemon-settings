@@ -26,5 +26,5 @@ brew tap caskroom/cask
 if [ ! $(sw_vers -productVersion | grep 10.12)] ; then
     brew cask install karabiner hyperswitch
 fi
-brew cask install google-chrome kindle dropbox vlc skype google-japanese-ime libreoffice \
+brew cask install kindle dropbox vlc skype google-japanese-ime libreoffice \
      meshlab emacs iterm2
