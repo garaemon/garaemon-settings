@@ -594,9 +594,9 @@ alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 # rossetlocal >/dev/null 2>&1
 
 # for emacs
-#perl -wle \
-#    'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
-#    PATH > ~/.emacs.d/shellenv.el
+perl -wle \
+   'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
+   PATH > ~/.emacs.d/shellenv.el
 
 # automatically clone repositories
 # if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
