@@ -94,7 +94,7 @@ function echo-ttyrec-safe {
     fi
 }
 
-export DISPLAY=:0
+# export DISPLAY=:0
 
 export PATH=$PATH:$HOME/gprog/ttygif
 export PATH=$PATH:$HOME/gprog/seq2gif
