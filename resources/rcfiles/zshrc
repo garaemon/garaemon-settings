@@ -663,12 +663,7 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
-if [ "$OS" = "Darwin" ] ; then
-    alias e='emacsclient -n'
-    :
-else
-    alias e='emacsclient -n'
-fi
+alias e='emacsclient -n'
 
 function e() {
     emacsclient -n $(echo $1 | cut -f1 -d:)
