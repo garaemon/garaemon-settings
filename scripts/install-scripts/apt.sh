@@ -14,7 +14,7 @@ libxml2-dev librsvg2-dev libotf-dev libm17n-dev \
 libgpm-dev libgnutls-dev libgconf2-dev libdbus-1-dev glc \
 r-base ess rlwrap golang xclip w3m libzlma-dev quicksynergy \
 compizconfig-settings-manager imagemagick libicu-dev conky conky-all \
-silversearcher-ag"
+silversearcher-ag ubuntu-gnome-desktop"
 
 runsudo apt-get --quiet update
 runsudo apt-get --quiet install aptitude
