@@ -4,13 +4,10 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 
 . $cwd/../lib.sh
 if [ `uname` == "Linux" ]; then
-    if [ ! -e $HOME/.local/bin/emacs ]; then
-	cyanecho ">>>> [compiling emacs]"
-	cd $GPROG_DIR/emacs
-	./autogen.sh && ./configure --prefix=$HOME/.local
-	make -j$(grep -c processor /proc/cpuinfo)
-	make install
-    fi
+    sudo add-apt-repository ppa:kelleyk/emacs -y
+    sudo apt update
+    sudo apt install emacs26 -y
+    sudo update-alternatives --set emacs /usr/bin/emacs26
 fi
 
 cyanecho ">>>> [installing .emacs]"
