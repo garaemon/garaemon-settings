@@ -10,7 +10,7 @@ garaemon/garaemon-settings.git garaemon/rosenv.git \
 garaemon/til.git \
 holman/spark.git joemiller/spark-ping.git seebi/dircolors-solarized.git \
 tomislav/osx-terminal.app-colors-solarized.git yonchu/shell-color-pallet.git \
-sigurdga/gnome-terminal-colors-solarized.git \
+chriskempson/base16-gnome-terminal \
 saitoha/seq2gif.git \
 garaemon/ffmpeg-movie-builder.git \
 possatti/pokemonsay.git \

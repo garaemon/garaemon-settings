@@ -50,5 +50,7 @@ runscript font.sh
 #if [ `uname` == "Linux" ]; then
 #    runscript ros.sh
 #fi
+# tmp support
+~/gprog/base16-gnome-terminal/base16-solarized.dark.sh
 runscript node.sh
 source ~/.nvm/nvm.sh
