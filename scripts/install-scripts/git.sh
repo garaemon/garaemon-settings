@@ -20,6 +20,7 @@ if [ `uname` == "Linux" ]; then
   runsudo apt-get build-dep git # for 14.04
 	git clone https://github.com/git/git.git
 	cd git
+    git checkout v2.20.0
 	make configure
 	./configure --prefix=$HOME/.local
 	make all -j8
