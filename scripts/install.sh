@@ -35,7 +35,7 @@ runscript git.sh
 runscript zsh.sh
 
 #runscript go.sh
-# runscript hub.sh
+runscript hub.sh
 if [ `uname` == "Linux" ]; then
     runscript ruby.sh
     source ~/.rvm/scripts/rvm
