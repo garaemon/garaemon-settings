@@ -5,11 +5,12 @@ expr "${0}" : "/.*" > /dev/null || cwd=`(cd "${cwd}" && pwd)`
 . $cwd/../lib.sh
 
 PACKAGES="travis github-pages"
-RUBY_VERSION="ruby-2.2.0"
+RUBY_VERSION="ruby-2.6.0"
 cyanecho ">>>> [installing rvm]"
 
 if [ ! -e ~/.rvm ]; then
-    gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+    curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
+    curl -sSL https://rvm.io/pkuczynski.asc | gpg2 --import -
     curl -sSL https://get.rvm.io | bash -s stable
 # else
 #     rvm get stable
@@ -24,5 +25,3 @@ rvm use $RUBY_VERSION
 cyanecho ">>>> [installing $PACKAGES]"
 gem install $PACKAGES
 
-gem install rack -v 1.5.2
-gem install gollum
