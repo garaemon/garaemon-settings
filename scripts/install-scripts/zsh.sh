@@ -14,3 +14,10 @@ cyanecho ">>>> [installing auto-fu.zsh]"
 if [ ! -e ~/.auto-fu ]; then
     git clone https://github.com/hchbaw/auto-fu.zsh.git ~/.auto-fu
 fi
+
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zlogin ~/.zlogin
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zlogout ~/.zlogout
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zpreztorc ~/.zpreztorc
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zprofile ~/.zprofile
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrnv ~/.zshrnv
+ln -sf $GPROG_DIR/garaemon-settings/resources/rcfiles/zshrc.zplug ~/.zshrc.zplug
