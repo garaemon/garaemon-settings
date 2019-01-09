@@ -679,3 +679,6 @@ fi
 
 # hack to return 0 from `source ~/.zshrc`
 echo -n
+
+# added by travis gem
+[ -f /Users/rueda/.travis/travis.sh ] && source /Users/rueda/.travis/travis.sh
