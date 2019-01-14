@@ -1,0 +1,4 @@
+- name: Create ~/gprog directory
+  file:
+    path: ~/gprog
+    state: directory
