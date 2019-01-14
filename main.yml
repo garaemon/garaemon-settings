@@ -1,3 +1,5 @@
 - hosts: all
   roles:
     - peco
+    - role: apt
+      when: ansible_os_family == "Debian"

@@ -1,0 +1,56 @@
+- name: Install apt packages
+  apt:
+    name: "{{packages}}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+      - anthy-el
+      - build-essential
+      - compizconfig-settings-manager
+      - conky
+      - conky-all
+      - curl
+      - ess
+      - ffmpeg
+      - git-core
+      - glc
+      - golang
+      - htop
+      - imagemagick
+      - jq
+      - libdbus-1-dev
+      - libgconf2-dev
+      - libgif-dev
+      - libgnutls-dev
+      - libgpm-dev
+      - libgtk2.0-dev
+      - libicu-dev
+      - libjpeg-dev
+      - libm17n-dev
+      - libncurses5-dev
+      - libotf-dev
+      - libpng-dev
+      - librsvg2-dev
+      - libtiff4-dev
+      - libxml2-dev
+      - libxpm-dev
+      - libzlma-dev
+      - man
+      - python-pip
+      - quicksynergy
+      - quicksynergy
+      - r-base
+      - rlwrap
+      - silversearcher-ag
+      - ssh
+      - tcpflow
+      - texinfo
+      - tmux
+      - toilet
+      - ttyrec
+      - ubuntu-gnome-desktop
+      - vim
+      - w3m
+      - xclip
+      - zsh
