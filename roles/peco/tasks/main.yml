@@ -1,0 +1,22 @@
+- name: Get latest peco version
+  shell: >
+    curl -sI https://github.com/peco/peco/releases/latest | awk -F '/' '/^Location:/{print $NF}'
+  register: peco_latest_version
+
+- name: Download latest peco
+  get_url: url=https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_darwin_amd64.zip dest=/tmp/peco_darwin_amd64.zip
+  register: download_peco
+
+- name: Extract peco
+  when: download_peco.changed
+  command: unzip /tmp/peco_darwin_amd64.zip chdir=/tmp/
+
+- name: Copy to .local/bin/
+  when: download_peco.changed
+  command: cp /tmp/peco_darwin_amd64/peco ~/.local/bin
+
+- name: chmod peco
+  when: download_peco.changed
+  file:
+    path: ~/.local/bin/peco
+    mode: 0755

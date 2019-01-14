@@ -62,6 +62,8 @@ setopt hist_ignore_dups     # ignore duplication command history list
 setopt share_history        # share command history data
 bindkey -e
 
+export PATH=$HOME/.local/bin:$PATH
+
 if [ -e "${HOME}/.nvm/nvm.sh" ]; then
     echo sourcing nvm.sh
     source ${HOME}/.nvm/nvm.sh
@@ -265,138 +267,17 @@ else
     alias ls="gls -AF --color=auto"
 fi
 
-#percol settings
-
-which percol > /dev/null
+#peco settings
+which peco > /dev/null
 if [ $? = 0 ]; then
-    function percol_select_history() {
-        local tac
-        which gtac >/dev/null && tac="gtac" || { which tac >/dev/null && tac="tac" || { tac="tail -r" } }
-        BUFFER=$(fc -l -n 1 | eval $tac | percol --query "$LBUFFER")
-        CURSOR=$#BUFFER         # move cursor
-        zle -R -c               # refresh
-    }
-
-    zle -N percol_select_history
-    bindkey '^R' percol_select_history
-
-
-    function search-rostopic-by-percol(){
-        LBUFFER=$LBUFFER$(rostopic list | percol)
-        zle -R -c
-    }
-    zle -N search-rostopic-by-percol
-    bindkey '^[r' search-rostopic-by-percol
-
-    function search-document-by-percol(){
-        DOCUMENT_DIR="\
-/path/to/doc/directory1
-/path/to/doc/directory2"
-        SELECTED_FILE=$(echo $DOCUMENT_DIR | xargs find | \
-            grep -E "\.(pdf|txt|odp|odt|ods)$" | percol --match-method regex)
-        if [ $? -eq 0 ]; then
-            gnome-open $SELECTED_FILE
-        fi
-    }
-    alias sd='search-document-by-percol'
-
-    function insert-file-by-percol(){
-        LBUFFER=$LBUFFER$(ls -A | percol --match-method regex | tr '\n' ' ' | \
-            sed 's/[[:space:]]*$//') # delete trailing space
-        zle -R -c
-    }
-    zle -N insert-file-by-percol
-    bindkey '^[c' insert-file-by-percol
-
-    function percol_select_dirstack_entry() {
-        BUFFER=$(dirs -pl | percol --query "$LBUFFER")
+    function peco-history-selection() {
+        BUFFER=`history -n 1 | tail -r  | awk '!a[$0]++' | peco`
         CURSOR=$#BUFFER
-        zle -R -c
-    }
-    zle -N percol_select_dirstack_entry
-    bindkey '^[d' percol_select_dirstack_entry
-
-    function pk() {
-        ps aux | percol | awk '{ print $2 }' | xargs kill
-    }
-
-    function rosn() {
-        if [ "$1" = "" ]; then
-            topic=$(rosnode list | percol | xargs -n 1 rosnode info | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
-        else
-            topic=$(rosnode info $1 | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
-        fi
-        if [ "$topic" != "" ] ; then
-            rost $topic
-        fi
-    }
-    function rost() {
-        if [ "$1" = "" ]; then
-            node=$(rostopic list | percol | xargs -n 1 rostopic info | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
-        else
-            node=$(rostopic info $1 | percol | sed -e 's%.* \* \(/[/a-zA-Z0-9_]*\) .*%\1%')
-        fi
-        if [ "$node" != "" ] ; then
-            rosn $node
-        fi
-    }
-    function grepe() {
-        grep $@ | percol |  sed -e 's/^\([^:]*\):.*$'/\\1/ | xargs -n 1 emacsclient -n
-    }
-
-    function rosm() {
-        rosmsg list | percol | xargs -n 1 rosmsg show
-    }
-
-    function rostopic_echo_p () {
-        rostopic echo $(rostopic list | p)
-    }
-
-    function rostopic_info_p () {
-        rostopic info $(rostopic list | p)
-    }
-
-    # code from http://stillpedant.hatenablog.com/entry/percol-cd-history
-    typeset -U chpwd_functions
-    CD_HISTORY_FILE=${HOME}/.cd_history_file # cd 履歴の記録先ファイル
-    function chpwd_record_history() {
-        echo $PWD >> ${CD_HISTORY_FILE}
-    }
-    chpwd_functions=($chpwd_functions chpwd_record_history)
-
-    # Chose directory using percol based on history.
-    # As the number of visits in the past increases, it comes to the top of the selection candidate
-    function percol_get_destination_from_history() {
-        sort ${CD_HISTORY_FILE} | uniq -c | sort -r | \
-            sed -e 's/^[ ]*[0-9]*[ ]*//' | \
-            sed -e s"/^${HOME//\//\\/}/~/" | \
-            percol | xargs echo
-    }
-
-    # widget to cd to the directory using percol based on history
-    function percol_cd_history() {
-        local destination=$(percol_get_destination_from_history)
-        [ -n $destination ] && cd ${destination/#\~/${HOME}}
-        #zle reset-prompt
-        zle accept-line
-    }
-    zle -N percol_cd_history
-
-    # insert directory based on history using percol
-    function percol_insert_history() {
-        local destination=$(percol_get_destination_from_history)
-        if [ $? -eq 0 ]; then
-            local new_left="${LBUFFER} ${destination} "
-            BUFFER=${new_left}${RBUFFER}
-            CURSOR=${#new_left}
-        fi
         zle reset-prompt
     }
-    zle -N percol_insert_history
 
-    bindkey '^[' percol_cd_history
-    alias j=percol_cd_history
-    alias p=percol
+    zle -N peco-history-selection
+    bindkey '^R' peco-history-selection
 fi
 
 export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
@@ -492,7 +373,6 @@ until-success() {
     done
 }
 
-export PATH=$HOME/.local/bin:$PATH
 export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
 export PATH=$PATH:$HOME/gprog/pltcli/bin
 export PATH=$PATH:$HOME/gprog/simpler-dot
