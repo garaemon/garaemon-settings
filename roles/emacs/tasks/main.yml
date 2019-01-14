@@ -12,3 +12,18 @@
     src: ~/.emacs.d/dot.emacs
     dest: ~/.emacs
     state: link
+- name: Add ppa to install emacs26
+  apt_repository:
+    repo: ppa:kelleyk/emacs
+  when: ansible_os_family == "Debian"
+  become: yes
+- name: Install emacs
+  apt:
+    name: emacs26
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+  become: yes
+- name: Use emacs26 as default emacs
+  command: update-alternatives --set emacs /usr/bin/emacs26
+  become: yes
+  when: ansible_os_family == "Debian"
