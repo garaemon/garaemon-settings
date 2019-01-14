@@ -1,3 +1,6 @@
 [submodule "roles/pyenv"]
 	path = roles/pyenv
 	url = https://github.com/markosamuli/ansible-pyenv.git
+[submodule "roles/rvm"]
+	path = roles/rvm
+	url = https://github.com/rvm/rvm1-ansible.git

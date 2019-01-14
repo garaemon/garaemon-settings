@@ -18,6 +18,7 @@
       - clang-format
       - shellcheck
       - zlib
+      - gpg
 - name: Install ffmpeg with special options
   homebrew:
     name: ffmpeg
