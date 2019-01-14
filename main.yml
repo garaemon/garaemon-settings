@@ -1,7 +1,23 @@
 - hosts: all
   roles:
-    - peco
+    - zlib
+    - pyenv
     - role: apt
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - peco
+  vars:
+    # pyenv variables
+    # Initialize shell profile scripts
+    pyenv_init_shell: yes
+    # Python versions to install
+    pyenv_python_versions:
+      - "2.7.10"
+      - "3.7.2"
+    # Set global pyenv version
+    pyenv_global: "3.7.2"
+    # Define the shell profile scripts to initialiaze
+    pyenv_shell_profile_scripts:
+      - .bashrc
+      - .zshrc

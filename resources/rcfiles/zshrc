@@ -70,16 +70,6 @@ if [ -e "${HOME}/.nvm/nvm.sh" ]; then
     nvm use v8.9.3 > /dev/null
 fi
 
-# setup pyenv
-if [ -e "${HOME}/.pyenv" ]; then
-    export PYENV_ROOT=$HOME/.pyenv
-    export PATH=${PYENV_ROOT}/bin:${PATH}
-    eval "$(pyenv init -)"
-    export PYTHON_ROOT=$(pyenv prefix)
-else
-    export PYTHON_ROOT=""
-fi
-
 #alias
 # alias cp='cp -v'
 alias mv='mv -v'
@@ -557,5 +547,9 @@ if [ -e $HOME/catkin_ws/devel/setup.zsh ]; then
     source ~/catkin_ws/devel/setup.zsh
 fi
 
-# hack to return 0 from `source ~/.zshrc`
-echo -n
+# BEGIN ANSIBLE MANAGED BLOCK: pyenv
+if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
+  source $HOME/.pyenv/.pyenvrc
+  source $HOME/.pyenv/completions/pyenv.zsh
+fi
+# END ANSIBLE MANAGED BLOCK: pyenv
