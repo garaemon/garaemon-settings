@@ -1,0 +1,9 @@
+- name: Create ~/.config directory
+  file:
+    path: ~/.config
+    state: directory
+- name: Synlink for powerline
+  file:
+    src: "{{ansible_env.PWD}}/resources/powerline"
+    dest: ~/.config/powerline
+    state: link
