@@ -1,11 +1,21 @@
 - hosts: all
   roles:
+    - base
+    - vim
+    - tmux
+    - zsh
+    - emacs
+    - powerline
     - zlib
-    - pyenv
     - role: apt
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - pyenv
+    - rvm
+    - nvm
+    - font
+    - ispell
     - peco
   vars:
     # pyenv variables
@@ -21,3 +31,7 @@
     pyenv_shell_profile_scripts:
       - .bashrc
       - .zshrc
+    # rvm variables
+    rvm1_rubies:
+      - 'ruby-2.6.0'
+    rvm1_user: '{{ansible_env.USER}}'
