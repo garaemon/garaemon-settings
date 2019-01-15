@@ -1,0 +1,4 @@
+- name: Setup .aspell.conf
+  lineinfile:
+    line: "lang en_US"
+    path: ~/.aspell.conf
