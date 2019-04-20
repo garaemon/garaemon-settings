@@ -1,0 +1,7 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: current-directory
+# key: current-directory
+# binding: direct-keybinding
+# --
+cwd=\`dirname "\${0}"\`
+expr "\${0}" : "/.*" > /dev/null || cwd=\`(cd "\${cwd}" && pwd)\`

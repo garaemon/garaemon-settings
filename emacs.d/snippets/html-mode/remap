@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: remap
+# key: remap
+# binding: direct-keybinding
+# --
+<remap from="$1" to="$2" />

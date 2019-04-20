@@ -1,0 +1,7 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: initialize diagnostic_updater
+# key: diagnostic_updater
+# binding: direct-keybinding
+# --
+  diagnostic_updater_.reset(new diagnostic_updater::Updater);
+  diagnostic_updater_->setHardwareID(getName());

@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: add-diagnostic-updater
+# key: add-diagnostic-updater
+# binding: direct-keybinding
+# --
+    diagnostic_updater_->add("$1", boost::bind(&$2,
+                                                           this,
+                                                           _1));

@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: rviz-pluginlib
+# key: rviz-pluginlib
+# binding: direct-keybinding
+# --
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS( $1::$2, rviz::Display )

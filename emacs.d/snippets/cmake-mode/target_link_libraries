@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: target_link_libraries
+# key: target_link_libraries
+# binding: direct-keybinding
+# --
+target_link_libraries($1 $2)

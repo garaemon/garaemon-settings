@@ -1,0 +1,7 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: depend
+# key: depend
+# binding: direct-keybinding
+# --
+<build_depend>$1</build_depend>
+<run_depend>$1</run_depend>

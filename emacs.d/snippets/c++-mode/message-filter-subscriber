@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: message-filter-subscriber
+# key: message-filter-subscriber
+# binding: direct-keybinding
+# --
+message_filters::Subscriber<$1> sub_$2_;
