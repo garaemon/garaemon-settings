@@ -1,0 +1,11 @@
+language: c
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:kelleyk/emacs'
+    packages:
+      - emacs26
+before_script:
+  - sudo update-alternatives --set emacs /usr/bin/emacs26
+script:
+  - emacs -nw -Q -batch update.el
