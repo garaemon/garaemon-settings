@@ -16,4 +16,4 @@ script:
   - ls -l ~/gprog
   - ls -l ~/gprog/garaemon-settings
   - ansible --version
-  - ansible-playbook main.yml -i "localhost," -c local --become
+  - ansible-playbook main.yml -i "localhost," -c local
