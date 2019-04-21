@@ -9,4 +9,4 @@ addons:
       - ansible
 script:
   - ansible --version
-  - ansible-playbook main.yml -i "localhost," -c local
+  - ansible-playbook main.yml -i "localhost," -c local --become
