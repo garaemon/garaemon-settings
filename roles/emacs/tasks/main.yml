@@ -2,13 +2,13 @@
   git:
     repo: git@github.com:garaemon/emacs.d
     dest: ~/gprog/emacs.d
-  when: ansible_env.TRAVIS != true
+  when: ansible_env.TRAVIS != "true"
 
 - name: Clone emacs.d
   git:
     repo: https://github.com/garaemon/emacs.d
     dest: ~/gprog/emacs.d
-  when: ansible_env.TRAVIS == true
+  when: ansible_env.TRAVIS == "true"
 
 - name: Symlink for emacs.d
   file:
