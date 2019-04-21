@@ -7,6 +7,5 @@ addons:
       - sourceline: 'ppa:ansible/ansible'
     packages:
       - ansible
-      - acpi-support # for /usr/share/acpi-support directory
 script:
   - ansible-playbook main.yml -i "localhost," -c local
