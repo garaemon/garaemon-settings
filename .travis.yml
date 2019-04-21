@@ -8,12 +8,10 @@ addons:
     packages:
       - ansible
       - dirmngr                 # Required by gpg command
-script:
+before_script:
   - mkdir -p ~/gprog
   - cp -r $PWD ~/gprog/garaemon-settings
-  - pwd
-  - ls -l
-  - ls -l ~/gprog
-  - ls -l ~/gprog/garaemon-settings
+  - rm ~/.zshrc
+script:
   - ansible --version
   - ansible-playbook main.yml -i "localhost," -c local
