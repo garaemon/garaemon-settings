@@ -1,0 +1,4 @@
+- name: Clone dircolors-solarized
+  git:
+    repo: https://github.com/seebi/dircolors-solarized.git
+    dest: ~/gprog/dircolors-solarized

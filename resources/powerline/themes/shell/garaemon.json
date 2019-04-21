@@ -1,0 +1,63 @@
+{
+  "segments": {
+    "left": [
+      {
+        "function": "powerline.segments.shell.last_pipe_status"
+      },
+      {
+        "function": "powerline.segments.common.vcs.branch",
+        "before": " "
+      },
+      {
+        "function": "powerline.segments.common.env.environment",
+        "args": {
+          "variable": "ROBOT"
+        }
+      },
+      {
+        "function": "powerline.segments.common.env.virtualenv"
+      },
+      {
+        "type": "string",
+        "highlight_groups": ["newline"],
+        "contents": "__NEWLINE__"
+      },
+      {
+        "function": "powerline.segments.shell.cwd",
+        "use_path_separator": true,
+        "args": {
+          "dir_limit_depth": 4
+        }
+
+      },
+      {
+        "type": "string",
+        "highlight_groups": ["newline"],
+        "contents": "__NEWLINE__"
+      },
+      {
+        "function": "powerline.segments.common.env.user",
+        "priority": 10
+      },
+      {
+        "function": "powerline.segments.common.net.hostname",
+        "priority": 10,
+        "before": "@",
+        "after": ":",
+        "args": {
+          "only_if_ssh": false
+        }
+      },
+      {
+ "highlight_groups": ["prompt"],
+
+        "type": "string",
+        "contents": "Yes, Master?"
+      },
+      {
+        "function": "powerline.segments.shell.jobnum",
+        "priority": 10
+      }
+    ]
+  }
+}

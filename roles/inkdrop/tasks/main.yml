@@ -1,0 +1,10 @@
+- name: Creating directory for keymap.cson
+  file:
+    path: ~/.config/inkdrop
+    state: directory
+- name: Symlink keymap.cson for inkdrop app
+  file:
+    src: "{{role_path}}/files/keymap.cson"
+    dest: ~/.config/inkdrop/keymap.cson
+    state: link
+    force: yes

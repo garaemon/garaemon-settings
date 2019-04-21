@@ -1,0 +1,17 @@
+# -*- mode: shell-script -*-
+# if running bash
+if [ -n "$BASH_VERSION" ]; then
+    # exec zsh if zsh exists
+    [ -x /usr/local/bin/zsh ] && SHELL=/usr/local/bin/zsh exec /usr/local/bin/zsh
+    [ -x /usr/bin/zsh ] && SHELL=/usr/bin/zsh exec /usr/bin/zsh
+    [ -x /bin/zsh ] && SHELL=/bin/zsh exec /bin/zsh
+    # include .bashrc if it exists
+    if [ -f "$HOME/.bashrc" ]; then
+        . "$HOME/.bashrc"
+    fi
+fi
+                                
+
+export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*

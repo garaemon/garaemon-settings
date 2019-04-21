@@ -1,0 +1,536 @@
+# -*- mode: shell-script -*-
+# -*- coding: utf-8 -*-
+umask 022
+
+EDITOR=vim
+VISUAL=vim
+
+# export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+# export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
+export PATH=/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin
+# export LC_ALL=en_US.UTF-8
+
+if [[ $TERM = dumb ]]; then
+    return
+fi
+
+
+# for emacs tramp
+case "$TERM" in
+  dumb | emacs)
+    PROMPT="%m:%~> "
+    unsetopt zle
+    return
+    ;;
+esac
+
+#zsh
+fpath=(~/.zsh_fpath $fpath)
+autoload -U colors
+colors
+
+# Setup completion before `autoload`.
+if [[ -e $HOME/.completions ]]; then
+    fpath=($HOME/.completions $fpath)
+fi
+
+autoload -Uz compinit
+compinit
+setopt correct
+setopt beep
+autoload -Uz add-zsh-hook
+
+setopt list_types
+setopt auto_list
+setopt auto_menu
+setopt magic_equal_subst
+setopt auto_cd
+setopt auto_param_keys
+setopt pushd_ignore_dups
+setopt auto_pushd
+setopt interactive_comments # ignore hash in command line
+setopt magic_equal_subst # complete after = like --prefix=/usr/locl
+zstyle ':completion:*' menu select interactive
+#setopt menu_complete
+
+compdef -d scp
+compdef -d rsync
+
+watch="all"
+#log
+
+local GREEN=$'%{\e[1;32m%}'
+local YELLOW=$'%{\e[1;33m%}'
+local BLUE=$'%{\e[1;34m%}'
+local LIGHT_BLUE=$'%{\e[1;36m%}'
+local DEFAULT=$'%{\e[1;0m%}'
+
+
+HISTFILE=~/.zsh_history
+HISTSIZE=5000
+SAVEHIST=5000
+setopt hist_ignore_dups     # ignore duplication command history list
+setopt share_history        # share command history data
+bindkey -e
+
+export PATH=$HOME/.local/bin:$PATH
+
+if [ -e "${HOME}/.nvm/nvm.sh" ]; then
+    echo sourcing nvm.sh
+    # --no-use option to speed up source nvm.sh
+    source ${HOME}/.nvm/nvm.sh --no-use
+    nvm use v8.9.3 > /dev/null
+fi
+
+#alias
+# alias cp='cp -v'
+alias mv='mv -v'
+alias grep='grep --color=auto'
+
+# for ttyrec environment.
+# This zshrc expects using ttyrec with IS_TTYREC=true like
+# `IS_TTYREC=true ttyrec terminal.log`.
+function echo-ttyrec-safe {
+    if [ "${IS_TTYREC}" = "true" ]; then
+        :
+    else
+        echo $@
+    fi
+}
+
+# export DISPLAY=:0
+
+export PATH=$PATH:$HOME/gprog/ttygif
+export PATH=$PATH:$HOME/gprog/seq2gif
+
+# PATH setup
+export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
+export PATH=$PATH:$HOME/gprog/scan-scripts/bin
+if [ -e $HOME/.zshrc.jsk ]; then
+    echo loading jsk setup file ...
+    source $HOME/.zshrc.jsk
+fi
+
+OS=`uname`
+if [ "$OS" = "CYGWIN_NT-5.1" -o "$OS" = "CYGWIN_NT-6.0" ] ; then
+    if [ -e $HOME/.zshrc.cygwin ]; then
+        echo-ttyrec-safe loading cygwin setup file ...
+        source $HOME/.zshrc.cygwin
+    fi
+    if [ -e $HOME/.zshrc.cygwin.jsk ]; then
+        echo-ttyrec-safe loading jsk setup file ...
+        source $HOME/.zshrc.cygwin.jsk
+    fi
+elif [ "$OS" = "Linux" ] ; then
+    if [ -e $HOME/.zshrc.linux ]; then
+        echo-ttyrec-safe loading linux setup file ...
+        source $HOME/.zshrc.linux
+    fi
+elif [ "$OS" = "Darwin" ] ; then
+    if [ -e $HOME/.zshrc.darwin ]; then
+        echo-ttyrec-safe loading darwin setup file ...
+        source $HOME/.zshrc.darwin
+    fi
+fi
+
+alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
+
+export PATH=$PATH:$HOME/gprog/platex-create-pkg
+export PATH=$PATH:$HOME/gprog/spark
+export PATH=$PATH:$HOME/gprog/spark-ping
+export PATH=$PATH:$HOME/gprog/shell-color-pallet
+export PATH=$PATH:$HOME/gprog/wakatime
+export PATH=$PATH:$HOME/gprog/multi_crop
+#alias jbibtex=bibtex
+# for bibtex
+# from http://qiita.com/amayaw9/items/01d626ce1ae18c27df8b
+export BSTINPUTS=$BSTINPUTS:/usr/share/texmf/jbibtex/bst
+
+
+export PATH=$PATH:$HOME/gprog/emacs-settings
+
+export CC="ccache gcc"
+export CXX="ccache g++"
+
+
+export PATH=/opt/android-sdk/tools:$PATH
+export PATH=/opt/android-sdk/tools:$PATH
+
+export PATH=$PATH:$HOME/gprog/git-your-emacs
+export PATH=$PATH:$HOME/gprog/heroku-nodekit
+export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin
+
+fpath=($HOME/.zsh/functions/ $fpath) # not work?
+
+export PATH=$PATH:$HOME/gprog/minify-make
+export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
+export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
+export PATH=$PATH:$HOME/gprog/jq
+
+# update roszsh
+if [ ! -e $HOME/.roszsh ] ; then
+    wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q > /dev/null
+    if [ -e $HOME/.roszsh ]; then
+        source $HOME/.roszsh
+    fi
+fi
+
+function record_time_start {
+    set +x
+    RECORD_START_TIME=$(date +%s%N)
+    RECORD_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+    RECORD_FOLD_NAME=$1
+    echo -e "\e[0Ktraivs_fold:start:$RECORD_FOLD_NAME"
+    echo -e "\e[0Ktraivs_time:start:$RECORD_TIME_ID"
+    set -x
+}
+
+function record_time_end {
+    set +x
+    _COLOR=${1:-32}
+    RECORD_END_TIME=$(date +%s%N)
+    TIME_ELAPSED_SECONDS=$(( ($RECORD_END_TIME - $RECORD_START_TIME)/1000000000 ))
+    echo -e "traivs_time:end:$RECORD_TIME_ID:start=$RECORD_START_TIME,finish=$RECORD_END_TIME,duration=$(($RECORD_END_TIME - $RECORD_START_TIME))\n\e[0K"
+    echo -e "traivs_fold:end:$RECORD_FOLD_NAME"
+    echo -e "\e[0K\e[${_COLOR}mFunction $RECORD_FOLD_NAME takes $(( $TIME_ELAPSED_SECONDS / 60 )) min $(( $TIME_ELAPSED_SECONDS % 60 )) sec\e[0m"
+    set -x
+}
+
+export NO_ROS_PROMPT=true
+
+################################################################################
+# ros
+rosenv_use_hook() {
+    rospack find jsk_tools >/dev/null 2>&1
+    if [ $? = 0 ]; then
+        source $(rospack find jsk_tools)/src/zshrc.ros
+        if [ -e $HOME/.roszsh ]; then
+            source $HOME/.roszsh
+        fi
+    fi
+    rospack find hrpsys_ros_bridge >/dev/null 2>&1
+    if [ $? = 0 ]; then
+        alias rtmlaunch='`rospack find openrtm_tools`/scripts/rtmlaunch'
+    fi
+}
+
+# if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
+#     source $HOME/gprog/rosenv/rosenv.sh
+#     if [ "$OS" = "Darwin" ] ; then
+#         rosenv use indigo >/dev/null
+#     else
+#         if [ "$ROSENV_CURRENT" = "" ]; then
+#             rosenv use jsk.hydro >/dev/null
+#         else
+#             rosenv use >/dev/null
+#         fi
+#     fi
+# fi
+
+# alias roseus with rlwrap
+alias roseus="rlwrap rosrun roseus roseus"
+
+# install by
+if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
+    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+fi
+if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
+    setopt hist_ignore_dups     # ignore duplication command history list
+    setopt share_history        # share command history data
+fi
+PROMPT2="%_%% "
+# re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
+# command line. It should be after `prompt giddie` command.
+function +vi-set_novcs_prompt_symbol {
+    _prompt_giddie_symbol='$'
+}
+function +vi-set_vcs_prompt_symbol {
+    _prompt_giddie_symbol='$'
+}
+
+if [[ ! -e ${HOME}/.zsh ]]; then
+    git clone https://github.com/rupa/z.git $HOME/.zsh
+fi
+source $HOME/.zsh/z.sh
+compctl -U -K _z_zsh_tab_completion z
+
+if [ `uname` != Darwin ]; then
+    eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
+    alias ls="ls -AF --color=auto"
+else
+    eval `gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
+    alias ls="gls -AF --color=auto"
+fi
+
+#peco settings
+which peco > /dev/null
+if [ $? = 0 ]; then
+    function peco-history-selection() {
+        BUFFER=`history -nr 1 | awk '!a[$0]++' | peco`
+        CURSOR=$#BUFFER
+        zle reset-prompt
+    }
+
+    zle -N peco-history-selection
+    bindkey '^R' peco-history-selection
+fi
+
+export PATH=$HOME/gprog/ffmpeg-movie-builder:$PATH
+export PATH=$PATH:$HOME/.bin
+
+if [ -f $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+    source $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+
+function sine_wave() {
+    i=0
+    for i in `seq 0 10`
+    do
+        SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
+        echo -ne $SIN\\r
+        let i=i+1
+        sleep 0.05
+    done
+    echo
+}
+
+git_delete_all_branched() {
+    git branch -D `git branch --merged | grep -v \* | xargs`
+}
+
+until-success() {
+    $@
+    while [ $? != 0 ];
+    do
+        sleep 1;
+        $@
+    done
+}
+
+export PATH=$PATH:$HOME/gprog/garaemon-settings/scripts/utils
+export PATH=$PATH:$HOME/gprog/pltcli/bin
+export PATH=$PATH:$HOME/gprog/simpler-dot
+export PATH=$PATH:$HOME/gprog/tidier-pdfimages
+export PATH=$HOME/bin/:$PATH
+
+
+function git-branch-remove-all-local() {
+    git branch --merged master | grep -v '*' |xargs -I % echo git branch -d %
+}
+
+function git-branch-remove-all-local-exec() {
+    git branch --merged master | grep -v '*' | xargs -I % git branch -d %
+}
+
+function git-branch-remove-all-remote() {
+    # dryrun
+    local remote=$1
+    if [ "$remote" = "" ]; then
+        echo "Specify remote branch"
+    else
+        git remote prune $remote
+        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% echo git push $remote :%
+    fi
+}
+
+function git-branch-remove-all-remote-exec() {
+    local remote=$1
+    if [ "$remote" = "" ]; then
+        echo "Specify remote branch"
+    else
+        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% git push $remote :%
+    fi
+}
+
+function rename-spaces() {
+    # Replace spaces in file with underscores
+    mv -i "$*" "$(echo $* | sed -e 's/\s\+/_/g')"
+}
+
+
+function ev() {
+    # use C-xC-q to toggle read only
+    emacsclient -e "(find-file-read-only \"$1\")"
+}
+
+function dropbox-share() {
+    target=$(md5sum $1 | cut -f1 -d ' ').${1##*.}
+    cp $1 ~/Dropbox/Public/tmp/$target
+    echo -e "File is available on $fg[cyan] $(dropbox puburl ~/Dropbox/Public/tmp/$target)$reset_color"
+    echo -e $'\U1F61D' $'\U1F61D' $'\U1F61D' $'\U1F61D'
+}
+
+# added by travis gem
+[ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
+
+alias rviz="rosrun rviz rviz"
+alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
+alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
+# xset mouse 3 0
+alias v="view"
+alias s="source ~/.zshrc"
+alias git-graph="git log --graph --decorate --oneline"
+
+which hub 2>&1 >/dev/null
+if [ $? = 0 ]; then
+    eval "$(hub alias -s)"
+fi
+
+if [[ ! -e $HOME/.local/share/diff-so-fancy ]] ; then
+    git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
+fi
+export PATH=$PATH:$HOME/.local/share/diff-so-fancy
+
+# git aliases
+git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
+git config --global alias.see browse
+git config --global alias.p pull-request
+git config --global alias.br branch
+git config --global alias.co checkout
+git config --global alias.st status
+git config --global alias.unstage "reset -q HEAD --"
+#git config --global alias.discard "checkout --"
+git config --global alias.uncommit "reset --mixed HEAD~"
+#git config --global alias.amend "commit --amend"
+git config --global alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
+git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
+git config --global alias.unmerged "diff --name-only --diff-filter=U"
+git config --global alias.remotes "remotes = remote -v"
+git config --global rebase.autostash true
+alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
+
+# no ROS environment
+# export ROSLAUNCH_SSH_UNKNOWN=1
+# rossetlocal >/dev/null 2>&1
+
+# for emacs
+perl -wle \
+   'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
+   PATH > ~/.emacs.d/shellenv.el
+
+# automatically clone repositories
+# if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
+#     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
+# fi
+
+# zplug
+if [ -e $HOME/.zshrc.zplug ]; then
+    echo-ttyrec-safe loading customizing setup file for zplug...
+    source $HOME/.zshrc.zplug
+fi
+
+# customizing zshrc?
+if [ -e $HOME/.zshrc.mine ]; then
+    echo-ttyrec-safe loading customizing setup file ...
+    source $HOME/.zshrc.mine
+fi
+
+function clang-format-view {
+    local fname=$(mktemp)
+    clang-format $1 > $fname
+    colordiff -W 200 -y $1 $fname | less
+}
+
+# wrapping tip command to use virtualenv
+function tips {
+    (cd ~/gprog/tips && source .venv/bin/activate && ./bin/tips $@)
+}
+
+function restart-dns {
+    # Restart DNS Cache. It is only available on mac os.
+    if [ "$(uname)" = "Darwin" ] ; then
+        echo Restarting dns ...
+        sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+        sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
+    else
+        echo "It's not mac os, skip"
+    fi
+}
+
+export PATH=$PATH:$HOME/gprog/depot_tools
+export PATH=$PATH:$HOME/Library/Android/sdk/tools
+
+# Google Cloud SDK
+if [ -e $HOME/google-cloud-sdk/completion.zsh.inc ]; then
+    source $HOME/google-cloud-sdk/completion.zsh.inc
+fi
+
+if [ -e $HOME/google-cloud-sdk/path.zsh.inc ]; then
+    source $HOME/google-cloud-sdk/path.zsh.inc
+fi
+
+[[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
+
+ruby_version="2.6.0"
+if [ -e $HOME/.rvm/scripts/rvm ]; then
+    source ~/.rvm/scripts/rvm
+    if ! rvm list | grep "${ruby_version}" >/dev/null ; then
+        if [ "$OS" = "Darwin" ] ; then
+            rvm install "ruby-${ruby_version}" --with-openssl-dir=/usr/local/opt/openssl
+        else
+            rvm install "ruby-${ruby_version}"
+        fi
+    fi
+    rvm use ruby-${ruby_version} >/dev/null
+    # update ~/.rvmrc to supress warning message
+    echo rvm_silence_path_mismatch_check_flag=1 > ~/.rvmrc
+    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+fi
+
+alias e='emacsclient -n'
+
+function e() {
+    emacsclient -n $(echo $1 | cut -f1 -d:)
+}
+
+if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
+    source ~/gitai/catkin_ws/devel/setup.zsh
+fi
+
+# wstool util
+function wstool-interactive {
+    local wstool_line
+    local repo
+    wstool_line=$(wstool info | peco)
+    repo=$(echo "${wstool_line}" | cut -d ' ' -f 2)
+    wstool update "${repo}"
+    (cd "${repo}" && git checkout master)
+}
+
+function catkin-compile-json {
+    local catkin_ws
+    local package_directories
+    local package
+    catkin_ws=$(echo $CMAKE_PREFIX_PATH | cut -d: -f1)/..
+    (cd "${catkin_ws}";
+     catkin config --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+    package_directories=$(find "${catkin_ws}/src" -name package.xml | xargs -n 1 dirname)
+    for package_dir in $(echo $package_directories)
+    do
+        package=$(echo $package_dir | xargs -n 1 basename)
+        (cd "${catkin_ws}";
+         ln -sf ${catkin_ws}/build/$package/compile_commands.json \
+            $(rospack find $package)/compile_commands.json)
+    done
+}
+
+function wstool-checkout-default-branch {
+    wstool foreach \
+           "bash -c 'git symbolic-ref refs/remotes/origin/HEAD | \
+                     sed s@^refs/remotes/origin/@@ | xargs git checkout'"
+}
+
+# alias catkindistcc="catkin build -p\$(distcc -j) -j\$(distcc -j) --no-jobserver"
+
+# BEGIN ANSIBLE MANAGED BLOCK: pyenv
+if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
+  source $HOME/.pyenv/.pyenvrc
+  source $HOME/.pyenv/completions/pyenv.zsh
+fi
+# END ANSIBLE MANAGED BLOCK: pyenv
+
+# This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
+# of mosh.
+export MOSH_ESCAPE_KEY="-"

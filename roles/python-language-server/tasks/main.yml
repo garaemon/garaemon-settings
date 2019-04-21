@@ -1,0 +1,5 @@
+- name: Install python-language-server
+  shell: |
+    . ~/.pyenv/.pyenvrc &&
+    pyenv shell 3.7.2
+    pip install 'python-language-server[all]'

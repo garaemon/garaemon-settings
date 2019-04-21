@@ -1,0 +1,6 @@
+chef/Berksfile.lock
+.vagrant
+.DS_Store
+*.retry
+*.yml-e
+inventory/

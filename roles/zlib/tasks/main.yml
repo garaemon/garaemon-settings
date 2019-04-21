@@ -1,0 +1,5 @@
+# Install zlib to build python package.
+# See https://qiita.com/zreactor/items/c3fd04417e0d61af0afe for detail.
+- name: Install zlib
+  command: installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
+  become: yes

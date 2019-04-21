@@ -1,0 +1,9 @@
+- name: Clone base16 theme for iTerm2
+  git:
+    repo: https://github.com/chriskempson/base16-iterm2.git
+    dest: ~/gprog/base16-iterm2
+
+- name: Clone color schemes for iTerm2
+  git:
+    repo: https://github.com/mbadolato/iTerm2-Color-Schemes.git
+    dest: ~/gprog/iTerm2-Color-Schemes

@@ -1,0 +1,9 @@
+- name: Prepare ~/.local/bin
+  file:
+    path: ~/.local/bin
+    state: directory
+- name: Install cpplint.py
+  get_url:
+    url: https://github.com/google/styleguide/raw/gh-pages/cpplint/cpplint.py
+    dest: ~/.local/bin/cpplint.py
+    mode: 0755

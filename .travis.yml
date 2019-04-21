@@ -1,0 +1,18 @@
+language:
+  - cpp
+  - python
+python:
+  - "2.7"
+compiler:
+  - gcc
+notifications:
+  email:
+    recipients:
+      - garaemon@gmail.com
+    on_success: change #[always|never|change] # default: change
+    on_failure: change #[always|never|change] # default: always
+script:
+  - sudo apt-get remove postgresql*
+  - export GPROG_DIR=$PWD/gprog
+  - export USE_HTTPS_FOR_GIT=true
+  - ./scripts/install.sh

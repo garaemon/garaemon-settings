@@ -1,0 +1,45 @@
+- name: Symlink for zshrc
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshrc"
+    dest: ~/.zshrc
+    state: link
+- name: Symlink for zlogin
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zlogin"
+    dest: ~/.zlogin
+    state: link
+- name: Symlink for zlogout
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zlogout"
+    dest: ~/.zlogout
+    state: link
+- name: Symlink for zpreztorc
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zpreztorc"
+    dest: ~/.zpreztorc
+    state: link
+- name: Symlink for zprofile
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zprofile"
+    dest: ~/.zprofile
+    state: link
+- name: Symlink for zshenv
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshenv"
+    dest: ~/.zshenv
+    state: link
+- name: Symlink for zshrc.zplug
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshrc.zplug"
+    dest: ~/.zshrc.zplug
+    state: link
+- name: Clone zprezto
+  git:
+    repo: https://github.com/sorin-ionescu/prezto.git
+    dest: ~/.zprezto
+    recursive: yes
+- name: Symlink for prompt_garaemon_setup
+  file:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/prompt_garaemon_setup"
+    dest: ~/.zprezto/modules/prompt/functions/prompt_garaemon_setup
+    state: link
