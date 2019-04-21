@@ -9,4 +9,4 @@ addons:
 before_script:
   - sudo update-alternatives --set emacs /usr/bin/emacs26
 script:
-  - emacs -nw -Q -batch update.el
+  - emacs -nw -Q -batch -l update.el
