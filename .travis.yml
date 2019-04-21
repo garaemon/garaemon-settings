@@ -11,7 +11,7 @@ addons:
 before_script:
   - mkdir -p ~/gprog
   - cp -r $PWD ~/gprog/garaemon-settings
-  - rm ~/.zshrc
+  - rm ~/.zshrc ~/.zlogin
 script:
   - ansible --version
   - ansible-playbook main.yml -i "localhost," -c local
