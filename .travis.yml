@@ -8,9 +8,5 @@ addons:
     packages:
       - ansible
       - acpi-support # for /usr/share/acpi-support directory
-before_install:
-  - ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
-  - cat ~/.ssh/id_rsa.pub >>~/.ssh/authorized_keys
-  - ssh-keyscan -t rsa localhost >>~/.ssh/known_hosts
 script:
-  - ansible-playbook main.yml -i "localhost," -u $USER
+  - ansible-playbook main.yml -i "localhost," -c local
