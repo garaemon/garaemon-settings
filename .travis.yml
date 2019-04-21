@@ -8,4 +8,5 @@ addons:
     packages:
       - ansible
 script:
+  - ansible --version
   - ansible-playbook main.yml -i "localhost," -c local
