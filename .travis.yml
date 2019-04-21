@@ -1,18 +1,16 @@
-language:
-  - cpp
-  - python
-python:
-  - "2.7"
-compiler:
-  - gcc
-notifications:
-  email:
-    recipients:
-      - garaemon@gmail.com
-    on_success: change #[always|never|change] # default: change
-    on_failure: change #[always|never|change] # default: always
+language: python
+dist: xenial
+addons:
+  apt:
+    update: true
+    sources:
+      - sourceline: 'ppa:ansible/ansible'
+    packages:
+      - ansible
+      - acpi-support # for /usr/share/acpi-support directory
+before_install:
+  - ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
+  - cat ~/.ssh/id_rsa.pub >>~/.ssh/authorized_keys
+  - ssh-keyscan -t rsa localhost >>~/.ssh/known_hosts
 script:
-  - sudo apt-get remove postgresql*
-  - export GPROG_DIR=$PWD/gprog
-  - export USE_HTTPS_FOR_GIT=true
-  - ./scripts/install.sh
+  - ansible-playbook main.yml -i "localhost," -u $USER
