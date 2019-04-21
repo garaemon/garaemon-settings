@@ -25,3 +25,5 @@ url/
 flycheck_*.el
 *.sqlite
 .lsp-session-v1
+
+transient
