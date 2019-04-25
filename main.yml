@@ -8,7 +8,6 @@
     - tmux
     - zsh
     - emacs
-    - powerline
     - role: zlib
       when: ansible_os_family == "Darwin"
     - role: apt
