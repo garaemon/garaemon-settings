@@ -1259,6 +1259,8 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
+(setq inhibit-compacting-font-caches t)
 
 (require 'garaemon-dot-emacs)
 
