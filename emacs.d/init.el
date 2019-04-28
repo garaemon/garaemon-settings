@@ -1283,6 +1283,17 @@ Requires Flake8 3.0 or newer. See URL
             )
  )
 
+;; rosemacs
+(add-to-list 'load-path "/opt/ros/kinetic/share/emacs/site-lisp")
+(use-package rosemacs-config
+  :config (progn
+            (global-set-key "\C-x\C-r" ros-keymap)
+            )
+  )
+
+;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
+(setq inhibit-compacting-font-caches t)
+
 (require 'garaemon-dot-emacs)
 
 ;; Run emacsserver if not started.
