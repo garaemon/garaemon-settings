@@ -36,6 +36,7 @@
 
 - N the number of the lines to scroll up"
   (interactive "p")
+  ;;(line-move-visual (- n) t)
   (forward-line (- n))
   (scroll-down n))
 
@@ -44,6 +45,7 @@
 
 - N the number of the lines to scroll down"
   (interactive "p")
+  ;;(line-move-visual n t)
   (forward-line n)
   (scroll-up n))
 
@@ -647,10 +649,40 @@ Requires Flake8 3.0 or newer. See URL
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
          )
+  :config (progn
+            ;; (setq lsp-print-io nil)
+            ;; (setq lsp-enable-xref nil)
+            ;; (setq lsp-enable-symbol-highlighting nil)
+            ;; (setq lsp-enable-on-type-formatting nil)
+            ;; (setq lsp-enable-completion-at-point nil)
+            ;; (setq lsp-enable-on-type-formatting nil)
+            ;; (setq lsp-enable-folding nil)
+            ;; (setq lsp-enable-imenu nil)
+            (setq lsp-print-performance t)
+            ;; (setq lsp-eldoc-enable-hover nil)
+            ;; (setq-default lsp-eldoc-enable-hover nil)
+            ;; (setq lsp-eldoc-render-all nil)
+            ;; (setq lsp-markup-display-all nil)
+            ;; (setq lsp-pyls-plugins-jedi-hover-enabled nil)
+            )
   )
+(defun lsp-describe-thing-at-point () (interactive) nil)
 
 (use-package lsp-ui :ensure t
-  :init (add-hook 'lsp-mode-hook #'lsp-ui-mode))
+  :init (add-hook 'lsp-mode-hook #'lsp-ui-mode)
+  :config (progn
+            ;; Reguster lsp-ui-doc--make-request to 'post-command-hook is too heavy.
+            ;; Add small latency before calling lsp-ui-doc--make-request.
+            (defun lsp-ui-doc-make-request-lazy ()
+              (run-with-idle-timer 0.2 nil #'lsp-ui-doc--make-request))
+            (add-hook 'lsp-ui-doc-mode-hook
+                      '(lambda ()
+                         (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
+                         (add-hook 'post-command-hook 'lsp-ui-doc-make-request-lazy
+                                   nil t)
+                         ))
+            )
+  )
 
 (use-package company-lsp :ensure t
   :init (add-to-list 'company-backends 'company-lsp))
@@ -1208,6 +1240,17 @@ Requires Flake8 3.0 or newer. See URL
             (define-key c-mode-base-map "\C-c f" 'clang-format)
             )
  )
+
+;; rosemacs
+(add-to-list 'load-path "/opt/ros/kinetic/share/emacs/site-lisp")
+(use-package rosemacs-config
+  :config (progn
+            (global-set-key "\C-x\C-r" ros-keymap)
+            )
+  )
+
+;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
+(setq inhibit-compacting-font-caches t)
 
 (require 'garaemon-dot-emacs)
 
