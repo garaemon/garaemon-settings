@@ -529,6 +529,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (global-set-key (kbd "C-x C-m") 'ros-catkin-make)
+(global-set-key (kbd "C-x m") 'ros-catkin-make) ; Hijack key for compose-mail
 (global-set-key [f5] 'ros-catkin-make)
 ;;; }}}
 
