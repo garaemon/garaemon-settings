@@ -1,0 +1,15 @@
+- name: Install dictd packages
+  apt:
+    name:
+      - dictd
+      - dict
+      - dictfmt
+  become: yes
+- name: Install dictd.conf
+  copy:
+    src: dictd.conf
+    dest: /etc/dictd/dictd.conf
+  become: yes
+- name: restart dictd
+  command: systemctl restart dictd
+  become: yes
