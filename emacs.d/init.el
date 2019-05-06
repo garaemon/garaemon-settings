@@ -1241,6 +1241,22 @@ Requires Flake8 3.0 or newer. See URL
             )
  )
 
+(use-package dictionary :ensure t
+  :config (progn
+            (setq dictionary-server "localhost")
+            (setq dictionary-default-strategy "prefix")
+            (defun dictionary-popup-matching-region-or-words ()
+              (interactive)
+              (let ((word
+                     (if (use-region-p)
+                         (buffer-substring (region-beginning) (region-end) )
+                       (current-word))))
+                (dictionary-popup-matching-words word)
+                ))
+            (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
+            )
+  )
+
 (use-package rosemacs-config
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
@@ -1281,5 +1297,5 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
