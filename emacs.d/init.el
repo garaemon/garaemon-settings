@@ -654,7 +654,7 @@ Requires Flake8 3.0 or newer. See URL
             (setq auto-mode-alist (cons (cons "\\.js$" 'js2-mode) auto-mode-alist))
             (setq auto-mode-alist (cons (cons "\\.jsx$" 'js2-jsx-mode) auto-mode-alist))
             (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
-            (setq js-indent-level 4)
+            (setq js-indent-level 2)
             ;; Disable some js2 features for eslint integration by flycheck
             (setq js2-include-browser-externs nil)
             (setq js2-mode-show-parse-errors nil)
@@ -1281,7 +1281,13 @@ Requires Flake8 3.0 or newer. See URL
   :config (progn
             (define-key c-mode-base-map "\C-c f" 'clang-format)
             )
- )
+  )
+
+(use-package qml-mode :ensure t
+  :config (progn
+            (setq js-indent-level 2)
+            )
+  )
 
 ;; rosemacs
 (add-to-list 'load-path "/opt/ros/kinetic/share/emacs/site-lisp")
@@ -1323,5 +1329,5 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (qml-mode auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
