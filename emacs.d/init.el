@@ -421,49 +421,7 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package google-c-style :ensure t
   :config (progn
-            (defun google-c-lineup-expression-plus-8 (langelem)
-              "Special version of google-c-lineup-expression-plus-4."
-              (save-excursion
-                (back-to-indentation)
-                ;; Go to beginning of *previous* line:
-                (c-backward-syntactic-ws)
-                (back-to-indentation)
-                (cond
-                 ;; We are making a reasonable assumption that if there is a control
-                 ;; structure to indent past, it has to be at the beginning of the line.
-                 ((looking-at "\\(\\(if\\|for\\|while\\)\\s *(\\)")
-                  (goto-char (match-end 1)))
-                 ;; For constructor initializer lists, the reference point for line-up is
-                 ;; the token after the initial colon.
-                 ((looking-at ":\\s *")
-                  (goto-char (match-end 0))))
-                (vector (+ 8 (current-column)))))
-
-            (setf (cdr (assoc 'c-offsets-alist google-c-style))
-                  '((arglist-intro google-c-lineup-expression-plus-8) ;this is the only diff
-                    (func-decl-cont . ++)
-                    (member-init-intro . ++)
-                    (inher-intro . ++)
-                    (comment-intro . 0)
-                    (arglist-close . c-lineup-arglist)
-                    (topmost-intro . 0)
-                    (block-open . 0)
-                    (inline-open . 0)
-                    (substatement-open . 0)
-                    (statement-cont
-                     .
-                     (,(when (fboundp 'c-no-indent-after-java-annotations)
-                         'c-no-indent-after-java-annotations)
-                      ,(when (fboundp 'c-lineup-assignments)
-                         'c-lineup-assignments)
-                      ++))
-                    (label . /)
-                    (case-label . +)
-                    (statement-case-open . +)
-                    (statement-case-intro . +) ; case w/o {
-                    (access-label . /)
-                    (innamespace . 0)))
-            (setf (cdr (assoc 'c-basic-offset google-c-style)) 4)
+            (setf (cdr (assoc 'c-basic-offset google-c-style)) 2)
             )
   :hook ((c-mode-common . google-set-c-style)
          (c-mode-common . google-make-newline-indent))
@@ -1289,12 +1247,28 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
-;; rosemacs
-(add-to-list 'load-path "/opt/ros/kinetic/share/emacs/site-lisp")
+(use-package dictionary :ensure t
+  :config (progn
+            (setq dictionary-server "localhost")
+            (setq dictionary-default-strategy "prefix")
+            (defun dictionary-popup-matching-region-or-words ()
+              (interactive)
+              (let ((word
+                     (if (use-region-p)
+                         (buffer-substring (region-beginning) (region-end) )
+                       (current-word))))
+                (dictionary-popup-matching-words word)
+                ))
+            (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
+            )
+  )
+
 (use-package rosemacs-config
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
             )
+  :load-path "/opt/ros/kinetic/share/emacs/site-lisp"
+  :if (file-exists-p "/opt/ros/kinetic/share/emacs/site-lisp/rosemacs-config.el")
   )
 
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
