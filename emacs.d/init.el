@@ -186,9 +186,36 @@
 
 (use-package fill-column-indicator :ensure t
   :hook ((prog-mode) . fci-mode)
-  :config (setq fci-rule-column 100))
+  :config (progn
+            (setq fci-rule-column 100)
+            ;; Automatically hide fci ruler if window is too narrow
+            ;; See http://bit.ly/2Yw3XiE
+            (defvar i42/fci-mode-suppressed nil)
+            (make-variable-buffer-local 'i42/fci-mode-suppressed)
 
-(use-package flycheck :ensure t
+            (defun fci-width-workaround (frame)
+              (let ((fci-enabled (symbol-value 'fci-mode))
+                    (fci-column (if fci-rule-column fci-rule-column fill-column))
+                    (current-window-list (window-list frame 'no-minibuf)))
+                (dolist (window current-window-list)
+                  (with-selected-window window
+                    (if i42/fci-mode-suppressed
+                        (when (and (eq fci-enabled nil)
+                                   (< fci-column
+                                      (+ (window-width) (window-hscroll))))
+                          (setq i42/fci-mode-suppressed nil)
+                          (turn-on-fci-mode))
+                      ;; i42/fci-mode-suppressed == nil
+                      (when (and fci-enabled fci-column
+                                 (>= fci-column
+                                     (+ (window-width) (window-hscroll))))
+                        (setq i42/fci-mode-suppressed t)
+                        (turn-off-fci-mode)))))))
+            (add-hook 'window-size-change-functions 'fci-width-workaround)
+            )
+  )
+
+(Use-package flycheck :ensure t
   :requires (thingopt)
   :config (progn
             (setq flycheck-check-syntax-automatically '(mode-enabled save))
