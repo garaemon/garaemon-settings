@@ -546,3 +546,8 @@ if [ "$OS" = "Darwin" ] ; then
         /usr/bin/ssh $@
     }
 fi
+
+# Change terminal title to current hostname
+precmd() {
+    echo -ne "\033]0;$(hostname)\007"
+}
