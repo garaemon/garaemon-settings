@@ -215,7 +215,7 @@
             )
   )
 
-(Use-package flycheck :ensure t
+(use-package flycheck :ensure t
   :requires (thingopt)
   :config (progn
             (setq flycheck-check-syntax-automatically '(mode-enabled save))
