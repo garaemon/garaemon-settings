@@ -711,6 +711,9 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package lsp-treemacs :ensure t
+  :config (global-set-key "\C-c^" 'lsp-treemacs-errors-list))
+
 (use-package company-lsp :ensure t
   :init (add-to-list 'company-backends 'company-lsp))
 
@@ -1330,5 +1333,5 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (qml-mode auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
