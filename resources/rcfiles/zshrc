@@ -534,3 +534,20 @@ fi
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
 # of mosh.
 export MOSH_ESCAPE_KEY="-"
+if [ "$OS" = "Darwin" ] ; then
+    # Change title before mosh for iTerm
+    # Please uncheck all the check box in Preference > Appearance > Window & Tab Titles
+    function mosh {
+        echo -ne "\033]0;$@\007"
+        /usr/local/bin/mosh $@
+    }
+    function ssh {
+        echo -ne "\033]0;$@\007"
+        /usr/bin/ssh $@
+    }
+fi
+
+# Change terminal title to current hostname
+precmd() {
+    echo -ne "\033]0;$(hostname)\007"
+}
