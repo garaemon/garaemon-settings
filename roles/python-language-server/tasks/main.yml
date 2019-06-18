@@ -3,3 +3,7 @@
     . ~/.pyenv/.pyenvrc &&
     pyenv shell 3.7.2
     pip install 'python-language-server[all]'
+- name: Install config file of pycodestyle
+  copy:
+    src: pycodestyle
+    dest: ~/.config/pycodestyle
