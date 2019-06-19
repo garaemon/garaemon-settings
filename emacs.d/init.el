@@ -559,6 +559,7 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package ivy-posframe :ensure t
+  :if (display-graphic-p)
   :config (progn
             ;; (setq ivy-display-function #'ivy-posframe-display-at-window-center)
             (setq ivy-display-function #'ivy-posframe-display-at-frame-center)
