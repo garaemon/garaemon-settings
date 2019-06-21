@@ -1268,7 +1268,7 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package clang-format :ensure t
   :config (progn
-            (define-key c-mode-base-map "\C-c f" 'clang-format)
+            (define-key c-mode-base-map "\C-cf" 'clang-format-buffer)
             )
   )
 
