@@ -1272,6 +1272,12 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package py-yapf :ensure t
+  :config (progn
+            (define-key python-mode-map "\C-cf" 'py-yapf-buffer)
+            )
+  )
+
 (use-package qml-mode :ensure t
   :config (progn
             (setq js-indent-level 2)
@@ -1334,5 +1340,5 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
