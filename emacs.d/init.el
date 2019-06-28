@@ -730,6 +730,8 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package sx :ensure t)
+
 (use-package markdown-mode :ensure t
   :config (progn
             (setq auto-mode-alist (cons '("\\.md" . markdown-mode) auto-mode-alist))
