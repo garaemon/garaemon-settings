@@ -1272,9 +1272,7 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package py-yapf :ensure t
-  :config (progn
-            (define-key python-mode-map "\C-cf" 'py-yapf-buffer)
-            )
+  :hook ((python-mode . (lambda () (define-key python-mode-map "\C-cf" 'py-yapf-buffer))))
   )
 
 (use-package qml-mode :ensure t
