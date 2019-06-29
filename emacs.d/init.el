@@ -719,8 +719,8 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package cquery :ensure t
   :config (setq cquery-executable "~/.local/bin/cquery")
-  :hook ((c-mode . lsp)
-         (c++-mode . lsp)))
+  :hook ((c-mode c++-mode objc-mode) .
+         (lambda () (require 'ccls) (lsp))))
 
 (use-package magit :ensure t
   :config (progn
