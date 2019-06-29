@@ -525,7 +525,6 @@ Requires Flake8 3.0 or newer. See URL
               (counsel-require-program counsel-git-cmd)
               (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
                      (default-directory (or git-directory default-directory)))
-                (message "default directory %s" default-directory)
                 (let* ((counsel-git-cands (if git-directory
                                               (split-string
                                                (shell-command-to-string counsel-git-cmd)
