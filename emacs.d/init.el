@@ -143,26 +143,26 @@
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
-;; (use-package elpy :ensure t
-;;   :config (progn
-;;             (elpy-enable)
-;;             ;; use ipython for interactive shell
-;;             (setq python-shell-interpreter "ipython"
-;;                   python-shell-interpreter-args "-i --no-confirm-exit"
-;;                   python-shell-enable-font-lock nil)
-;;             (defun elpy-shell-send-region-or-statement ()
-;;               "Send region or statement to python shell."
-;;               (interactive)
-;;               (if (use-region-p)
-;;                   (progn
-;;                     (elpy-shell-send-region-or-buffer)
-;;                     (deactivate-mark))
-;;                 (elpy-shell-send-statement)
-;;                 ))
-;;             (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
-;;             (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
-;;             (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
-;;             ))
+(use-package elpy :ensure t
+  :config (progn
+            (elpy-enable)
+            ;; use ipython for interactive shell
+            (setq python-shell-interpreter "ipython"
+                  python-shell-interpreter-args "-i --no-confirm-exit"
+                  python-shell-enable-font-lock nil)
+            (defun elpy-shell-send-region-or-statement ()
+              "Send region or statement to python shell."
+              (interactive)
+              (if (use-region-p)
+                  (progn
+                    (elpy-shell-send-region-or-buffer)
+                    (deactivate-mark))
+                (elpy-shell-send-statement)
+                ))
+            (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
+            (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
+            (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
+            ))
 
 (use-package exec-path-from-shell :ensure t
   :config (progn
