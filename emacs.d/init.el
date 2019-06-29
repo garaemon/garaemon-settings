@@ -121,7 +121,7 @@
             ;; 候補の一番下でさらに下に行こうとすると一番上に戻る
             (setq company-selection-wrap-around t)
             (add-to-list 'company-backends 'company-dabbrev-code)
-            (add-to-list 'company-backends 'company-yasnippet)
+            ;; (add-to-list 'company-backends 'company-yasnippet)
             (add-to-list 'company-backends 'company-files)
             (define-key company-active-map (kbd "C-n") 'company-select-next)
             (define-key company-active-map (kbd "C-p") 'company-select-previous)
