@@ -1267,10 +1267,8 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package clang-format :ensure t
-  :config (progn
-            (define-key c-mode-base-map "\C-cf" 'clang-format-buffer)
-            )
-  )
+  :bind (:map c-mode-base-map
+              ("C-c f" . 'clang-format-buffer)))
 
 (if (not (file-directory-p "~/.emacs.d/plugins/"))
     (make-directory "~/.emacs.d/plugins/"))
