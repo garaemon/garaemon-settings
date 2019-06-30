@@ -28,3 +28,4 @@ flycheck_*.el
 
 transient
 .cache
+plugins/

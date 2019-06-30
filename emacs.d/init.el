@@ -9,6 +9,7 @@
 ;;; ln -sf ~/.emacs.d/dot.emacs ~/.emacs
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
+(add-to-list 'load-path "~/.emacs.d/plugins")
 
 ;; remove tramp file first to clean up old tramp connection
 (let ((tramp-old-file (expand-file-name "~/.emacs.d/tramp")))
@@ -1268,6 +1269,24 @@ Requires Flake8 3.0 or newer. See URL
 (use-package clang-format :ensure t
   :config (progn
             (define-key c-mode-base-map "\C-cf" 'clang-format-buffer)
+            )
+  )
+
+(if (not (file-directory-p "~/.emacs.d/plugins/"))
+    (make-directory "~/.emacs.d/plugins/"))
+(if (not (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el"))
+    (url-copy-file
+     "https://raw.githubusercontent.com/nilsdeppe/emacs-clang-rename/master/emacs-clang-rename.el"
+     "~/.emacs.d/plugins/emacs-clang-rename.el"))
+(use-package emacs-clang-rename
+  :if (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el")
+  :bind (:map c-mode-base-map
+              ("C-c c p" . emacs-clang-rename-at-point)
+              ("C-c c q" . emacs-clang-rename-qualified-name)
+              ("C-c c a" . emacs-clang-rename-qualified-name-all))
+  :config (progn
+            (if (executable-find "clang-rename-6.0")
+                (setq emacs-clang-rename-binary "clang-rename-6.0"))
             )
   )
 
