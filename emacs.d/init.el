@@ -719,9 +719,16 @@ Requires Flake8 3.0 or newer. See URL
   :init (add-to-list 'company-backends 'company-lsp))
 
 (use-package cquery :ensure t
+  :if nil
   :config (setq cquery-executable "~/.local/bin/cquery")
+  :commands lsp
+  )
+
+(use-package ccls :ensure t
+  :config
   :hook ((c-mode c++-mode objc-mode) .
          (lambda () (require 'ccls) (lsp))))
+
 
 (use-package magit :ensure t
   :config (progn
