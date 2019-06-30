@@ -709,6 +709,12 @@ Requires Flake8 3.0 or newer. See URL
                          (add-hook 'post-command-hook 'lsp-ui-doc-make-request-lazy
                                    nil t)
                          ))
+            (setq lsp-ui-doc-enable t)
+            (setq lsp-ui-doc-header t)
+            (setq lsp-ui-doc-include-signature t)
+            (setq lsp-ui-doc-max-width 80)
+            (setq lsp-ui-doc-max-height 30)
+            (setq lsp-ui-peek-enable t)
             )
   )
 
