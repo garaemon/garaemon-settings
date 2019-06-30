@@ -58,6 +58,15 @@
 (global-set-key "\C-o" 'dabbrev-expand)
 (setq mac-command-modifier 'meta)
 
+;; Bind C-x # to switch back to tmux window where emacsclient run.
+;; In order to use this feature, the window index should be stored in ~/.emacs.d/emacsclient-window.
+(global-set-key
+ "\C-x#"
+ (lambda ()
+   (interactive)
+   (shell-command "tmux select-window -t \`cat ~/.emacs.d/emacsclient-window\`")))
+
+
 (require 'package)
 (setq package-archives
       '(("gnu" . "http://elpa.gnu.org/packages/")

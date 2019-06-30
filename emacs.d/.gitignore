@@ -29,3 +29,4 @@ flycheck_*.el
 transient
 .cache
 plugins/
+emacsclient-window
