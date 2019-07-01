@@ -318,6 +318,7 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package flyspell :ensure t
+  :if nil
   :config (progn
             ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
             ;; if (aspell installed) { use aspell}
