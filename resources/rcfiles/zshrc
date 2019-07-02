@@ -479,9 +479,17 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
+unalias e
 function e() {
     # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
+    tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
+                                | cut -d ':' -f1)
+}
+
+function gp() {
+    git pull-request &
     tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
     tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
                                 | cut -d ':' -f1)
