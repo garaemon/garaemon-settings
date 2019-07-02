@@ -495,6 +495,8 @@ function gp() {
                                 | cut -d ':' -f1)
 }
 
+alias cbt='catkin bt'
+
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
     source ~/gitai/catkin_ws/devel/setup.zsh
 fi
