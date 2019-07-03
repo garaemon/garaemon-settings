@@ -1337,6 +1337,9 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package bm :ensure t
+  :bind (("M-^" . 'bm-toggle)))
+
 (use-package rosemacs-config
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
