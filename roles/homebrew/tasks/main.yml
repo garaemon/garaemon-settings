@@ -10,6 +10,7 @@
       - findutils
       - imagemagick
       - gnu-sed
+      - ccache
       - coreutils
       - cowsay
       - hub
@@ -22,20 +23,20 @@
       - llvm # for clangd
       - gpg
       - reattach-to-user-namespace
-- name: Install ffmpeg with special options
-  homebrew:
-    name: ffmpeg
-    state: present
-    install_options:
-      - with-fdk-aac
-      - with-ffplay
-      - with-freetype
-      - with-libass
-      - with-libquvi
-      - with-libvorbis
-      - with-libvpx
-      - with-opus
-      - with-x265
+#- name: Install ffmpeg with special options
+#  homebrew:
+#    name: ffmpeg
+#    state: present
+#    install_options:
+#      - with-fdk-aac
+#      - with-ffplay
+#      - with-freetype
+#      - with-libass
+#      - with-libquvi
+#      - with-libvorbis
+#      - with-libvpx
+#      - with-opus
+#      - with-x265
 - name: Install homebrew cask packages
   homebrew_cask:
     name: "{{packages}}"
