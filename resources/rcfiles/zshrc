@@ -385,6 +385,7 @@ export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
 # git aliases
 git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
+git config --global core.editor "emacsclient"
 git config --global alias.see browse
 git config --global alias.p pull-request
 git config --global alias.br branch
@@ -479,6 +480,7 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
+unalias e
 function e() {
     # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
@@ -486,6 +488,15 @@ function e() {
     tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
                                 | cut -d ':' -f1)
 }
+
+function gp() {
+    git pull-request &
+    tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
+                                | cut -d ':' -f1)
+}
+
+alias cbt='catkin bt'
 
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
     source ~/gitai/catkin_ws/devel/setup.zsh
