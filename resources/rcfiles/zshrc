@@ -540,7 +540,9 @@ function wstool-checkout-default-branch {
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
   source $HOME/.pyenv/.pyenvrc
-  source $HOME/.pyenv/completions/pyenv.zsh
+  if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
+    source $HOME/.pyenv/completions/pyenv.zsh
+  fi
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 
@@ -564,3 +566,4 @@ fi
 precmd() {
     echo -ne "\033]0;$(hostname)\007"
 }
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
