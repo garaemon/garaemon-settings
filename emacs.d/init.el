@@ -197,6 +197,7 @@
   )
 
 (use-package fill-column-indicator :ensure t
+  :if nil
   :hook ((prog-mode) . fci-mode)
   :config (progn
             (setq fci-rule-column 100)
@@ -937,7 +938,7 @@ Requires Flake8 3.0 or newer. See URL
   :config (smart-cursor-color-mode +1))
 
 (use-package smart-mode-line :ensure t
-  :if t
+  :if nil
   :config (progn
             (setq sml/no-confirm-load-theme t)
             (setq sml/theme 'dark)
