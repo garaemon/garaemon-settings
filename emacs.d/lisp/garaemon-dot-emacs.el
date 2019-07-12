@@ -14,6 +14,7 @@
 (global-set-key "\C-o" 'dabbrev-expand)
 ;; Increase threshold to fire garbage collection
 (setq gc-cons-threshold 1342177280)
+(setq garbage-collection-messages t)
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
 ;; C-x p to switch buffer with inverse manner.
