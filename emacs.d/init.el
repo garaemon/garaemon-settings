@@ -9,6 +9,7 @@
 ;;; ln -sf ~/.emacs.d/dot.emacs ~/.emacs
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
+(add-to-list 'load-path "~/.emacs.d/plugins")
 
 ;; remove tramp file first to clean up old tramp connection
 (let ((tramp-old-file (expand-file-name "~/.emacs.d/tramp")))
@@ -56,6 +57,15 @@
 
 (global-set-key "\C-o" 'dabbrev-expand)
 (setq mac-command-modifier 'meta)
+
+;; Bind C-x # to switch back to tmux window where emacsclient run.
+;; In order to use this feature, the window index should be stored in ~/.emacs.d/emacsclient-window.
+(global-set-key
+ "\C-x#"
+ (lambda ()
+   (interactive)
+   (shell-command "tmux select-window -t \`cat ~/.emacs.d/emacsclient-window\`")))
+
 
 (require 'package)
 (setq package-archives
@@ -121,7 +131,7 @@
             ;; 候補の一番下でさらに下に行こうとすると一番上に戻る
             (setq company-selection-wrap-around t)
             (add-to-list 'company-backends 'company-dabbrev-code)
-            (add-to-list 'company-backends 'company-yasnippet)
+            ;; (add-to-list 'company-backends 'company-yasnippet)
             (add-to-list 'company-backends 'company-files)
             (define-key company-active-map (kbd "C-n") 'company-select-next)
             (define-key company-active-map (kbd "C-p") 'company-select-previous)
@@ -143,26 +153,26 @@
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
-;; (use-package elpy :ensure t
-;;   :config (progn
-;;             (elpy-enable)
-;;             ;; use ipython for interactive shell
-;;             (setq python-shell-interpreter "ipython"
-;;                   python-shell-interpreter-args "-i --no-confirm-exit"
-;;                   python-shell-enable-font-lock nil)
-;;             (defun elpy-shell-send-region-or-statement ()
-;;               "Send region or statement to python shell."
-;;               (interactive)
-;;               (if (use-region-p)
-;;                   (progn
-;;                     (elpy-shell-send-region-or-buffer)
-;;                     (deactivate-mark))
-;;                 (elpy-shell-send-statement)
-;;                 ))
-;;             (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
-;;             (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
-;;             (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
-;;             ))
+(use-package elpy :ensure t
+  :config (progn
+            (elpy-enable)
+            ;; use ipython for interactive shell
+            (setq python-shell-interpreter "ipython"
+                  python-shell-interpreter-args "-i --no-confirm-exit"
+                  python-shell-enable-font-lock nil)
+            (defun elpy-shell-send-region-or-statement ()
+              "Send region or statement to python shell."
+              (interactive)
+              (if (use-region-p)
+                  (progn
+                    (elpy-shell-send-region-or-buffer)
+                    (deactivate-mark))
+                (elpy-shell-send-statement)
+                ))
+            (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
+            (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
+            (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
+            ))
 
 (use-package exec-path-from-shell :ensure t
   :config (progn
@@ -308,6 +318,7 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package flyspell :ensure t
+  :if nil
   :config (progn
             ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
             ;; if (aspell installed) { use aspell}
@@ -525,7 +536,6 @@ Requires Flake8 3.0 or newer. See URL
               (counsel-require-program counsel-git-cmd)
               (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
                      (default-directory (or git-directory default-directory)))
-                (message "default directory %s" default-directory)
                 (let* ((counsel-git-cands (if git-directory
                                               (split-string
                                                (shell-command-to-string counsel-git-cmd)
@@ -709,6 +719,12 @@ Requires Flake8 3.0 or newer. See URL
                          (add-hook 'post-command-hook 'lsp-ui-doc-make-request-lazy
                                    nil t)
                          ))
+            (setq lsp-ui-doc-enable t)
+            (setq lsp-ui-doc-header t)
+            (setq lsp-ui-doc-include-signature t)
+            (setq lsp-ui-doc-max-width 80)
+            (setq lsp-ui-doc-max-height 30)
+            (setq lsp-ui-peek-enable t)
             )
   )
 
@@ -719,9 +735,16 @@ Requires Flake8 3.0 or newer. See URL
   :init (add-to-list 'company-backends 'company-lsp))
 
 (use-package cquery :ensure t
+  :if nil
   :config (setq cquery-executable "~/.local/bin/cquery")
-  :hook ((c-mode . lsp)
-         (c++-mode . lsp)))
+  :commands lsp
+  )
+
+(use-package ccls :ensure t
+  :config
+  :hook ((c-mode c++-mode objc-mode) .
+         (lambda () (require 'ccls) (lsp))))
+
 
 (use-package magit :ensure t
   :config (progn
@@ -1269,15 +1292,29 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package clang-format :ensure t
+  :bind (:map c-mode-base-map
+              ("C-c f" . 'clang-format-buffer)))
+
+(if (not (file-directory-p "~/.emacs.d/plugins/"))
+    (make-directory "~/.emacs.d/plugins/"))
+(if (not (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el"))
+    (url-copy-file
+     "https://raw.githubusercontent.com/nilsdeppe/emacs-clang-rename/master/emacs-clang-rename.el"
+     "~/.emacs.d/plugins/emacs-clang-rename.el"))
+(use-package emacs-clang-rename
+  :if (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el")
+  :bind (:map c-mode-base-map
+              ("C-c c p" . emacs-clang-rename-at-point)
+              ("C-c c q" . emacs-clang-rename-qualified-name)
+              ("C-c c a" . emacs-clang-rename-qualified-name-all))
   :config (progn
-            (define-key c-mode-base-map "\C-cf" 'clang-format-buffer)
+            (if (executable-find "clang-rename-6.0")
+                (setq emacs-clang-rename-binary "clang-rename-6.0"))
             )
   )
 
 (use-package py-yapf :ensure t
-  :config (progn
-            (define-key python-mode-map "\C-cf" 'py-yapf-buffer)
-            )
+  :hook ((python-mode . (lambda () (define-key python-mode-map "\C-cf" 'py-yapf-buffer))))
   )
 
 (use-package qml-mode :ensure t
@@ -1301,6 +1338,9 @@ Requires Flake8 3.0 or newer. See URL
             (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
             )
   )
+
+(use-package bm :ensure t
+  :bind (("M-^" . 'bm-toggle)))
 
 (use-package rosemacs-config
   :config (progn
