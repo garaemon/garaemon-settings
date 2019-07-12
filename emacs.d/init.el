@@ -58,6 +58,8 @@
 (global-set-key "\C-o" 'dabbrev-expand)
 (setq mac-command-modifier 'meta)
 
+(add-hook 'highlight-indentation-mode (lambda () (highlight-indentation-mode -1)))
+
 ;; Bind C-x # to switch back to tmux window where emacsclient run.
 ;; In order to use this feature, the window index should be stored in ~/.emacs.d/emacsclient-window.
 (global-set-key
@@ -172,6 +174,7 @@
             (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
             (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
             (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
+            (add-hook 'elpy-mode-hook (lambda () (highlight-indentation-mode -1)))
             ))
 
 (use-package exec-path-from-shell :ensure t
@@ -195,6 +198,7 @@
   )
 
 (use-package fill-column-indicator :ensure t
+  :if nil
   :hook ((prog-mode) . fci-mode)
   :config (progn
             (setq fci-rule-column 100)
@@ -937,11 +941,16 @@ Requires Flake8 3.0 or newer. See URL
   :config (smart-cursor-color-mode +1))
 
 (use-package smart-mode-line :ensure t
+  :if nil
   :config (progn
             (setq sml/no-confirm-load-theme t)
             (setq sml/theme 'dark)
             (setq sml/shorten-directory -1)
             (sml/setup)
+            (remove-hook 'post-command-hook 'sml/generate-position-help)
+            (add-hook 'post-command-hook
+                      (lambda ()
+                        (run-with-idle-timer 0.2 nil #'sml/generate-position-help)))
             )
   )
 

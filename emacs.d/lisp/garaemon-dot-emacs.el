@@ -13,7 +13,8 @@
 ;; C-o to expand completion
 (global-set-key "\C-o" 'dabbrev-expand)
 ;; Increase threshold to fire garbage collection
-(setq gc-cons-threshold 134217728)
+(setq gc-cons-threshold 1342177280)
+(setq garbage-collection-messages t)
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
 ;; C-x p to switch buffer with inverse manner.
@@ -64,7 +65,7 @@
 (setq compilation-scroll-output t)
 ;; sort with ignoring case.
 (setq sort-fold-case t)
-(eldoc-mode 1)
+(eldoc-mode nil)
 ;; subword for camelcase
 (global-subword-mode)
 ;; do not ask y-or-n when saving all
