@@ -174,6 +174,7 @@
             (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
             (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
             (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
+            (add-hook 'elpy-mode-hook (lambda () (highlight-indentation-mode -1)))
             ))
 
 (use-package exec-path-from-shell :ensure t
