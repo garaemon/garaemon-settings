@@ -935,11 +935,16 @@ Requires Flake8 3.0 or newer. See URL
   :config (smart-cursor-color-mode +1))
 
 (use-package smart-mode-line :ensure t
+  :if t
   :config (progn
             (setq sml/no-confirm-load-theme t)
             (setq sml/theme 'dark)
             (setq sml/shorten-directory -1)
             (sml/setup)
+            (remove-hook 'post-command-hook 'sml/generate-position-help)
+            (add-hook 'post-command-hook
+                      (lambda ()
+                        (run-with-idle-timer 0.2 nil #'sml/generate-position-help)))
             )
   )
 

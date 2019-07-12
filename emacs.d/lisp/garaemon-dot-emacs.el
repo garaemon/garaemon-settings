@@ -64,7 +64,7 @@
 (setq compilation-scroll-output t)
 ;; sort with ignoring case.
 (setq sort-fold-case t)
-(eldoc-mode 1)
+(eldoc-mode nil)
 ;; subword for camelcase
 (global-subword-mode)
 ;; do not ask y-or-n when saving all
