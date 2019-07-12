@@ -13,7 +13,7 @@
 ;; C-o to expand completion
 (global-set-key "\C-o" 'dabbrev-expand)
 ;; Increase threshold to fire garbage collection
-(setq gc-cons-threshold 134217728)
+(setq gc-cons-threshold 1342177280)
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
 ;; C-x p to switch buffer with inverse manner.
