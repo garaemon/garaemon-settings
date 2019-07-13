@@ -13,8 +13,12 @@
 ;; C-o to expand completion
 (global-set-key "\C-o" 'dabbrev-expand)
 ;; Increase threshold to fire garbage collection
-(setq gc-cons-threshold 1342177280)
+(setq gc-cons-threshold 1073741824)
 (setq garbage-collection-messages t)
+
+;; Run GC every 60 seconds if emacs is idle.
+(run-with-idle-timer 60.0 t #'garbage-collect)
+
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
 ;; C-x p to switch buffer with inverse manner.
