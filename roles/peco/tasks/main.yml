@@ -22,7 +22,7 @@
   when: download_peco.changed and ansible_os_family == "Darwin"
   unarchive:
     src: /tmp/peco_darwin_amd64.zip
-    dest: /tmp/peco_{{os_name | lower}}_amd64/
+    dest: /tmp
 
 - name: Download latest peco (debian)
   get_url: url=https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_linux_amd64.tar.gz dest=/tmp/peco_linux_amd64.tar.gz
