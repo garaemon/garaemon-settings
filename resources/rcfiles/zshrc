@@ -489,6 +489,11 @@ function e() {
                                 | cut -d ':' -f1)
 }
 
+# TODO: add completion
+function roslaunch-args() {
+    roslaunch $@ --args $(roslaunch $@ --nodes | peco)
+}
+
 function gp() {
     git pull-request &
     tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
