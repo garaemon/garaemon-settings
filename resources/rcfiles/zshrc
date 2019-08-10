@@ -480,7 +480,9 @@ if [ -e $HOME/.rvm/scripts/rvm ]; then
     export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 fi
 
-unalias e
+if alias e >/dev/null; then
+    unalias e
+fi
 function e() {
     # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
