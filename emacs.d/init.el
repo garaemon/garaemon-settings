@@ -413,7 +413,16 @@
 ;;; query-replace-regexp. {{{
 (defalias 'qrr 'query-replace-regexp)
 ;; for mistype :)
-(global-set-key "\M-%" 'query-replace)
+(defun query-replace-with-current-region ()
+  ""
+  (interactive)
+  (if (use-region-p)
+      (let ((search-word (buffer-substring (region-beginning) (region-end))))
+        (deactivate-mark)
+        (call-interactively 'query-replace t (vector search-word)))
+    (call-interactively 'query-replace)))
+
+(global-set-key "\M-&" 'query-replace)
 ;;; }}}
 
 ;;; rosemacs {{{
@@ -706,7 +715,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :if nil
   :hook ((prog-mode) . fci-mode)
   :config (progn
-            (setq fci-rule-column 100)
+            (setq-default fci-rule-column 100)
             ;; Automatically hide fci ruler if window is too narrow
             ;; See http://bit.ly/2Yw3XiE
             (defvar i42/fci-mode-suppressed nil)
@@ -1896,3 +1905,4 @@ Requires Flake8 3.0 or newer. See URL
    (quote
     (py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
