@@ -413,16 +413,7 @@
 ;;; query-replace-regexp. {{{
 (defalias 'qrr 'query-replace-regexp)
 ;; for mistype :)
-(defun query-replace-with-current-region ()
-  ""
-  (interactive)
-  (if (use-region-p)
-      (let ((search-word (buffer-substring (region-beginning) (region-end))))
-        (deactivate-mark)
-        (call-interactively 'query-replace t (vector search-word)))
-    (call-interactively 'query-replace)))
-
-(global-set-key "\M-&" 'query-replace)
+(global-set-key "\M-%" 'query-replace)
 ;;; }}}
 
 ;;; rosemacs {{{
