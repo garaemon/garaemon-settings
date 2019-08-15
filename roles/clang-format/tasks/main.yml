@@ -2,15 +2,20 @@
   apt:
     name:
       - clang-format
-      - clang-format-3.5
-      - clang-format-3.6
-      - clang-format-3.8
       - clang-format-3.9
       - clang-format-4.0
       - clang-format-5.0
       - clang-format-6.0
   become: yes
   when: ansible_os_family == "Debian"
+- name: Install clang-format (xenial)
+  apt:
+    name:
+      - clang-format-3.5
+      - clang-format-3.6
+      - clang-format-3.8
+  become: yes
+  when: ansible_os_family == "Debian" and ansible_lsb.codename == "xenial"
 - name: "Install clang-format update-alternatives"
   command: update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-6.0 60
   when: ansible_os_family == "Debian"
