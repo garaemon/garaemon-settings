@@ -20,7 +20,6 @@
       become: yes
     - hub
     - pyenv
-    - rvm
     - nvm
     - font
     - ispell
@@ -37,6 +36,7 @@
     - python-language-server
     - typescript-language-server
     - iterm2-themes
+    # - rvm
   vars:
     # pyenv variables
     # Initialize shell profile scripts

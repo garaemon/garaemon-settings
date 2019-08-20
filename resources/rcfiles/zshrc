@@ -464,25 +464,10 @@ fi
 
 [[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
 
-ruby_version="2.6.0"
-if [ -e $HOME/.rvm/scripts/rvm ]; then
-    source ~/.rvm/scripts/rvm
-    if ! rvm list | grep "${ruby_version}" >/dev/null ; then
-        if [ "$OS" = "Darwin" ] ; then
-            rvm install "ruby-${ruby_version}" --with-openssl-dir=/usr/local/opt/openssl
-        else
-            rvm install "ruby-${ruby_version}"
-        fi
-    fi
-    rvm use ruby-${ruby_version} >/dev/null
-    # update ~/.rvmrc to supress warning message
-    echo rvm_silence_path_mismatch_check_flag=1 > ~/.rvmrc
-    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
-fi
-
 if alias e >/dev/null; then
     unalias e
 fi
+
 function e() {
     # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
