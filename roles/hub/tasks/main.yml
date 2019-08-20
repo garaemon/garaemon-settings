@@ -13,14 +13,24 @@
     os_name: "darwin"
   when: ansible_os_family == "Darwin"
 
+- name: Set Arch Name (darwin)
+  command: echo amd64
+  register: arch
+  when: ansible_os_family == "Darwin"
+
 - name: Set OS Name (debian)
   set_fact:
     os_name: "linux"
   when: ansible_os_family == "Debian"
 
+- name: Set Arch Name (darwin)
+  command: dpkg --print-architecture
+  when: ansible_os_family == "Debian"
+  register: arch
+
 - name: Download latest hub {{hub_latest_version.stdout}}
   get_url:
-    url: https://github.com/github/hub/releases/download/{{hub_latest_version.stdout}}/hub-{{os_name}}-amd64-{{hub_latest_version_number.stdout}}.tgz
+    url: https://github.com/github/hub/releases/download/{{hub_latest_version.stdout}}/hub-{{os_name}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}.tgz
     dest: /tmp/hub.tgz
   register: download_hub
 
@@ -35,7 +45,7 @@
 
 - name: Copy to .local/bin/
   when: download_hub.changed
-  command: cp /tmp/hub-{{os_name | lower}}-amd64-{{hub_latest_version_number.stdout}}/bin/hub ~/.local/bin/hub
+  command: cp /tmp/hub-{{os_name | lower}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}/bin/hub ~/.local/bin/hub
 
 - name: chmod hub
   when: download_hub.changed
