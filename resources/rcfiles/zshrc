@@ -480,6 +480,7 @@ function e() {
 function roslaunch-args() {
     roslaunch $@ --args $(roslaunch $@ --nodes | peco)
 }
+export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message}'
 
 function gp() {
     git pull-request &
