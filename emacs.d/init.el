@@ -1695,6 +1695,7 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package hl-line
+  :if nil
   :config (progn
             (defun global-hl-line-timer-function ()
               "Callback function for hl-line timer."
