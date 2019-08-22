@@ -706,7 +706,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :if nil
   :hook ((prog-mode) . fci-mode)
   :config (progn
-            (setq fci-rule-column 100)
+            (setq-default fci-rule-column 100)
             ;; Automatically hide fci ruler if window is too narrow
             ;; See http://bit.ly/2Yw3XiE
             (defvar i42/fci-mode-suppressed nil)
@@ -1900,3 +1900,4 @@ Requires Flake8 3.0 or newer. See URL
    (quote
     (py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
