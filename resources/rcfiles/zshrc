@@ -517,8 +517,10 @@ function catkin-compile-json {
     do
         package=$(echo $package_dir | xargs -n 1 basename)
         (cd "${catkin_ws}";
-         ln -sf ${catkin_ws}/build/$package/compile_commands.json \
-            $(rospack find $package)/compile_commands.json)
+         if [ -e ${catkin_ws}/build/$package/compile_commands.json ]; then
+             ln -sf ${catkin_ws}/build/$package/compile_commands.json \
+                $(rospack find $package)/compile_commands.json
+         fi)
     done
 }
 
