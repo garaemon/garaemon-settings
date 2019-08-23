@@ -414,6 +414,7 @@
 (defalias 'qrr 'query-replace-regexp)
 ;; for mistype :)
 (global-set-key "\M-%" 'query-replace)
+(global-set-key "\M-&" 'query-replace)
 ;;; }}}
 
 ;;; rosemacs {{{
