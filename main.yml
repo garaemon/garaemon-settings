@@ -20,13 +20,14 @@
       become: yes
     - hub
     - pyenv
-    - rvm
     - nvm
     - font
     - ispell
     - tig
     - dircolors-solarized
     - role: base16-gnome-terminal
+      when: ansible_os_family == "Debian"
+    - role: dictd
       when: ansible_os_family == "Debian"
     - inkdrop
     - vscode
@@ -35,13 +36,13 @@
     - python-language-server
     - typescript-language-server
     - iterm2-themes
+    # - rvm
   vars:
     # pyenv variables
     # Initialize shell profile scripts
     pyenv_init_shell: yes
     # Python versions to install
     pyenv_python_versions:
-      - "2.7.10"
       - "3.7.2"
     # Set global pyenv version
     pyenv_global: "system"

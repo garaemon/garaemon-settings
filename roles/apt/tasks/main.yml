@@ -25,7 +25,7 @@
       - libgconf2-dev
       - libgdbm-dev
       - libgif-dev
-      - libgnutls-dev
+      - libgmp-dev
       - libgpm-dev
       - libgtk2.0-dev
       - libicu-dev
@@ -55,7 +55,18 @@
       - toilet
       - ttyrec
       - ubuntu-gnome-desktop
+      - urlview
       - vim
       - w3m
       - xclip
       - zsh
+- name: Install apt packages (xenial)
+  apt:
+    name: "{{packages}}"
+    state: present
+    update_cache: yes
+  become: yes
+  vars:
+    packages:
+      - libgnutls-dev
+  when: ansible_lsb.codename == "xenial"

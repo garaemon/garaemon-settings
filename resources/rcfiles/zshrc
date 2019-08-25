@@ -385,6 +385,7 @@ export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
 # git aliases
 git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
+git config --global core.editor "emacsclient"
 git config --global alias.see browse
 git config --global alias.p pull-request
 git config --global alias.br branch
@@ -463,27 +464,32 @@ fi
 
 [[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
 
-ruby_version="2.6.0"
-if [ -e $HOME/.rvm/scripts/rvm ]; then
-    source ~/.rvm/scripts/rvm
-    if ! rvm list | grep "${ruby_version}" >/dev/null ; then
-        if [ "$OS" = "Darwin" ] ; then
-            rvm install "ruby-${ruby_version}" --with-openssl-dir=/usr/local/opt/openssl
-        else
-            rvm install "ruby-${ruby_version}"
-        fi
-    fi
-    rvm use ruby-${ruby_version} >/dev/null
-    # update ~/.rvmrc to supress warning message
-    echo rvm_silence_path_mismatch_check_flag=1 > ~/.rvmrc
-    export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+if alias e >/dev/null; then
+    unalias e
 fi
 
-alias e='emacsclient -n'
-
 function e() {
+    # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
+    tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' \
+                                | cut -d ':' -f1)
 }
+
+# TODO: add completion
+function roslaunch-args() {
+    roslaunch $@ --args $(roslaunch $@ --nodes | peco)
+}
+export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message}'
+
+function gp() {
+    git pull-request &
+    tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
+                                | cut -d ':' -f1)
+}
+
+alias cbt='catkin bt'
 
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
     source ~/gitai/catkin_ws/devel/setup.zsh
@@ -511,8 +517,10 @@ function catkin-compile-json {
     do
         package=$(echo $package_dir | xargs -n 1 basename)
         (cd "${catkin_ws}";
-         ln -sf ${catkin_ws}/build/$package/compile_commands.json \
-            $(rospack find $package)/compile_commands.json)
+         if [ -e ${catkin_ws}/build/$package/compile_commands.json ]; then
+             ln -sf ${catkin_ws}/build/$package/compile_commands.json \
+                $(rospack find $package)/compile_commands.json
+         fi)
     done
 }
 
@@ -527,7 +535,9 @@ function wstool-checkout-default-branch {
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
   source $HOME/.pyenv/.pyenvrc
-  source $HOME/.pyenv/completions/pyenv.zsh
+  if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
+    source $HOME/.pyenv/completions/pyenv.zsh
+  fi
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 
@@ -551,3 +561,4 @@ fi
 precmd() {
     echo -ne "\033]0;$(hostname)\007"
 }
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

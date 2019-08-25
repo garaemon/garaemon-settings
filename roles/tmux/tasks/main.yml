@@ -3,3 +3,4 @@
     src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/tmux.conf"
     dest: ~/.tmux.conf
     state: link
+    force: yes
