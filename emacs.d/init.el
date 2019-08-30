@@ -618,13 +618,13 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package bm :ensure t
+  :bind ((("M-^" . 'bm-toggle)
+          ("C-M-n" . 'bm-next)
+          ("C-M-p" . 'bm-previous)))
   :config (progn
-            (global-set-key [?\C-\M-\ ] 'bm-toggle)
-            (global-set-key [?\C-\M-n] 'bm-next)
-            (global-set-key [?\C-\M-p] 'bm-previous)
+            (global-set-key [?\C-\M-\ ] 'bm-toggle) ;not work
             (set-face-background bm-face "orange")
             (set-face-foreground bm-face "black"))
-  :defer t
   )
 
 (use-package calfw :ensure t :defer t)
@@ -1857,9 +1857,6 @@ Requires Flake8 3.0 or newer. See URL
             (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
             )
   )
-
-(use-package bm :ensure t
-  :bind (("M-^" . 'bm-toggle)))
 
 (use-package rosemacs-config
   :config (progn
