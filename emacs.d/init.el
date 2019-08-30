@@ -263,6 +263,20 @@
 
 ;;; C+++ {{{
 (setq auto-mode-alist (cons (cons "\\.h?$" 'c++-mode) auto-mode-alist))
+(defun insert-include-guard ()
+  "Automatically insert include guard"
+  (interactive)
+  (let* ((full-current-file-name (buffer-file-name))
+         (file-name (file-name-nondirectory full-current-file-name))
+         (directory-name (file-name-nondirectory (substring (file-name-directory full-current-file-name) 0 -1))))
+    (let ((macro-name (replace-regexp-in-string "\\\." "_" file-name)))
+      (goto-char (point-min))
+      (insert (format "#ifndef %s_%s\n" (upcase directory-name) (upcase macro-name)))
+      (insert (format "#define %s_%s\n" (upcase directory-name) (upcase macro-name)))
+      (goto-char (point-max))
+      (insert (format "#endif //%s_%s\n" (upcase directory-name) (upcase macro-name)))
+      )
+  ))
 ;;; }}}
 
 ;;; lisp {{{
