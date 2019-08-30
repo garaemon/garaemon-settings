@@ -1201,6 +1201,7 @@ Requires Flake8 3.0 or newer. See URL
          (typescript-mode . lsp)
          )
   :config (progn
+            (setq lsp-enable-snippet nil)
             ;; (setq lsp-print-io nil)
             ;; (setq lsp-enable-xref nil)
             ;; (setq lsp-enable-symbol-highlighting nil)
