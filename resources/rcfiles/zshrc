@@ -79,7 +79,7 @@ if [ -e "${HOME}/.nvm/nvm.sh" ]; then
     echo sourcing nvm.sh
     # --no-use option to speed up source nvm.sh
     source ${HOME}/.nvm/nvm.sh --no-use
-    nvm use v8.9.3 > /dev/null
+    nvm use v10.16.3 > /dev/null
 fi
 
 #alias
