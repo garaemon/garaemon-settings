@@ -274,8 +274,7 @@
 
 (defun get-c++-namespace ()
   (interactive)                         ;for debug
-  (let* ((full-current-file-name (buffer-file-name))
-         (file-name (file-name-nondirectory full-current-file-name)))
+  (let* ((full-current-file-name (buffer-file-name)))
     (file-name-nondirectory
      ;; Remove the tailing '/'
      (substring (file-name-directory full-current-file-name) 0 -1))))
@@ -438,6 +437,21 @@
     (require 'rosemacs nil t)
   (invoke-rosemacs)
   (global-set-key "\C-x\C-r" ros-keymap))
+(defun get-package-name-for-dynamic-reconfigure-cfg ()
+  (interactive)                       ;for debug
+  ;; package/cfg/Foo.cfg
+  (let* ((full-current-file-name (buffer-file-name)))
+    (message (file-name-nondirectory
+              (substring                ;Remove trailing /
+               (file-name-directory
+                (substring              ;Remoev trailing /
+                 (file-name-directory full-current-file-name) 0 -1))
+               0 -1))))
+  )
+(defun get-file-name-for-dynamic-reconfigure-cfg ()
+  (interactive)                         ;for debug
+  ;; package/cfg/Foo.cfg
+  (file-name-base (buffer-file-name)))
 ;;; }}}
 
 ;;; useful functions to manage multiple windows. {{{
