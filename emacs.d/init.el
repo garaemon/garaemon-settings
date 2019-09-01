@@ -263,6 +263,20 @@
 
 ;;; C+++ {{{
 (setq auto-mode-alist (cons (cons "\\.h?$" 'c++-mode) auto-mode-alist))
+(defun insert-include-guard ()
+  "Automatically insert include guard"
+  (interactive)
+  (let* ((full-current-file-name (buffer-file-name))
+         (file-name (file-name-nondirectory full-current-file-name))
+         (directory-name (file-name-nondirectory (substring (file-name-directory full-current-file-name) 0 -1))))
+    (let ((macro-name (replace-regexp-in-string "\\\." "_" file-name)))
+      (goto-char (point-min))
+      (insert (format "#ifndef %s_%s\n" (upcase directory-name) (upcase macro-name)))
+      (insert (format "#define %s_%s\n" (upcase directory-name) (upcase macro-name)))
+      (goto-char (point-max))
+      (insert (format "#endif //%s_%s\n" (upcase directory-name) (upcase macro-name)))
+      )
+  ))
 ;;; }}}
 
 ;;; lisp {{{
@@ -414,6 +428,7 @@
 (defalias 'qrr 'query-replace-regexp)
 ;; for mistype :)
 (global-set-key "\M-%" 'query-replace)
+(global-set-key "\M-&" 'query-replace)
 ;;; }}}
 
 ;;; rosemacs {{{
@@ -617,13 +632,13 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package bm :ensure t
+  :bind ((("M-^" . 'bm-toggle)
+          ("C-M-n" . 'bm-next)
+          ("C-M-p" . 'bm-previous)))
   :config (progn
-            (global-set-key [?\C-\M-\ ] 'bm-toggle)
-            (global-set-key [?\C-\M-n] 'bm-next)
-            (global-set-key [?\C-\M-p] 'bm-previous)
+            (global-set-key [?\C-\M-\ ] 'bm-toggle) ;not work
             (set-face-background bm-face "orange")
             (set-face-foreground bm-face "black"))
-  :defer t
   )
 
 (use-package calfw :ensure t :defer t)
@@ -660,7 +675,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
-(use-package elpy :ensure t
+(use-package elpy :ensure t :if nil
   :config (progn
             (elpy-enable)
             ;; use ipython for interactive shell
@@ -1201,6 +1216,7 @@ Requires Flake8 3.0 or newer. See URL
          (typescript-mode . lsp)
          )
   :config (progn
+            (setq lsp-enable-snippet nil)
             ;; (setq lsp-print-io nil)
             ;; (setq lsp-enable-xref nil)
             ;; (setq lsp-enable-symbol-highlighting nil)
@@ -1857,9 +1873,6 @@ Requires Flake8 3.0 or newer. See URL
             (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
             )
   )
-
-(use-package bm :ensure t
-  :bind (("M-^" . 'bm-toggle)))
 
 (use-package rosemacs-config
   :config (progn
