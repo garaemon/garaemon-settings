@@ -263,20 +263,22 @@
 
 ;;; C+++ {{{
 (setq auto-mode-alist (cons (cons "\\.h?$" 'c++-mode) auto-mode-alist))
-(defun insert-include-guard ()
-  "Automatically insert include guard"
-  (interactive)
+;; For yasnippet helper
+(defun get-c++-include-guard-macro-name ()
+  (interactive)                         ;for debug
   (let* ((full-current-file-name (buffer-file-name))
          (file-name (file-name-nondirectory full-current-file-name))
-         (directory-name (file-name-nondirectory (substring (file-name-directory full-current-file-name) 0 -1))))
+         (directory-name (get-c++-namespace)))
     (let ((macro-name (replace-regexp-in-string "\\\." "_" file-name)))
-      (goto-char (point-min))
-      (insert (format "#ifndef %s_%s\n" (upcase directory-name) (upcase macro-name)))
-      (insert (format "#define %s_%s\n" (upcase directory-name) (upcase macro-name)))
-      (goto-char (point-max))
-      (insert (format "#endif //%s_%s\n" (upcase directory-name) (upcase macro-name)))
-      )
-  ))
+      (format "%s_%s" (upcase directory-name) (upcase macro-name)))))
+
+(defun get-c++-namespace ()
+  (interactive)                         ;for debug
+  (let* ((full-current-file-name (buffer-file-name))
+         (file-name (file-name-nondirectory full-current-file-name)))
+    (file-name-nondirectory
+     ;; Remove the tailing '/'
+     (substring (file-name-directory full-current-file-name) 0 -1))))
 ;;; }}}
 
 ;;; lisp {{{
@@ -1666,7 +1668,6 @@ Requires Flake8 3.0 or newer. See URL
   :init (add-to-list 'auto-mode-alist '("\\.\\(yml\\|yaml\\|rosinstall\\)$" . yaml-mode)))
 
 (use-package yasnippet :ensure t
-  :defer t
   :config (progn
             (setq yas-snippet-dirs '("~/.emacs.d/snippets"
                                      "~/.emacs.d/yasnippet-snippets/snippets"))
@@ -1681,7 +1682,22 @@ Requires Flake8 3.0 or newer. See URL
             ;; edit a snippet
             (define-key yas-minor-mode-map (kbd "C-x i v") 'yas-visit-snippet-file)
             )
+  :hook ((prog-mode . yas-minor-mode)
+         (cmake-mode . yas-minor-mode))
   )
+
+(use-package yatemplate :ensure t
+  :config (progn
+            (setq auto-insert-alist '(()))
+            (setq yatemplate-dir (expand-file-name "~/.emacs.d/templates"))
+            (yatemplate-fill-alist)
+            (auto-insert-mode 1)
+            (defun after-save-hook--yatemplate ()
+              (when (string-match "emacs.*/templates/" buffer-file-name)
+                (yatemplate-fill-alist)))
+            (add-hook 'after-save-hook 'after-save-hook--yatemplate)
+            ))
+
 
 (use-package esup :ensure t)
 
@@ -1701,6 +1717,14 @@ Requires Flake8 3.0 or newer. See URL
   :init  (progn
            (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
            (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
+           (defun get-cmake-project-name ()
+             (interactive)              ;for debug
+             (let* ((full-current-file-name (buffer-file-name))
+                    (file-name (file-name-nondirectory full-current-file-name)))
+               (file-name-nondirectory
+                ;; Remove the tailing '/'
+                (substring (file-name-directory full-current-file-name) 0 -1))
+               ))
            )
   )
 
@@ -1912,6 +1936,6 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (yatemplate py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
