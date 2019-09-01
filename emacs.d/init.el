@@ -1216,7 +1216,7 @@ Requires Flake8 3.0 or newer. See URL
          (typescript-mode . lsp)
          )
   :config (progn
-            (setq lsp-enable-snippet nil)
+            (setq lsp-enable-snippet t)
             ;; (setq lsp-print-io nil)
             ;; (setq lsp-enable-xref nil)
             ;; (setq lsp-enable-symbol-highlighting nil)
@@ -1669,9 +1669,9 @@ Requires Flake8 3.0 or newer. See URL
   :defer t
   :config (progn
             (setq yas-snippet-dirs '("~/.emacs.d/snippets"
-                                     "~/.emacs.d/el-get/yasnippet/snippets"))
+                                     "~/.emacs.d/yasnippet-snippets/snippets"))
             (setq yas-trigger-key "Enter")
-            (yas-global-mode -1)
+            (yas-global-mode 1)
             ;;(custom-set-variables '(yas-trigger-key "TAB"))
 
             ;; insert new snippet
