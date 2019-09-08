@@ -80,8 +80,15 @@
 (setq garbage-collection-messages t)
 
 ;; Run GC every 60 seconds if emacs is idle.
+(setq previous-gc-run-time (float-time (current-time)))
+(defun run-gc-with-interval ()
+  (let ((now (float-time (current-time))))
+    (if (> (- now previous-gc-run-time) 60.0)
+        (progn
+          (garbage-collect)
+          (setq previous-gc-run-time now)))))
 (add-hook 'post-command-hook #'(lambda ()
-                                 (run-with-idle-timer 60 nil #'garbage-collect)))
+                                 (run-with-idle-timer 60 nil #'run-gc-with-interval)))
 
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
