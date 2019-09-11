@@ -1105,6 +1105,7 @@ Requires Flake8 3.0 or newer. See URL
                             ))))
             (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
             (global-set-key "\C-s" 'swiper-isearch)
+            (global-set-key "\C-r" 'swiper-isearch-backward)
             (global-set-key (kbd "C-c C-r") 'ivy-resume)
             (global-set-key (kbd "<f6>") 'ivy-resume)
             (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
