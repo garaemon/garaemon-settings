@@ -964,7 +964,14 @@ Requires Flake8 3.0 or newer. See URL
 ;;     (use-package flycheck-pos-tip))
 ;; (use-package Simplify/flycheck-typescript-tslint)
 
-(use-package gist :ensure t)
+;; Need to setup:
+;; git config --global github.user <username>
+;; git config --global github.oauth-token <token>
+(use-package gist :ensure t
+  :bind
+  (("C-c C-g" . gist-region-or-buffer))
+  )
+
 
 (use-package git-gutter+ :ensure t
   :if (not (display-graphic-p))
