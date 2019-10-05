@@ -589,7 +589,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (defun ros-catkin-make (dir)
   "Run catkin_make command in DIR."
-  ;; (interactive (list (file-name-directory (buffer-file-name))))
   (interactive (list default-directory))
   ;; clear compilation buffer first not to occupy memory space.
   (if (get-buffer "*catkin_make*")
@@ -597,7 +596,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (let* ((default-directory dir)
          (compilation-buffer-name-function (lambda (major-mode-name) "*catkin_make*")))
     (compile "catkin bt --no-status"))
-  ;; (switch-to-buffer (get-buffer "*catkin_make*"))
   (switch-to-buffer-other-window (get-buffer-create "*catkin_make*"))
   )
 
