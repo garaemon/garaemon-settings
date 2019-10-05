@@ -1,3 +1,6 @@
 [submodule "yasnippet-snippets"]
 	path = yasnippet-snippets
 	url = https://github.com/AndreaCrotti/yasnippet-snippets.git
+[submodule "avy-migemo"]
+	path = avy-migemo
+	url = https://github.com/tam17aki/avy-migemo

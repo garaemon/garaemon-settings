@@ -1034,6 +1034,24 @@ Requires Flake8 3.0 or newer. See URL
                  )
   )
 
+(use-package migemo :ensure t
+  :config
+  (progn
+    (setq migemo-command "cmigemo")
+    (setq migemo-options '("-q" "--emacs"))
+    (let ((migemo-dictionary-candiates
+           '("/usr/local/share/migemo/utf-8/migemo-dict"
+             "/usr/share/cmigemo/utf-8/migemo-dict")))
+      (dolist (candidate migemo-dictionary-candiates)
+        (if (file-exists-p candidate)
+            (setq migemo-dictionary candidate))))
+    (setq migemo-user-dictionary nil)
+    (setq migemo-regex-dictionary nil)
+    ;; charset encoding
+    (setq migemo-coding-system 'utf-8-unix)
+    (migemo-init)
+    ))
+
 (use-package counsel :ensure t
   :config (progn
             (ivy-mode t)
@@ -1042,7 +1060,8 @@ Requires Flake8 3.0 or newer. See URL
             (setq enable-recursive-minibuffers t)
             ;; (setq ivy-height 30)
             (setq ivy-extra-directories nil)
-            (setq ivy-re-builders-alist '((t . ivy--regex-plus)))
+            ;; (setq ivy-re-builders-alist '((t . ivy--regex-plus)))
+
             ;; Remove the first '^' in query form.
             ;; https://github.com/abo-abo/swiper/issues/1455
             (setq ivy-initial-inputs-alist nil)
@@ -1125,6 +1144,18 @@ Requires Flake8 3.0 or newer. See URL
             (define-key ivy-minibuffer-map (kbd "C-RET") #'ivy-immediate-done)
             (define-key ivy-minibuffer-map "\C-h" 'ivy-backward-delete-char)
             )
+  )
+
+(use-package avy :ensure t)
+(add-to-list 'load-path "~/.emacs.d/avy-migemo")
+(use-package avy-migemo
+  ;; :ensure t
+  :config
+  (avy-migemo-mode 1)
+  (setq avy-timeout-seconds nil)
+  (require 'avy-migemo-e.g.swiper)
+  (global-set-key (kbd "C-M-;") 'avy-migemo-goto-char-timer)
+  ;;  (global-set-key (kbd "M-g m m") 'avy-migemo-mode)
   )
 
 (use-package ivy-posframe :ensure t
@@ -1960,11 +1991,19 @@ Requires Flake8 3.0 or newer. See URL
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(avy-migemo-function-names
+   (quote
+    (swiper--make-overlays-migemo
+     (swiper--re-builder :around swiper--re-builder-migemo-around)
+     (ivy--regex :around ivy--regex-migemo-around)
+     (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
+     (ivy--regex-plus :around ivy--regex-plus-migemo-around)
+     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full)))
  '(custom-safe-themes
    (quote
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (yatemplate py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
