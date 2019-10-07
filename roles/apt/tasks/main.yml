@@ -9,6 +9,7 @@
       - anthy-el
       - bison
       - build-essential
+      - cmigemo
       - compizconfig-settings-manager
       - conky
       - conky-all

@@ -11,6 +11,7 @@
       - imagemagick
       - gnu-sed
       - ccache
+      - cmigemo
       - coreutils
       - cowsay
       - hub
