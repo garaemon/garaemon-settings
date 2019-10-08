@@ -1358,6 +1358,9 @@ Requires Flake8 3.0 or newer. See URL
               (start-process "shiba" "*shiba*" "shiba" "--detach" buffer-file-name))
             (define-key markdown-mode-map (kbd "C-c C-c") 'open-with-shiba)
             (define-key markdown-mode-map (kbd "C-c m") 'newline)
+            ;; do not work?
+            (setq markdown-display-remote-images t)
+            (setq markdown-max-image-size '(200 . 200))
             ;; syntax highlight for code block
             (setq markdown-fontify-code-blocks-natively t)
             ;; Do not change font in code block
