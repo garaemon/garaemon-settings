@@ -1371,6 +1371,14 @@ Requires Flake8 3.0 or newer. See URL
                                              (electric-indent-local-mode -1)))
             ))
 
+(add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
+(use-package markdown-dnd-images
+  :config
+  (setq dnd-save-directory "images")
+  (setq dnd-view-inline t)
+  (setq dnd-save-buffer-name nil)
+  (setq dnd-capture-source t))
+
 (use-package migemo :ensure t
   :if (executable-find "cmigemo")
   :config (progn
