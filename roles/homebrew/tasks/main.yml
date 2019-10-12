@@ -55,3 +55,4 @@
       - hyperswitch
       - latexit
       - virtualbox
+      - homebrew/cask-fonts/font-symbola
