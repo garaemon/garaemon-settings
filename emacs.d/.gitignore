@@ -30,3 +30,4 @@ transient
 .cache
 plugins/
 emacsclient-window
+emojis/
