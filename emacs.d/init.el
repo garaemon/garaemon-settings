@@ -1361,6 +1361,7 @@ Requires Flake8 3.0 or newer. See URL
             ;; do not work?
             (setq markdown-display-remote-images t)
             (setq markdown-max-image-size '(200 . 200))
+            (setq markdown-enable-math t)
             ;; syntax highlight for code block
             (setq markdown-fontify-code-blocks-natively t)
             ;; Do not change font in code block
