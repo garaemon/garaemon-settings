@@ -1360,7 +1360,7 @@ Requires Flake8 3.0 or newer. See URL
             (define-key markdown-mode-map (kbd "C-c m") 'newline)
             ;; do not work?
             (setq markdown-display-remote-images t)
-            (setq markdown-max-image-size '(200 . 200))
+            (setq markdown-max-image-size '(600 . 600))
             (setq markdown-enable-math t)
             ;; syntax highlight for code block
             (setq markdown-fontify-code-blocks-natively t)
@@ -1416,13 +1416,32 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package switch-buffer-functions :ensure t)
+
 (use-package neotree :ensure t
   :requires (all-the-icons)
   :config (progn
             (global-set-key [f8] 'neotree-toggle)
             ;; all-the-icons is required
             (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-            )
+            (setq neo-smart-open t)
+            (add-hook 'switch-buffer-functions
+                      (lambda (prev current)
+                        (let ((neotree-buffer (neo-global--get-buffer)))
+                          (if (and
+                               ;; Ignore if new buffer is neotree
+                               (not (eq current neotree-buffer))
+                               ;; Ignore if the buffer is not assosiated with a file
+                               buffer-file-name
+                               ;; Ignore if neotree is not active
+                               (neo-global--window-exists-p))
+                              (progn
+                                (neo-buffer--change-root default-directory)
+                                (switch-to-buffer current)
+                                )
+                            )
+                          )
+                        )))
   )
 
 (use-package nlinum :ensure t
@@ -2023,6 +2042,6 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
