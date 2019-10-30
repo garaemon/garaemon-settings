@@ -1987,6 +1987,10 @@ Requires Flake8 3.0 or newer. See URL
   :config (gcmh-mode 1)
   )
 
+(use-package transpose-frame :ensure t
+  :bind (("C-x C-o" . 'rotate-frame-clockwise))
+  )
+
 (use-package rosemacs-config
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
@@ -2033,6 +2037,6 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
