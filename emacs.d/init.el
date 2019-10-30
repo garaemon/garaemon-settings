@@ -75,20 +75,7 @@
 ;;; basic setting {{{
 ;; C-o to expand completion
 (global-set-key "\C-o" 'dabbrev-expand)
-;; Increase threshold to fire garbage collection
-(setq gc-cons-threshold 1073741824)
 (setq garbage-collection-messages t)
-
-;; Run GC every 60 seconds if emacs is idle.
-(setq previous-gc-run-time (float-time (current-time)))
-(defun run-gc-with-interval ()
-  (let ((now (float-time (current-time))))
-    (if (> (- now previous-gc-run-time) 60.0)
-        (progn
-          (garbage-collect)
-          (setq previous-gc-run-time now)))))
-(add-hook 'post-command-hook #'(lambda ()
-                                 (run-with-idle-timer 60 nil #'run-gc-with-interval)))
 
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
@@ -1996,6 +1983,10 @@ Requires Flake8 3.0 or newer. See URL
   ("C-x e" . 'emojify-insert-emoji)
   )
 
+(use-package gcmh :ensure t
+  :config (gcmh-mode 1)
+  )
+
 (use-package rosemacs-config
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
@@ -2042,6 +2033,6 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
