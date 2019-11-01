@@ -1328,6 +1328,10 @@ Requires Flake8 3.0 or newer. See URL
   :config (progn
             (global-set-key "\C-cl" 'magit-status)
             (global-set-key "\C-cL" 'magit-status)
+            ;; It expects core.editor=emacsclient
+            (defun github-pull-request ()
+              (interactive)
+              (shell-command "hub pull-request &"))
             )
   )
 
