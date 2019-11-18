@@ -491,6 +491,8 @@ function gp() {
 
 alias cbt='catkin bt'
 
+alias c='catkin'
+
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
     source ~/gitai/catkin_ws/devel/setup.zsh
 fi
@@ -535,9 +537,7 @@ function wstool-checkout-default-branch {
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
   source $HOME/.pyenv/.pyenvrc
-  if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
-    source $HOME/.pyenv/completions/pyenv.zsh
-  fi
+  source $HOME/.pyenv/completions/pyenv.zsh
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 
