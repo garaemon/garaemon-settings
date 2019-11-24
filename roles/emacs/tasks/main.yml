@@ -15,18 +15,55 @@
     src: ~/gprog/emacs.d
     dest: ~/.emacs.d
     state: link
-- name: Add ppa to install emacs26
-  apt_repository:
-    repo: ppa:kelleyk/emacs
-  when: ansible_os_family == "Debian"
-  become: yes
-- name: Install emacs
+
+# Build emacs from source for Ubuntu. If install the latest emacs from ppa package,
+# ros-emacs may fail to be installed because of dependency to emacs-25.
+- name: Install packages to build emacs
   apt:
-    name: emacs26
-    update_cache: yes
+    name:
+      - libgnutls28-dev
+  become: yes
   when: ansible_os_family == "Debian"
-  become: yes
-- name: Use emacs26 as default emacs
-  command: update-alternatives --set emacs /usr/bin/emacs26
-  become: yes
+
+- name: Clone the latest emacs
+  git:
+    repo: https://github.com/emacs-mirror/emacs
+    dest: ~/gprog/emacs
+    version: emacs-26.3
+  when: ansible_os_family == "Debian"
+
+- name: Prepare configure for the latest emacs
+  command: ./autogen.sh
+  args:
+    chdir: ~/gprog/emacs
+  environment:
+    CC: ccache gcc
+    CXX: ccache g++
+  when: ansible_os_family == "Debian"
+
+- name: Configure the latest emacs
+  command: ./configure --prefix=$HOME/.local
+  args:
+    chdir: ~/gprog/emacs
+  environment:
+    CC: ccache gcc
+    CXX: ccache g++
+  when: ansible_os_family == "Debian"
+
+- name: Build the latest emacs
+  command: make
+  args:
+    chdir: ~/gprog/emacs
+  environment:
+    CC: ccache gcc
+    CXX: ccache g++
+  when: ansible_os_family == "Debian"
+
+- name: Install the latest emacs
+  command: make install
+  args:
+    chdir: ~/gprog/emacs
+  environment:
+    CC: ccache gcc
+    CXX: ccache g++
   when: ansible_os_family == "Debian"
