@@ -2001,8 +2001,8 @@ Requires Flake8 3.0 or newer. See URL
   :config (progn
             (global-set-key "\C-x\C-r" ros-keymap)
             )
-  :load-path "/opt/ros/kinetic/share/emacs/site-lisp"
-  :if (file-exists-p "/opt/ros/kinetic/share/emacs/site-lisp/rosemacs-config.el")
+  :load-path "/opt/ros/melodic/share/emacs/site-lisp"
+  :if (file-exists-p "/opt/ros/melodic/share/emacs/site-lisp/rosemacs-config.el")
   )
 
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
