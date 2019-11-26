@@ -614,6 +614,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 ;; (when (executable-find "pdftex")
 ;;   (use-package auctex :ensure t)) ;; it depends on tex
+;; Need to run (all-the-icons-install-fonts)
 (use-package all-the-icons :ensure t)
 
 (use-package anzu :ensure t
