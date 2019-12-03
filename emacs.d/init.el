@@ -685,6 +685,33 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
+(use-package python
+  :config
+  (progn
+    (setq python-shell-interpreter "ipython"
+          python-shell-interpreter-args "-i --no-confirm-exit"
+          python-shell-enable-font-lock nil)
+    (defun run-python-and-switch-to-shell ()
+      (interactive)
+      (run-python)
+      (python-shell-switch-to-shell))
+    ;; TODO: It does not work
+    (defun python-shell-send-region-or-statement ()
+      (interactive)
+      (if (use-region-p)
+          (progn
+            (call-interactively 'python-shell-send-region)
+            (deactivate-mark))
+        (let ((beg (save-excursion (beginning-of-line) (point)))
+              (end (save-excursion (end-of-line) (point))))
+          (python-shell-send-string
+           (python-shell-buffer-substring beg end))
+          ))))
+  :bind (:map python-mode-map
+              ("\C-x\C-E" . 'python-shell-send-region-or-statement)
+              ("\C-cE" . 'run-python-and-switch-to-shell)
+              ("\C-ce" . 'run-python-and-switch-to-shell)))
+
 (use-package elpy :ensure t :if nil
   :config (progn
             (elpy-enable)
