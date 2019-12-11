@@ -532,6 +532,19 @@ function wstool-checkout-default-branch {
                      sed s@^refs/remotes/origin/@@ | xargs git checkout'"
 }
 
+function catkin-test-results {
+    target_dir=$(realpath ${1:-.})
+    if [ ${target_dir} = "/" ]; then
+        :
+    elif [ -e ${target_dir}/package.xml ]; then
+        pkg_name=$(basename ${target_dir})
+        catkin_ws=$(echo ${CMAKE_PREFIX_PATH} | cut -d: -f1)/..
+        catkin_test_results ${catkin_ws}/build/${test_result_dir}
+    else
+        catkin-test-results ${target_dir}/..
+    fi
+}
+
 # alias catkindistcc="catkin build -p\$(distcc -j) -j\$(distcc -j) --no-jobserver"
 
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
