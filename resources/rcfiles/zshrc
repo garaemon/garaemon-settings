@@ -551,8 +551,10 @@ function catkin-test-results {
 
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
-  source $HOME/.pyenv/.pyenvrc
-  source $HOME/.pyenv/completions/pyenv.zsh
+    source $HOME/.pyenv/.pyenvrc
+    if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
+        source $HOME/.pyenv/completions/pyenv.zsh
+    fi
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 
