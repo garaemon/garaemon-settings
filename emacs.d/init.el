@@ -1123,26 +1123,21 @@ Requires Flake8 3.0 or newer. See URL
               (setq this-command #'my-ivy-switch-buffer)
               (counsel-require-program counsel-git-cmd)
               (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
-                     (default-directory (or git-directory default-directory)))
-                (let* ((counsel-git-cands (if git-directory
-                                              (split-string
-                                               (shell-command-to-string counsel-git-cmd)
-                                               "\n"
-                                               t)))
-                       (ivy-sources
-                        ;; Comes from ivy-switch-buffer
-                        (ivy--buffer-list "" ivy-use-virtual-buffers)))
-                  (if counsel-git-cands
-                      (setq ivy-sources (append ivy-sources counsel-git-cands)))
-                  (setq ivy-sources (append ivy-sources (catkin-packages-list)))
+                     (counsel-git-cands (if git-directory (counsel-git-cands git-directory)))
+                     (ivy-sources
+                      ;; Comes from ivy-switch-buffer
+                      (ivy--buffer-list "" ivy-use-virtual-buffers)))
+                (if counsel-git-cands
+                    (setq ivy-sources (append ivy-sources counsel-git-cands)))
+                (setq ivy-sources (append ivy-sources (catkin-packages-list)))
 
-                  (ivy-read ">> " ivy-sources
-                            :keymap ivy-switch-buffer-map
-                            :preselect (buffer-name (other-buffer (current-buffer)))
-                            :action #'my-ivy-switch-buffer-action
-                            :matcher #'ivy--switch-buffer-matcher
-                            :caller 'my-ivy-switch-buffer
-                            ))))
+                (ivy-read ">> " ivy-sources
+                          :keymap ivy-switch-buffer-map
+                          :preselect (buffer-name (other-buffer (current-buffer)))
+                          :action #'my-ivy-switch-buffer-action
+                          :matcher #'ivy--switch-buffer-matcher
+                          :caller 'my-ivy-switch-buffer
+                          )))
             (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
             (global-set-key "\C-s" 'swiper-isearch)
             (global-set-key "\C-r" 'swiper-isearch-backward)
