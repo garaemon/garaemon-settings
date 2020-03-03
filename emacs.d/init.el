@@ -1287,7 +1287,9 @@ Requires Flake8 3.0 or newer. See URL
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
          )
+
   :config (progn
+            (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
             (setq lsp-enable-snippet t)
             ;; (setq lsp-print-io nil)
             ;; (setq lsp-enable-xref nil)
@@ -1701,7 +1703,7 @@ Requires Flake8 3.0 or newer. See URL
 (use-package volatile-highlights :ensure t
   :config (volatile-highlights-mode))
 
-(use-package web-mode :ensure t
+(use-package web-mode :ensure t :if nil
   :requires (flycheck)
   :init (progn (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . web-mode))
                (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
