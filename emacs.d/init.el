@@ -1128,7 +1128,9 @@ Requires Flake8 3.0 or newer. See URL
                       ;; Comes from ivy-switch-buffer
                       (ivy--buffer-list "" ivy-use-virtual-buffers)))
                 (if counsel-git-cands
-                    (setq ivy-sources (append ivy-sources counsel-git-cands)))
+                    (setq ivy-sources (append ivy-sources
+                                              (mapcar #'(lambda (cand) (concat git-directory cand))
+                                                      counsel-git-cands))))
                 (setq ivy-sources (append ivy-sources (catkin-packages-list)))
 
                 (ivy-read ">> " ivy-sources
