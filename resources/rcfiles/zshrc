@@ -549,6 +549,9 @@ function catkin-test-results {
 
 # alias catkindistcc="catkin build -p\$(distcc -j) -j\$(distcc -j) --no-jobserver"
 
+export GOPATH=$HOME/.go
+export PATH=$PATH:$GOPATH/bin
+
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
     source $HOME/.pyenv/.pyenvrc
