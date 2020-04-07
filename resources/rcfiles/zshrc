@@ -149,10 +149,6 @@ export BSTINPUTS=$BSTINPUTS:/usr/share/texmf/jbibtex/bst
 
 export PATH=$PATH:$HOME/gprog/emacs-settings
 
-export CC="ccache gcc"
-export CXX="ccache g++"
-
-
 export PATH=/opt/android-sdk/tools:$PATH
 export PATH=/opt/android-sdk/tools:$PATH
 
