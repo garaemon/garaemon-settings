@@ -7,7 +7,7 @@ VISUAL=vim
 
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 # export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
-export PATH=/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin
 # export LC_ALL=en_US.UTF-8
 
 if [[ $TERM = dumb ]]; then
@@ -559,7 +559,7 @@ fi
 
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
 # of mosh.
-export MOSH_ESCAPE_KEY="-"
+export MOSH_ESCAPE_KEY="~"
 
 # Change title before mosh for iTerm
 # Please uncheck all the check box in Preference > Appearance > Window & Tab Titles
