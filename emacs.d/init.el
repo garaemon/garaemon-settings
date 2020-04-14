@@ -756,7 +756,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package fill-column-indicator :ensure t
-  :if nil
   :hook ((prog-mode) . fci-mode)
   :config (progn
             (setq-default fci-rule-column 100)
