@@ -1287,9 +1287,14 @@ Requires Flake8 3.0 or newer. See URL
          (python-mode . lsp)
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
+         (js-mode . lsp)
          )
-  :bind (:map typescript-mode-map
-              ("C-c f" . 'lsp-format-buffer))
+  :bind (:map
+         typescript-mode-map
+         ("C-c f" . 'lsp-format-buffer)
+         :map js-mode-map
+         ("C-c f" . 'lsp-format-buffer)
+         )
 
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
