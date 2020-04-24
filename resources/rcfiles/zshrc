@@ -263,7 +263,7 @@ fi
 which peco > /dev/null
 if [ $? = 0 ]; then
     function peco-history-selection() {
-        BUFFER=`history -nr 1 | awk '!a[$0]++' | peco`
+        BUFFER=$(history -nr 1 | awk '!a[$0]++' | peco --query "$LBUFFER" | sed 's/\\n/\n/g')
         CURSOR=$#BUFFER
         zle reset-prompt
     }
@@ -578,4 +578,4 @@ fi
 precmd() {
     echo -ne "\033]0;$(hostname)\007"
 }
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion"  # This loads nvm bash_completion
