@@ -755,6 +755,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             (defun org-set-outline-overlay-data (&rest args)))
   )
 
+;; It does not work with lsp mode
 (use-package fill-column-indicator :ensure t
   :hook ((prog-mode) . fci-mode)
   :config (progn
@@ -1279,12 +1280,17 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package less-css-mode :ensure t :defer t)
 
+;; require typescript before configuring lsp-mode
+(require 'typescript)
+
 (use-package lua-mode :ensure t :defer t)
+
+(use-package lsp-python-ms :ensure t)
 
 (use-package lsp-mode :ensure t
   :hook (
          ;; pip install 'python-language-server[yapf]'
-         (python-mode . lsp)
+         (python-mode . (lambda () (require 'lsp-python-ms) (lsp)))
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
          (js-mode . lsp)
@@ -1295,24 +1301,23 @@ Requires Flake8 3.0 or newer. See URL
          :map js-mode-map
          ("C-c f" . 'lsp-format-buffer)
          )
-
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
             (setq lsp-enable-snippet t)
-            ;; (setq lsp-print-io nil)
-            ;; (setq lsp-enable-xref nil)
-            ;; (setq lsp-enable-symbol-highlighting nil)
-            ;; (setq lsp-enable-on-type-formatting nil)
-            ;; (setq lsp-enable-completion-at-point nil)
-            ;; (setq lsp-enable-on-type-formatting nil)
-            ;; (setq lsp-enable-folding nil)
-            ;; (setq lsp-enable-imenu nil)
+            (setq lsp-print-io nil)
+            (setq lsp-enable-xref nil)
+            (setq lsp-enable-symbol-highlighting nil)
+            (setq lsp-enable-on-type-formatting nil)
+            (setq lsp-enable-completion-at-point nil)
+            (setq lsp-enable-on-type-formatting nil)
+            (setq lsp-enable-folding nil)
+            (setq lsp-enable-imenu nil)
             (setq lsp-print-performance t)
-            ;; (setq lsp-eldoc-enable-hover nil)
-            ;; (setq-default lsp-eldoc-enable-hover nil)
-            ;; (setq lsp-eldoc-render-all nil)
-            ;; (setq lsp-markup-display-all nil)
-            ;; (setq lsp-pyls-plugins-jedi-hover-enabled nil)
+            (setq lsp-eldoc-enable-hover nil)
+            (setq-default lsp-eldoc-enable-hover nil)
+            (setq lsp-eldoc-render-all nil)
+            (setq lsp-markup-display-all nil)
+            (setq lsp-pyls-plugins-jedi-hover-enabled nil)
             )
   )
 (defun lsp-describe-thing-at-point () (interactive) nil)
@@ -2076,6 +2081,6 @@ Requires Flake8 3.0 or newer. See URL
     ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+    (typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
