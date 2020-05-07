@@ -14,10 +14,9 @@ if [[ $TERM = dumb ]]; then
     return
 fi
 
-
 # for emacs tramp
 case "$TERM" in
-  dumb | emacs)
+dumb | emacs)
     PROMPT="%m:%~> "
     unsetopt zle
     return
@@ -49,7 +48,7 @@ setopt auto_param_keys
 setopt pushd_ignore_dups
 setopt auto_pushd
 setopt interactive_comments # ignore hash in command line
-setopt magic_equal_subst # complete after = like --prefix=/usr/locl
+setopt magic_equal_subst    # complete after = like --prefix=/usr/locl
 zstyle ':completion:*' menu select interactive
 #setopt menu_complete
 
@@ -65,12 +64,11 @@ local BLUE=$'%{\e[1;34m%}'
 local LIGHT_BLUE=$'%{\e[1;36m%}'
 local DEFAULT=$'%{\e[1;0m%}'
 
-
 HISTFILE=~/.zsh_history
 HISTSIZE=5000
 SAVEHIST=5000
-setopt hist_ignore_dups     # ignore duplication command history list
-setopt share_history        # share command history data
+setopt hist_ignore_dups # ignore duplication command history list
+setopt share_history    # share command history data
 bindkey -e
 
 export PATH=$HOME/.local/bin:$PATH
@@ -79,7 +77,7 @@ if [ -e "${HOME}/.nvm/nvm.sh" ]; then
     echo sourcing nvm.sh
     # --no-use option to speed up source nvm.sh
     source ${HOME}/.nvm/nvm.sh --no-use
-    nvm use v10.16.3 > /dev/null
+    nvm use v10.16.3 >/dev/null
 fi
 
 #alias
@@ -90,7 +88,7 @@ alias grep='grep --color=auto'
 # for ttyrec environment.
 # This zshrc expects using ttyrec with IS_TTYREC=true like
 # `IS_TTYREC=true ttyrec terminal.log`.
-function echo-ttyrec-safe {
+function echo-ttyrec-safe() {
     if [ "${IS_TTYREC}" = "true" ]; then
         :
     else
@@ -111,8 +109,8 @@ if [ -e $HOME/.zshrc.jsk ]; then
     source $HOME/.zshrc.jsk
 fi
 
-OS=`uname`
-if [ "$OS" = "CYGWIN_NT-5.1" -o "$OS" = "CYGWIN_NT-6.0" ] ; then
+OS=$(uname)
+if [ "$OS" = "CYGWIN_NT-5.1" -o "$OS" = "CYGWIN_NT-6.0" ]; then
     if [ -e $HOME/.zshrc.cygwin ]; then
         echo-ttyrec-safe loading cygwin setup file ...
         source $HOME/.zshrc.cygwin
@@ -121,12 +119,12 @@ if [ "$OS" = "CYGWIN_NT-5.1" -o "$OS" = "CYGWIN_NT-6.0" ] ; then
         echo-ttyrec-safe loading jsk setup file ...
         source $HOME/.zshrc.cygwin.jsk
     fi
-elif [ "$OS" = "Linux" ] ; then
+elif [ "$OS" = "Linux" ]; then
     if [ -e $HOME/.zshrc.linux ]; then
         echo-ttyrec-safe loading linux setup file ...
         source $HOME/.zshrc.linux
     fi
-elif [ "$OS" = "Darwin" ] ; then
+elif [ "$OS" = "Darwin" ]; then
     if [ -e $HOME/.zshrc.darwin ]; then
         echo-ttyrec-safe loading darwin setup file ...
         source $HOME/.zshrc.darwin
@@ -146,7 +144,6 @@ export PATH=$PATH:$HOME/gprog/multi_crop
 # from http://qiita.com/amayaw9/items/01d626ce1ae18c27df8b
 export BSTINPUTS=$BSTINPUTS:/usr/share/texmf/jbibtex/bst
 
-
 export PATH=$PATH:$HOME/gprog/emacs-settings
 
 export PATH=/opt/android-sdk/tools:$PATH
@@ -164,14 +161,14 @@ export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
 export PATH=$PATH:$HOME/gprog/jq
 
 # update roszsh
-if [ ! -e $HOME/.roszsh ] ; then
-    wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q > /dev/null
+if [ ! -e $HOME/.roszsh ]; then
+    wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q >/dev/null
     if [ -e $HOME/.roszsh ]; then
         source $HOME/.roszsh
     fi
 fi
 
-function record_time_start {
+function record_time_start() {
     set +x
     RECORD_START_TIME=$(date +%s%N)
     RECORD_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
@@ -181,14 +178,14 @@ function record_time_start {
     set -x
 }
 
-function record_time_end {
+function record_time_end() {
     set +x
     _COLOR=${1:-32}
     RECORD_END_TIME=$(date +%s%N)
-    TIME_ELAPSED_SECONDS=$(( ($RECORD_END_TIME - $RECORD_START_TIME)/1000000000 ))
+    TIME_ELAPSED_SECONDS=$((($RECORD_END_TIME - $RECORD_START_TIME) / 1000000000))
     echo -e "traivs_time:end:$RECORD_TIME_ID:start=$RECORD_START_TIME,finish=$RECORD_END_TIME,duration=$(($RECORD_END_TIME - $RECORD_START_TIME))\n\e[0K"
     echo -e "traivs_fold:end:$RECORD_FOLD_NAME"
-    echo -e "\e[0K\e[${_COLOR}mFunction $RECORD_FOLD_NAME takes $(( $TIME_ELAPSED_SECONDS / 60 )) min $(( $TIME_ELAPSED_SECONDS % 60 )) sec\e[0m"
+    echo -e "\e[0K\e[${_COLOR}mFunction $RECORD_FOLD_NAME takes $(($TIME_ELAPSED_SECONDS / 60)) min $(($TIME_ELAPSED_SECONDS % 60)) sec\e[0m"
     set -x
 }
 
@@ -232,16 +229,16 @@ if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
 fi
 if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
     source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
-    setopt hist_ignore_dups     # ignore duplication command history list
-    setopt share_history        # share command history data
+    setopt hist_ignore_dups # ignore duplication command history list
+    setopt share_history    # share command history data
 fi
 PROMPT2="%_%% "
 # re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
 # command line. It should be after `prompt giddie` command.
-function +vi-set_novcs_prompt_symbol {
+function +vi-set_novcs_prompt_symbol() {
     _prompt_giddie_symbol='$'
 }
-function +vi-set_vcs_prompt_symbol {
+function +vi-set_vcs_prompt_symbol() {
     _prompt_giddie_symbol='$'
 }
 
@@ -251,16 +248,16 @@ fi
 source $HOME/.zsh/z.sh
 compctl -U -K _z_zsh_tab_completion z
 
-if [ `uname` != Darwin ]; then
-    eval `dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
+if [ $(uname) != Darwin ]; then
+    eval $(dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light)
     alias ls="ls -AF --color=auto"
 else
-    eval `gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light`
+    eval $(gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light)
     alias ls="gls -AF --color=auto"
 fi
 
 #peco settings
-which peco > /dev/null
+which peco >/dev/null
 if [ $? = 0 ]; then
     function peco-history-selection() {
         BUFFER=$(history -nr 1 | awk '!a[$0]++' | peco --query "$LBUFFER" | sed 's/\\n/\n/g')
@@ -279,11 +276,9 @@ if [ -f $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
     source $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
-
 function sine_wave() {
     i=0
-    for i in `seq 0 10`
-    do
+    for i in $(seq 0 10); do
         SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
         echo -ne $SIN\\r
         let i=i+1
@@ -293,14 +288,13 @@ function sine_wave() {
 }
 
 git_delete_all_branched() {
-    git branch -D `git branch --merged | grep -v \* | xargs`
+    git branch -D $(git branch --merged | grep -v \* | xargs)
 }
 
 until-success() {
     $@
-    while [ $? != 0 ];
-    do
-        sleep 1;
+    while [ $? != 0 ]; do
+        sleep 1
         $@
     done
 }
@@ -311,9 +305,8 @@ export PATH=$PATH:$HOME/gprog/simpler-dot
 export PATH=$PATH:$HOME/gprog/tidier-pdfimages
 export PATH=$HOME/bin/:$PATH
 
-
 function git-branch-remove-all-local() {
-    git branch --merged master | grep -v '*' |xargs -I % echo git branch -d %
+    git branch --merged master | grep -v '*' | xargs -I % echo git branch -d %
 }
 
 function git-branch-remove-all-local-exec() {
@@ -327,7 +320,7 @@ function git-branch-remove-all-remote() {
         echo "Specify remote branch"
     else
         git remote prune $remote
-        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% echo git push $remote :%
+        git branch -a --merged | grep -v master | grep remotes/$remote | sed -e "s% *remotes/$remote/%%" | xargs -I% echo git push $remote :%
     fi
 }
 
@@ -336,7 +329,7 @@ function git-branch-remove-all-remote-exec() {
     if [ "$remote" = "" ]; then
         echo "Specify remote branch"
     else
-        git branch -a --merged | grep -v master | grep remotes/$remote| sed -e "s% *remotes/$remote/%%" | xargs -I% git push $remote :%
+        git branch -a --merged | grep -v master | grep remotes/$remote | sed -e "s% *remotes/$remote/%%" | xargs -I% git push $remote :%
     fi
 }
 
@@ -344,7 +337,6 @@ function rename-spaces() {
     # Replace spaces in file with underscores
     mv -i "$*" "$(echo $* | sed -e 's/\s\+/_/g')"
 }
-
 
 function ev() {
     # use C-xC-q to toggle read only
@@ -374,7 +366,7 @@ if [ $? = 0 ]; then
     eval "$(hub alias -s)"
 fi
 
-if [[ ! -e $HOME/.local/share/diff-so-fancy ]] ; then
+if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
     git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
 fi
 export PATH=$PATH:$HOME/.local/share/diff-so-fancy
@@ -404,8 +396,8 @@ alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 
 # for emacs
 perl -wle \
-   'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
-   PATH > ~/.emacs.d/shellenv.el
+    'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
+    PATH >~/.emacs.d/shellenv.el
 
 # automatically clone repositories
 # if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
@@ -424,20 +416,20 @@ if [ -e $HOME/.zshrc.mine ]; then
     source $HOME/.zshrc.mine
 fi
 
-function clang-format-view {
+function clang-format-view() {
     local fname=$(mktemp)
-    clang-format $1 > $fname
+    clang-format $1 >$fname
     colordiff -W 200 -y $1 $fname | less
 }
 
 # wrapping tip command to use virtualenv
-function tips {
+function tips() {
     (cd ~/gprog/tips && source .venv/bin/activate && ./bin/tips $@)
 }
 
-function restart-dns {
+function restart-dns() {
     # Restart DNS Cache. It is only available on mac os.
-    if [ "$(uname)" = "Darwin" ] ; then
+    if [ "$(uname)" = "Darwin" ]; then
         echo Restarting dns ...
         sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
         sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
@@ -468,9 +460,9 @@ function e() {
     # If the argument contains :
     emacsclient -n $(echo $1 | cut -f1 -d:)
     if tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$'; then
-        tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
-        tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' \
-                                    | cut -d ':' -f1)
+        tmux display-message -p '#I' >~/.emacs.d/emacsclient-window
+        tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' |
+            cut -d ':' -f1)
     fi
 }
 
@@ -482,9 +474,9 @@ export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message
 
 function gp() {
     git pull-request &
-    tmux display-message -p '#I' > ~/.emacs.d/emacsclient-window
-    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs \
-                                | cut -d ':' -f1)
+    tmux display-message -p '#I' >~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs |
+        cut -d ':' -f1)
 }
 
 alias cbt='catkin bt'
@@ -496,7 +488,7 @@ if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
 fi
 
 # wstool util
-function wstool-interactive {
+function wstool-interactive() {
     local wstool_line
     local repo
     wstool_line=$(wstool info | peco)
@@ -505,32 +497,35 @@ function wstool-interactive {
     (cd "${repo}" && git checkout master)
 }
 
-function catkin-compile-json {
+function catkin-compile-json() {
     local catkin_ws
     local package_directories
     local package
     catkin_ws=$(echo $CMAKE_PREFIX_PATH | cut -d: -f1)/..
-    (cd "${catkin_ws}";
-     catkin config --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+    (
+        cd "${catkin_ws}"
+        catkin config --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    )
     package_directories=$(find "${catkin_ws}/src" -name package.xml | xargs -n 1 dirname)
-    for package_dir in $(echo $package_directories)
-    do
+    for package_dir in $(echo $package_directories); do
         package=$(echo $package_dir | xargs -n 1 basename)
-        (cd "${catkin_ws}";
-         if [ -e ${catkin_ws}/build/$package/compile_commands.json ]; then
-             ln -sf ${catkin_ws}/build/$package/compile_commands.json \
-                $(rospack find $package)/compile_commands.json
-         fi)
+        (
+            cd "${catkin_ws}"
+            if [ -e ${catkin_ws}/build/$package/compile_commands.json ]; then
+                ln -sf ${catkin_ws}/build/$package/compile_commands.json \
+                    $(rospack find $package)/compile_commands.json
+            fi
+        )
     done
 }
 
-function wstool-checkout-default-branch {
+function wstool-checkout-default-branch() {
     wstool foreach \
-           "bash -c 'git symbolic-ref refs/remotes/origin/HEAD | \
+        "bash -c 'git symbolic-ref refs/remotes/origin/HEAD | \
                      sed s@^refs/remotes/origin/@@ | xargs git checkout'"
 }
 
-function catkin-test-results {
+function catkin-test-results() {
     target_dir=$(realpath ${1:-.})
     if [ ${target_dir} = "/" ]; then
         :
@@ -563,12 +558,12 @@ export MOSH_ESCAPE_KEY="~"
 
 # Change title before mosh for iTerm
 # Please uncheck all the check box in Preference > Appearance > Window & Tab Titles
-if [ "$OS" = "Darwin" ] ; then
-    function mosh {
+if [ "$OS" = "Darwin" ]; then
+    function mosh() {
         echo -ne "\033]0;$@\007"
         /usr/local/bin/mosh $@
     }
-    function ssh {
+    function ssh() {
         echo -ne "\033]0;$@\007"
         /usr/bin/ssh $@
     }
@@ -578,4 +573,4 @@ fi
 precmd() {
     echo -ne "\033]0;$(hostname)\007"
 }
-[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
