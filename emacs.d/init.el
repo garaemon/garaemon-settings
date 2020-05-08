@@ -96,7 +96,6 @@
 ;; Do not concer about upper/lower case in completion.
 (setq completion-ignore-case t)
 (global-unset-key "\C-\\")
-(set-language-environment "Japanese")
 (prefer-coding-system 'utf-8)
 (setq column-number-mode t) ; show column number
 ;; no scroll bar
