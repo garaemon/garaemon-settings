@@ -787,7 +787,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             )
   )
 (when (>= emacs-major-version 27)
-  (setq display-fill-column-indicator-column 100)
+  (setq-default display-fill-column-indicator-column 100)
   (global-display-fill-column-indicator-mode))
 
 (use-package flycheck :ensure t
