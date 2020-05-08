@@ -756,7 +756,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 ;; It does not work with lsp mode
-(use-package fill-column-indicator :ensure t
+(use-package fill-column-indicator :ensure t :if (<= emacs-major-version 26)
   :hook ((prog-mode) . fci-mode)
   :config (progn
             (setq-default fci-rule-column 100)
@@ -786,6 +786,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             (add-hook 'window-size-change-functions 'fci-width-workaround)
             )
   )
+(when (>= emacs-major-version 27)
+  (setq display-fill-column-indicator-column 100)
+  (global-display-fill-column-indicator-mode))
 
 (use-package flycheck :ensure t
   :requires (thingopt)
@@ -2069,18 +2072,15 @@ Requires Flake8 3.0 or newer. See URL
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(avy-migemo-function-names
-   (quote
-    (swiper--make-overlays-migemo
+   '(swiper--make-overlays-migemo
      (swiper--re-builder :around swiper--re-builder-migemo-around)
      (ivy--regex :around ivy--regex-migemo-around)
      (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
      (ivy--regex-plus :around ivy--regex-plus-migemo-around)
-     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full)))
+     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full))
  '(custom-safe-themes
-   (quote
-    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
+   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   (quote
-    (typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
+   '(typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
