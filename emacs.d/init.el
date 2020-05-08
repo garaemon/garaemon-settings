@@ -882,8 +882,8 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(when nil
 (use-package flyspell :ensure t
-  :if nil
   :config (progn
             ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
             ;; if (aspell installed) { use aspell}
@@ -976,6 +976,7 @@ Requires Flake8 3.0 or newer. See URL
             (global-set-key "\M-." 'add-word-to-ispell-dictionary)
             )
   )
+)
 
 ;; (use-package flycheck-google-cpplint :ensure t)
 ;; (if (not (eq system-type 'darwin))
@@ -1962,7 +1963,8 @@ Requires Flake8 3.0 or newer. See URL
   :defer t
   :init (autoload 'goby "goby" nil t))
 
-(use-package ansi-color :ensure t
+(when nil
+(use-package ansi-color :ensure t :if nil
   :init (progn
           (defun endless/colorize-compilation ()
             "Colorize from `compilation-filter-start' to `point'."
@@ -1974,6 +1976,7 @@ Requires Flake8 3.0 or newer. See URL
                     #'endless/colorize-compilation)
           )
   )
+)
 
 (use-package clang-format :ensure t
   :bind (:map c-mode-base-map
