@@ -1962,8 +1962,7 @@ Requires Flake8 3.0 or newer. See URL
   :defer t
   :init (autoload 'goby "goby" nil t))
 
-(when nil
-(use-package ansi-color :ensure t :if nil
+(use-package ansi-color :ensure t
   :init (progn
           (defun endless/colorize-compilation ()
             "Colorize from `compilation-filter-start' to `point'."
@@ -1975,7 +1974,6 @@ Requires Flake8 3.0 or newer. See URL
                     #'endless/colorize-compilation)
           )
   )
-)
 
 (use-package clang-format :ensure t
   :bind (:map c-mode-base-map
