@@ -1962,7 +1962,7 @@ Requires Flake8 3.0 or newer. See URL
   :defer t
   :init (autoload 'goby "goby" nil t))
 
-(use-package ansi-color :ensure t
+(use-package ansi-color
   :init (progn
           (defun endless/colorize-compilation ()
             "Colorize from `compilation-filter-start' to `point'."
