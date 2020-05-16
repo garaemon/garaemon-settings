@@ -1084,6 +1084,7 @@ Requires Flake8 3.0 or newer. See URL
             ;; https://github.com/abo-abo/swiper/issues/1455
             (setq ivy-initial-inputs-alist nil)
             (defun catkin-packages-list ()
+              "List all the catkin packages in catkin workspace"
               (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH"))
                     (catkin-root nil))
                 (when cmake-prefix-path
@@ -1112,6 +1113,10 @@ Requires Flake8 3.0 or newer. See URL
                                ;; silence "Directory has changed on disk"
                                (inhibit-message t))
                            (ivy-set-view-recur (cadr view))))
+                        ;; This is the modification to the original ivy--switch-buffer-action.
+                        ;; If `buffer' is a file and the buffer of the file have not opened yet,
+                        ;; open the file.
+                        ;; This modification is designed to open catkin pacakge.
                         ((and (not (get-buffer buffer))
                               (file-exists-p (expand-file-name buffer)))
                          (find-file buffer))
@@ -1119,30 +1124,29 @@ Requires Flake8 3.0 or newer. See URL
                          (switch-to-buffer
                           buffer nil 'force-same-window))))))
 
+            (defun my-counsel-git-files ()
+              (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
+                     (counsel-git-cands (if git-directory (counsel-git-cands git-directory))))
+                counsel-git-cands))
+
             ;; C-x b like helm-mini
             (defun my-ivy-switch-buffer ()
-              "Switch to another buffer."
+              "Customized version of ivy-switch-buffer."
               (interactive)
-              (setq this-command #'my-ivy-switch-buffer)
-              (counsel-require-program counsel-git-cmd)
-              (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
-                     (counsel-git-cands (if git-directory (counsel-git-cands git-directory)))
-                     (ivy-sources
-                      ;; Comes from ivy-switch-buffer
-                      (ivy--buffer-list "" ivy-use-virtual-buffers)))
-                (if counsel-git-cands
-                    (setq ivy-sources (append ivy-sources
-                                              (mapcar #'(lambda (cand) (concat git-directory cand))
-                                                      counsel-git-cands))))
-                (setq ivy-sources (append ivy-sources (catkin-packages-list)))
-
-                (ivy-read ">> " ivy-sources
-                          :keymap ivy-switch-buffer-map
-                          :preselect (buffer-name (other-buffer (current-buffer)))
-                          :action #'my-ivy-switch-buffer-action
-                          :matcher #'ivy--switch-buffer-matcher
-                          :caller 'my-ivy-switch-buffer
-                          )))
+              (ivy-read ">> " #'internal-complete-buffer
+                        :keymap ivy-switch-buffer-map
+                        :preselect (buffer-name (other-buffer (current-buffer)))
+                        :action #'my-ivy-switch-buffer-action ;This is the modification.
+                        :matcher #'ivy--switch-buffer-matcher
+                        :caller 'my-ivy-switch-buffer)
+              )
+            ;; Customize sources of my-ivy-switch-buffer
+            (ivy-set-sources
+             'my-ivy-switch-buffer
+             '((original-source)
+               (ivy-source-views)
+               (my-counsel-git-files)
+               (catkin-packages-list)))
             (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
             (global-set-key "\C-s" 'swiper-isearch)
             (global-set-key "\C-r" 'swiper-isearch-backward)
