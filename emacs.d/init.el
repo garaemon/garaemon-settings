@@ -1177,15 +1177,6 @@ Requires Flake8 3.0 or newer. See URL
   ;;  (global-set-key (kbd "M-g m m") 'avy-migemo-mode)
   )
 
-(use-package ivy-posframe :ensure t
-  :if (display-graphic-p)
-  :config (progn
-            ;; (setq ivy-display-function #'ivy-posframe-display-at-window-center)
-            (setq ivy-display-function #'ivy-posframe-display-at-frame-center)
-            (ivy-posframe-enable)
-            )
-  )
-
 (use-package hyde :ensure t
   :config (progn
             (setq-default jekyll-root (expand-file-name "~/gprog/garaemon.github.io"))
