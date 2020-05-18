@@ -1127,7 +1127,8 @@ Requires Flake8 3.0 or newer. See URL
             (defun my-counsel-git-files ()
               (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
                      (counsel-git-cands (if git-directory (counsel-git-cands git-directory))))
-                counsel-git-cands))
+                (mapcar #'(lambda (cand) (concat git-directory cand))
+                        counsel-git-cands)))
 
             ;; C-x b like helm-mini
             (defun my-ivy-switch-buffer ()
