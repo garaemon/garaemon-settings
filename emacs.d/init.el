@@ -1293,8 +1293,9 @@ Requires Flake8 3.0 or newer. See URL
          (typescript-mode . lsp)
          (js-mode . lsp)
          )
-  :bind (:map
-         typescript-mode-map
+  :bind (:map typescript-mode-map
+         ("C-c f" . 'lsp-format-buffer)
+         :map web-mode-map
          ("C-c f" . 'lsp-format-buffer)
          :map js-mode-map
          ("C-c f" . 'lsp-format-buffer)
@@ -1367,6 +1368,7 @@ Requires Flake8 3.0 or newer. See URL
             ;; It expects core.editor=emacsclient
             (defun github-pull-request ()
               (interactive)
+              (shell-command "git config core.editor=emacsclient")
               (shell-command "hub pull-request &"))
             )
   )
@@ -1714,9 +1716,9 @@ Requires Flake8 3.0 or newer. See URL
 (use-package volatile-highlights :ensure t
   :config (volatile-highlights-mode))
 
-(use-package web-mode :ensure t :if nil
+(use-package web-mode :ensure t :if t
   :requires (flycheck)
-  :init (progn (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . web-mode))
+  :init (progn (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
                (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
   :config (progn
             (defun my-web-mode-hook ()
@@ -1729,18 +1731,12 @@ Requires Flake8 3.0 or newer. See URL
               (setq web-mode-style-padding 2)
               (setq tab-width 2)
               )
-            (flycheck-add-mode 'typescript-tslint 'web-mode)
-            (flycheck-add-mode 'javascript-eslint 'web-mode)
             )
   :hook (web-mode . (lambda ()
-                      (if buffer-file-name
-                          (let ((ext (file-name-extension buffer-file-name)))
-                            (when (or (string-equal "tsx" ext)
-                                      (string-equal "ts" ext))
-                              ;; need to call my-web-mode-hook twice to apply
-                              ;; indent setting correctly.
-                              (my-web-mode-hook)
-                              (my-typescript-hook))))))
+                      (my-web-mode-hook)
+                      ;; (when (string-equal "tsx" (file-name-extension buffer-file-name))
+                      ;;   (setup-tide-mode))
+                      ))
   )
 
 (use-package which-key :ensure t
@@ -2050,6 +2046,8 @@ Requires Flake8 3.0 or newer. See URL
 
 (provide 'dot)
 
+;; (require 'garaemon-project-setting)
+
 ;; load machine local setup
 (if (file-exists-p "~/.emacs.d/dot.emacs.local.el")
     (load "~/.emacs.d/dot.emacs.local.el"))
@@ -2067,15 +2065,18 @@ Requires Flake8 3.0 or newer. See URL
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(avy-migemo-function-names
-   '(swiper--make-overlays-migemo
+   (quote
+    (swiper--make-overlays-migemo
      (swiper--re-builder :around swiper--re-builder-migemo-around)
      (ivy--regex :around ivy--regex-migemo-around)
      (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
      (ivy--regex-plus :around ivy--regex-plus-migemo-around)
-     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full))
+     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full)))
  '(custom-safe-themes
-   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
+   (quote
+    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
-   '(typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   (quote
+    (typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
