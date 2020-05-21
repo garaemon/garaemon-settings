@@ -1299,6 +1299,10 @@ Requires Flake8 3.0 or newer. See URL
          ("C-c f" . 'lsp-format-buffer)
          :map js-mode-map
          ("C-c f" . 'lsp-format-buffer)
+         :map lsp-signature-mode-map
+         ;; These settings are not applied to lsp-signature-mode-map.
+         ("\M-n" . 'scroll-down-in-place)
+         ("\M-p" . 'scroll-up-in-place)
          )
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
@@ -1317,6 +1321,7 @@ Requires Flake8 3.0 or newer. See URL
             (setq lsp-eldoc-render-all nil)
             (setq lsp-markup-display-all nil)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
+            (setq lsp-signature-auto-activate nil)
             )
   )
 (defun lsp-describe-thing-at-point () (interactive) nil)
