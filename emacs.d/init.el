@@ -1292,6 +1292,8 @@ Requires Flake8 3.0 or newer. See URL
          (python-mode . (lambda () (require 'lsp-python-ms) (lsp)))
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
+         ;; npm i -g yaml-language-server
+         (yaml-mode . lsp
          (js-mode . lsp)
          )
   :bind (:map typescript-mode-map
