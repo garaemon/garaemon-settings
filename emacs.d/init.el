@@ -1293,12 +1293,10 @@ Requires Flake8 3.0 or newer. See URL
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
          ;; npm i -g yaml-language-server
-         (yaml-mode . lsp
+         (yaml-mode . lsp)
          (js-mode . lsp)
          )
   :bind (:map typescript-mode-map
-         ("C-c f" . 'lsp-format-buffer)
-         :map web-mode-map
          ("C-c f" . 'lsp-format-buffer)
          :map js-mode-map
          ("C-c f" . 'lsp-format-buffer)
@@ -1324,7 +1322,7 @@ Requires Flake8 3.0 or newer. See URL
             (setq lsp-eldoc-render-all nil)
             (setq lsp-markup-display-all nil)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
-            (setq lsp-signature-auto-activate nil)
+            (setq-default lsp-signature-auto-activate nil)
             )
   )
 (defun lsp-describe-thing-at-point () (interactive) nil)
@@ -1728,6 +1726,9 @@ Requires Flake8 3.0 or newer. See URL
   :requires (flycheck)
   :init (progn (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
                (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
+  ;; Cannot defind this keybind in :bind section of lsp-mode because web-mode-map variable is not
+  ;; defined in the scope.
+  :bind (("C-c f" . 'lsp-format-buffer))
   :config (progn
             (defun my-web-mode-hook ()
               "Hooks for Web mode."
