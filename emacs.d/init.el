@@ -688,9 +688,23 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package python
   :config
   (progn
-    (setq python-shell-interpreter "ipython"
-          python-shell-interpreter-args "-i --no-confirm-exit"
-          python-shell-enable-font-lock nil)
+    ;; Verify ipython version
+    (if (executable-find "ipython")
+        ;; ipython-version-string is a string like "5.5.0"
+        (let* ((ipython-version-string (shell-command-to-string "ipython --version"))
+               (ipython-major-version (string-to-number (car (split-string "5.5.0" "\\.")))))
+          (if (>= ipython-major-version 5)
+              (setq python-shell-interpreter "ipython"
+                    python-shell-interpreter-args "-i --simple-prompt --no-confirm-exit"
+                    python-shell-enable-font-lock nil)
+            (setq python-shell-interpreter "ipython"
+                  python-shell-interpreter-args "-i --no-confirm-exit"
+                  python-shell-enable-font-lock nil)))
+      ;; Use the default python if no ipython is installed
+      (setq python-shell-interpreter "python"
+              python-shell-interpreter-args nil
+              python-shell-enable-font-lock nil)
+      )
     (defun run-python-and-switch-to-shell ()
       (interactive)
       (run-python)
