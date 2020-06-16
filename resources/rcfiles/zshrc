@@ -532,7 +532,7 @@ function catkin-test-results() {
     elif [ -e ${target_dir}/package.xml ]; then
         pkg_name=$(basename $(readlink -f ${target_dir}))
         catkin_ws=$(echo ${CMAKE_PREFIX_PATH} | cut -d: -f1)/..
-        catkin_test_results ${catkin_ws}/build/${pkg_name}
+        catkin_test_results --verbose ${catkin_ws}/build/${pkg_name}
     else
         catkin-test-results ${target_dir}/..
     fi
