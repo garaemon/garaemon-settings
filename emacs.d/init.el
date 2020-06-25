@@ -724,7 +724,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :bind (:map python-mode-map
               ("\C-x\C-E" . 'python-shell-send-region-or-statement)
               ("\C-cE" . 'run-python-and-switch-to-shell)
-              ("\C-ce" . 'run-python-and-switch-to-shell)))
+              ("\C-ce" . 'run-python-and-switch-to-shell)
+              ("\C-c <right>" . python-indent-shift-right)
+              ("\C-c <left>" . python-indent-shift-left)
+              ))
 
 (use-package elpy :ensure t :if nil
   :config (progn
