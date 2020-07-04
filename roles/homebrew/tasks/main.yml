@@ -4,6 +4,7 @@
     state: present
   vars:
     packages:
+      - ccls
       - tmux
       - wget
       - w3m

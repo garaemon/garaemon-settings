@@ -1,0 +1,26 @@
+- name: Clone ccls
+  git:
+    repo: https://github.com/MaskRay/ccls.git
+    dest: ~/gprog/ccls
+- name: Create build directory
+  file:
+    path: ~/gprog/ccls/build
+    state: directory
+- name: Download and unarchive clang
+  unarchive:
+    src: http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+    dest: ~/gprog/ccls
+    remote_src: yes
+- name: Configure ccls
+  command: >-
+    cmake -H..
+        -BRelease
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_PREFIX_PATH=~/gprog/ccls/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04
+        -DCMAKE_INSTALL_PREFIX=$HOME/.local
+  args:
+    chdir: ~/gprog/ccls/build
+- name: Build and install ccls
+  command: cmake --build Release --target install
+  args:
+    chdir: ~/gprog/ccls/build
