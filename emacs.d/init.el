@@ -1324,6 +1324,7 @@ Requires Flake8 3.0 or newer. See URL
          )
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
+            (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.cquery_cached_index$")
             (setq lsp-enable-snippet t)
             (setq lsp-print-io nil)
             (setq lsp-enable-xref nil)
