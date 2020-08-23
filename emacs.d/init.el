@@ -104,6 +104,9 @@
 (menu-bar-mode -1)
 ;; no tool bar
 (tool-bar-mode -1)
+;; The default of find-name-arg is "-name".
+;; In order to exclude git directory from `find-name-dired', add option to exclude .git directory.
+(setq find-name-arg "-not -path '*/\.git*' -name")
 (setq scroll-conservatively 1)
 ;; Do not create ~ files
 (setq make-backup-files nil)
