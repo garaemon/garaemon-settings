@@ -7,13 +7,13 @@
     - vim
     - tmux
     - zsh
-    - emacs
     - role: zlib
       when: ansible_os_family == "Darwin"
     - role: apt
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - emacs
     - peco
     - role: chrome
       when: ansible_os_family == "Debian"
@@ -31,6 +31,8 @@
       when: ansible_os_family == "Debian"
     - inkdrop
     - vscode
+    - role: ccls
+      when: ansible_os_family == "Debian"
     - cquery
     - clangd
     - python-language-server

@@ -1,6 +1,6 @@
 - name: Get latest hub version
   shell: >
-    curl -sI https://github.com/github/hub/releases/latest | awk -F '/' '/^Location:/{print $NF}'
+    curl -sI https://github.com/github/hub/releases/latest | awk -F '/' '/^location:/{print $NF}'
   register: hub_latest_version
 
 - name: Get latest hub version number
