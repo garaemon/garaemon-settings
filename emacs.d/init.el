@@ -1323,19 +1323,18 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package lsp-mode :ensure t
   :hook (
-         ;; pip install 'python-language-server[yapf]'
          (python-mode . (lambda () (require 'lsp-python-ms) (lsp)))
+         ;; pip3 install 'python-language-server[all]'
+         (python-mode . lsp)
          ;; npm i -g typescript-language-server; npm i -g typescript
          (typescript-mode . lsp)
          ;; npm i -g yaml-language-server
          (yaml-mode . lsp)
          (js-mode . lsp)
+         (lsp-mode . lsp-ui-mode)
+         (lsp-managed-mode .(lambda () (setq-local company-backends '(company-capf))))
          )
-  :bind (:map typescript-mode-map
-         ("C-c f" . 'lsp-format-buffer)
-         :map js-mode-map
-         ("C-c f" . 'lsp-format-buffer)
-         :map lsp-signature-mode-map
+  :bind (:map lsp-signature-mode-map
          ;; These settings are not applied to lsp-signature-mode-map.
          ("\M-n" . 'scroll-down-in-place)
          ("\M-p" . 'scroll-up-in-place)
@@ -1344,6 +1343,7 @@ Requires Flake8 3.0 or newer. See URL
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
             (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.cquery_cached_index$")
             (setq lsp-enable-snippet t)
+            (setq lsp-prefer-capf t)
             (setq lsp-print-io nil)
             (setq lsp-enable-xref nil)
             (setq lsp-enable-symbol-highlighting nil)
