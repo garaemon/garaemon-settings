@@ -741,7 +741,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
               ("\C-ce" . 'run-python-and-switch-to-shell)
               ("\C-c <right>" . python-indent-shift-right)
               ("\C-c <left>" . python-indent-shift-left)
-              ))
+              )
+  :hook ((python-mode . (lambda () (setq-local comment-inline-offset 2))))
+  )
 
 (use-package elpy :ensure t :if nil
   :config (progn
