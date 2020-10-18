@@ -576,16 +576,25 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 ;; Based on https://www.seas.upenn.edu/~chaoliu/2018/03/12/ros-programming-in-emacs/#org8817889
 
-(defun ros-catkin-make (dir)
-  "Run catkin_make command in DIR."
-  (interactive (list default-directory))
-  ;; clear compilation buffer first not to occupy memory space.
+(defun ros-catkin-make-impl (dir option)
   (if (get-buffer "*catkin_make*")
       (kill-buffer "*catkin_make*"))
   (let* ((default-directory dir)
          (compilation-buffer-name-function (lambda (major-mode-name) "*catkin_make*")))
-    (compile "catkin bt --no-status"))
+    (compile (concat "catkin bt --no-status " option)))
   (switch-to-buffer-other-window (get-buffer-create "*catkin_make*"))
+  )
+
+(defun ros-catkin-make (dir)
+  "Run catkin build --this command in DIR."
+  (interactive (list default-directory))
+  (ros-catkin-make-impl dir nil)
+  )
+
+(defun ros-catkin-make-no-deps (dir)
+  "Run catkin build --thid --no-deps command in DIR."
+  (interactive (list default-directory))
+  (ros-catkin-make-impl dir "--no-deps")
   )
 
 (defun ros-catkin-make-json (dir)
@@ -596,7 +605,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
     (compile "catkin_make -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ."))
   )
 
-(global-set-key (kbd "C-x C-m") 'ros-catkin-make)
+(global-set-key (kbd "C-x C-m") 'ros-catkin-make-no-deps)
 (global-set-key (kbd "C-x m") 'ros-catkin-make) ; Hijack key for compose-mail
 (global-set-key [f5] 'ros-catkin-make)
 ;;; }}}
