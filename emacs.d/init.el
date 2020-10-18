@@ -688,6 +688,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
+(use-package udev-mode :ensure t)
+
 (use-package python
   :config
   (let ((ipython-executable "ipython2"))
