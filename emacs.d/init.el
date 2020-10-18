@@ -1751,7 +1751,7 @@ Requires Flake8 3.0 or newer. See URL
                (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
   ;; Cannot defind this keybind in :bind section of lsp-mode because web-mode-map variable is not
   ;; defined in the scope.
-  :bind (("C-c f" . 'lsp-format-buffer))
+  :bind (("C-c f" . 'prettier-js))
   :config (progn
             (defun my-web-mode-hook ()
               "Hooks for Web mode."
@@ -2059,6 +2059,15 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package transpose-frame :ensure t
   :bind (("C-x C-o" . 'rotate-frame-clockwise))
+  )
+
+(use-package prettier-js :ensure t
+  :bind
+  (:map typescript-mode-map
+   ("C-c f" . 'prettier-js)
+   :map js-mode-map
+   ("C-c f" . 'lsp-format-buffer)
+   )
   )
 
 (use-package rosemacs-config
