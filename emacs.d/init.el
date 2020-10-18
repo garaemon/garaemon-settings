@@ -1186,6 +1186,8 @@ Requires Flake8 3.0 or newer. See URL
             )
   )
 
+(use-package ivy-prescient :ensure t)
+
 (use-package avy :ensure t)
 (add-to-list 'load-path "~/.emacs.d/avy-migemo")
 (use-package avy-migemo
