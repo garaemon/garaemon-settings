@@ -1,0 +1,29 @@
+- name: Install gh on mac
+  homebrew:
+    name: gh
+  when: ansible_os_family == "Darwin"
+
+- name: define lsb_release -cs
+  shell: lsb_release -cs
+  register: lsb_release
+  when: ansible_os_family == "Debian"
+
+- name: Setup apt key for gh
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: C99B11DEB97541F0
+  become: yes
+  when: ansible_os_family == "Debian"
+
+- name: Setup apt repository for gh
+  apt_repository:
+    repo: "deb https://cli.github.com/packages {{ lsb_release.stdout}} main"
+    update_cache: yes
+  become: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install gh
+  apt:
+    name: gh
+  become: yes
+  when: ansible_os_family == "Debian"

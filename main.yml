@@ -19,6 +19,7 @@
       when: ansible_os_family == "Debian"
       become: yes
     - hub
+    - gh
     - pyenv
     - nvm
     - font
