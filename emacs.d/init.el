@@ -1342,21 +1342,20 @@ Requires Flake8 3.0 or newer. See URL
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
             (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.cquery_cached_index$")
+            (setq lsp-eldoc-enable-hover nil)
+            (setq lsp-enable-completion-at-point t)
+            (setq lsp-enable-folding nil)
+            (setq lsp-enable-imenu t)
+            (setq lsp-enable-on-type-formatting t)
             (setq lsp-enable-snippet t)
+            (setq lsp-enable-symbol-highlighting t)
+            (setq lsp-enable-xref t)
             (setq lsp-prefer-capf t)
             (setq lsp-print-io nil)
-            (setq lsp-enable-xref nil)
-            (setq lsp-enable-symbol-highlighting nil)
-            (setq lsp-enable-on-type-formatting nil)
-            (setq lsp-enable-completion-at-point nil)
-            (setq lsp-enable-on-type-formatting nil)
-            (setq lsp-enable-folding nil)
-            (setq lsp-enable-imenu nil)
             (setq lsp-print-performance t)
-            (setq lsp-eldoc-enable-hover nil)
             (setq-default lsp-eldoc-enable-hover nil)
-            (setq lsp-eldoc-render-all nil)
-            (setq lsp-markup-display-all nil)
+            (setq lsp-eldoc-render-all t)
+            (setq lsp-markup-display-all t)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
             (setq-default lsp-signature-auto-activate nil)
             )
@@ -1387,9 +1386,6 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package lsp-treemacs :ensure t
   :config (global-set-key "\C-c^" 'lsp-treemacs-errors-list))
-
-(use-package company-lsp :ensure t
-  :init (add-to-list 'company-backends 'company-lsp))
 
 (use-package cquery :ensure t
   :if nil
