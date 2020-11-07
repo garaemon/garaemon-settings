@@ -1322,11 +1322,8 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package lua-mode :ensure t :defer t)
 
-(use-package lsp-python-ms :ensure t)
-
 (use-package lsp-mode :ensure t
   :hook (
-         (python-mode . (lambda () (require 'lsp-python-ms) (lsp)))
          ;; pip3 install 'python-language-server[all]'
          (python-mode . lsp)
          ;; npm i -g typescript-language-server; npm i -g typescript
