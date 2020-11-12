@@ -1539,40 +1539,31 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package org :ensure t
   :config (progn
-            (setq org-directory "~/GoogleDrive/org")
+            (setq org-directory (expand-file-name "~/GoogleDrive/org/"))
+            ;; The special characters for org-capture-templates are described below:
+            ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
+            ;;
             (setq org-capture-templates
-                  '(("n" "note" entry
-                     (file
-                      (lambda () (expand-file-name
-                                  (concat org-directory
-                                          (format-time-string "/daily-notes/%Y-%m.org")))))
-                     "* %? %T"
-                     :empty-lines 1
-                     :unnarrowed t)
-                    ("N" "note with file link" entry
-                     (file
-                      (lambda () (expand-file-name
-                                  (concat org-directory
-                                          (format-time-string "/daily-notes/%Y-%m.org")))))
-                     "* %? %T\n\n  %a"
-                     :empty-lines 1
-                     :unnarrowed t)
-                    ("m" "movie" entry
-                     (file (lambda ()
-                             (expand-file-name
-                              (concat org-directory (format-time-string "/%Y-movie.org")))))
-                     "* %? %T"
-                     :empty-lines 1
-                     :unnarrowed t)
-                  ))
+                  '(("m" "Memo" entry (file+headline
+                                       (lambda () (concat org-directory "INBOX.org"))
+                                       "Memos")
+                     "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
+                     :unarrowed t
+                     :prepend t
+                     ))
+                    )
             (global-set-key (kbd "C-c c") 'org-capture)
+            ;; Is it ok? minor-modes such as magit takes over this key bind?
             (global-set-key (kbd "C-c C-c") 'org-capture)
+            (global-set-key (kbd "C-c a") 'org-agenda)
+            ;; Write content to org-capture from MINI Buffer
+            ;; http://ganmacs.hatenablog.com/entry/2016/04/01/164245
             (defun org/note-right-now (content)
-              (interactive "sContent: ")
-              (org-capture nil "n")
+              (interactive "sContent for org-capture quick memo: ")
+              (org-capture nil "m")
               (insert content)
               (org-capture-finalize))
-            (global-set-key (kbd "C-M-=") 'org/note-right-now)
+            (global-set-key (kbd "C-M-c") 'org/note-right-now)
             )
   )
 
