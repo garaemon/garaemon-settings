@@ -1342,6 +1342,7 @@ Requires Flake8 3.0 or newer. See URL
   :config (progn
             (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
             (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.cquery_cached_index$")
+            (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.ccls-cache$")
             (setq lsp-eldoc-enable-hover nil)
             (setq lsp-enable-completion-at-point t)
             (setq lsp-enable-folding nil)
