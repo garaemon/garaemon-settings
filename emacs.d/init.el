@@ -2079,6 +2079,8 @@ Requires Flake8 3.0 or newer. See URL
   :if (file-exists-p "/opt/ros/melodic/share/emacs/site-lisp/rosemacs-config.el")
   )
 
+(use-package systemd :ensure t)
+
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
 
