@@ -1183,7 +1183,9 @@ Requires Flake8 3.0 or newer. See URL
              '((original-source)
                (ivy-source-views)
                (my-counsel-git-files)
-               (catkin-packages-list)))
+               (catkin-packages-list)
+               ;; (identity projectile-known-projects)
+               ))
             (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
             (global-set-key "\C-s" 'swiper-isearch)
             (global-set-key "\C-r" 'swiper-isearch-backward)
@@ -2081,6 +2083,31 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package systemd :ensure t)
 
+(use-package projectile :ensure t
+  :config
+  (projectile-mode +1)
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+  ;; projectile-add-known-project
+  ;; (defun catkin-packages-list ()
+  ;;   "List all the catkin packages in catkin workspace"
+  ;;   (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH"))
+  ;;         (catkin-root nil))
+  ;;     (when cmake-prefix-path
+  ;;       (setq catkin-root
+  ;;             (format "%s/../src" (car (split-string cmake-prefix-path ":")))))
+  ;;     (let ((string-output
+  ;;            (shell-command-to-string
+  ;;             (format "find %s -name package.xml -exec dirname {} \\\;"
+  ;;                     catkin-root))))
+  ;;       (let ((dirs (split-string string-output "\n")))
+  ;;         dirs))))
+  (dolist (proj (catkin-packages-list))
+    (projectile-add-known-project proj))
+  )
+
+(use-package counsel-projectile :ensure t)
+
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
 
@@ -2118,6 +2145,6 @@ Requires Flake8 3.0 or newer. See URL
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   '(company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   '(counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
