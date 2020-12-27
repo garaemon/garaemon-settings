@@ -1333,6 +1333,7 @@ Requires Flake8 3.0 or newer. See URL
          ;; npm i -g yaml-language-server
          (yaml-mode . lsp)
          (js-mode . lsp)
+         (emacs-lisp-mode . lsp)
          (lsp-mode . lsp-ui-mode)
          (lsp-managed-mode .(lambda () (setq-local company-backends '(company-capf))))
          )
