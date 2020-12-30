@@ -1119,19 +1119,72 @@ Requires Flake8 3.0 or newer. See URL
             ;; Remove the first '^' in query form.
             ;; https://github.com/abo-abo/swiper/issues/1455
             (setq ivy-initial-inputs-alist nil)
-            (defun catkin-packages-list ()
-              "List all the catkin packages in catkin workspace"
-              (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH"))
-                    (catkin-root nil))
+            (defun get-catkin-root-dir ()
+              (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH")))
                 (when cmake-prefix-path
-                  (setq catkin-root
-                        (format "%s/../src" (car (split-string cmake-prefix-path ":")))))
+                  (format "%s/../src" (car (split-string cmake-prefix-path ":"))))))
+
+            (defun get-catkin-packages-list ()
+              (let ((catkin-root (get-catkin-root-dir)))
                 (let ((string-output
                        (shell-command-to-string
-                      (format "find %s -name package.xml -exec dirname {} \\\;"
-                              catkin-root))))
+                        (format "find %s -name package.xml -exec dirname {} \\\;"
+                                catkin-root))))
                   (let ((dirs (split-string string-output "\n")))
                     dirs))))
+
+            (defun update-catkin-packages-list ()
+              "List all the catkin packages in catkin workspace"
+              (message "Updating catkin-packages-list")
+              (setq catkin-packages-list (get-catkin-packages-list)))
+
+            (defvar catkin-packages-list (get-catkin-packages-list))
+            ;; Defiend only for ivy-set-sources. ivy-set-sources only supports function without
+            ;; arguments.
+            (defun get-cached-catkin-packages-list ()
+              "Return `catkin-packages-list'
+This function is defiend only for ivy-set-sources.
+ivy-set-sources only supports function without arguments.
+"
+              catkin-packages-list)
+
+            (defvar catkin-workspace-timestamp-process nil)
+            (defvar catkin-workspace-timestamp nil)
+            (defun catkin-workspace-updated-p ()
+              (let ((catkin-root (get-catkin-root-dir))
+                    (buffer-name "*catkin-timestamp-query*"))
+                (when catkin-root
+                  ;; Process is not started
+                  (cond ((null catkin-workspace-timestamp-process)
+                         ;; Before running process, clean up buffer
+                         (let ((buff (get-buffer-create buffer-name)))
+                           (with-current-buffer buff
+                             (erase-buffer)))
+                         (setq catkin-workspace-timestamp-process
+                               (start-process "latest_directory_timestamp.py" buffer-name
+                                              "~/.emacs.d/scripts/latest_directory_timestamp.py"
+                                              catkin-root))
+                         nil)
+                        ;; Process is still on-going
+                        ((process-live-p catkin-workspace-timestamp-process)
+                         nil)
+                        (t
+                         ;; Process is finished and *timestamp-query* buffer is ready to be read
+                         (let* ((timestamp-string (with-current-buffer (get-buffer-create buffer-name)
+                                                    (goto-char (point-min))
+                                                    (buffer-substring (point) (line-end-position))))
+                                (timestamp (car (read-from-string timestamp-string)))
+                                (result (cond ((null catkin-workspace-timestamp) t)
+                                              ((> timestamp catkin-workspace-timestamp) t)
+                                              (t nil))))
+                           (setq catkin-workspace-timestamp timestamp)
+                           (setq catkin-workspace-timestamp-process nil)
+                           result))))
+                  )
+              )
+            (run-with-idle-timer 10 nil #'(lambda ()
+                                            (if (catkin-workspace-updated-p)
+                                                (update-catkin-packages-list))))
 
             (defun my-ivy-switch-buffer-action (buffer)
               "Customized ivy--switch-buffer-action."
@@ -1183,7 +1236,7 @@ Requires Flake8 3.0 or newer. See URL
              '((original-source)
                (ivy-source-views)
                (my-counsel-git-files)
-               (catkin-packages-list)
+               (get-cached-catkin-packages-list)
                ;; (identity projectile-known-projects)
                ))
             (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
@@ -2087,8 +2140,10 @@ Requires Flake8 3.0 or newer. See URL
 (use-package projectile :ensure t
   :config
   (projectile-mode +1)
-  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  ;; (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+  (add-to-list 'projectile-globally-ignored-directories ".ccls-cache")
+  (add-to-list 'projectile-globally-ignored-directories ".cquery_cached_index")
   ;; projectile-add-known-project
   ;; (defun catkin-packages-list ()
   ;;   "List all the catkin packages in catkin workspace"
@@ -2104,10 +2159,15 @@ Requires Flake8 3.0 or newer. See URL
   ;;       (let ((dirs (split-string string-output "\n")))
   ;;         dirs))))
   (dolist (proj (catkin-packages-list))
-    (projectile-add-known-project proj))
+    (unless (member proj projectile-known-projects)
+      (projectile-add-known-project proj)))
   )
 
-(use-package counsel-projectile :ensure t)
+(use-package counsel-projectile :ensure t
+  ;; :hook ((projectile-mode counsel-projectile-mode))
+  ;; :config
+  ;; (setq counsel-projectile-mode t)
+  )
 
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
@@ -2143,6 +2203,7 @@ Requires Flake8 3.0 or newer. See URL
      (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
      (ivy--regex-plus :around ivy--regex-plus-migemo-around)
      ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full))
+ '(counsel-projectile-mode t nil (counsel-projectile))
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(lsp-pyls-plugins-jedi-completion-enabled t)
