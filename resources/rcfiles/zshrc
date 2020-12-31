@@ -533,13 +533,14 @@ function wstool-checkout-default-branch() {
                      sed s@^refs/remotes/origin/@@ | xargs git checkout'"
 }
 
+# Wrapper of cakint_test_results
 function catkin-test-results() {
-    target_dir=$(realpath ${1:-.})
+    local target_dir=$(realpath ${1:-.})
     if [ ${target_dir} = "/" ]; then
         :
     elif [ -e ${target_dir}/package.xml ]; then
-        pkg_name=$(basename $(readlink -f ${target_dir}))
-        catkin_ws=$(echo ${CMAKE_PREFIX_PATH} | cut -d: -f1)/..
+        local pkg_name=$(basename $(readlink -f ${target_dir}))
+        local catkin_ws=$(echo ${CMAKE_PREFIX_PATH} | cut -d: -f1)/..
         catkin_test_results --verbose ${catkin_ws}/build/${pkg_name}
     else
         catkin-test-results ${target_dir}/..
