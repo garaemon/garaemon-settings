@@ -429,28 +429,6 @@
 (global-set-key "\M-&" 'query-replace)
 ;;; }}}
 
-;;; rosemacs {{{
-(when
-    (require 'rosemacs nil t)
-  (invoke-rosemacs)
-  (global-set-key "\C-x\C-r" ros-keymap))
-(defun get-package-name-for-dynamic-reconfigure-cfg ()
-  (interactive)                       ;for debug
-  ;; package/cfg/Foo.cfg
-  (let* ((full-current-file-name (buffer-file-name)))
-    (message (file-name-nondirectory
-              (substring                ;Remove trailing /
-               (file-name-directory
-                (substring              ;Remoev trailing /
-                 (file-name-directory full-current-file-name) 0 -1))
-               0 -1))))
-  )
-(defun get-file-name-for-dynamic-reconfigure-cfg ()
-  (interactive)                         ;for debug
-  ;; package/cfg/Foo.cfg
-  (file-name-base (buffer-file-name)))
-;;; }}}
-
 ;;; useful functions to manage multiple windows. {{{
 (defun split-window-vertically-n (num-wins)
   "Split window vertically into NUM-WINS windows."
@@ -2125,14 +2103,6 @@ ivy-set-sources only supports function without arguments.
    :map js-mode-map
    ("C-c f" . 'lsp-format-buffer)
    )
-  )
-
-(use-package rosemacs-config
-  :config (progn
-            (global-set-key "\C-x\C-r" ros-keymap)
-            )
-  :load-path "/opt/ros/melodic/share/emacs/site-lisp"
-  :if (file-exists-p "/opt/ros/melodic/share/emacs/site-lisp/rosemacs-config.el")
   )
 
 (use-package systemd :ensure t)
