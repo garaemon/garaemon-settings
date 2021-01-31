@@ -1361,6 +1361,21 @@ Requires Flake8 3.0 or newer. See URL
             (setq lsp-markup-display-all t)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
             (setq-default lsp-signature-auto-activate nil)
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "ccls")
+                              :major-modes '(c++-mode)
+                              :remote? t
+                              :server-id 'c++-remote))
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "pyls")
+                              :major-modes '(python-mode)
+                              :remote? t
+                              :server-id 'python-remote))
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "yaml-language-server")
+                              :major-modes '(yaml-mode)
+                              :remote? t
+                              :server-id 'yaml-remote))
             )
   )
 (defun lsp-describe-thing-at-point () (interactive) nil)
@@ -1553,8 +1568,9 @@ Requires Flake8 3.0 or newer. See URL
                      "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
                      :unarrowed t
                      :prepend t
-                     ))
+                     )
                     )
+                  )
             (global-set-key (kbd "C-c c") 'org-capture)
             ;; Is it ok? minor-modes such as magit takes over this key bind?
             (global-set-key (kbd "C-c C-c") 'org-capture)
@@ -1723,6 +1739,7 @@ Requires Flake8 3.0 or newer. See URL
               (interactive)
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
+            (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
             )
   )
 
@@ -2106,6 +2123,8 @@ Requires Flake8 3.0 or newer. See URL
     (projectile-add-known-project proj))
   )
 
+(use-package counsel-tramp :ensure t)
+
 (use-package counsel-projectile :ensure t)
 
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
@@ -2145,6 +2164,6 @@ Requires Flake8 3.0 or newer. See URL
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(package-selected-packages
-   '(counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   '(counsel-tramp counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
