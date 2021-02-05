@@ -1779,6 +1779,11 @@ ivy-set-sources only supports function without arguments.
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
             (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+            (customize-set-variable
+             'tramp-ssh-controlmaster-options
+             (concat
+              "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+              "-o ControlMaster=auto -o ControlPersist=yes"))
             )
   )
 
