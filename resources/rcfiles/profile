@@ -1,17 +1,42 @@
-# -*- mode: shell-script -*-
+# ~/.profile: executed by the command interpreter for login shells.
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
+# exists.
+# see /usr/share/doc/bash/examples/startup-files for examples.
+# the files are located in the bash-doc package.
+
+# the default umask is set in /etc/profile; for setting the umask
+# for ssh logins, install and configure the libpam-umask package.
+#umask 022
+
 # if running bash
 if [ -n "$BASH_VERSION" ]; then
-    # exec zsh if zsh exists
-    [ -x /usr/local/bin/zsh ] && SHELL=/usr/local/bin/zsh exec /usr/local/bin/zsh
-    [ -x /usr/bin/zsh ] && SHELL=/usr/bin/zsh exec /usr/bin/zsh
-    [ -x /bin/zsh ] && SHELL=/bin/zsh exec /bin/zsh
     # include .bashrc if it exists
     if [ -f "$HOME/.bashrc" ]; then
         . "$HOME/.bashrc"
     fi
 fi
-                                
 
-export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/bin" ] ; then
+    PATH="$HOME/bin:$PATH"
+fi
 
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    . "$NVM_DIR/nvm.sh"
+    nvm use v10.16.3 >/dev/null
+fi
+
+if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
+    . $HOME/.pyenv/.pyenvrc
+fi
+
+[ -s "$HOME/.gvm/scripts/gvm" ] && . "$HOME/.gvm/scripts/gvm"
+
+# cannot load setup.sh because gnome-shell hangs after loading it
+# [ -s "$HOME/gitai/catkin_ws/devel/setup.sh" ] && . "$HOME/gitai/catkin_ws/devel/setup.sh"

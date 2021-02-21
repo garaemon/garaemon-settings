@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 umask 022
 
+if [[ "$ZPROF" = true ]]; then
+  zmodload zsh/zprof
+fi
+
 EDITOR=vim
 VISUAL=vim
 
@@ -72,13 +76,6 @@ setopt share_history    # share command history data
 bindkey -e
 
 export PATH=$HOME/.local/bin:$PATH
-
-if [ -e "${HOME}/.nvm/nvm.sh" ]; then
-    echo sourcing nvm.sh
-    # --no-use option to speed up source nvm.sh
-    source ${HOME}/.nvm/nvm.sh --no-use
-    nvm use v10.16.3 >/dev/null
-fi
 
 #alias
 # alias cp='cp -v'
@@ -450,8 +447,6 @@ if [ -e $HOME/google-cloud-sdk/path.zsh.inc ]; then
     source $HOME/google-cloud-sdk/path.zsh.inc
 fi
 
-[[ -s "/Users/ryohei/.gvm/scripts/gvm" ]] && source "/Users/ryohei/.gvm/scripts/gvm"
-
 if alias e >/dev/null; then
     unalias e
 fi
@@ -583,3 +578,31 @@ precmd() {
     echo -ne "\033]0;$(hostname)\007"
 }
 [ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
+
+alias rviz=rviz --opengl 210
+
+gcd() {
+    roscd gitai_$1
+}
+
+_gcd() {
+    local gitai_packages=$(rospack list-names | grep gitai_ | sed s/gitai_//g)
+    _values \
+        "package" $(echo ${gitai_packages})
+}
+
+compdef _gcd gcd
+
+timezsh() {
+  shell=${1-$SHELL}
+  for i in $(seq 1 10); do /usr/bin/time $shell -i -c exit; done
+}
+
+profzsh() {
+  shell=${1-$SHELL}
+  ZPROF=true $shell -i -c exit
+}
+
+if [[ "$ZPROF" = true ]]; then
+  zprof
+fi
