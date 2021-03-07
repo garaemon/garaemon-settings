@@ -2146,6 +2146,34 @@ ivy-set-sources only supports function without arguments.
   ;; (setq counsel-projectile-mode t)
   )
 
+(use-package browse-at-remote :ensure t
+  :bind (("C-c b" . 'browse-at-remote)))
+
+;; vterm
+(when (file-exists-p (expand-file-name "~/gprog/emacs-libvterm"))
+    (use-package vterm
+      :load-path "~/gprog/emacs-libvterm"
+      :bind (:map vterm-mode-map
+                  ("\C-h" . 'vterm-send-backspace)
+                  ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
+                  ;; key.
+                  ("\C-c t" . 'vterm-copy-mode)
+                  )
+      :config
+      (setq vterm-max-scrollback  10000)
+      (setq vterm-buffer-name-string  "*vterm: %s*")
+      ;; Remove C-h from the original vterm-keymap-exceptions
+      (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
+                                      "C-y" "M-y"))
+      )
+    (use-package vterm-toggle :ensure t
+      :bind
+      ("\C-c t" . 'vterm-toggle)
+      ("\C-c T" . 'vterm-toggle-cd)
+      )
+  )
+
+
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
 
@@ -2188,6 +2216,6 @@ ivy-set-sources only supports function without arguments.
  '(lsp-pyls-plugins-pylint-enabled nil)
  '(lsp-pyls-plugins-yapf-enabled t)
  '(package-selected-packages
-   '(counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   '(vterm-toggle browse-at-remote counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
