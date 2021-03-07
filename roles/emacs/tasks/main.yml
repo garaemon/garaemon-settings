@@ -68,3 +68,24 @@
     CC: ccache gcc
     CXX: ccache g++
   when: ansible_os_family == "Debian"
+
+# vterm
+- name: Clone libvterm
+  git:
+    repo: https://github.com/akermu/emacs-libvterm
+    dest: ~/gprog/emacs-libvterm
+
+- name: mkdir libvterm/build
+  file:
+    path: ~/gprog/emacs-libvterm/build
+    state: directory
+
+- name: configure libvterm
+  command: cmake ..
+  args:
+    chdir: ~/gprog/emacs-libvterm/build
+
+- name: build libvterm
+  command: make
+  args:
+    chdir: ~/gprog/emacs-libvterm/build
