@@ -1400,6 +1400,21 @@ ivy-set-sources only supports function without arguments.
             (setq lsp-markup-display-all t)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
             (setq-default lsp-signature-auto-activate nil)
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "ccls")
+                              :major-modes '(c++-mode)
+                              :remote? t
+                              :server-id 'c++-remote))
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "pyls")
+                              :major-modes '(python-mode)
+                              :remote? t
+                              :server-id 'python-remote))
+            (lsp-register-client
+             (make-lsp-client :new-connection (lsp-tramp-connection "yaml-language-server")
+                              :major-modes '(yaml-mode)
+                              :remote? t
+                              :server-id 'yaml-remote))
             )
   )
 (defun lsp-describe-thing-at-point () (interactive) nil)
@@ -1592,8 +1607,9 @@ ivy-set-sources only supports function without arguments.
                      "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
                      :unarrowed t
                      :prepend t
-                     ))
+                     )
                     )
+                  )
             (global-set-key (kbd "C-c c") 'org-capture)
             ;; Is it ok? minor-modes such as magit takes over this key bind?
             (global-set-key (kbd "C-c C-c") 'org-capture)
@@ -1762,6 +1778,12 @@ ivy-set-sources only supports function without arguments.
               (interactive)
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
+            (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+            (customize-set-variable
+             'tramp-ssh-controlmaster-options
+             (concat
+              "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+              "-o ControlMaster=auto -o ControlPersist=yes"))
             )
   )
 
@@ -2139,6 +2161,8 @@ ivy-set-sources only supports function without arguments.
     (unless (member proj projectile-known-projects)
       (projectile-add-known-project proj)))
   )
+
+(use-package counsel-tramp :ensure t)
 
 (use-package counsel-projectile :ensure t
   ;; :hook ((projectile-mode counsel-projectile-mode))
