@@ -2181,7 +2181,7 @@ ivy-set-sources only supports function without arguments.
                   ("\C-h" . 'vterm-send-backspace)
                   ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
                   ;; key.
-                  ("\C-c t" . 'vterm-copy-mode)
+                  ("\C-c [" . 'vterm-copy-mode) ; like tmux
                   )
       :config
       (setq vterm-max-scrollback  10000)
