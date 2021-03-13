@@ -2171,7 +2171,12 @@ ivy-set-sources only supports function without arguments.
   )
 
 (use-package browse-at-remote :ensure t
-  :bind (("C-c b" . 'browse-at-remote)))
+  :bind (("C-c b" . 'echo-url-at-remote))
+  :config
+  (defun echo-url-at-remote ()
+    (interactive)
+    (message "URL: %s" (browse-at-remote-get-url)))
+  )
 
 ;; vterm
 (when (file-exists-p (expand-file-name "~/gprog/emacs-libvterm"))
