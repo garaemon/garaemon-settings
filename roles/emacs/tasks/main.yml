@@ -8,7 +8,6 @@
   git:
     repo: https://github.com/garaemon/emacs.d
     dest: ~/gprog/emacs.d
-    version: emacs-27.0.91
   when: "'TRAVIS' in ansible_env and ansible_env.TRAVIS == 'true'"
 
 - name: Symlink for emacs.d
