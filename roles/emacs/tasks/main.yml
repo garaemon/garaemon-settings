@@ -3,6 +3,7 @@
     repo: git@github.com:garaemon/emacs.d
     dest: ~/gprog/emacs.d
   when: "'TRAVIS' not in ansible_env or ansible_env.TRAVIS != 'true'"
+  ignore_errors: yes
 
 - name: Clone emacs.d
   git:
