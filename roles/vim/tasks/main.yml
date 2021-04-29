@@ -3,4 +3,3 @@
     src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/vimrc"
     dest: ~/.vimrc
     state: link
-    remote_src: yes
