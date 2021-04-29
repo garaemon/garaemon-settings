@@ -33,25 +33,30 @@
     url: https://github.com/github/hub/releases/download/{{hub_latest_version.stdout}}/hub-{{os_name}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}.tgz
     dest: /tmp/hub.tgz
   register: download_hub
+  when: ansible_os_family == "Debian"
 
 - name: Extract hub
   when: download_hub.changed
   command: tar xvzf /tmp/hub.tgz chdir=/tmp/
+  when: ansible_os_family == "Debian"
 
 - name: Create .local/bin
   file:
     path: ~/.local/bin
     state: directory
+  when: ansible_os_family == "Debian"
 
 - name: Copy to .local/bin/
   when: download_hub.changed
   command: cp /tmp/hub-{{os_name | lower}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}/bin/hub ~/.local/bin/hub
+  when: ansible_os_family == "Debian"
 
 - name: chmod hub
   when: download_hub.changed
   file:
     path: ~/.local/bin/hub
     mode: 0755
+  when: ansible_os_family == "Debian"
 
 - name: Prepare completions directory
   file:
