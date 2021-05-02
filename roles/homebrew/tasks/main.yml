@@ -20,11 +20,12 @@
       - hg
       - mosh
       - clang-format
-      - shellcheck
       - zlib
       - llvm # for clangd
       - gpg
       - reattach-to-user-namespace
+      - fontconfig
+      - cmake
 #- name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
@@ -45,7 +46,6 @@
     state: present
   vars:
     packages:
-      - kindle
       - vlc
       - skype
       - google-japanese-ime
@@ -56,4 +56,3 @@
       - hyperswitch
       - latexit
       - virtualbox
-      - homebrew/cask-fonts/font-symbola
