@@ -34,7 +34,6 @@
     - vscode
     - role: ccls
       when: ansible_os_family == "Debian"
-    - cquery
     - clangd
     - python-language-server
     - typescript-language-server
