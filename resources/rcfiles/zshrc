@@ -549,10 +549,8 @@ export PATH=$PATH:$GOPATH/bin
 
 # BEGIN ANSIBLE MANAGED BLOCK: pyenv
 if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
-    source $HOME/.pyenv/.pyenvrc
-    if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
-        source $HOME/.pyenv/completions/pyenv.zsh
-    fi
+  source $HOME/.pyenv/.pyenvrc
+  source $HOME/.pyenv/completions/pyenv.zsh
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 

@@ -23,6 +23,10 @@
   apt:
     name:
       - libgnutls28-dev
+      - libtiff-dev
+      - libgtk-3-dev
+      - libtool # for libvterm
+      - libtool-bin # for libvterm
   become: yes
   when: ansible_os_family == "Debian"
 

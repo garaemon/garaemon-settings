@@ -16,9 +16,10 @@
     - emacs
     - peco
     - role: chrome
-      when: ansible_os_family == "Debian"
+      when:
+        - ansible_os_family == "Debian"
+        - ansible_architecture != 'aarch64'
       become: yes
-    - hub
     - gh
     - pyenv
     - nvm
@@ -31,9 +32,14 @@
     - role: dictd
       when: ansible_os_family == "Debian"
     - inkdrop
-    - vscode
+    - role: vscode
+      when:
+        - ansible_os_family == "Debian"
+        - ansible_architecture != 'aarch64'
     - role: ccls
-      when: ansible_os_family == "Debian"
+      when:
+        - ansible_os_family == "Debian"
+        - ansible_architecture != 'aarch64'
     - clangd
     - python-language-server
     - typescript-language-server

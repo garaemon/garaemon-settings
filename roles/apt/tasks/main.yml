@@ -41,9 +41,8 @@
       - libyaml-dev
       - man
       - mercurial
-      - python-pip
-      - quicksynergy
-      - quicksynergy
+      - python3-pip
+      # - quicksynergy
       - r-base
       - rlwrap
       - silversearcher-ag
