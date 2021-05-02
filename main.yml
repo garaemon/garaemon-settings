@@ -7,8 +7,8 @@
     - vim
     - tmux
     - zsh
-    - role: zlib
-      when: ansible_os_family == "Darwin"
+#    - role: zlib
+#      when: ansible_os_family == "Darwin"
     - role: apt
       when: ansible_os_family == "Debian"
     - role: homebrew
