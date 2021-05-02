@@ -46,7 +46,7 @@
     pyenv_init_shell: yes
     # Python versions to install
     pyenv_python_versions:
-      - "3.7.10"
+      - "3.9.4"
     # Set global pyenv version
     pyenv_global: "system"
     # Define the shell profile scripts to initialiaze
