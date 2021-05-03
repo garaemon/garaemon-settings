@@ -1468,7 +1468,15 @@ ivy-set-sources only supports function without arguments.
             )
   )
 
-(use-package forge :after magit :ensure t)
+(use-package forge :after magit :ensure t
+  ;; How to setup forge:
+  ;;   Create ~/.authinfo file and write an entry like:
+  ;;     machine api.github.com login garaemon^forge password {token}
+  ;;   The scope of token to be enabled are
+  ;;     1. repo
+  ;;     2. user
+  ;;     3. read:org
+  )
 
 (use-package sx :ensure t)
 
