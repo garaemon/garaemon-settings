@@ -1460,11 +1460,6 @@ ivy-set-sources only supports function without arguments.
   :config (progn
             (global-set-key "\C-cl" 'magit-status)
             (global-set-key "\C-cL" 'magit-status)
-            ;; It expects core.editor=emacsclient
-            (defun github-pull-request ()
-              (interactive)
-              (shell-command "git config core.editor=emacsclient")
-              (shell-command "hub pull-request &"))
             )
   )
 
