@@ -13,25 +13,39 @@
     os_name: "linux"
   when: ansible_os_family == "Debian"
 
+- name: set architecture
+  set_fact:
+    peco_arch: amd64
+  when: ansible_architecture == 'amd64'
+
+- name: set architecture
+  set_fact:
+    peco_arch: arm64
+  when: ansible_architecture == 'aarch64'
+
 - name: Download latest peco (darwin)
-  get_url: url=https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_darwin_amd64.zip dest=/tmp/peco_darwin_amd64.zip
+  get_url:
+    url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_darwin_{{ peco_arch }}.zip
+    dest: /tmp/peco_darwin_{{ peco_arch }}.zip
   register: download_peco
   when: ansible_os_family == "Darwin"
 
 - name: Extract peco (darwin)
   when: download_peco.changed and ansible_os_family == "Darwin"
   unarchive:
-    src: /tmp/peco_darwin_amd64.zip
+    src: /tmp/peco_darwin_{{ peco_arch }}.zip
     dest: /tmp
 
 - name: Download latest peco (debian)
-  get_url: url=https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_linux_amd64.tar.gz dest=/tmp/peco_linux_amd64.tar.gz
+  get_url:
+    url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_linux_{{ peco_arch }}.tar.gz
+    dest: /tmp/peco_linux_{{ peco_arch }}.tar.gz
   register: download_peco
   when: ansible_os_family == "Debian"
 
 - name: Extract peco (debian)
   when: download_peco.changed and ansible_os_family == "Debian"
-  command: tar -xvzf /tmp/peco_linux_amd64.tar.gz chdir=/tmp/
+  command: tar -xvzf /tmp/peco_linux_{{ peco_arch }}.tar.gz chdir=/tmp/
 
 - name: Create .local/bin
   file:
@@ -40,7 +54,7 @@
 
 - name: Copy to .local/bin/
   copy:
-    src: /tmp/peco_{{os_name | lower}}_amd64/peco
+    src: /tmp/peco_{{os_name | lower}}_{{ peco_arch }}/peco
     dest: ~/.local/bin/peco
     mode: 0755
     remote_src: yes
