@@ -4,6 +4,7 @@
     state: present
   vars:
     packages:
+      - aspell
       - ccls
       - tmux
       - wget
