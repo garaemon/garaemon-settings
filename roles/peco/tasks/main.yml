@@ -16,7 +16,7 @@
 - name: set architecture
   set_fact:
     peco_arch: amd64
-  when: ansible_architecture == 'amd64'
+  when: ansible_architecture == 'amd64' or ansible_architecture == 'x86_64'
 
 - name: set architecture
   set_fact:
