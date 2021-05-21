@@ -603,6 +603,10 @@ profzsh() {
   ZPROF=true $shell -i -c exit
 }
 
+add-fork() {
+  gh repo fork --remote --remote-name garaemon
+}
+
 if [[ "$ZPROF" = true ]]; then
   zprof
 fi
