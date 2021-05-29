@@ -4,3 +4,4 @@ chef/Berksfile.lock
 *.retry
 *.yml-e
 inventory/
+*.log
