@@ -689,7 +689,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package python
   :config
-  (let ((ipython-executable "ipython2"))
+  (let ((ipython-executable (if (executable-find "ipython2") "ipython2" "ipython3")))
     ;; Verify ipython version
     (if (executable-find ipython-executable)
         ;; ipython-version-string is a string like "5.5.0"
