@@ -2160,7 +2160,7 @@ ivy-set-sources only supports function without arguments.
   ;;                     catkin-root))))
   ;;       (let ((dirs (split-string string-output "\n")))
   ;;         dirs))))
-  (dolist (proj (catkin-packages-list))
+  (dolist (proj catkin-packages-list)
     (unless (member proj projectile-known-projects)
       (projectile-add-known-project proj)))
   )
