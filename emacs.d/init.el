@@ -821,15 +821,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             ;; `load-path` inherited from the current emacs.
             (setq flycheck-emacs-lisp-load-path 'inherit)
 
-            (defun flycheck-exclude-tramp ()
-              "Do not run flycheck for the file over tramp mode.
-
-See http://fukuyama.co/tramp-flycheck"
-              (unless (or (and (fboundp 'tramp-tramp-file-p)
-                               (tramp-tramp-file-p buffer-file-name))
-                          (string-match "sudo:.*:" (buffer-file-name)))
-                (flycheck-mode t)))
-
             ;; Do not use flycheck-pos-tip on cocoa emacs
             (if (not (eq system-type 'darwin))
                 (progn
