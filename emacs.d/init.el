@@ -1765,21 +1765,21 @@ ivy-set-sources only supports function without arguments.
 (use-package tramp
   :config (progn
             (setq tramp-debug-buffer t
-                  tramp-verbose 10
+                  ;; tramp-verbose 6
                   tramp-default-method "ssh")
-            (setq tramp-shell-prompt-pattern
-                  "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+            ;; (setq tramp-shell-prompt-pattern
+            ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
             (defun tramp-cleanup-all ()
               "Cleanup all tramp connection and buffers"
               (interactive)
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
             (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-            (customize-set-variable
-             'tramp-ssh-controlmaster-options
-             (concat
-              "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-              "-o ControlMaster=auto -o ControlPersist=yes"))
+            ;; (customize-set-variable
+            ;;  'tramp-ssh-controlmaster-options
+            ;;  (concat
+            ;;   "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+            ;;   "-o ControlMaster=auto -o ControlPersist=yes"))
             )
   )
 
