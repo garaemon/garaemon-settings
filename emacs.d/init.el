@@ -2136,7 +2136,7 @@ ivy-set-sources only supports function without arguments.
   :config
   (projectile-mode +1)
   ;; (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+  ;; (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
   (add-to-list 'projectile-globally-ignored-directories ".ccls-cache")
   (add-to-list 'projectile-globally-ignored-directories ".cquery_cached_index")
   ;; projectile-add-known-project
@@ -2183,6 +2183,9 @@ ivy-set-sources only supports function without arguments.
                   ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
                   ;; key.
                   ("\C-c [" . 'vterm-copy-mode) ; like tmux
+                  ("\C-c c" . 'multi-vterm) ; like tmux
+                  ("\C-c n" . 'multi-vterm-next)
+                  ("\C-c p" . 'multi-vterm-prev)
                   )
       :config
       (setq vterm-max-scrollback  10000)
@@ -2191,6 +2194,7 @@ ivy-set-sources only supports function without arguments.
       (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
                                       "C-y" "M-y"))
       )
+    (use-package multi-vterm :ensure t)
     (use-package vterm-toggle :ensure t
       :bind
       ("\C-c t" . 'vterm-toggle)
