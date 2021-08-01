@@ -187,7 +187,9 @@
 (when-darwin
  (when (display-graphic-p)
    ;; see http://d.hatena.ne.jp/kazu-yamamoto/20090122/1232589385
-   (defvar default-face-height 120)
+   (if (> (x-display-pixel-width) 1440)
+       (setq default-face-height 120)
+     (setq default-face-height 100))
    (set-face-attribute 'default nil :family "monaco" :height default-face-height)
    ;; Japanese font
    (set-fontset-font
