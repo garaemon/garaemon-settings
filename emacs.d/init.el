@@ -267,6 +267,12 @@
 (setq auto-mode-alist (cons (cons "\\.cg?$" 'c-mode) auto-mode-alist))
 ;;; }}}
 
+;;; shell script {{{
+(setq sh-basic-offset 2)
+(setq sh-indentation 2)
+(setq sh-shell-file "/bin/bash")
+;;; }}}
+
 ;;; C+++ {{{
 (setq auto-mode-alist (cons (cons "\\.h?$" 'c++-mode) auto-mode-alist))
 ;; For yasnippet helper
