@@ -1361,6 +1361,7 @@ ivy-set-sources only supports function without arguments.
 
 (use-package lua-mode :ensure t :defer t)
 
+;; Run M-x all-the-icons-install-fonts to show '>' in headerline.
 (use-package lsp-mode :ensure t
   :hook (
          ;; pip3 install 'python-language-server[all]'
