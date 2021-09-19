@@ -1410,7 +1410,8 @@ ivy-set-sources only supports function without arguments.
                               :remote? t
                               :server-id 'python-remote))
             (lsp-register-client
-             (make-lsp-client :new-connection (lsp-tramp-connection "yaml-language-server")
+             (make-lsp-client :new-connection
+                              (lsp-tramp-connection (list "yaml-language-server" "--stdio"))
                               :major-modes '(yaml-mode)
                               :remote? t
                               :server-id 'yaml-remote))
