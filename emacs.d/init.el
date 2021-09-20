@@ -1454,7 +1454,11 @@ ivy-set-sources only supports function without arguments.
 (use-package ccls :ensure t
   :config
   :hook ((c-mode c++-mode objc-mode) .
-         (lambda () (require 'ccls) (lsp))))
+         (lambda ()
+           (require 'ccls)
+           (run-with-timer 3 nil #'lsp)
+           )))
+
 
 
 (use-package magit :ensure t
