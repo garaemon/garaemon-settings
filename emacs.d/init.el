@@ -1400,6 +1400,9 @@ ivy-set-sources only supports function without arguments.
             (setq lsp-markup-display-all t)
             (setq lsp-pyls-plugins-jedi-hover-enabled nil)
             (setq-default lsp-signature-auto-activate nil)
+            (unless (display-graphic-p)
+              (setq lsp-headerline-arrow ">")
+              )
             (lsp-register-client
              (make-lsp-client :new-connection (lsp-tramp-connection "ccls")
                               :major-modes '(c++-mode)
