@@ -1785,7 +1785,7 @@ ivy-set-sources only supports function without arguments.
 (use-package tramp
   :config (progn
             (setq tramp-debug-buffer t
-                  ;; tramp-verbose 6
+                  tramp-verbose 6
                   tramp-default-method "ssh")
             ;; (setq tramp-shell-prompt-pattern
             ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
