@@ -565,7 +565,7 @@ export MOSH_ESCAPE_KEY="~"
 if [ "$OS" = "Darwin" ]; then
     function mosh() {
         echo -ne "\033]0;$@\007"
-        /usr/local/bin/mosh $@
+        /opt/homebrew/bin/mosh $@
     }
     function ssh() {
         echo -ne "\033]0;$@\007"
