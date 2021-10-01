@@ -547,14 +547,14 @@ function catkin-test-results() {
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
-# BEGIN ANSIBLE MANAGED BLOCK: pyenv
-if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
-  source $HOME/.pyenv/.pyenvrc
-  if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
-    source $HOME/.pyenv/completions/pyenv.zsh
-  fi
+
+if [ -e "$HOME/.pyenv" ]; then
+    eval "$(pyenv init -)"
 fi
-# END ANSIBLE MANAGED BLOCK: pyenv
+if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
+    source $HOME/.pyenv/completions/pyenv.zsh
+fi
+
 
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
 # of mosh.
