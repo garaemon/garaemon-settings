@@ -1,0 +1,4 @@
+- name: Install circleci-cli
+  shell: go get -u github.com/CircleCI-Public/circleci-cli
+  environment:
+    GO111MODULE: 'on'
