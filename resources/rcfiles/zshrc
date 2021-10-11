@@ -17,10 +17,12 @@ export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr
 # for emacs tramp
 case "$TERM" in
 dumb | emacs)
-    PROMPT='$ '
-    unsetopt zle
-    return
-    ;;
+  unsetopt zle
+  unsetopt prompt_cr
+  unsetopt prompt_subst
+  PS1='$ '
+  PROMPT='$ '
+  return
 esac
 
 #zsh
