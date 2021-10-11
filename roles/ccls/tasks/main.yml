@@ -6,17 +6,23 @@
   file:
     path: ~/gprog/ccls/build
     state: directory
-- name: Download and unarchive clang
-  unarchive:
-    src: http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-    dest: ~/gprog/ccls
-    remote_src: yes
+- name: Install clang
+  apt:
+    name: "{{packages}}"
+    state: present
+  become: yes
+  vars:
+    packages:
+      - clang-10
+      - libclang-10-dev
 - name: Configure ccls
   command: >-
     cmake -H..
         -BRelease
         -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_PREFIX_PATH=~/gprog/ccls/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04
+        -DCMAKE_PREFIX_PATH=/usr/lib/llvm-10
+        -DLLVM_INCLUDE_DIR=/usr/lib/llvm-10/include
+        -DLLVM_BUILD_INCLUDE_DIR=/usr/include/llvm-10/
         -DCMAKE_INSTALL_PREFIX=$HOME/.local
   args:
     chdir: ~/gprog/ccls/build
