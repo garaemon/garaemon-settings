@@ -448,13 +448,17 @@ if alias e >/dev/null; then
 fi
 
 function e() {
-    # If the argument contains :
-    emacsclient -n $(echo $1 | cut -f1 -d:)
-    if tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$'; then
-        tmux display-message -p '#I' >~/.emacs.d/emacsclient-window
-        tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' |
-            cut -d ':' -f1)
-    fi
+  # If the argument contains :
+  emacsclient -n $(echo $1 | cut -f1 -d:)
+  if [ "$?" != "0" ]; then
+    echo No emacsclient is available
+    return 1
+  fi
+  if tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' 2>&1 >/dev/null ; then
+    tmux display-message -p '#I' >~/.emacs.d/emacsclient-window
+    tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep -e 'emacs$' |
+                              cut -d ':' -f1)
+  fi
 }
 
 # TODO: add completion
