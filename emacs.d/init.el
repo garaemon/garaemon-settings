@@ -201,7 +201,10 @@
    (defvar mac-pass-control-to-system)
    (setq mac-pass-control-to-system nil)
    ;; for emacs24 x mac
-   (setq mac-command-modifier 'meta)))
+   (setq mac-command-modifier 'meta)
+   ;; Force to use \ instead of ¥
+   (define-key global-map [?¥] [?\\])
+   ))
 
 (when (eq system-type 'gnu/linux)
   (defvar default-face-height 120)
