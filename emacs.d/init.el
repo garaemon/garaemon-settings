@@ -1486,6 +1486,8 @@ ivy-set-sources only supports function without arguments.
   ;;     1. repo
   ;;     2. user
   ;;     3. read:org
+  :config
+  (setq forge-owned-accounts '(("garaemon")))
   )
 
 (use-package sx :ensure t)
