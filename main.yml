@@ -39,7 +39,6 @@
     - role: ccls
       when:
         - ansible_os_family == "Debian"
-        - ansible_architecture != 'aarch64'
     - clangd
     - python-language-server
     - typescript-language-server
