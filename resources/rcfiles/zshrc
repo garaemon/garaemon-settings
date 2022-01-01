@@ -26,11 +26,13 @@ case "$TERM" in
 esac
 
 #zsh
-fpath=(~/.zsh_fpath $fpath)
 autoload -U colors
 colors
 
 # Setup completion before `autoload`.
+if [[ ! -e $HOME/.completions ]]; then
+  mkdir -p $HOME/.completions
+fi
 if [[ -e $HOME/.completions ]]; then
   fpath=($HOME/.completions $fpath)
 fi
@@ -147,8 +149,6 @@ export PATH=/opt/android-sdk/tools:$PATH
 export PATH=$PATH:$HOME/gprog/git-your-emacs
 export PATH=$PATH:$HOME/gprog/heroku-nodekit
 export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin
-
-fpath=($HOME/.zsh/functions/ $fpath) # not work?
 
 export PATH=$PATH:$HOME/gprog/minify-make
 export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
@@ -555,6 +555,13 @@ if [ -e "$HOME/.pyenv" ]; then
 fi
 if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
   source $HOME/.pyenv/completions/pyenv.zsh
+fi
+
+if which gh > /dev/null; then
+  if [ ! -e ~/.completions/_gh ]; then
+    echo Installing gh completion
+    gh completion -s zsh > ~/.completions/_gh
+  fi
 fi
 
 
