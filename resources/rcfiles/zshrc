@@ -565,6 +565,25 @@ if which gh > /dev/null; then
 fi
 
 
+
+function ssh-with-copy-id() {
+  command ssh -o "PasswordAuthentication=no" $@
+  if [ $? != "0" ]; then
+    echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
+    ssh-copy-id $@
+    command ssh -o "PasswordAuthentication=no" $@
+  fi
+}
+
+function mosh-with-copy-id() {
+  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+  if [ $? != "0" ]; then
+    echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
+    ssh-copy-id $@
+    command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+  fi
+}
+
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
 # of mosh.
 export MOSH_ESCAPE_KEY="~"
@@ -574,11 +593,18 @@ export MOSH_ESCAPE_KEY="~"
 if [ "$OS" = "Darwin" ]; then
   function mosh() {
     echo -ne "\033]0;$@\007"
-    /opt/homebrew/bin/mosh $@
+    mosh-with-copy-id $@
   }
   function ssh() {
     echo -ne "\033]0;$@\007"
-    /usr/bin/ssh $@
+    ssh-with-copy-id $@
+  }
+else
+  function mosh() {
+    mosh-with-copy-id $@
+  }
+  function ssh() {
+    ssh-with-copy-id $@
   }
 fi
 
