@@ -1,3 +1,4 @@
+#!/bin/zsh
 #
 # Executes commands at login pre-zshrc.
 #
@@ -69,4 +70,5 @@ fi
 # pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
+# The following line works if pyenv version is 1.2.27
+eval "$(pyenv init -)"

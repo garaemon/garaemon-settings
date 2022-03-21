@@ -11,7 +11,7 @@ VISUAL=vim
 
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 # export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
-export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
 # export LC_ALL=en_US.UTF-8
 
 # for emacs tramp
