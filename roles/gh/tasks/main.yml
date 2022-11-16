@@ -11,7 +11,7 @@
 - name: Setup apt key for gh
   apt_key:
     keyserver: keyserver.ubuntu.com
-    id: C99B11DEB97541F0
+    id: 23F3D4EA75716059
   become: yes
   when: ansible_os_family == "Debian"
 
