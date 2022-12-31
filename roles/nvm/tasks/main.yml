@@ -4,7 +4,7 @@
     dest: /tmp/nvm_install.sh
     mode: 0755
 - name: Install nvm
-  command: sh /tmp/nvm_install.sh
+  command: bash /tmp/nvm_install.sh
 - name: Install node {{node_versions}}
   command: bash -lc "source ~/.nvm/nvm.sh && nvm install v{{item}}"
   loop: "{{node_versions}}"
