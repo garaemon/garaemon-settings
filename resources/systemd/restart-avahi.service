@@ -1,0 +1,11 @@
+[Unit]
+Description=restart avahi-daemon.service
+After=avahi-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=echo restarting avahi-daemon.service
+ExecStart=systemctl restart avahi-daemon.service
+
+[Install]
+WantedBy=multi-user.target
