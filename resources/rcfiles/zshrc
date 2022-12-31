@@ -449,6 +449,8 @@ if alias e >/dev/null; then
   unalias e
 fi
 
+alias c=code
+
 function e() {
   # If the argument contains :
   emacsclient -n $(echo $1 | cut -f1 -d:)
