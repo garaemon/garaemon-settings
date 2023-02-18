@@ -644,6 +644,11 @@ add-fork() {
   gh repo fork --remote --remote-name garaemon
 }
 
+function roscode() {
+  (roscd $1 && code .)
+}
+
+
 if [[ "$ZPROF" = true ]]; then
   zprof
 fi
