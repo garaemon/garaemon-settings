@@ -650,3 +650,7 @@ fi
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+if [ -e $HOME/.dotnet ]; then
+  export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
+fi
