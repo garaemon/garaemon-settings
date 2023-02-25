@@ -569,21 +569,21 @@ fi
 
 
 function ssh-with-copy-id() {
-  command ssh -o "PasswordAuthentication=no" $@
+  command ssh -o "PasswordAuthentication=no" $1 exit
   if [ $? != "0" ]; then
     echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $@
-    command ssh -o "PasswordAuthentication=no" $@
+    ssh-copy-id $1
   fi
+  command ssh -o "PasswordAuthentication=no" $@
 }
 
 function mosh-with-copy-id() {
-  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+  command ssh -o "PasswordAuthentication=no" $1 exit
   if [ $? != "0" ]; then
     echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $@
-    command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+    ssh-copy-id $1
   fi
+  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
 }
 
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
