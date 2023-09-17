@@ -371,9 +371,9 @@ function set-git-config ()
 {
   local config_name="$1"
   local value="$2"
-  local current_config=$(git config --global ${config_name} || true)
+  local current_config=$(git config --global "${config_name}" 2>/dev/null || true)
   if [[ "${current_config}" != "${value}" ]]; then
-    git config --global "${config_nam}" "$value"
+    git config --global "${config_name}" "$value"
   fi
 }
 set-git-config core.pager "diff-so-fancy | less --tabs=4 -RFX"
