@@ -668,7 +668,9 @@ if [ -e $HOME/.dotnet ]; then
   export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
 fi
 
-export JAVA_HOME=$(/usr/libexec/java_home)
+if [ -e /usr/libexec/java_home ]; then
+  export JAVA_HOME=$(/usr/libexec/java_home)
+fi
 
 # print tmux env
 if [ -z "$TMUX" ]; then
