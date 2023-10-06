@@ -348,7 +348,6 @@ function dropbox-share() {
 # added by travis gem
 [ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
 
-alias rviz="rosrun rviz rviz"
 alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
 alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
 # xset mouse 3 0
@@ -615,8 +614,6 @@ precmd() {
   echo -ne "\033]0;$(hostname)\007"
 }
 [ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
-
-alias rviz=rviz --opengl 210
 
 gcd() {
   roscd gitai_$1
