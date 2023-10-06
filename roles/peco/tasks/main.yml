@@ -21,7 +21,7 @@
 - name: set architecture
   set_fact:
     peco_arch: arm64
-  when: ansible_architecture == 'aarch64'
+  when: ansible_architecture == 'aarch64' or ansible_architecture == 'arm64'
 
 - name: Download latest peco (darwin)
   get_url:

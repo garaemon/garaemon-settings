@@ -12,7 +12,7 @@ VISUAL=vim
 # export PATH=$PATH:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 # export PATH=/bin:/usr/bin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
 export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
-# export LC_ALL=en_US.UTF-8
+export LC_CTYPE=en_US.UTF-8
 
 # for emacs tramp
 case "$TERM" in
@@ -366,22 +366,31 @@ fi
 export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
 # git aliases
-git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
-git config --global core.editor "emacsclient"
-git config --global alias.see browse
-git config --global alias.p pull-request
-git config --global alias.br branch
-git config --global alias.co checkout
-git config --global alias.st status
-git config --global alias.unstage "reset -q HEAD --"
-#git config --global alias.discard "checkout --"
-git config --global alias.uncommit "reset --mixed HEAD~"
-#git config --global alias.amend "commit --amend"
-git config --global alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
-git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
-git config --global alias.unmerged "diff --name-only --diff-filter=U"
-git config --global alias.remotes "remotes = remote -v"
-git config --global rebase.autostash true
+function set-git-config ()
+{
+  local config_name="$1"
+  local value="$2"
+  local current_config=$(git config --global "${config_name}" 2>/dev/null || true)
+  if [[ "${current_config}" != "${value}" ]]; then
+    git config --global "${config_name}" "$value"
+  fi
+}
+set-git-config core.pager "diff-so-fancy | less --tabs=4 -RFX"
+set-git-config core.editor "emacsclient"
+set-git-config alias.see browse
+set-git-config alias.p pull-request
+set-git-config alias.br branch
+set-git-config alias.co checkout
+set-git-config alias.st status
+set-git-config alias.unstage "reset -q HEAD --"
+#set-git-config alias.discard "checkout --"
+set-git-config alias.uncommit "reset --mixed HEAD~"
+#set-git-config alias.amend "commit --amend"
+set-git-config alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
+set-git-config alias.precommit "diff --cached --diff-algorithm=minimal -w"
+set-git-config alias.unmerged "diff --name-only --diff-filter=U"
+set-git-config alias.remotes "remotes = remote -v"
+set-git-config rebase.autostash true
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 
 # no ROS environment
@@ -568,21 +577,21 @@ fi
 
 
 function ssh-with-copy-id() {
-  command ssh -o "PasswordAuthentication=no" $@
+  command ssh -o "PasswordAuthentication=no" $1 exit
   if [ $? != "0" ]; then
     echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $@
-    command ssh -o "PasswordAuthentication=no" $@
+    ssh-copy-id $1
   fi
+  command ssh -o "PasswordAuthentication=no" $@
 }
 
 function mosh-with-copy-id() {
-  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+  command ssh -o "PasswordAuthentication=no" $1 exit
   if [ $? != "0" ]; then
     echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $@
-    command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
+    ssh-copy-id $1
   fi
+  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
 }
 
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
@@ -657,4 +666,14 @@ export NVM_DIR="$HOME/.nvm"
 
 if [ -e $HOME/.dotnet ]; then
   export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
+fi
+
+export JAVA_HOME=$(/usr/libexec/java_home)
+
+# print tmux env
+if [ -z "$TMUX" ]; then
+  # If not in tmux environment
+  if tmux has-session 2>/dev/null; then
+    echo "[tmux] There is a tmux session"
+  fi
 fi
