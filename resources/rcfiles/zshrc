@@ -668,3 +668,5 @@ export NVM_DIR="$HOME/.nvm"
 if [ -e $HOME/.dotnet ]; then
   export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
 fi
+
+export JAVA_HOME=$(/usr/libexec/java_home)
