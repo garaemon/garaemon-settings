@@ -645,6 +645,8 @@ function roscode() {
   (roscd $1 && code .)
 }
 
+compctl -K "_roscomplete" "roscode"
+
 
 if [[ "$ZPROF" = true ]]; then
   zprof
