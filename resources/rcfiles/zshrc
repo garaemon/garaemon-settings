@@ -670,3 +670,11 @@ if [ -e $HOME/.dotnet ]; then
 fi
 
 export JAVA_HOME=$(/usr/libexec/java_home)
+
+# print tmux env
+if [ -z "$TMUX" ]; then
+  # If not in tmux environment
+  if tmux has-session 2>/dev/null; then
+    echo "[tmux] There is a tmux session"
+  fi
+fi
