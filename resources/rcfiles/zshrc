@@ -355,11 +355,6 @@ alias v="view"
 alias s="source ~/.zshrc"
 alias git-graph="git log --graph --decorate --oneline"
 
-which hub 2>&1 >/dev/null
-if [ $? = 0 ]; then
-  eval "$(hub alias -s)"
-fi
-
 if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
   git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
 fi
