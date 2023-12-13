@@ -667,6 +667,12 @@ if [ -e /usr/libexec/java_home ]; then
   export JAVA_HOME=$(/usr/libexec/java_home)
 fi
 
+# Unalias git if aliased. GITAI's setup.sh alias git to hub command.
+alias git >/dev/null
+if [ $? = 0 ]; then
+  unalias git
+fi
+
 # print tmux env
 if [ -z "$TMUX" ]; then
   # If not in tmux environment
