@@ -11,10 +11,10 @@
     - ispell
     - tig
     - dircolors-solarized
-    - role: base16-gnome-terminal
-      when: ansible_os_family == "Debian"
-    - role: dictd
-      when: ansible_os_family == "Debian"
+    # - role: base16-gnome-terminal
+    #   when: ansible_os_family == "Debian"
+    # - role: dictd
+    #   when: ansible_os_family == "Debian"
     - inkdrop
 
     # - rvm
