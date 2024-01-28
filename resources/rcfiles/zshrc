@@ -218,24 +218,29 @@ rosenv_use_hook() {
 # alias roseus with rlwrap
 alias roseus="rlwrap rosrun roseus roseus"
 
-# install by
-if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
-  git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+# I prefer using starship to zprezto
+if which starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+else
+  if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
+    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+  fi
+  if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
+    setopt hist_ignore_dups # ignore duplication command history list
+    setopt share_history    # share command history data
+  fi
+  PROMPT2="%_%% "
+  # re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
+  # command line. It should be after `prompt giddie` command.
+  function +vi-set_novcs_prompt_symbol() {
+    _prompt_giddie_symbol='$'
+  }
+  function +vi-set_vcs_prompt_symbol() {
+    _prompt_giddie_symbol='$'
+  }
 fi
-if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-  source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
-  setopt hist_ignore_dups # ignore duplication command history list
-  setopt share_history    # share command history data
-fi
-PROMPT2="%_%% "
-# re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
-# command line. It should be after `prompt giddie` command.
-function +vi-set_novcs_prompt_symbol() {
-  _prompt_giddie_symbol='$'
-}
-function +vi-set_vcs_prompt_symbol() {
-  _prompt_giddie_symbol='$'
-}
+
 
 if [[ ! -e ${HOME}/.zsh ]]; then
   git clone https://github.com/rupa/z.git $HOME/.zsh

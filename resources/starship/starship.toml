@@ -1,0 +1,27 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Add $ to easily copy-and-paste a code.
+format = '''$all$directory$character
+\$ '''
+
+
+# Replace the '❯' symbol in the prompt with '➜'
+[character] # The name of the module we are configuring is 'character'
+success_symbol = '[✓](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
+error_symbol = '[✘](bold red)'
+
+[directory]
+truncation_length = 5
+truncate_to_repo = false
+
+[hostname]
+ssh_only = false
+# The default "dimmed" color is too dark for me.
+style ="green bold"
+
+[time]
+disabled = false
+format ="at [⏱ $time]($style) "
+
+[username]
+show_always = true
