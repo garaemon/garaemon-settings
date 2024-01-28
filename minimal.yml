@@ -5,6 +5,7 @@
     - vim
     - tmux
     - zsh
+    - starship
     - peco
     - pyenv
     - nvm
