@@ -470,6 +470,48 @@ function e() {
   fi
 }
 
+# Search history by peco
+# Based on:
+#  1. https://github.com/mooz/percol#zsh-history-search
+#  2. https://github.com/joshskidmore/zsh-fzf-history-search/tree/master
+
+if (( $+commands[peco] )); then
+
+  peco_history_search() {
+    setopt extendedglob
+
+    FC_ARGS="-l -i"
+    CANDIDATE_LEADING_FIELDS=4
+
+    history_cmd="fc ${=FC_ARGS} -1 0"
+
+      if (( $+commands[awk] )); then
+        history_cmd="$history_cmd | awk '!seen[\$0]++'"
+      else
+        # In case awk is not installed fallback to uniq. It will only remove commands that are repeated consecutively.
+        history_cmd="$history_cmd | uniq"
+      fi
+
+    candidates=(${(f)"$(eval $history_cmd | peco)"})
+    local ret=$?
+    if [ -n "$candidates" ]; then
+      if (( $CANDIDATE_LEADING_FIELDS != 1 )); then
+        BUFFER="${candidates[@]/(#m)[0-9 \-\:]##/${${(As: :)MATCH}[${CANDIDATE_LEADING_FIELDS},-1]}}"
+      else
+        BUFFER="${candidates[@]}"
+      fi
+      BUFFER=$(printf "${BUFFER[@]//\\\\n/\\\\\\n}")
+      zle vi-fetch-history -n $BUFFER
+      zle end-of-line
+    fi
+    zle reset-prompt
+    return $ret
+  }
+
+  zle -N peco_history_search
+  bindkey '^R' peco_history_search
+fi
+
 # TODO: add completion
 function roslaunch-args() {
   roslaunch $@ --args $(roslaunch $@ --nodes | peco)

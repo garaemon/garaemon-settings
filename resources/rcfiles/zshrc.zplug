@@ -17,6 +17,7 @@ zplug "zsh-users/zsh-syntax-highlighting"
 zplug "zsh-users/zsh-autosuggestions"
 zplug "supercrabtree/k"
 zplug "peterhurford/git-aliases.zsh", use: "git-aliases.plugin.zsh"
-zplug "jimeh/zsh-peco-history", defer:2
+# We do not use peco-history plugin to show timestamp. See zshrc.
+# zplug "jimeh/zsh-peco-history", defer:2
 zplug load
 # Do we have to run zplug install?
