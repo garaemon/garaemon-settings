@@ -621,18 +621,6 @@ precmd() {
 }
 [ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
 
-gcd() {
-  roscd gitai_$1
-}
-
-_gcd() {
-  local gitai_packages=$(rospack list-names | grep gitai_ | sed s/gitai_//g)
-  _values \
-    "package" $(echo ${gitai_packages})
-}
-
-compdef _gcd gcd
-
 timezsh() {
   shell=${1-$SHELL}
   for i in $(seq 1 10); do /usr/bin/time $shell -i -c exit; done
