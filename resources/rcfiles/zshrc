@@ -654,7 +654,9 @@ if [ -e $HOME/.dotnet ]; then
 fi
 
 if [ -e /usr/libexec/java_home ]; then
-  export JAVA_HOME=$(/usr/libexec/java_home)
+  # If no Java SDK is available, java_home commands show a wrning message. To ignore it,
+  # we redirect the standard error to /dev/null.
+  export JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null)
 fi
 
 # Unalias git if aliased. GITAI's setup.sh alias git to hub command.
