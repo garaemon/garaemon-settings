@@ -64,6 +64,5 @@
     block: |
       if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
         source $HOME/.pyenv/.pyenvrc
-        source $HOME/.pyenv/completions/pyenv.zsh
       fi
   when: pyenv_zshrc_st.stat.exists and check_zshrc.rc != 0
