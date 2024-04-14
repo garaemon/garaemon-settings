@@ -60,7 +60,7 @@ style = "bg:#9A348E"
 disabled = true # Disabled by default
 
 [directory]
-style = "bg:#DA627D"
+style = "bg:#DA627D fg:black"
 format = "[ $path ]($style)"
 truncation_length = 5
 truncate_to_repo = false
