@@ -6,7 +6,7 @@ $hostname\
 [](bg:#DA627D fg:#9A348E)\
 $directory\
 [](fg:#DA627D bg:#FCA17D)\
-$git_bran\
+$git_branch\
 $git_status\
 [](fg:#FCA17D bg:#86BBD8)\
 $c\
@@ -101,11 +101,11 @@ format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
 symbol = ""
-style = "bg:#FCA17D"
+style = "bg:#FCA17D fg:black"
 format = '[ $symbol $branch ]($style)'
 
 [git_status]
-style = "bg:#FCA17D"
+style = "bg:#FCA17D fg:black"
 format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
