@@ -3,6 +3,6 @@
     repo: https://github.com/aarowill/base16-gnome-terminal.git
     dest: ~/gprog/base16-gnome-terminal
 - name: Execute theme setting script
-  command: ./base16-solarized.dark.sh
+  command: ./base16-solarized-dark.sh
   args:
-    chdir: ~/gprog/base16-gnome-terminal
+    chdir: ~/gprog/base16-gnome-terminal/color-scripts
