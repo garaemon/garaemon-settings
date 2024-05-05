@@ -38,16 +38,9 @@
       when:
         - ansible_os_family == "Debian"
         - ansible_architecture != 'aarch64'
-    - role: ccls
-      when:
-        - ansible_os_family == "Debian"
-    - clangd
     - python-language-server
     - typescript-language-server
     - iterm2-themes
-    - role: circleci-cli
-      when: ansible_architecture == 'aarch64'
-
     # - rvm
   vars:
     # pyenv variables
