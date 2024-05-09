@@ -707,6 +707,15 @@ if [ $? = 0 ]; then
   unalias git
 fi
 
+# Check if gh copilot is installed or not.
+if which gh >/dev/null 2>&1; then
+  if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
+    eval "$(gh copilot alias -- zsh)"  # ghcs command is available
+  else
+    echo Please install gh copilot by "gh extension install github/gh-copilot" >2
+  fi
+fi
+
 # print tmux env
 if [ -z "$TMUX" ]; then
   # If not in tmux environment
