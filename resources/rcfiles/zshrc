@@ -372,7 +372,6 @@ function set-git-config ()
   fi
 }
 set-git-config core.pager "diff-so-fancy | less --tabs=4 -RFX"
-set-git-config core.editor "emacsclient"
 set-git-config alias.see browse
 set-git-config alias.p pull-request
 set-git-config alias.br branch
@@ -731,3 +730,6 @@ if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
 fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+ghe() { GH_HOST="github.gitai.tech" gh "$@"
+}
