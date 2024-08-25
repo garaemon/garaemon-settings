@@ -706,6 +706,12 @@ if [ $? = 0 ]; then
   unalias git
 fi
 
+# Alias to use `gh` command for github enterprise environment.
+function ghe()
+{
+  GH_HOST=github.gitai.tech gh $@
+}
+
 # Check if gh copilot is installed or not.
 if which gh >/dev/null 2>&1; then
   if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
