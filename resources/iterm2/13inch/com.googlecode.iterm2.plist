@@ -6,8 +6,12 @@
 	<true/>
 	<key>Default Bookmark Guid</key>
 	<string>808428EB-BC23-4040-852C-7D214FBAE401</string>
+	<key>EnableDivisionView</key>
+	<true/>
 	<key>HapticFeedbackForEsc</key>
 	<false/>
+	<key>HideMenuBarInFullscreen</key>
+	<true/>
 	<key>HotkeyMigratedFromSingleToMulti</key>
 	<true/>
 	<key>NeverWarnAboutShortLivedSessions_808428EB-BC23-4040-852C-7D214FBAE401</key>
@@ -240,6 +244,8 @@
 				<key>Red Component</key>
 				<real>0.57647058823529407</real>
 			</dict>
+			<key>Brighten Bold Text</key>
+			<true/>
 			<key>Character Encoding</key>
 			<integer>4</integer>
 			<key>Close Sessions On End</key>
@@ -616,7 +622,7 @@
 				<integer>0</integer>
 			</dict>
 			<key>Minimum Contrast</key>
-			<real>0.35389293323863635</real>
+			<real>0.0</real>
 			<key>Mouse Reporting</key>
 			<true/>
 			<key>Name</key>
@@ -1373,6 +1379,8 @@
 			<string>/Users/rueda</string>
 		</dict>
 	</array>
+	<key>PerPaneBackgroundImage</key>
+	<true/>
 	<key>PointerActions</key>
 	<dict>
 		<key>Button,1,1,,</key>
@@ -1410,5 +1418,7 @@
 	<false/>
 	<key>VisualIndicatorForEsc</key>
 	<false/>
+	<key>WindowNumber</key>
+	<true/>
 </dict>
 </plist>
