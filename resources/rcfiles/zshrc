@@ -739,3 +739,7 @@ fi
 
 ghe() { GH_HOST="github.gitai.tech" gh "$@"
 }
+ghe() {
+  GH_HOST="github.gitai.tech" gh "$@"
+}
+
