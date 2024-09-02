@@ -717,7 +717,7 @@ if which gh >/dev/null 2>&1; then
   if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
     eval "$(gh copilot alias -- zsh)"  # ghcs command is available
   else
-    echo Please install gh copilot by "gh extension install github/gh-copilot" >2
+    echo Please install gh copilot by "gh extension install github/gh-copilot" >&2
   fi
 fi
 
