@@ -4,10 +4,9 @@
 	"name": "Ubuntu",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"postCreateCommand": "bash .devcontainer/install-dependencies.sh",
 
-  "postCreateCommand": "bash .devcontainer/install-dependencies.sh",
-
-  "customizations": {
+	"customizations": {
 		"vscode": {
 			"extensions": [
 				"adpyke.codesnap",
@@ -81,5 +80,8 @@
 				"yzhang.markdown-all-in-one",
 			]
 		}
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	}
 }
