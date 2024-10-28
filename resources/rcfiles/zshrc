@@ -495,7 +495,7 @@ if (( $+commands[peco] )); then
     local ret=$?
     if [ -n "$candidates" ]; then
       if (( $CANDIDATE_LEADING_FIELDS != 1 )); then
-        BUFFER="${candidates[@]/(#m)[0-9 \-\:]##/${${(As: :)MATCH}[${CANDIDATE_LEADING_FIELDS},-1]}}"
+        BUFFER="${candidates[@]/(#m)[0-9\* \-\:]##/${${(As: :)MATCH}[${CANDIDATE_LEADING_FIELDS},-1]}}"
       else
         BUFFER="${candidates[@]}"
       fi
