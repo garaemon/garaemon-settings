@@ -7,6 +7,14 @@
                         "description": "JPY to Backslash",
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "^com\\.googlecode\\.iterm2$"
+                                        ],
+                                        "type": "frontmost_application_unless"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "international3",
                                     "modifiers": { "optional": ["any"] }
