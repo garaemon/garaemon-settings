@@ -10,10 +10,6 @@ fi
 
 umask 022
 
-if [[ "$ZPROF" = true ]]; then
-  zmodload zsh/zprof
-fi
-
 EDITOR=vim
 VISUAL=vim
 
@@ -675,11 +671,6 @@ timezsh() {
   for i in $(seq 1 10); do /usr/bin/time $shell -i -c exit; done
 }
 
-profzsh() {
-  shell=${1-$SHELL}
-  ZPROF=true $shell -i -c exit
-}
-
 add-fork() {
   gh repo fork --remote --remote-name garaemon
 }
@@ -689,11 +680,6 @@ function roscode() {
 }
 
 compctl -K "_roscomplete" "roscode"
-
-
-if [[ "$ZPROF" = true ]]; then
-  zprof
-fi
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
