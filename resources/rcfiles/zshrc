@@ -1,5 +1,13 @@
 # -*- mode: shell-script -*-
 # -*- coding: utf-8 -*-
+
+ZSHRC_PROFILE=false
+
+if [ "$ZSHRC_PROFILE" = "true" ]; then
+  zmodload zsh/zprof
+fi
+
+
 umask 022
 
 if [[ "$ZPROF" = true ]]; then
@@ -758,4 +766,9 @@ fi
 # check if ssh-agent has a key or not.
 if ! ssh-add -l >/dev/null; then
     ssh-add $HOME/.ssh/id_rsa 2>/dev/null
+fi
+
+
+if [ "$ZSHRC_PROFILE" = true ]; then
+  zprof
 fi
