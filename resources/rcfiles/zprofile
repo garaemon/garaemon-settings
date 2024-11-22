@@ -72,3 +72,5 @@ export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 # The following line works if pyenv version is 1.2.27
 eval "$(pyenv init -)"
+
+# git aliases. `git config`` is not so fast. To launch zsh faster, I set git aliases here.

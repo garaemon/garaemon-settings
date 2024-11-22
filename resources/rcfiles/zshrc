@@ -682,7 +682,10 @@ function roscode() {
 compctl -K "_roscomplete" "roscode"
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
+
+[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
+
 
 if [ -e $HOME/.dotnet ]; then
   export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
