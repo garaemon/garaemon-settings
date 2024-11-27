@@ -4,6 +4,7 @@
     - sudo-no-password
     - cpplint
     - clang-format
+    - git
     - git-find-big
     - vim
     - tmux

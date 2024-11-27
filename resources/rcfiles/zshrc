@@ -365,31 +365,6 @@ if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
 fi
 export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
-# git aliases
-function set-git-config ()
-{
-  local config_name="$1"
-  local value="$2"
-  local current_config=$(git config --global "${config_name}" 2>/dev/null || true)
-  if [[ "${current_config}" != "${value}" ]]; then
-    git config --global "${config_name}" "$value"
-  fi
-}
-set-git-config core.pager "diff-so-fancy | less --tabs=4 -RFX"
-set-git-config alias.see browse
-set-git-config alias.p pull-request
-set-git-config alias.br branch
-set-git-config alias.co checkout
-set-git-config alias.st status
-set-git-config alias.unstage "reset -q HEAD --"
-#set-git-config alias.discard "checkout --"
-set-git-config alias.uncommit "reset --mixed HEAD~"
-#set-git-config alias.amend "commit --amend"
-set-git-config alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
-set-git-config alias.precommit "diff --cached --diff-algorithm=minimal -w"
-set-git-config alias.unmerged "diff --name-only --diff-filter=U"
-set-git-config alias.remotes "remotes = remote -v"
-set-git-config rebase.autostash true
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 
 # no ROS environment
