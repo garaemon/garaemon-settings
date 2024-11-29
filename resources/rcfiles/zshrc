@@ -688,13 +688,20 @@ function ghe()
   GH_HOST=github.gitai.tech gh $@
 }
 
-# Check if gh copilot is installed or not.
-if which gh >/dev/null 2>&1; then
-  if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
-    eval "$(gh copilot alias -- zsh)"  # ghcs command is available
-  else
-    echo Please install gh copilot by "gh extension install github/gh-copilot" >&2
+# Run eval $(gh copilot alias -- zsh). However, `gh copilot alias`` is slow.
+# So, we cache the result to $HOME/.zshrc.copilot.
+if [ ! -e $HOME/.zshrc.copilot ]; then
+  if which gh >/dev/null 2>&1; then
+    if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
+      gh copilot alias -- zsh > ~/.zshrc.copilot
+    else
+      echo Please install gh copilot by "gh extension install github/gh-copilot" >&2
+    fi
   fi
+fi
+
+if [ -e $HOME/.zshrc.copilot ]; then
+  source $HOME/.zshrc.copilot
 fi
 
 # print tmux env
