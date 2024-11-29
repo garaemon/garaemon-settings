@@ -42,7 +42,11 @@ if [[ -e $HOME/.completions ]]; then
 fi
 
 autoload -Uz compinit
-compinit
+for dump in ~/.zcompdump(N.mh+24); do
+  compinit
+done
+compinit -C
+
 setopt correct
 setopt beep
 autoload -Uz add-zsh-hook
