@@ -387,10 +387,10 @@ fi
 # fi
 
 # zplug
-if [ -e $HOME/.zshrc.zplug ]; then
-  echo-ttyrec-safe loading customizing setup file for zplug...
-  source $HOME/.zshrc.zplug
-fi
+# if [ -e $HOME/.zshrc.zplug ]; then
+#   echo-ttyrec-safe loading customizing setup file for zplug...
+#   source $HOME/.zshrc.zplug
+# fi
 
 # customizing zshrc?
 if [ -e $HOME/.zshrc.mine ]; then
