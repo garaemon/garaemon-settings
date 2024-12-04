@@ -203,40 +203,6 @@ function record_time_end() {
   set -x
 }
 
-export NO_ROS_PROMPT=true
-
-################################################################################
-# ros
-rosenv_use_hook() {
-  rospack find jsk_tools >/dev/null 2>&1
-  if [ $? = 0 ]; then
-    source $(rospack find jsk_tools)/src/zshrc.ros
-    if [ -e $HOME/.roszsh ]; then
-      source $HOME/.roszsh
-    fi
-  fi
-  rospack find hrpsys_ros_bridge >/dev/null 2>&1
-  if [ $? = 0 ]; then
-    alias rtmlaunch='`rospack find openrtm_tools`/scripts/rtmlaunch'
-  fi
-}
-
-# if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
-#     source $HOME/gprog/rosenv/rosenv.sh
-#     if [ "$OS" = "Darwin" ] ; then
-#         rosenv use indigo >/dev/null
-#     else
-#         if [ "$ROSENV_CURRENT" = "" ]; then
-#             rosenv use jsk.hydro >/dev/null
-#         else
-#             rosenv use >/dev/null
-#         fi
-#     fi
-# fi
-
-# alias roseus with rlwrap
-alias roseus="rlwrap rosrun roseus roseus"
-
 # I prefer using starship to zprezto
 if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
