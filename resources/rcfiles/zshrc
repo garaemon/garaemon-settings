@@ -657,6 +657,19 @@ add-fork() {
   gh repo fork --remote --remote-name garaemon
 }
 
+git-branch-for-pr() {
+  CURRENT_BRANCH_NAME=$(git branch --show-current)
+  ORIGINAL_BRANCH=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
+
+  git checkout "${ORIGINAL_BRANCH}"
+  git pull
+  echo "Creating a branch pr/${CURRENT_BRANCH_NAME}"
+  git checkout -b "pr/${CURRENT_BRANCH_NAME}"
+  git cherry-pick "${CURRENT_BRANCH_NAME}"
+  git push -u garaemon "pr/${CURRENT_BRANCH_NAME}"
+  git checkout "${CURRENT_BRANCH_NAME}"
+}
+
 function roscode() {
   (roscd $1 && code .)
 }
