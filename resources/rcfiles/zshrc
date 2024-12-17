@@ -292,23 +292,6 @@ function git-branch-remove-all-remote-exec() {
   fi
 }
 
-function rename-spaces() {
-  # Replace spaces in file with underscores
-  mv -i "$*" "$(echo $* | sed -e 's/\s\+/_/g')"
-}
-
-function ev() {
-  # use C-xC-q to toggle read only
-  emacsclient -e "(find-file-read-only \"$1\")"
-}
-
-function dropbox-share() {
-  target=$(md5sum $1 | cut -f1 -d ' ').${1##*.}
-  cp $1 ~/Dropbox/Public/tmp/$target
-  echo -e "File is available on $fg[cyan] $(dropbox puburl ~/Dropbox/Public/tmp/$target)$reset_color"
-  echo -e $'\U1F61D' $'\U1F61D' $'\U1F61D' $'\U1F61D'
-}
-
 # added by travis gem
 [ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
 
@@ -336,10 +319,6 @@ if [ -e $HOME/.emacs.d ]; then
        'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
        PATH >~/.emacs.d/shellenv.el
 fi
-# automatically clone repositories
-# if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
-#     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
-# fi
 
 # zplug
 # if [ -e $HOME/.zshrc.zplug ]; then
