@@ -580,7 +580,6 @@ fi
 precmd() {
   echo -ne "\033]0;$(hostname)\007"
 }
-[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
 
 timezsh() {
   shell=${1-$SHELL}
