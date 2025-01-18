@@ -203,40 +203,6 @@ function record_time_end() {
   set -x
 }
 
-export NO_ROS_PROMPT=true
-
-################################################################################
-# ros
-rosenv_use_hook() {
-  rospack find jsk_tools >/dev/null 2>&1
-  if [ $? = 0 ]; then
-    source $(rospack find jsk_tools)/src/zshrc.ros
-    if [ -e $HOME/.roszsh ]; then
-      source $HOME/.roszsh
-    fi
-  fi
-  rospack find hrpsys_ros_bridge >/dev/null 2>&1
-  if [ $? = 0 ]; then
-    alias rtmlaunch='`rospack find openrtm_tools`/scripts/rtmlaunch'
-  fi
-}
-
-# if [ -e $HOME/gprog/rosenv/rosenv.sh ]; then
-#     source $HOME/gprog/rosenv/rosenv.sh
-#     if [ "$OS" = "Darwin" ] ; then
-#         rosenv use indigo >/dev/null
-#     else
-#         if [ "$ROSENV_CURRENT" = "" ]; then
-#             rosenv use jsk.hydro >/dev/null
-#         else
-#             rosenv use >/dev/null
-#         fi
-#     fi
-# fi
-
-# alias roseus with rlwrap
-alias roseus="rlwrap rosrun roseus roseus"
-
 # I prefer using starship to zprezto
 if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
@@ -279,17 +245,6 @@ export PATH=$PATH:$HOME/.bin
 if [ -f $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
   source $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
-
-function sine_wave() {
-  i=0
-  for i in $(seq 0 10); do
-    SIN=$(python -c "from math import *;print map( lambda x: ceil(6*sin((x+$i)*pi/5)), range($(tput cols)) )" | tr -d '[]' | spark)
-    echo -ne $SIN\\r
-    let i=i+1
-    sleep 0.05
-  done
-  echo
-}
 
 git_delete_all_branched() {
   git branch -D $(git branch --merged | grep -v \* | xargs)
@@ -337,23 +292,6 @@ function git-branch-remove-all-remote-exec() {
   fi
 }
 
-function rename-spaces() {
-  # Replace spaces in file with underscores
-  mv -i "$*" "$(echo $* | sed -e 's/\s\+/_/g')"
-}
-
-function ev() {
-  # use C-xC-q to toggle read only
-  emacsclient -e "(find-file-read-only \"$1\")"
-}
-
-function dropbox-share() {
-  target=$(md5sum $1 | cut -f1 -d ' ').${1##*.}
-  cp $1 ~/Dropbox/Public/tmp/$target
-  echo -e "File is available on $fg[cyan] $(dropbox puburl ~/Dropbox/Public/tmp/$target)$reset_color"
-  echo -e $'\U1F61D' $'\U1F61D' $'\U1F61D' $'\U1F61D'
-}
-
 # added by travis gem
 [ -f /home/lueda/.travis/travis.sh ] && source /home/lueda/.travis/travis.sh
 
@@ -381,10 +319,6 @@ if [ -e $HOME/.emacs.d ]; then
        'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
        PATH >~/.emacs.d/shellenv.el
 fi
-# automatically clone repositories
-# if [ -e $HOME/gprog/garaemon-settings/scripts/install_repositories.sh ]; then
-#     $HOME/gprog/garaemon-settings/scripts/install_repositories.sh
-# fi
 
 # zplug
 # if [ -e $HOME/.zshrc.zplug ]; then
@@ -646,7 +580,6 @@ fi
 precmd() {
   echo -ne "\033]0;$(hostname)\007"
 }
-[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
 
 timezsh() {
   shell=${1-$SHELL}
