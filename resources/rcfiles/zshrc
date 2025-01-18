@@ -136,31 +136,6 @@ fi
 
 alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 
-export PATH=$PATH:$HOME/gprog/platex-create-pkg
-export PATH=$PATH:$HOME/gprog/spark
-export PATH=$PATH:$HOME/gprog/spark-ping
-export PATH=$PATH:$HOME/gprog/shell-color-pallet
-export PATH=$PATH:$HOME/gprog/wakatime
-export PATH=$PATH:$HOME/gprog/multi_crop
-#alias jbibtex=bibtex
-# for bibtex
-# from http://qiita.com/amayaw9/items/01d626ce1ae18c27df8b
-export BSTINPUTS=$BSTINPUTS:/usr/share/texmf/jbibtex/bst
-
-export PATH=$PATH:$HOME/gprog/emacs-settings
-
-export PATH=/opt/android-sdk/tools:$PATH
-export PATH=/opt/android-sdk/tools:$PATH
-
-export PATH=$PATH:$HOME/gprog/git-your-emacs
-export PATH=$PATH:$HOME/gprog/heroku-nodekit
-export PATH=$PATH:/usr/local/Cellar/pypy/1.9/bin
-
-export PATH=$PATH:$HOME/gprog/minify-make
-export SENCHA_SDK_TOOLS_2_0_0_BETA3=/Applications/SenchaSDKTools-2.0.0-beta3
-export PATH=$PATH:$SENCHA_SDK_TOOLS_2_0_0_BETA3
-export PATH=$PATH:$HOME/gprog/jq
-
 # update roszsh
 if [ ! -e $HOME/.roszsh ]; then
   wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q >/dev/null
