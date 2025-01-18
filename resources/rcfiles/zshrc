@@ -112,19 +112,6 @@ function echo-ttyrec-safe() {
   fi
 }
 
-# export DISPLAY=:0
-
-export PATH=$PATH:$HOME/gprog/ttygif
-export PATH=$PATH:$HOME/gprog/seq2gif
-
-# PATH setup
-export PYTHONPATH=$PYTHONPATH:$HOME/gprog/scan-scripts
-export PATH=$PATH:$HOME/gprog/scan-scripts/bin
-if [ -e $HOME/.zshrc.jsk ]; then
-  echo loading jsk setup file ...
-  source $HOME/.zshrc.jsk
-fi
-
 OS=$(uname)
 if [ "$OS" = "CYGWIN_NT-5.1" -o "$OS" = "CYGWIN_NT-6.0" ]; then
   if [ -e $HOME/.zshrc.cygwin ]; then
