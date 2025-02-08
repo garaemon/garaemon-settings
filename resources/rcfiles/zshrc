@@ -265,10 +265,6 @@ export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 
-# no ROS environment
-# export ROSLAUNCH_SSH_UNKNOWN=1
-# rossetlocal >/dev/null 2>&1
-
 # for emacs
 if [ -e $HOME/.emacs.d ]; then
   perl -wle \
@@ -309,9 +305,6 @@ function restart-dns() {
     echo "It's not mac os, skip"
   fi
 }
-
-export PATH=$PATH:$HOME/gprog/depot_tools
-export PATH=$PATH:$HOME/Library/Android/sdk/tools
 
 # Google Cloud SDK
 if [ -e $HOME/google-cloud-sdk/completion.zsh.inc ]; then
