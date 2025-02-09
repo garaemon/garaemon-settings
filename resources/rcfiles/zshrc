@@ -96,11 +96,6 @@ setopt HIST_REDUCE_BLANKS    # Remove superfluous blanks from each command line 
 
 bindkey -e
 
-#alias
-# alias cp='cp -v'
-alias mv='mv -v'
-alias grep='grep --color=auto'
-
 # for ttyrec environment.
 # This zshrc expects using ttyrec with IS_TTYREC=true like
 # `IS_TTYREC=true ttyrec terminal.log`.
@@ -133,8 +128,6 @@ elif [ "$OS" = "Darwin" ]; then
     source $HOME/.zshrc.darwin
   fi
 fi
-
-alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
 
 # update roszsh
 if [ ! -e $HOME/.roszsh ]; then
@@ -246,19 +239,10 @@ function git-branch-remove-all-remote-exec() {
 }
 
 
-alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
-alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
-# xset mouse 3 0
-alias v="view"
-alias s="source ~/.zshrc"
-alias git-graph="git log --graph --decorate --oneline"
-
 if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
   git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
 fi
 export PATH=$PATH:$HOME/.local/share/diff-so-fancy
-
-alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 
 # for emacs
 if [ -e $HOME/.emacs.d ]; then
@@ -313,8 +297,6 @@ fi
 if alias e >/dev/null; then
   unalias e
 fi
-
-alias c=code
 
 function e() {
   # If the argument contains :
@@ -384,10 +366,6 @@ function gp() {
   tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs |
                             cut -d ':' -f1)
 }
-
-alias cbt='catkin bt'
-
-alias c='catkin'
 
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
   source ~/gitai/catkin_ws/devel/setup.zsh
@@ -639,3 +617,16 @@ fi
 if [ "$ZSHRC_PROFILE" = true ]; then
   zprof
 fi
+
+#alias
+# alias cp='cp -v'
+alias mv='mv -v'
+alias grep='grep --color=auto'
+alias wifi-diag="open '/System/Library/CoreServices/Wi-Fi Diagnostics.app'"
+alias rqt_reconfigure="rosrun rqt_reconfigure rqt_reconfigure"
+alias docker-bash="sudo docker run -i -t ubuntu:12.04 /bin/bash"
+alias v="view"
+alias s="source ~/.zshrc"
+alias git-graph="git log --graph --decorate --oneline"
+alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
+alias c=code
