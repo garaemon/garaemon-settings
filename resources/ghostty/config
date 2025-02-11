@@ -1,0 +1,5 @@
+font-family = "Monaco Nerd Font Mono"
+theme = "Spacedust"
+cursor-style = block
+cursor-style-blink = true
+shell-integration-features = no-cursor
