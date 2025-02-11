@@ -28,6 +28,10 @@ case "$TERM" in
     PS1='$ '
     PROMPT='$ '
     return
+    ;;
+  "xterm-ghostty")
+    export TERM="xterm-256color"
+    ;;
 esac
 
 #zsh
