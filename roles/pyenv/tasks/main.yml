@@ -8,14 +8,13 @@
     - "{{ ansible_os_family }}.yml"
     - "default.yml"
 
-- include: Linux.yml
+- include_tasks: Linux.yml
   when: "ansible_system == 'Linux'"
 
-- include: Darwin.yml
+- include_tasks: Darwin.yml
   when: "ansible_os_family == 'Darwin'"
 
-- include: install.yml
+- include_tasks: install.yml
 
-- include: shell.yml
+- include_tasks: shell.yml
   when: pyenv_init_shell
-
