@@ -13,6 +13,7 @@
     - ispell
     - tig
     - dircolors-solarized
+    - ghostty
     # - role: base16-gnome-terminal
     #   when: ansible_os_family == "Debian"
     # - role: dictd

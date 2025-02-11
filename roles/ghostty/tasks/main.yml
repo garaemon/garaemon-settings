@@ -1,0 +1,15 @@
+- when: ansible_os_family == 'Darwin'
+  block:
+
+  - name: Make directory for config
+    file:
+      path: "{{ ansible_env.HOME }}/Application Support/com.mitchellh.ghostty"
+      state: directory
+      mode: 0755
+
+  - name: Copy config
+    file:
+      src: "{{ ansible_env.HOME }}/gprog/garaemon-settings/roles/ghostty/files/config"
+      path: "{{ ansible_env.HOME }}/Application Support/com.mitchellh.ghostty/config"
+      state: link
+      mode: 0644

@@ -41,7 +41,7 @@
         - ansible_architecture != 'aarch64'
     - python-language-server
     - typescript-language-server
-    - iterm2-themes
+    - ghostty
     # - rvm
   vars:
     # pyenv variables
