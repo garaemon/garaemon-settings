@@ -1,0 +1,26 @@
+- name: git config core.page
+  command: git config core.pager "diff-so-fancy | less --tabs=4 -RFX"
+- name: git config alias.see
+  command: git config alias.see browse
+- name: git config alias.p
+  command: git config alias.p pull-request
+- name: git config alilas.br
+  command: git config alias.br branch
+- name: git config alias.co
+  command: git config alias.co checkout
+- name: git config alias.st
+  command: git config alias.st status
+- name: git config alias.unstage
+  command: git config alias.unstage "reset -q HEAD --"
+- name: git config alias.uncommit
+  command: git config alias.uncommit "reset --mixed HEAD~"
+- name: git config alias.graph
+  command: git config alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
+- name: git config alias.precommit
+  command: git config alias.precommit "diff --cached --diff-algorithm=minimal -w"
+- name: git config alias.unmerged
+  command: git config alias.unmerged "diff --name-only --diff-filter=U"
+- name: git config alias.remotes
+  command: git config alias.remotes "remotes = remote -v"
+- name: git config rebase.autostash
+  command: git config rebase.autostash true
