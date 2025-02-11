@@ -435,7 +435,7 @@ function catkin-test-results() {
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
-# Cache pyenv init - in .pyenvrc to spee up
+# Cache pyenv init - in .pyenvrc to speed up
 if [ -e "$HOME/.pyenv" ]; then
   if [ ! -e "$HOME/.pyenvrc" ]; then
       pyenv init - > "$HOME/.pyenvrc"
