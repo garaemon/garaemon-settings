@@ -57,4 +57,4 @@
     src: /tmp/peco_{{os_name | lower}}_{{ peco_arch }}/peco
     dest: ~/.local/bin/peco
     mode: 0755
-    remote_src: yes
+    remote_src: true

@@ -22,7 +22,7 @@
       when:
         - ansible_os_family == "Debian"
         - ansible_architecture != 'aarch64'
-      become: yes
+      become: true
     - gh
     - pyenv
     - nvm
@@ -46,7 +46,7 @@
   vars:
     # pyenv variables
     # Initialize shell profile scripts
-    pyenv_init_shell: yes
+    pyenv_init_shell: true
     # Python versions to install
     pyenv_python_versions:
       - "3.9.4"

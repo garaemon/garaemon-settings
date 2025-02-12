@@ -6,25 +6,25 @@
 - name: Install microsoft.gpg
   shell:
     install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
-  become: yes
+  become: true
 
 - name: Add microsoft apt repository
   lineinfile:
     line: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
     path: /etc/apt/sources.list.d/vscode.list
-    create: yes
-  become: yes
+    create: true
+  become: true
 
 - name: Install apt-transport-https
   apt:
     name:
       - apt-transport-https
-  become: yes
+  become: true
 
 - name: Install vscode
   apt:
     name:
       - code
-    update_cache: yes
-  become: yes
+    update_cache: true
+  become: true
   when: ansible_os_family == "Debian"

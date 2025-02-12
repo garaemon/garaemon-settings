@@ -37,7 +37,7 @@
   git:
     repo: https://github.com/sorin-ionescu/prezto.git
     dest: ~/.zprezto
-    recursive: yes
+    recursive: true
 - name: Symlink for prompt_garaemon_setup
   file:
     src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/prompt_garaemon_setup"

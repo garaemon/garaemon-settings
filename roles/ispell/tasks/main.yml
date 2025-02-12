@@ -2,4 +2,4 @@
   lineinfile:
     line: "lang en_US"
     path: ~/.aspell.conf
-    create: yes
+    create: true

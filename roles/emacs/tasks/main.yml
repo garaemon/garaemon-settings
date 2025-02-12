@@ -3,7 +3,7 @@
     repo: git@github.com:garaemon/emacs.d
     dest: ~/gprog/emacs.d
   when: "'TRAVIS' not in ansible_env or ansible_env.TRAVIS != 'true'"
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Clone emacs.d
   git:
@@ -27,7 +27,7 @@
       - libgtk-3-dev
       - libtool # for libvterm
       - libtool-bin # for libvterm
-  become: yes
+  become: true
   when: ansible_os_family == "Debian"
 
 - name: Clone the latest emacs

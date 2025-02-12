@@ -15,4 +15,4 @@
 
 - name: updat fc-cache
   command: fc-cache -vf
-  become: yes
+  become: true

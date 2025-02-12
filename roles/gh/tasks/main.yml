@@ -12,18 +12,18 @@
   apt_key:
     keyserver: keyserver.ubuntu.com
     id: 23F3D4EA75716059
-  become: yes
+  become: true
   when: ansible_os_family == "Debian"
 
 - name: Setup apt repository for gh
   apt_repository:
     repo: "deb https://cli.github.com/packages {{ lsb_release.stdout}} main"
-    update_cache: yes
-  become: yes
+    update_cache: true
+  become: true
   when: ansible_os_family == "Debian"
 
 - name: Install gh
   apt:
     name: gh
-  become: yes
+  become: true
   when: ansible_os_family == "Debian"

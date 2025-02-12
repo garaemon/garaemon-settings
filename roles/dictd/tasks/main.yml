@@ -4,12 +4,12 @@
       - dictd
       - dict
       - dictfmt
-  become: yes
+  become: true
 - name: Install dictd.conf
   copy:
     src: dictd.conf
     dest: /etc/dictd/dictd.conf
-  become: yes
+  become: true
 - name: restart dictd
   command: systemctl restart dictd
-  become: yes
+  become: true

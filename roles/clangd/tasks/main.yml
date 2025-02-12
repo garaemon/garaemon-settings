@@ -3,12 +3,12 @@
     name:
       - clang-tools-6.0
   when: ansible_os_family == "Debian"
-  become: yes
+  become: true
 - name: "Install clangd update-alternatives"
   command: update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-6.0 60
   when: ansible_os_family == "Debian"
-  become: yes
+  become: true
 - name: "Install clangd update-alternatives"
   command: update-alternatives --set clangd /usr/bin/clangd-6.0
   when: ansible_os_family == "Debian"
-  become: yes
+  become: true

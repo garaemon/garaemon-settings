@@ -7,4 +7,4 @@
     src: "{{role_path}}/files/keymap.cson"
     dest: ~/.config/inkdrop/keymap.cson
     state: link
-    force: yes
+    force: true
