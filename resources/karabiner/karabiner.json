@@ -98,7 +98,7 @@
                         ]
                     },
                     {
-                        "description": "コマンドキーを単体で押したときに、英数・かなキーを送信する。（左コマンドキーは英数、右コマンドキーはかな） (rev 2)",
+                        "description": "Send Eisu/Kana key when command key is pressed alone. (Left command key is Eisu, right command key is Kana) (rev 2)",
                         "manipulators": [
                             {
                                 "from": {
