@@ -5,3 +5,4 @@ cursor-style-blink = true
 shell-integration-features = no-cursor
 clipboard-paste-protection = false
 copy-on-select = false
+macos-option-as-alt = true
