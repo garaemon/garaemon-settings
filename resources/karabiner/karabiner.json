@@ -33,15 +33,13 @@
                                 "conditions": [
                                     {
                                         "bundle_identifiers": [
-                                            "^com\\.googlecode\\.iterm2$"
+                                            "^com\\.googlecode\\.iterm2$",
+                                            "^com\\.mitchellh\\.ghostty$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
                                 ],
-                                "from": {
-                                    "key_code": "international3",
-                                    "modifiers": { "optional": ["any"] }
-                                },
+                                "from": { "key_code": "international3" },
                                 "to": [
                                     {
                                         "key_code": "international3",
