@@ -549,10 +549,6 @@ fi
 # END ANSIBLE MANAGED BLOCK: pyenv
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-ghe() {
-  GH_HOST="github.gitai.tech" gh "$@"
-}
-
 # ssh agent
 # eval "$(ssh-agent -s)"
 # for linux
