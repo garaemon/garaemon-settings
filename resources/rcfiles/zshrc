@@ -141,27 +141,9 @@ if [ ! -e $HOME/.roszsh ]; then
   fi
 fi
 
-# I prefer using starship to zprezto
 if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
-else
-  if [[ ! -e "${ZDOTDIR:-$HOME}/.zprezto" ]]; then
-    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-  fi
-  if [[ -e "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-    source ${ZDOTDIR:-$HOME}/.zprezto/init.zsh
-  fi
-  PROMPT2="%_%% "
-  # re-define +vi-set_novcs_prompt_symbol function in order to change symbol at the begginign of the
-  # command line. It should be after `prompt giddie` command.
-  function +vi-set_novcs_prompt_symbol() {
-    _prompt_giddie_symbol='$'
-  }
-  function +vi-set_vcs_prompt_symbol() {
-    _prompt_giddie_symbol='$'
-  }
 fi
-
 
 if [[ ! -e ${HOME}/.zsh ]]; then
   git clone https://github.com/rupa/z.git $HOME/.zsh
@@ -194,7 +176,6 @@ function git-branch-remove-all-local-exec() {
 }
 
 function git-branch-remove-all-remote() {
-  # dryrun
   local remote=$1
   if [ "$remote" = "" ]; then
     echo "Specify remote branch"
@@ -237,12 +218,6 @@ if [ -e $HOME/.zshrc.mine ]; then
   echo-ttyrec-safe loading customizing setup file ...
   source $HOME/.zshrc.mine
 fi
-
-function clang-format-view() {
-  local fname=$(mktemp)
-  clang-format $1 >$fname
-  colordiff -W 200 -y $1 $fname | less
-}
 
 # wrapping tip command to use virtualenv
 function tips() {
@@ -305,7 +280,8 @@ if (( $+commands[peco] )); then
       if (( $+commands[awk] )); then
         history_cmd="$history_cmd | awk '!seen[\$0]++'"
       else
-        # In case awk is not installed fallback to uniq. It will only remove commands that are repeated consecutively.
+        # In case awk is not installed fallback to uniq.
+        # `uniq` will only remove commands that are repeated consecutively.
         history_cmd="$history_cmd | uniq"
       fi
 
@@ -500,7 +476,7 @@ if [ -e $HOME/.dotnet ]; then
 fi
 
 if [ -e /usr/libexec/java_home ]; then
-  # If no Java SDK is available, java_home commands show a wrning message. To ignore it,
+  # If no Java SDK is available, java_home commands show a warning message. To ignore it,
   # we redirect the standard error to /dev/null.
   export JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null)
 fi
