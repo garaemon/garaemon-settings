@@ -141,27 +141,6 @@ if [ ! -e $HOME/.roszsh ]; then
   fi
 fi
 
-function record_time_start() {
-  set +x
-  RECORD_START_TIME=$(date +%s%N)
-  RECORD_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-  RECORD_FOLD_NAME=$1
-  echo -e "\e[0Ktraivs_fold:start:$RECORD_FOLD_NAME"
-  echo -e "\e[0Ktraivs_time:start:$RECORD_TIME_ID"
-  set -x
-}
-
-function record_time_end() {
-  set +x
-  _COLOR=${1:-32}
-  RECORD_END_TIME=$(date +%s%N)
-  TIME_ELAPSED_SECONDS=$((($RECORD_END_TIME - $RECORD_START_TIME) / 1000000000))
-  echo -e "traivs_time:end:$RECORD_TIME_ID:start=$RECORD_START_TIME,finish=$RECORD_END_TIME,duration=$(($RECORD_END_TIME - $RECORD_START_TIME))\n\e[0K"
-  echo -e "traivs_fold:end:$RECORD_FOLD_NAME"
-  echo -e "\e[0K\e[${_COLOR}mFunction $RECORD_FOLD_NAME takes $(($TIME_ELAPSED_SECONDS / 60)) min $(($TIME_ELAPSED_SECONDS % 60)) sec\e[0m"
-  set -x
-}
-
 # I prefer using starship to zprezto
 if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
