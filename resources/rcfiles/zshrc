@@ -185,14 +185,6 @@ git_delete_all_branched() {
   git branch -D $(git branch --merged | grep -v \* | xargs)
 }
 
-until-success() {
-  $@
-  while [ $? != 0 ]; do
-    sleep 1
-    $@
-  done
-}
-
 function git-branch-remove-all-local() {
   git branch --merged master | grep -v '*' | xargs -I % echo git branch -d %
 }
@@ -354,16 +346,6 @@ if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
   source ~/gitai/catkin_ws/devel/setup.zsh
 fi
 
-# wstool util
-function wstool-interactive() {
-  local wstool_line
-  local repo
-  wstool_line=$(wstool info | peco)
-  repo=$(echo "${wstool_line}" | cut -d ' ' -f 2)
-  wstool update "${repo}"
-  (cd "${repo}" && git checkout master)
-}
-
 function catkin-compile-commands-json() {
   local catkin_ws=$(echo $CMAKE_PREFIX_PATH | cut -d: -f1)/..
   # Verify catkin cmake args contains -DCMAKE_EXPORT_COMPILE_COMMANDS=ON.
@@ -394,13 +376,7 @@ function catkin-compile-commands-json() {
   done
 }
 
-function wstool-checkout-default-branch() {
-  wstool foreach \
-         "bash -c 'git symbolic-ref refs/remotes/origin/HEAD | \
-                     sed s@^refs/remotes/origin/@@ | xargs git checkout'"
-}
-
-# Wrapper of cakint_test_results
+# Wrapper of catkin_test_results
 function catkin-test-results() {
   local target_dir=$(realpath ${1:-.})
   if [ ${target_dir} = "/" ]; then
