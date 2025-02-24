@@ -132,6 +132,10 @@ elif [ "$OS" = "Darwin" ]; then
     source $HOME/.zshrc.darwin
   fi
 fi
+if [ -e $HOME/.zshrc.mine ]; then
+  echo-ttyrec-safe loading customizing setup file ...
+  source $HOME/.zshrc.mine
+fi
 
 # update roszsh
 if [ ! -e $HOME/.roszsh ]; then
@@ -212,12 +216,6 @@ fi
 #   echo-ttyrec-safe loading customizing setup file for zplug...
 #   source $HOME/.zshrc.zplug
 # fi
-
-# customizing zshrc?
-if [ -e $HOME/.zshrc.mine ]; then
-  echo-ttyrec-safe loading customizing setup file ...
-  source $HOME/.zshrc.mine
-fi
 
 # wrapping tip command to use virtualenv
 function tips() {
