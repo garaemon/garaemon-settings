@@ -217,11 +217,6 @@ fi
 #   source $HOME/.zshrc.zplug
 # fi
 
-# wrapping tip command to use virtualenv
-function tips() {
-  (cd ~/gprog/tips && source .venv/bin/activate && ./bin/tips $@)
-}
-
 function restart-dns() {
   # Restart DNS Cache. It is only available on mac os.
   if [ "$(uname)" = "Darwin" ]; then
@@ -308,13 +303,6 @@ function roslaunch-args() {
   roslaunch $@ --args $(roslaunch $@ --nodes | peco)
 }
 export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message}'
-
-function gp() {
-  git pull-request &
-  tmux display-message -p '#I' >~/.emacs.d/emacsclient-window
-  tmux select-window -t $(tmux list-windows -F "#{window_id}:#{window_name}" | grep emacs |
-                            cut -d ':' -f1)
-}
 
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
   source ~/gitai/catkin_ws/devel/setup.zsh
