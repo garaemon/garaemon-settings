@@ -1,24 +1,24 @@
 - name: Copy for zshrc
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshrc"
+    src: zshrc
     dest: ~/.zshrc
 - name: Copy for zlogin
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zlogin"
+    src: zlogin
     dest: ~/.zlogin
 - name: Copy for zlogout
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zlogout"
+    src: zlogout
     dest: ~/.zlogout
 - name: Copy for zprofile
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zprofile"
+    src: zprofile
     dest: ~/.zprofile
 - name: Copy for zshenv
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshenv"
+    src: zshenv
     dest: ~/.zshenv
 - name: Copy for zshrc.zplug
   copy:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshrc.zplug"
+    src: zshrc.zplug
     dest: ~/.zshrc.zplug
