@@ -1,30 +1,24 @@
-- name: Symlink for zshrc
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshrc"
+- name: Copy for zshrc
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshrc"
     dest: ~/.zshrc
-    state: link
-- name: Symlink for zlogin
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zlogin"
+- name: Copy for zlogin
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zlogin"
     dest: ~/.zlogin
-    state: link
-- name: Symlink for zlogout
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zlogout"
+- name: Copy for zlogout
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zlogout"
     dest: ~/.zlogout
-    state: link
-- name: Symlink for zprofile
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zprofile"
+- name: Copy for zprofile
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zprofile"
     dest: ~/.zprofile
-    state: link
-- name: Symlink for zshenv
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshenv"
+- name: Copy for zshenv
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshenv"
     dest: ~/.zshenv
-    state: link
-- name: Symlink for zshrc.zplug
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/zshrc.zplug"
+- name: Copy for zshrc.zplug
+  copy:
+    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/zsh/files/zshrc.zplug"
     dest: ~/.zshrc.zplug
-    state: link
