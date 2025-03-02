@@ -2,62 +2,8 @@
   apt:
     name:
       - clang-format
-      - clang-format-6.0
   become: true
   when: ansible_os_family == "Debian"
-
-- name: Install clang-format (xenial)
-  apt:
-    name:
-      - clang-format-3.5
-      - clang-format-3.6
-      - clang-format-3.8
-  become: true
-  when: ansible_os_family == "Debian" and ansible_lsb.codename == "xenial"
-
-- name: Install clang-format (focal)
-  apt:
-    name:
-      - clang-format-7
-      - clang-format-8
-      - clang-format-9
-      - clang-format-10
-      - clang-format-11
-  become: true
-  when:
-    - ansible_os_family == "Debian"
-    - ansible_lsb.codename == "focal"
-
-- name: "Install clang-format update-alternatives"
-  command: update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-6.0 60
-  when: ansible_os_family == "Debian"
-  become: true
-
-- name: "Install clang-format update-alternatives"
-  shell: |
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-7 70
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-8 80
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-9 90
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-10 100
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
-  when:
-    - ansible_os_family == "Debian"
-    - ansible_lsb.codename == "focal"
-  become: true
-
-- name: "Install clang-format update-alternatives"
-  command: update-alternatives --set clang-format /usr/bin/clang-format-6.0
-  when:
-    - ansible_os_family == "Debian"
-    - ansible_lsb.codename == "trusty"
-  become: true
-
-- name: "Install clang-format update-alternatives"
-  command: update-alternatives --set clang-format /usr/bin/clang-format-10
-  when:
-    - ansible_os_family == "Debian"
-    - ansible_lsb.codename == "focal"
-  become: true
 
 - name: Copy ~/.clang-format file
   copy:

@@ -1,3 +1,9 @@
+- name: Install base16-gnome-terminal requirements
+  apt:
+    name:
+      - uuid-runtime
+  become: true
+
 - name: Clone base16-gnome-terminal
   git:
     repo: https://github.com/aarowill/base16-gnome-terminal.git

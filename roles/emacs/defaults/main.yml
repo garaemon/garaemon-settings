@@ -1,0 +1,2 @@
+# Set the variable true if you want to build emacs from source.
+build_emacs: false
