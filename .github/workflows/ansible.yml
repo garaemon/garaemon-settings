@@ -12,29 +12,35 @@ on:
 
 jobs:
   minimal:
-    runs-on: ubuntu-latest
-    name: Execute minimal.yml
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-20.04]
+    name: Execute minimal.yml on ${{ matrix.os }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Ansible
-      run: pip install ansible
+      - name: Install Ansible
+        run: pip install ansible
 
-    - name: Execute minimal.yml
-      run: ansible-playbook -i localhost, -c local minimal.yml
+      - name: Execute minimal.yml
+        run: ansible-playbook -i localhost, -c local minimal.yml
 
   main:
-    runs-on: ubuntu-latest
-    name: Execute main.yml
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-20.04]
+    name: Execute main.yml on ${{ matrix.os }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install Ansible
-      run: pip install ansible
+      - name: Install Ansible
+        run: pip install ansible
 
-    - name: Execute main.yml
-      run: ansible-playbook -i localhost, -c local main.yml
+      - name: Execute main.yml
+        run: ansible-playbook -i localhost, -c local main.yml
