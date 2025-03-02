@@ -1,5 +1,5 @@
-- name: Symlink for vim
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/vimrc"
+- name: Copy vimrc
+  copy:
+    src: vimrc
     dest: ~/.vimrc
-    state: link
+    remote_src: no

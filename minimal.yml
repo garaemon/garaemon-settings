@@ -8,7 +8,7 @@
     - zsh
     - starship
     - peco
-    - pyenv
+    # - pyenv
     - nvm
     - ispell
     - tig

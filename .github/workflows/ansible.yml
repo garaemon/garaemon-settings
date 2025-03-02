@@ -23,7 +23,7 @@ jobs:
       run: pip install ansible
 
     - name: Execute minimal.yml
-      run: ansible-playbook minimal.yml
+      run: ansible-playbook -i localhost, -c local minimal.yml
 
   main:
     runs-on: ubuntu-latest
@@ -37,4 +37,4 @@ jobs:
       run: pip install ansible
 
     - name: Execute main.yml
-      run: ansible-playbook main.yml
+      run: ansible-playbook -i localhost, -c local main.yml

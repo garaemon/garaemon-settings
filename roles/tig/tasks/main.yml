@@ -1,6 +1,4 @@
-- name: Symbolic link for tigrc
-  file:
-    # src: tigrc does not work on mac environment.
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/roles/tig/files/tigrc"
+- name: Copy tigrc
+  copy:
+    src: tigrc
     dest: ~/.tigrc
-    state: link

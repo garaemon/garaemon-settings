@@ -1,5 +1,6 @@
 - hosts: all
   roles:
+    - gh
     - base
     - sudo-no-password
     - cpplint
@@ -18,12 +19,6 @@
       when: ansible_os_family == "Darwin"
     - emacs
     - peco
-    - role: chrome
-      when:
-        - ansible_os_family == "Debian"
-        - ansible_architecture != 'aarch64'
-      become: true
-    - gh
     - pyenv
     - nvm
     - font

@@ -19,8 +19,7 @@
     path: '{{ ansible_env.HOME }}/.config'
     state: directory
 
-- name: Symlink to starship.toml
-  file:
+- name: Copy starship.toml
+  copy:
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/starship/starship.toml"
-    state: link
+    src: starship.toml
