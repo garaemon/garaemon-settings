@@ -2,7 +2,6 @@
   roles:
     - base
     - sudo-no-password
-    - clang-format
     - git
     - git-find-big
     - vim
@@ -15,6 +14,7 @@
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - clang-format
     - gh
     - emacs
     - peco

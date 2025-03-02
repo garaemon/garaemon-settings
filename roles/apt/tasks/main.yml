@@ -10,9 +10,6 @@
       - bison
       - build-essential
       - cmigemo
-      - compizconfig-settings-manager
-      - conky
-      - conky-all
       - curl
       - ess
       - ffmpeg
