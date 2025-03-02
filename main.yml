@@ -1,9 +1,7 @@
 - hosts: all
   roles:
-    - gh
     - base
     - sudo-no-password
-    - cpplint
     - clang-format
     - git
     - git-find-big
@@ -17,6 +15,7 @@
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - gh
     - emacs
     - peco
     - pyenv
@@ -37,7 +36,6 @@
     - python-language-server
     - typescript-language-server
     - ghostty
-    # - rvm
   vars:
     # pyenv variables
     # Initialize shell profile scripts
