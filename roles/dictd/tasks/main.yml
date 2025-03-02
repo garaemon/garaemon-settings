@@ -10,6 +10,15 @@
     src: dictd.conf
     dest: /etc/dictd/dictd.conf
   become: true
-- name: restart dictd
-  command: systemctl restart dictd
+
+- name: Check if systemd is running
+  stat:
+    path: /run/systemd/system
+  register: systemd_check
+
+- name: Restart dictd service
+  systemd:
+    name: dictd
+    state: restarted
   become: true
+  when: systemd_check.stat.exists
