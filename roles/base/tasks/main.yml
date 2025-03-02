@@ -36,11 +36,20 @@
   ignore_errors: true
   changed_when: false
 
+- name: Check if gh is authenticated
+  command: gh auth status
+  register: gh_auth_status
+  ignore_errors: true
+  changed_when: false
+  when: gh_exists.rc == 0
+
 - name: Register the key
   local_action:
     module: command
     cmd: gh ssh-key add -t '{{ hostname.stdout }} (Automatically registered by ansible)' "{{ local_temp_directory_for_ssh_key.path }}/id_rsa.pub"
-  when: gh_exists.rc == 0
+  when:
+    - gh_exists.rc == 0
+    - gh_auth_status.rc == 0
 
 - name: Remove github.com from known_hosts
   shell: ssh-keygen -R github.com
