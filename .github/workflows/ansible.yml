@@ -1,0 +1,38 @@
+name: Ansible Playbook Execution
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  minimal:
+    runs-on: ubuntu-latest
+    name: Execute minimal.yml
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Ansible
+      run: pip install ansible
+
+    - name: Execute minimal.yml
+      run: ansible-playbook minimal.yml
+
+  main:
+    runs-on: ubuntu-latest
+    name: Execute main.yml
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Ansible
+      run: pip install ansible
+
+    - name: Execute main.yml
+      run: ansible-playbook main.yml
