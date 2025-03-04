@@ -1,4 +1,4 @@
 - name: Copy tmux.conf
   copy:
-    src: "{{ role_path }}/files/tmux.conf"
+    src: tmux.conf
     dest: ~/.tmux.conf
