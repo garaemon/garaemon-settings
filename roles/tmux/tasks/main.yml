@@ -1,6 +1,4 @@
-- name: Symlink tmux.conf
-  file:
-    src: "{{ansible_env.HOME}}/gprog/garaemon-settings/resources/rcfiles/tmux.conf"
+- name: Copy tmux.conf
+  copy:
+    src: tmux.conf
     dest: ~/.tmux.conf
-    state: link
-    force: true
