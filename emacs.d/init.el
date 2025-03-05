@@ -6,7 +6,7 @@
 ;;; Commentary:
 
 ;;; Code:
-;;; ln -sf ~/.emacs.d/dot.emacs ~/.emacs
+;;; ln -sf ~/.emacs.d ~/.emacs.d
 
 (add-to-list 'load-path "~/.emacs.d/lisp")
 (add-to-list 'load-path "~/.emacs.d/plugins")
