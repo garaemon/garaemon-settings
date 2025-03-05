@@ -1,12 +1,12 @@
 ---
 
 - name: Make sure .pyenv directory exists
-  file:
+  ansible.builtin.file: 
     path: "{{ pyenv_root }}"
     state: directory
 
 - name: Make sure WORKON_HOME directory exists
-  file:
+  ansible.builtin.file: 
     path: "{{ pyenv_virtualenvwrapper_home }}"
     state: directory
   when: pyenv_virtualenvwrapper

@@ -15,7 +15,7 @@
   when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
 
 - name: Create config directory
-  file:
+  ansible.builtin.file: 
     path: '{{ ansible_env.HOME }}/.config'
     state: directory
 

@@ -10,7 +10,7 @@
   when: not emacs_d_exists.stat.exists
 
 - name: Symlink for emacs.d
-  file:
+  ansible.builtin.file: 
     src: ~/gprog/emacs.d
     dest: ~/.emacs.d
     state: link

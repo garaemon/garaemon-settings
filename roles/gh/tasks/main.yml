@@ -15,7 +15,7 @@
     - gh_installed.rc != 0
   block:
     - name: Create /etc/apt/keyrings directory
-      file:
+      ansible.builtin.file: 
         path: /etc/apt/keyrings
         state: directory
         mode: 0755
@@ -28,7 +28,7 @@
       become: true
 
     - name: Set permissions on the keyring
-      file:
+      ansible.builtin.file: 
         path: /etc/apt/keyrings/githubcli-archive-keyring.gpg
         mode: "go+r"
       become: true

@@ -3,7 +3,7 @@
     repo: https://github.com/MaskRay/ccls.git
     dest: ~/gprog/ccls
 - name: Create build directory
-  file:
+  ansible.builtin.file: 
     path: ~/gprog/ccls/build
     state: directory
 - name: Install clang

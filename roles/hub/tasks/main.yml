@@ -41,7 +41,7 @@
   when: ansible_os_family == "Debian"
 
 - name: Create .local/bin
-  file:
+  ansible.builtin.file: 
     path: ~/.local/bin
     state: directory
   when: ansible_os_family == "Debian"
@@ -53,13 +53,13 @@
 
 - name: chmod hub
   when: download_hub.changed
-  file:
+  ansible.builtin.file: 
     path: ~/.local/bin/hub
     mode: 0755
   when: ansible_os_family == "Debian"
 
 - name: Prepare completions directory
-  file:
+  ansible.builtin.file: 
     path: ~/.completions
     state: directory
 

@@ -3,7 +3,7 @@
     repo: https://github.com/edihbrandon/RictyDiminished.git
     dest:  ~/gprog/RictyDiminished
 - name: Create ~/.fonts
-  file:
+  ansible.builtin.file: 
     path: ~/.fonts
     state: directory
 - name: Copy RictyDiminished .ttf files to ~/.fonts

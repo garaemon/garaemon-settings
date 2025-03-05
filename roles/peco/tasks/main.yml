@@ -48,7 +48,7 @@
   command: tar -xvzf /tmp/peco_linux_{{ peco_arch }}.tar.gz chdir=/tmp/
 
 - name: Create .local/bin
-  file:
+  ansible.builtin.file: 
     path: ~/.local/bin
     state: directory
 

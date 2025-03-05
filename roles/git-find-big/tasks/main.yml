@@ -1,5 +1,5 @@
 - name: Prepare ~/.local/bin
-  file:
+  ansible.builtin.file: 
     path: ~/.local/bin
     state: directory
 - name: Install git_find_big.sh
