@@ -2064,31 +2064,30 @@ ivy-set-sources only supports function without arguments.
   )
 
 ;; vterm
-(when (file-exists-p (expand-file-name "~/gprog/emacs-libvterm"))
-    (use-package vterm
-      :load-path "~/gprog/emacs-libvterm"
-      :bind (:map vterm-mode-map
-                  ("\C-h" . 'vterm-send-backspace)
-                  ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
-                  ;; key.
-                  ("\C-c [" . 'vterm-copy-mode) ; like tmux
-                  ("\C-c c" . 'multi-vterm) ; like tmux
-                  ("\C-c n" . 'multi-vterm-next)
-                  ("\C-c p" . 'multi-vterm-prev)
-                  )
-      :config
-      (setq vterm-max-scrollback  10000)
-      (setq vterm-buffer-name-string  "*vterm: %s*")
-      ;; Remove C-h from the original vterm-keymap-exceptions
-      (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
-                                      "C-y" "M-y"))
-      )
-    (use-package multi-vterm :ensure t)
-    (use-package vterm-toggle :ensure t
-      :bind
-      ("\C-c t" . 'vterm-toggle)
-      ("\C-c T" . 'vterm-toggle-cd)
-      )
+(use-package vterm
+  :bind (:map vterm-mode-map
+              ("\C-h" . 'vterm-send-backspace)
+              ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
+              ;; key.
+              ("\C-c [" . 'vterm-copy-mode) ; like tmux
+              ("\C-c c" . 'multi-vterm) ; like tmux
+              ("\C-c n" . 'multi-vterm-next)
+              ("\C-c p" . 'multi-vterm-prev)
+              ("\C-@" . 'vterm-toggle)
+              )
+  :config
+  (setq vterm-max-scrollback  10000)
+  (setq vterm-buffer-name-string  "*vterm: %s*")
+  ;; Remove C-h from the original vterm-keymap-exceptions
+  (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
+                                  "C-y" "M-y"))
+  )
+(use-package multi-vterm :ensure t)
+(use-package vterm-toggle :ensure t
+  :bind
+  ("\C-@" . 'vterm-toggle)
+  ;; ("\C-c t" . 'vterm-toggle)
+  ;; ("\C-c T" . 'vterm-toggle-cd)
   )
 
 
@@ -2126,7 +2125,6 @@ ivy-set-sources only supports function without arguments.
      (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
      (ivy--regex-plus :around ivy--regex-plus-migemo-around)
      ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full))
- '(counsel-projectile-mode t nil (counsel-projectile))
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
  '(lsp-pyls-plugins-jedi-completion-enabled t)
@@ -2134,6 +2132,6 @@ ivy-set-sources only supports function without arguments.
  '(lsp-pyls-plugins-pylint-enabled nil)
  '(lsp-pyls-plugins-yapf-enabled t)
  '(package-selected-packages
-   '(vterm-toggle browse-at-remote counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   '(multi-vterm vterm vterm-toggle browse-at-remote counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
