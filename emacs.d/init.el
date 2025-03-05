@@ -190,11 +190,7 @@
    (if (> (x-display-pixel-width) 1440)
        (setq default-face-height 120)
      (setq default-face-height 100))
-   (set-face-attribute 'default nil :family "monaco" :height default-face-height)
-   ;; Japanese font
-   (set-fontset-font
-    nil 'japanese-jisx0208
-    (font-spec :family "Hiragino Kaku Gothic ProN")) ; font
+   (set-frame-font "Monaco Nerd Font Mono" 12)
    (setq ns-command-modifier (quote meta))
    (setq ns-alternate-modifier (quote super))
    ;; Do not pass control key to mac OS X
