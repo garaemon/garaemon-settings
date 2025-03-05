@@ -27,6 +27,7 @@
       - reattach-to-user-namespace
       - fontconfig
       - cmake
+      - libvterm
 #- name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
