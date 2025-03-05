@@ -1,5 +1,5 @@
 - name: "Install clang-tools-6.0"
-  apt:
+  ansible.builtin.apt: 
     name:
       - clang-tools-6.0
   when: ansible_os_family == "Debian"

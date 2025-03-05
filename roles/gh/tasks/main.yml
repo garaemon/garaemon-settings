@@ -45,12 +45,12 @@
       become: true
 
     - name: Update apt
-      apt:
+      ansible.builtin.apt: 
         update_cache: yes
       become: true
 
     - name: Install gh
-      apt:
+      ansible.builtin.apt: 
         name: gh
         state: present
       become: true

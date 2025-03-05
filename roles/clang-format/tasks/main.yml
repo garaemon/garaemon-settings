@@ -1,5 +1,5 @@
 - name: Install clang-format
-  apt:
+  ansible.builtin.apt: 
     name:
       - clang-format
   become: true

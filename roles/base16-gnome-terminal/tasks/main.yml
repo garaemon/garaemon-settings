@@ -1,5 +1,5 @@
 - name: Install base16-gnome-terminal requirements
-  apt:
+  ansible.builtin.apt: 
     name:
       - uuid-runtime
   become: true

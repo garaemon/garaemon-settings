@@ -16,13 +16,13 @@
   become: true
 
 - name: Install apt-transport-https
-  apt:
+  ansible.builtin.apt: 
     name:
       - apt-transport-https
   become: true
 
 - name: Install vscode
-  apt:
+  ansible.builtin.apt: 
     name:
       - code
     update_cache: true

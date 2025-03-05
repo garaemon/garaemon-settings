@@ -20,7 +20,7 @@
     # Build emacs from source for Ubuntu. If install the latest emacs from ppa package,
     # ros-emacs may fail to be installed because of dependency to emacs-25.
     - name: Install packages to build emacs
-      apt:
+      ansible.builtin.apt: 
         name:
           - build-essential
           - ccache

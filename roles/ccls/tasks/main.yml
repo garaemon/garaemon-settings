@@ -7,7 +7,7 @@
     path: ~/gprog/ccls/build
     state: directory
 - name: Install clang
-  apt:
+  ansible.builtin.apt: 
     name: "{{packages}}"
     state: present
   become: true
