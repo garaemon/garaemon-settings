@@ -12,7 +12,7 @@
   become: true
 
 - name: Check if systemd is running
-  stat:
+  ansible.builtin.stat:
     path: /run/systemd/system
   register: systemd_check
 

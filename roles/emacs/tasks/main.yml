@@ -1,5 +1,5 @@
 - name: Check if emacs.d already exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ ansible_env.HOME }}/gprog/emacs.d"
   register: emacs_d_exists
 

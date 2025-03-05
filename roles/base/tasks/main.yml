@@ -4,7 +4,7 @@
     state: directory
 
 - name: Verify if ~/.ssh/id_rsa exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ ansible_env.HOME }}/.ssh/id_rsa"
   register: id_rsa
   changed_when: no

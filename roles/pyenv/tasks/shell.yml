@@ -6,7 +6,7 @@
   when: pyenv_bashrc_path is undefined
 
 - name: Check whether .bashrc file exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ pyenv_bashrc_path }}"
   register: pyenv_bashrc_st
 
@@ -40,7 +40,7 @@
   when: pyenv_zshrc_path is undefined
 
 - name: Check whether .zshrc exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ pyenv_zshrc_path }}"
   register: pyenv_zshrc_st
 
