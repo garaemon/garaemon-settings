@@ -2053,39 +2053,7 @@ ivy-set-sources only supports function without arguments.
 
 (use-package systemd :ensure t)
 
-(use-package projectile :ensure t
-  :config
-  (projectile-mode +1)
-  ;; (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  ;; (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-  (add-to-list 'projectile-globally-ignored-directories ".ccls-cache")
-  (add-to-list 'projectile-globally-ignored-directories ".cquery_cached_index")
-  ;; projectile-add-known-project
-  ;; (defun catkin-packages-list ()
-  ;;   "List all the catkin packages in catkin workspace"
-  ;;   (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH"))
-  ;;         (catkin-root nil))
-  ;;     (when cmake-prefix-path
-  ;;       (setq catkin-root
-  ;;             (format "%s/../src" (car (split-string cmake-prefix-path ":")))))
-  ;;     (let ((string-output
-  ;;            (shell-command-to-string
-  ;;             (format "find %s -name package.xml -exec dirname {} \\\;"
-  ;;                     catkin-root))))
-  ;;       (let ((dirs (split-string string-output "\n")))
-  ;;         dirs))))
-  (dolist (proj catkin-packages-list)
-    (unless (member proj projectile-known-projects)
-      (projectile-add-known-project proj)))
-  )
-
 (use-package counsel-tramp :ensure t)
-
-(use-package counsel-projectile :ensure t
-  ;; :hook ((projectile-mode counsel-projectile-mode))
-  ;; :config
-  ;; (setq counsel-projectile-mode t)
-  )
 
 (use-package browse-at-remote :ensure t
   :bind (("C-c b" . 'echo-url-at-remote))
