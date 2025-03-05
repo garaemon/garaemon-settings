@@ -1298,61 +1298,6 @@ ivy-set-sources only supports function without arguments.
 
 (use-package imenus :ensure t)
 
-(use-package js2-mode :ensure t
-  :config (progn
-            (defun my-js2-indent-function ()
-              "Hook function for indent in js2 mode."
-              (interactive)
-              (save-restriction
-                (widen)
-                (let* ((inhibit-point-motion-hooks t)
-                       (parse-status (save-excursion (syntax-ppss (point-at-bol))))
-                       (offset (- (current-column)
-                                  (current-indentation)))
-                       (indentation (js--proper-indentation parse-status)) node)
-                  (save-excursion
-                    ;; I like to indent case and labels to half of the tab width
-                    (back-to-indentation)
-                    (if (looking-at "case\\s-")
-                        (setq indentation (+ indentation (/ js-indent-level 2))))
-                    ;; consecutive declarations in a var statement are nice if
-                    ;; properly aligned, i.e:
-                    ;; var foo = "bar",
-                    ;;     bar = "foo";
-                    (setq node (js2-node-at-point))
-                    (when (and node
-                               (= js2-NAME (js2-node-type node))
-                               (= js2-VAR (js2-node-type (js2-node-parent node))))
-                      (setq indentation (+ 4 indentation))))
-                  (indent-line-to indentation)
-                  (when (> offset 0)
-                    (forward-char offset)))))
-
-            (setq auto-mode-alist (cons (cons "\\.js$" 'js2-mode) auto-mode-alist))
-            (setq auto-mode-alist (cons (cons "\\.jsx$" 'js2-jsx-mode) auto-mode-alist))
-            (add-to-list 'auto-mode-alist '("\\.json$" . js2-mode))
-            (setq js-indent-level 2)
-            ;; Disable some js2 features for eslint integration by flycheck
-            (setq js2-include-browser-externs nil)
-            (setq js2-mode-show-parse-errors nil)
-            (setq js2-mode-show-strict-warnings nil)
-            (setq js2-highlight-external-variables nil)
-            (setq js2-include-jslint-globals nil)
-            (c-toggle-auto-state 0)
-            (c-toggle-hungry-state 1)
-            (set (make-local-variable 'indent-line-function) 'my-js2-indent-function)
-            ;;  (define-key js2-mode-map [(meta control |)] 'cperl-lineup)
-            (define-key js2-mode-map [(meta control \;)]
-              '(lambda()
-                 (interactive)
-                 (insert "/* -----[ ")
-                 (save-excursion (insert " ]----- */"))))
-            (define-key js2-mode-map [(return)] 'newline-and-indent)
-            (define-key js2-mode-map [(backspace)] 'c-electric-backspace)
-            (define-key js2-mode-map [(control d)] 'c-electric-delete-forward)
-            )
-  )
-
 (use-package json-mode :ensure t :defer t)
 
 ;; (use-package judge-indent :ensure t)
@@ -1548,10 +1493,6 @@ ivy-set-sources only supports function without arguments.
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
 
-(use-package omnisharp :ensure t
-  :init (add-to-list 'auto-mode-alist '("\\.cs$" . csharp-mode))
-  )
-
 (use-package multiple-cursors :ensure t
   :config (progn
             (global-set-key (kbd "<C-M-return>") 'mc/edit-lines)
@@ -1676,9 +1617,6 @@ ivy-set-sources only supports function without arguments.
 (use-package recentf-ext :ensure t)
 
 (use-package rust-mode :ensure t)
-
-(use-package scss-mode :ensure t
-  :init (add-to-list 'auto-mode-alist '("\\.scss$" . scss-mode)))
 
 (use-package slack :ensure t
   :if (file-exists-p (expand-file-name "~/.slack.el"))
