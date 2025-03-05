@@ -6,7 +6,7 @@
       - dictfmt
   become: true
 - name: Install dictd.conf
-  copy:
+  ansible.builtin.copy:
     src: dictd.conf
     dest: /etc/dictd/dictd.conf
   become: true
@@ -17,7 +17,7 @@
   register: systemd_check
 
 - name: Restart dictd service
-  systemd:
+  ansible.builtin.systemd:
     name: dictd
     state: restarted
   become: true

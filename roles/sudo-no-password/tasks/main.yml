@@ -1,5 +1,5 @@
 - name: Do not require sudo password to restart avahi-daemon
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/sudoers
     state: present
     regexp: '^{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart avahi-daemon'
@@ -8,7 +8,7 @@
   become: true
 
 - name: Do not require sudo password to restart NetworkManager
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/sudoers
     state: present
     regexp: '^{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart NetworkManager'

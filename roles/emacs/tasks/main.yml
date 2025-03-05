@@ -4,7 +4,7 @@
   register: emacs_d_exists
 
 - name: Clone emacs.d
-  git:
+  ansible.builtin.git:
     repo: https://github.com/garaemon/emacs.d
     dest: "{{ ansible_env.HOME }}/gprog/emacs.d"
   when: not emacs_d_exists.stat.exists
@@ -33,14 +33,14 @@
       when: ansible_os_family == "Debian"
 
     - name: Clone the latest emacs
-      git:
+      ansible.builtin.git:
         repo: https://github.com/emacs-mirror/emacs
         dest: ~/gprog/emacs
         version: emacs-28.1
       when: ansible_os_family == "Debian"
 
     - name: Prepare configure for the latest emacs
-      command: ./autogen.sh
+      ansible.builtin.command: ./autogen.sh
       args:
         chdir: ~/gprog/emacs
       environment:
@@ -49,7 +49,7 @@
       when: ansible_os_family == "Debian"
 
     - name: Configure the latest emacs
-      command: ./configure --prefix=$HOME/.local
+      ansible.builtin.command: ./configure --prefix=$HOME/.local
       args:
         chdir: ~/gprog/emacs
       environment:
@@ -58,7 +58,7 @@
       when: ansible_os_family == "Debian"
 
     - name: Build the latest emacs
-      command: make
+      ansible.builtin.command: make
       args:
         chdir: ~/gprog/emacs
       environment:
@@ -67,7 +67,7 @@
       when: ansible_os_family == "Debian"
 
     - name: Install the latest emacs
-      command: make install
+      ansible.builtin.command: make install
       args:
         chdir: ~/gprog/emacs
       environment:
@@ -77,7 +77,7 @@
 
     # # vterm
     # - name: Clone libvterm
-    #   git:
+    #   ansible.builtin.git:
     #     repo: https://github.com/akermu/emacs-libvterm
     #     dest: ~/gprog/emacs-libvterm
 
@@ -87,11 +87,11 @@
     #     state: directory
 
     # - name: configure libvterm
-    #   command: cmake ..
+    #   ansible.builtin.command: cmake ..
     #   args:
     #     chdir: ~/gprog/emacs-libvterm/build
 
     # - name: build libvterm
-    #   command: make
+    #   ansible.builtin.command: make
     #   args:
     #     chdir: ~/gprog/emacs-libvterm/build

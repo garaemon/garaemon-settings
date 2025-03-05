@@ -1,35 +1,35 @@
 - name: Get latest hub version
-  shell: >
+  ansible.builtin.shell: >
     curl -sI https://github.com/github/hub/releases/latest | awk -F '/' '/^location:/{print $NF}'
   register: hub_latest_version
 
 - name: Get latest hub version number
-  shell: echo {{hub_latest_version.stdout}} | sed 's/^v//g'
+  ansible.builtin.shell: echo {{hub_latest_version.stdout}} | sed 's/^v//g'
   register: hub_latest_version_number
 
 
 - name: Set OS Name (darwin)
-  set_fact:
+  ansible.builtin.set_fact:
     os_name: "darwin"
   when: ansible_os_family == "Darwin"
 
 - name: Set Arch Name (darwin)
-  command: echo amd64
+  ansible.builtin.command: echo amd64
   register: arch
   when: ansible_os_family == "Darwin"
 
 - name: Set OS Name (debian)
-  set_fact:
+  ansible.builtin.set_fact:
     os_name: "linux"
   when: ansible_os_family == "Debian"
 
 - name: Set Arch Name (darwin)
-  command: dpkg --print-architecture
+  ansible.builtin.command: dpkg --print-architecture
   when: ansible_os_family == "Debian"
   register: arch
 
 - name: Download latest hub {{hub_latest_version.stdout}}
-  get_url:
+  ansible.builtin.get_url:
     url: https://github.com/github/hub/releases/download/{{hub_latest_version.stdout}}/hub-{{os_name}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}.tgz
     dest: /tmp/hub.tgz
   register: download_hub
@@ -37,7 +37,7 @@
 
 - name: Extract hub
   when: download_hub.changed
-  command: tar xvzf /tmp/hub.tgz chdir=/tmp/
+  ansible.builtin.command: tar xvzf /tmp/hub.tgz chdir=/tmp/
   when: ansible_os_family == "Debian"
 
 - name: Create .local/bin
@@ -48,7 +48,7 @@
 
 - name: Copy to .local/bin/
   when: download_hub.changed
-  command: cp /tmp/hub-{{os_name | lower}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}/bin/hub ~/.local/bin/hub
+  ansible.builtin.command: cp /tmp/hub-{{os_name | lower}}-{{arch.stdout}}-{{hub_latest_version_number.stdout}}/bin/hub ~/.local/bin/hub
   when: ansible_os_family == "Debian"
 
 - name: chmod hub
@@ -64,6 +64,6 @@
     state: directory
 
 - name: Install hub completion
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/github/hub/master/etc/hub.zsh_completion
     dest: ~/.completions/_hub

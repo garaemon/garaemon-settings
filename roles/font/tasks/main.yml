@@ -1,5 +1,5 @@
 - name: Clone RictyDiminished
-  git:
+  ansible.builtin.git:
     repo: https://github.com/edihbrandon/RictyDiminished.git
     dest:  ~/gprog/RictyDiminished
 - name: Create ~/.fonts
@@ -7,12 +7,12 @@
     path: ~/.fonts
     state: directory
 - name: Copy RictyDiminished .ttf files to ~/.fonts
-  copy:
+  ansible.builtin.copy:
     src: "{{item}}"
     dest: ~/.fonts/
   with_fileglob:
     - ~/gprog/RictyDiminished/*.ttf
 
 - name: updat fc-cache
-  command: fc-cache -vf
+  ansible.builtin.command: fc-cache -vf
   become: true

@@ -10,11 +10,11 @@
   changed_when: no
 
 - name: Create ssh key if it does not exist
-  command: ssh-keygen -t rsa -C "" -N "" -f "{{ ansible_env.HOME }}/.ssh/id_rsa"
+  ansible.builtin.command: ssh-keygen -t rsa -C "" -N "" -f "{{ ansible_env.HOME }}/.ssh/id_rsa"
   when: not id_rsa.stat.exists
 
 - name: Get hostname
-  command: hostname
+  ansible.builtin.command: hostname
   register: hostname
   changed_when: no
 
@@ -25,19 +25,19 @@
   register: local_temp_directory_for_ssh_key
 
 - name: Copy the remote public key to local computer
-  fetch:
+  ansible.builtin.fetch:
     src: "{{ ansible_env.HOME }}/.ssh/id_rsa.pub"
     dest: "{{ local_temp_directory_for_ssh_key.path }}/id_rsa.pub"
     flat: true
 
 - name: Check if gh command exists
-  command: which gh
+  ansible.builtin.command: which gh
   register: gh_exists
   ignore_errors: true
   changed_when: false
 
 - name: Check if gh is authenticated
-  command: gh auth status
+  ansible.builtin.command: gh auth status
   register: gh_auth_status
   ignore_errors: true
   changed_when: false
@@ -52,14 +52,14 @@
     - gh_auth_status.rc == 0
 
 - name: Remove github.com from known_hosts
-  shell: ssh-keygen -R github.com
+  ansible.builtin.shell: ssh-keygen -R github.com
   ignore_errors: true
 
 - name: Add github.com to known_hosts
-  shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
+  ansible.builtin.shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
 
 - name: Update garaemon-settings
-  git:
+  ansible.builtin.git:
     repo: git@github.com:garaemon/garaemon-settings.git
     dest: ~/gprog/garaemon-settings
   ignore_errors: true

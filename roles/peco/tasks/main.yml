@@ -1,30 +1,30 @@
 - name: Get latest peco version
-  shell: >
+  ansible.builtin.shell: >
     curl -sI https://github.com/peco/peco/releases/latest | awk -F '/' '/^location:/{print $NF}'
   register: peco_latest_version
 
 - name: Set OS Name (darwin)
-  set_fact:
+  ansible.builtin.set_fact:
     os_name: "darwin"
   when: ansible_os_family == "Darwin"
 
 - name: Set OS Name (debian)
-  set_fact:
+  ansible.builtin.set_fact:
     os_name: "linux"
   when: ansible_os_family == "Debian"
 
 - name: set architecture
-  set_fact:
+  ansible.builtin.set_fact:
     peco_arch: amd64
   when: ansible_architecture == 'amd64' or ansible_architecture == 'x86_64'
 
 - name: set architecture
-  set_fact:
+  ansible.builtin.set_fact:
     peco_arch: arm64
   when: ansible_architecture == 'aarch64' or ansible_architecture == 'arm64'
 
 - name: Download latest peco (darwin)
-  get_url:
+  ansible.builtin.get_url:
     url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_darwin_{{ peco_arch }}.zip
     dest: /tmp/peco_darwin_{{ peco_arch }}.zip
   register: download_peco
@@ -32,12 +32,12 @@
 
 - name: Extract peco (darwin)
   when: download_peco.changed and ansible_os_family == "Darwin"
-  unarchive:
+  ansible.builtin.unarchive:
     src: /tmp/peco_darwin_{{ peco_arch }}.zip
     dest: /tmp
 
 - name: Download latest peco (debian)
-  get_url:
+  ansible.builtin.get_url:
     url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_linux_{{ peco_arch }}.tar.gz
     dest: /tmp/peco_linux_{{ peco_arch }}.tar.gz
   register: download_peco
@@ -45,7 +45,7 @@
 
 - name: Extract peco (debian)
   when: download_peco.changed and ansible_os_family == "Debian"
-  command: tar -xvzf /tmp/peco_linux_{{ peco_arch }}.tar.gz chdir=/tmp/
+  ansible.builtin.command: tar -xvzf /tmp/peco_linux_{{ peco_arch }}.tar.gz chdir=/tmp/
 
 - name: Create .local/bin
   ansible.builtin.file: 
@@ -53,7 +53,7 @@
     state: directory
 
 - name: Copy to .local/bin/
-  copy:
+  ansible.builtin.copy:
     src: /tmp/peco_{{os_name | lower}}_{{ peco_arch }}/peco
     dest: ~/.local/bin/peco
     mode: 0755

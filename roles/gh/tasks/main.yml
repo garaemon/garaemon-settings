@@ -4,7 +4,7 @@
   when: ansible_os_family == "Darwin"
 
 - name: Check if gh is already installed
-  command: which gh
+  ansible.builtin.command: which gh
   register: gh_installed
   ignore_errors: true
   changed_when: false
@@ -22,7 +22,7 @@
       become: true
 
     - name: Download the GitHub CLI keyring
-      get_url:
+      ansible.builtin.get_url:
         url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
         dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
       become: true
@@ -34,12 +34,12 @@
       become: true
 
     - name: Get dpkg architecture
-      command: dpkg --print-architecture
+      ansible.builtin.command: dpkg --print-architecture
       register: dpkg_arch_output
       become: true
 
     - name: Add the GitHub CLI repository
-      copy:
+      ansible.builtin.copy:
         dest: /etc/apt/sources.list.d/github-cli.list
         content: "deb [arch={{ dpkg_arch_output.stdout }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
       become: true

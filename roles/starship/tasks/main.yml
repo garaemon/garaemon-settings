@@ -1,16 +1,16 @@
 - name: Check if starship is installed or not
-  shell: which starship
+  ansible.builtin.shell: which starship
   ignore_errors: true
   register: which_starship
 
 - name: Get starship version
-  shell:
+  ansible.builtin.shell:
     starship -V | sed 's/[^0-9.]*\([0-9.]*\).*/\1/'
   when: which_starship.rc == 0
   register: starship_installed_version
 
 - name: Install starship
-  shell:
+  ansible.builtin.shell:
     curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir $HOME/.local/bin
   when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
 
@@ -20,6 +20,6 @@
     state: directory
 
 - name: Copy starship.toml
-  copy:
+  ansible.builtin.copy:
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
     src: starship.toml

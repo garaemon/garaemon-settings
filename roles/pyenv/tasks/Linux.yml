@@ -2,23 +2,23 @@
 
 - name: Install pyenv build requirements
   become: true
-  package:
+  ansible.builtin.package:
     name: "{{ pyenv_build_requirements }}"
 
 - name: Clone pyenv
-  git:
+  ansible.builtin.git:
     repo: https://github.com/pyenv/pyenv.git
     dest: "{{ pyenv_root }}"
     version: "{{ pyenv_version }}"
 
 - name: Clone pyenv-virtualenv
-  git:
+  ansible.builtin.git:
     repo: https://github.com/pyenv/pyenv-virtualenv.git
     dest: "{{ pyenv_root }}/plugins/pyenv-virtualenv"
     version: "{{ pyenv_virtualenv_version }}"
 
 - name: Clone pyenv-virtualenvwrapper
-  git:
+  ansible.builtin.git:
     repo: https://github.com/pyenv/pyenv-virtualenvwrapper.git
     dest: "{{ pyenv_root }}/plugins/pyenv-virtualenvwrapper"
     version: "{{ pyenv_virtualenvwrapper_version }}"

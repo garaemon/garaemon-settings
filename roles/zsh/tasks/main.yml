@@ -1,24 +1,24 @@
 - name: Copy for zshrc
-  copy:
+  ansible.builtin.copy:
     src: zshrc
     dest: ~/.zshrc
 - name: Copy for zlogin
-  copy:
+  ansible.builtin.copy:
     src: zlogin
     dest: ~/.zlogin
 - name: Copy for zlogout
-  copy:
+  ansible.builtin.copy:
     src: zlogout
     dest: ~/.zlogout
 - name: Copy for zprofile
-  copy:
+  ansible.builtin.copy:
     src: zprofile
     dest: ~/.zprofile
 - name: Copy for zshenv
-  copy:
+  ansible.builtin.copy:
     src: zshenv
     dest: ~/.zshenv
 - name: Copy for zshrc.zplug
-  copy:
+  ansible.builtin.copy:
     src: zshrc.zplug
     dest: ~/.zshrc.zplug

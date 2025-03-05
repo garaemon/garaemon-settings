@@ -1,15 +1,15 @@
 # Based on https://code.visualstudio.com/docs/setup/linux
 
 - name: Download microsoft.gpg
-  shell: |
+  ansible.builtin.shell: |
     curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
 - name: Install microsoft.gpg
-  shell:
+  ansible.builtin.shell:
     install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
   become: true
 
 - name: Add microsoft apt repository
-  lineinfile:
+  ansible.builtin.lineinfile:
     line: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
     path: /etc/apt/sources.list.d/vscode.list
     create: true

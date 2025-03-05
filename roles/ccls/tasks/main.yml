@@ -1,5 +1,5 @@
 - name: Clone ccls
-  git:
+  ansible.builtin.git:
     repo: https://github.com/MaskRay/ccls.git
     dest: ~/gprog/ccls
 - name: Create build directory
@@ -16,7 +16,7 @@
       - clang-10
       - libclang-10-dev
 - name: Configure ccls
-  command: >-
+  ansible.builtin.command: >-
     cmake -H..
         -BRelease
         -DCMAKE_BUILD_TYPE=Release
@@ -27,6 +27,6 @@
   args:
     chdir: ~/gprog/ccls/build
 - name: Build and install ccls
-  command: cmake --build Release --target install
+  ansible.builtin.command: cmake --build Release --target install
   args:
     chdir: ~/gprog/ccls/build

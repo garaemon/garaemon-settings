@@ -5,10 +5,10 @@
   become: true
 
 - name: Clone base16-gnome-terminal
-  git:
+  ansible.builtin.git:
     repo: https://github.com/aarowill/base16-gnome-terminal.git
     dest: ~/gprog/base16-gnome-terminal
 - name: Execute theme setting script
-  command: ./base16-solarized-dark.sh
+  ansible.builtin.command: ./base16-solarized-dark.sh
   args:
     chdir: ~/gprog/base16-gnome-terminal/color-scripts

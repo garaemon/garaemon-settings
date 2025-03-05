@@ -6,6 +6,6 @@
   when: ansible_os_family == "Debian"
 
 - name: Copy ~/.clang-format file
-  copy:
+  ansible.builtin.copy:
     src: clang-format
     dest: ~/.clang-format

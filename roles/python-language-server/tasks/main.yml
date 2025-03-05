@@ -1,10 +1,10 @@
 # TODO: replace 3.7.2 with variable
 # - name: Install python-language-server
-#   shell: |
+#   ansible.builtin.shell: |
 #     . ~/.pyenv/.pyenvrc &&
 #     pyenv shell 3.7.2
 #     pip install 'python-language-server[all]'
 - name: Install config file of pycodestyle
-  copy:
+  ansible.builtin.copy:
     src: pycodestyle
     dest: ~/.config/pycodestyle

@@ -12,22 +12,22 @@
   when: pyenv_virtualenvwrapper
 
 - name: Create .pyenvrc
-  template:
+  ansible.builtin.template:
     src: ".pyenvrc.j2"
     dest: "{{ pyenv_root }}/.pyenvrc"
     mode: "0644"
 
 - name: Install Python interpreters
-  shell: . {{ pyenv_root }}/.pyenvrc && pyenv install {{ item }}
+  ansible.builtin.shell: . {{ pyenv_root }}/.pyenvrc && pyenv install {{ item }}
   args:
     creates: "{{ pyenv_root }}/versions/{{ item }}/bin/python"
   with_items: "{{ pyenv_python_versions }}"
 
 - name: Get current global version
-  shell: . {{ pyenv_root }}/.pyenvrc && pyenv global
+  ansible.builtin.shell: . {{ pyenv_root }}/.pyenvrc && pyenv global
   register: pyenv_global_version
   changed_when: False
 
 - name: Set pyenv global version
-  shell: . {{ pyenv_root }}/.pyenvrc && pyenv global {{ pyenv_global }} && pyenv rehash
+  ansible.builtin.shell: . {{ pyenv_root }}/.pyenvrc && pyenv global {{ pyenv_global }} && pyenv rehash
   when: pyenv_global is defined and pyenv_global_version.stdout != pyenv_global

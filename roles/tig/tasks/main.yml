@@ -1,4 +1,4 @@
 - name: Copy tigrc
-  copy:
+  ansible.builtin.copy:
     src: tigrc
     dest: ~/.tigrc
