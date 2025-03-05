@@ -34,7 +34,8 @@
                                     {
                                         "bundle_identifiers": [
                                             "^com\\.googlecode\\.iterm2$",
-                                            "^com\\.mitchellh\\.ghostty$"
+                                            "^com\\.mitchellh\\.ghostty$",
+                                            "^org\\.gnu\\.Emacs$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
