@@ -147,13 +147,6 @@
 ;; Do not ask y-or-n when following symlinks
 (setq vc-follow-symlinks t)
 
-(when (>= emacs-major-version 27)
-  (tab-bar-mode)
-  (tab-bar-history-mode)
-  (global-set-key "\C-xtn" 'tab-next)
-  (global-set-key "\C-xtp" 'tab-previous)
-  )
-
 (defun open-setting-file ()
   "Open this file."
   (interactive)
