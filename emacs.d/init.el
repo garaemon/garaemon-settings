@@ -982,9 +982,8 @@ Requires Flake8 3.0 or newer. See URL
   (("C-c C-g" . gist-region-or-buffer))
   )
 
-(use-package git-gutter :ensure t
-  :config (global-git-gutter-mode t)
-  )
+(use-package diff-hl :config (global-diff-hl-mode))
+
 
 (use-package go-mode :ensure t :defer t)
 
@@ -1905,16 +1904,16 @@ Requires Flake8 3.0 or newer. See URL
    '(auto-package-update avy-migemo base16-theme browse-at-remote capf
                          clang-format company company-statistics
                          consult consult-ag corfu counsel
-                         counsel-projectile cquery dictionary embark
-                         embark-consult esup forge gcmh git-gutter
-                         imenu-list imenus ivy-posframe ivy-prescient
-                         lsp-python-ms lsp-treemacs magit-gh-pulls
-                         marginalia minimap modern-cpp-font-lock
-                         multi-vterm nlinum orderless org-download
-                         origami prettier-js py-yapf slack
-                         solarized-theme switch-buffer-functions
-                         systemd total-lines transpose-frame
-                         typescript udev-mode use-package vertico
-                         vterm vterm-toggle)))
+                         counsel-projectile cquery dictionary diff-hl
+                         embark embark-consult esup forge gcmh
+                         git-gutter imenu-list imenus ivy-posframe
+                         ivy-prescient lsp-python-ms lsp-treemacs
+                         magit-gh-pulls marginalia minimap
+                         modern-cpp-font-lock multi-vterm nlinum
+                         orderless org-download origami prettier-js
+                         py-yapf slack solarized-theme
+                         switch-buffer-functions systemd total-lines
+                         transpose-frame typescript udev-mode
+                         use-package vertico vterm vterm-toggle)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
