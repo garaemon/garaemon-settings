@@ -8,6 +8,12 @@
 ;;; Code:
 ;;; ln -sf ~/.emacs.d ~/.emacs.d
 
+;; To measure the performance of init.el, you should add
+;; (profiler-start 'cpu)
+;; and add the following lines at the end of the file.
+;; (profiler-report)
+;; (profiler-stop)
+
 (add-to-list 'load-path "~/.emacs.d/lisp")
 (add-to-list 'load-path "~/.emacs.d/plugins")
 
