@@ -1,4 +1,4 @@
 - name: Clone dircolors-solarized
-  git:
+  ansible.builtin.git:
     repo: https://github.com/seebi/dircolors-solarized.git
     dest: ~/gprog/dircolors-solarized

@@ -1,5 +1,5 @@
 - name: Copy vimrc
-  copy:
+  ansible.builtin.copy:
     src: vimrc
     dest: ~/.vimrc
     remote_src: no

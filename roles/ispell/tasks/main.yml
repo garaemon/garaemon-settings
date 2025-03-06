@@ -1,5 +1,5 @@
 - name: Setup .aspell.conf
-  lineinfile:
+  ansible.builtin.lineinfile:
     line: "lang en_US"
     path: ~/.aspell.conf
     create: true

@@ -1,23 +1,23 @@
 - name: Install dictd packages
-  apt:
+  ansible.builtin.apt: 
     name:
       - dictd
       - dict
       - dictfmt
   become: true
 - name: Install dictd.conf
-  copy:
+  ansible.builtin.copy:
     src: dictd.conf
     dest: /etc/dictd/dictd.conf
   become: true
 
 - name: Check if systemd is running
-  stat:
+  ansible.builtin.stat:
     path: /run/systemd/system
   register: systemd_check
 
 - name: Restart dictd service
-  systemd:
+  ansible.builtin.systemd:
     name: dictd
     state: restarted
   become: true
