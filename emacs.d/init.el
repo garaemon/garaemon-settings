@@ -1268,101 +1268,9 @@ ivy-set-sources only supports function without arguments.
 
 (use-package lua-mode :ensure t :defer t)
 
-;; Run M-x all-the-icons-install-fonts to show '>' in headerline.
-(use-package lsp-mode :ensure t
-  :hook (
-         ;; pip3 install 'python-language-server[all]'
-         (python-mode . lsp)
-         ;; npm i -g typescript-language-server; npm i -g typescript
-         (typescript-mode . lsp)
-         ;; npm i -g yaml-language-server
-         (yaml-mode . lsp)
-         (js-mode . lsp)
-         (lsp-mode . lsp-ui-mode)
-         (lsp-managed-mode .(lambda () (setq-local company-backends '(company-capf))))
-         )
-  :bind (:map lsp-signature-mode-map
-         ;; These settings are not applied to lsp-signature-mode-map.
-         ("\M-n" . 'scroll-down-in-place)
-         ("\M-p" . 'scroll-up-in-place)
-         )
-  :config (progn
-            (add-to-list 'auto-mode-alist '("\\.ts[x]?\\'" . typescript-mode))
-            (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.cquery_cached_index$")
-            (add-to-list 'lsp-file-watch-ignored "[/\\\\]\\.ccls-cache$")
-            (setq lsp-eldoc-enable-hover t)
-            (setq lsp-enable-completion-at-point t)
-            (setq lsp-enable-folding nil)
-            (setq lsp-enable-imenu t)
-            (setq lsp-enable-on-type-formatting t)
-            (setq lsp-enable-snippet t)
-            (setq lsp-enable-symbol-highlighting t)
-            (setq lsp-enable-xref t)
-            (setq lsp-prefer-capf t)
-            (setq lsp-print-io t)
-            (setq lsp-print-performance t)
-            (setq lsp-eldoc-render-all t)
-            (setq lsp-markup-display-all t)
-            (setq-default lsp-signature-auto-activate nil)
-            (unless (display-graphic-p)
-              (setq lsp-headerline-arrow ">")
-              )
-            (setq lsp-pylsp-plugins-jedi-hover-enabled nil)
-            (setq lsp-pylsp-plugins-pyflakes-enabled nil)
-            (setq lsp-pylsp-plugins-pylint-enabled t)
-            (setq lsp-pylsp-plugins-flake8-enabled nil)
-            (setq lsp-pylsp-plugins-yapf-enabled t)
-            (setq lsp-pylsp-plugins-pydocstyle-enabled nil)
-            (setq lsp-pylsp-plugins-pycodestyle-enabled nil)
-            (lsp-register-client
-             (make-lsp-client :new-connection (lsp-tramp-connection "ccls")
-                              :major-modes '(c++-mode)
-                              :remote? t
-                              :server-id 'c++-remote))
-            (lsp-register-client
-             (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
-                              :major-modes '(python-mode)
-                              :remote? t
-                              :server-id 'python-remote))
-            (lsp-register-client
-             (make-lsp-client :new-connection
-                              (lsp-tramp-connection (list "yaml-language-server" "--stdio"))
-                              :major-modes '(yaml-mode)
-                              :remote? t
-                              :server-id 'yaml-remote))
-            )
-  )
-(defun lsp-describe-thing-at-point () (interactive) nil)
-
-(use-package lsp-ui :ensure t
-  :init (add-hook 'lsp-mode-hook #'lsp-ui-mode)
-  :config (progn
-            ;; Reguster lsp-ui-doc--make-request to 'post-command-hook is too heavy.
-            ;; Add small latency before calling lsp-ui-doc--make-request.
-            (defun lsp-ui-doc-make-request-lazy ()
-              (run-with-idle-timer 0.2 nil #'lsp-ui-doc--make-request))
-            (add-hook 'lsp-ui-doc-mode-hook
-                      '(lambda ()
-                         (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
-                         (add-hook 'post-command-hook 'lsp-ui-doc-make-request-lazy
-                                   nil t)
-                         ))
-            (setq lsp-ui-doc-enable t)
-            (setq lsp-ui-doc-header t)
-            (setq lsp-ui-doc-include-signature t)
-            (setq lsp-ui-doc-max-width 80)
-            (setq lsp-ui-doc-max-height 30)
-            (setq lsp-ui-peek-enable t)
-            )
-  )
-
-(use-package lsp-treemacs :ensure t
-  :config (global-set-key "\C-c^" 'lsp-treemacs-errors-list))
-
 (use-package cquery :ensure t
   :if nil
   :config (setq cquery-executable "~/.local/bin/cquery")
-  :commands lsp
   )
 
 (use-package ccls :ensure t
@@ -1370,10 +1278,24 @@ ivy-set-sources only supports function without arguments.
   :hook ((c-mode c++-mode objc-mode) .
          (lambda ()
            (require 'ccls)
-           (run-with-timer 3 nil #'lsp)
-           )))
+            )))
 
+(use-package eglot
+  :ensure t
+  :config
+  (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
+  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+  (setq-default eglot-workspace-configuration
+                '((:pylsp . (:configurationSources
+                             ["flake8"] :plugins
+                             (:pycodestyle (:enabled nil) :mccabe (:enabled nil) :flake8
+                                           (:enabled t))))))
 
+  :hook
+  ((python-mode . eglot-ensure)
+   (c-mode . eglot-ensure)
+   (c++-mode . eglot-ensure)
+   ))
 
 (use-package magit :ensure t
   :config (progn
@@ -2047,7 +1969,6 @@ ivy-set-sources only supports function without arguments.
   (:map typescript-mode-map
    ("C-c f" . 'prettier-js)
    :map js-mode-map
-   ("C-c f" . 'lsp-format-buffer)
    )
   )
 
