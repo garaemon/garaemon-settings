@@ -2081,7 +2081,9 @@ ivy-set-sources only supports function without arguments.
   ;; Remove C-h from the original vterm-keymap-exceptions
   (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
                                   "C-y" "M-y"))
+  :hook (vterm-mode . (lambda () (display-line-numbers-mode -1)))
   )
+
 (use-package multi-vterm :ensure t)
 (use-package vterm-toggle :ensure t
   :bind
