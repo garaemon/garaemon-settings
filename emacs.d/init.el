@@ -1017,6 +1017,10 @@ Requires Flake8 3.0 or newer. See URL
   (("C-c C-g" . gist-region-or-buffer))
   )
 
+(use-package git-gutter :ensure t
+  :config (global-git-gutter-mode t)
+  )
+
 (use-package go-mode :ensure t :defer t)
 
 (use-package google-c-style :ensure t
@@ -1968,8 +1972,8 @@ Requires Flake8 3.0 or newer. See URL
                          clang-format company company-statistics
                          consult consult-ag corfu counsel
                          counsel-projectile cquery dictionary embark
-                         embark-consult esup forge gcmh imenu-list
-                         imenus ivy-posframe ivy-prescient
+                         embark-consult esup forge gcmh git-gutter
+                         imenu-list imenus ivy-posframe ivy-prescient
                          lsp-python-ms lsp-treemacs magit-gh-pulls
                          marginalia minimap modern-cpp-font-lock
                          multi-vterm nlinum orderless org-download
