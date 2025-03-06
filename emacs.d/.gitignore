@@ -16,6 +16,7 @@ backups/*
 recentf
 network-security.data
 emacs-visited-files
+undo/
 undohist/
 irony
 .python-environments

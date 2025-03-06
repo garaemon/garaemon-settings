@@ -1500,6 +1500,10 @@ Requires Flake8 3.0 or newer. See URL
 (use-package trr :ensure t)
 
 (use-package undo-tree :ensure t
+  :custom
+  (undo-tree-visualizer-diff t)
+  (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+  (undo-tree-visualizer-timestamps t)
   :config (progn
             (global-undo-tree-mode)
             (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
