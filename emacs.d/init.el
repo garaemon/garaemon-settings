@@ -667,34 +667,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package coffee-mode :ensure t :defer t)
 
-(use-package company :ensure t
-  :config (progn
-            (global-company-mode)
-            (setq company-idle-delay 0.2)
-            (setq company-minimum-prefix-length 2)
-            ;; 候補の一番下でさらに下に行こうとすると一番上に戻る
-            (setq company-selection-wrap-around t)
-            (add-to-list 'company-backends 'company-dabbrev-code)
-            ;; (add-to-list 'company-backends 'company-yasnippet)
-            (add-to-list 'company-backends 'company-files)
-            (define-key company-active-map (kbd "C-n") 'company-select-next)
-            (define-key company-active-map (kbd "C-p") 'company-select-previous)
-            (define-key company-search-map (kbd "C-n") 'company-select-next)
-            (define-key company-search-map (kbd "C-p") 'company-select-previous)
-            (define-key company-search-map (kbd "C-h") 'backward-delete-char)
-            (define-key company-active-map (kbd "C-h") 'backward-delete-char)
-            (push (apply-partially #'cl-remove-if
-                                   (lambda (c)
-                                     (or (string-match-p "[^\x00-\x7F]+" c)
-                                         (string-match-p "[0-9]+" c)
-                                         (if (equal major-mode "org")
-                                             (>= (length c) 15))))) company-transformers)
-            )
-  )
-
-(use-package company-statistics :ensure t
-  :config (company-statistics-mode))
-
 (use-package dockerfile-mode :ensure t :defer t
   :init (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode)))
 ;; (use-package elisp-format
@@ -1080,13 +1052,14 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package corfu
   ;; Optional customizations
-  ;; :custom
-  ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+  :custom
+  (corfu-auto t)
+  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+  (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+  (corfu-preview-current nil)    ;; Disable current candidate preview
+  (corfu-preselect 'prompt)      ;; Preselect the prompt
+  (corfu-on-exact-match nil)     ;; Configure handling of exact matches
 
   ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
   ;; :hook ((prog-mode . corfu-mode)
@@ -1098,6 +1071,7 @@ Requires Flake8 3.0 or newer. See URL
   ;; `global-corfu-modes' to exclude certain modes.
   :init
   (global-corfu-mode)
+  (corfu-popupinfo-mode)
   )
 
 (use-package marginalia
@@ -1510,29 +1484,6 @@ Requires Flake8 3.0 or newer. See URL
   )
 
 (use-package thingopt :ensure t)
-
-(use-package tide :ensure t :requires (typescript)
-  :config (progn
-            (setq typescript-indent-level 2)
-            (defun my-typescript-hook ()
-              "My hook function for typescript-mode."
-              (tide-setup)
-              (flycheck-mode t)
-              ;; (setup-tide-mode)
-              (eldoc-mode t)
-              (setq flycheck-check-syntax-automatically
-                    (mode-enabled save))
-              (company-mode-on)
-              (tide-hl-identifier-mode +1)
-              (setq typescript-indent-level 2)
-              (define-smartrep-keys)
-              )
-            (add-hook 'typescript-mode-hook
-                      (lambda ()
-                        (my-typescript-hook)
-                        ))
-            )
-  )
 
 (use-package total-lines :ensure t
   :config (progn
