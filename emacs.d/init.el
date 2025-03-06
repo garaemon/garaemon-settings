@@ -1197,9 +1197,6 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package less-css-mode :ensure t :defer t)
 
-;; require typescript before configuring lsp-mode
-(require 'typescript)
-
 (use-package lua-mode :ensure t :defer t)
 
 (use-package cquery :ensure t
@@ -1582,32 +1579,6 @@ Requires Flake8 3.0 or newer. See URL
 (use-package volatile-highlights :ensure t
   :config (volatile-highlights-mode))
 
-(use-package web-mode :ensure t :if t
-  :requires (flycheck)
-  :init (progn (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-               (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
-  ;; Cannot defind this keybind in :bind section of lsp-mode because web-mode-map variable is not
-  ;; defined in the scope.
-  :bind (("C-c f" . 'prettier-js))
-  :config (progn
-            (defun my-web-mode-hook ()
-              "Hooks for Web mode."
-              (setq web-mode-enable-auto-indentation nil)
-              (setq web-mode-markup-indent-offset 2)
-              (setq web-mode-css-indent-offset 2)
-              (setq web-mode-code-indent-offset 2)
-              (setq web-mode-script-padding 2)
-              (setq web-mode-style-padding 2)
-              (setq tab-width 2)
-              )
-            )
-  :hook (web-mode . (lambda ()
-                      (my-web-mode-hook)
-                      ;; (when (string-equal "tsx" (file-name-extension buffer-file-name))
-                      ;;   (setup-tide-mode))
-                      ))
-  )
-
 (use-package which-key :ensure t
   :config (progn
             (which-key-mode)
@@ -1898,17 +1869,7 @@ Requires Flake8 3.0 or newer. See URL
   :bind (("C-x C-o" . 'rotate-frame-clockwise))
   )
 
-(use-package prettier-js :ensure t
-  :bind
-  (:map typescript-mode-map
-   ("C-c f" . 'prettier-js)
-   :map js-mode-map
-   )
-  )
-
 (use-package systemd :ensure t)
-
-(use-package counsel-tramp :ensure t)
 
 (use-package browse-at-remote :ensure t
   :bind (("C-c b" . 'echo-url-at-remote))
