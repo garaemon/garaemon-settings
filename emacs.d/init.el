@@ -181,6 +181,8 @@
         (backward-up-list)))))
 (global-set-key (kbd "C-,") 'jump-to-corresponding-brace)
 
+(savehist-mode t)
+
 ;;; }}}
 
 ;;; GUI setting {{{
@@ -1052,158 +1054,91 @@ Requires Flake8 3.0 or newer. See URL
     (migemo-init)
     ))
 
-(use-package counsel :ensure t
-  :config (progn
-            (ivy-mode t)
-            (counsel-mode t)
-            (setq ivy-use-virtual-buffers t)
-            (setq enable-recursive-minibuffers t)
-            ;; (setq ivy-height 30)
-            (setq ivy-extra-directories nil)
-            ;; (setq ivy-re-builders-alist '((t . ivy--regex-plus)))
-
-            ;; Remove the first '^' in query form.
-            ;; https://github.com/abo-abo/swiper/issues/1455
-            (setq ivy-initial-inputs-alist nil)
-            (defun get-catkin-root-dir ()
-              (let ((cmake-prefix-path (getenv "CMAKE_PREFIX_PATH")))
-                (when cmake-prefix-path
-                  (format "%s/../src" (car (split-string cmake-prefix-path ":"))))))
-
-            (defun get-catkin-packages-list ()
-              (let ((catkin-root (get-catkin-root-dir)))
-                (let ((string-output
-                       (shell-command-to-string
-                        (format "find %s -name package.xml -exec dirname {} \\\;"
-                                catkin-root))))
-                  (let ((dirs (split-string string-output "\n")))
-                    dirs))))
-
-            (defun update-catkin-packages-list ()
-              "List all the catkin packages in catkin workspace"
-              (message "Updating catkin-packages-list")
-              (setq catkin-packages-list (get-catkin-packages-list)))
-
-            (defvar catkin-packages-list (get-catkin-packages-list))
-            ;; Defiend only for ivy-set-sources. ivy-set-sources only supports function without
-            ;; arguments.
-            (defun get-cached-catkin-packages-list ()
-              "Return `catkin-packages-list'
-This function is defiend only for ivy-set-sources.
-ivy-set-sources only supports function without arguments.
-"
-              catkin-packages-list)
-
-            (defvar catkin-workspace-timestamp-process nil)
-            (defvar catkin-workspace-timestamp nil)
-            (defun catkin-workspace-updated-p ()
-              (let ((catkin-root (get-catkin-root-dir))
-                    (buffer-name "*catkin-timestamp-query*"))
-                (when catkin-root
-                  ;; Process is not started
-                  (cond ((null catkin-workspace-timestamp-process)
-                         ;; Before running process, clean up buffer
-                         (let ((buff (get-buffer-create buffer-name)))
-                           (with-current-buffer buff
-                             (erase-buffer)))
-                         (setq catkin-workspace-timestamp-process
-                               (start-process "latest_directory_timestamp.py" buffer-name
-                                              "~/.emacs.d/scripts/latest_directory_timestamp.py"
-                                              catkin-root))
-                         nil)
-                        ;; Process is still on-going
-                        ((process-live-p catkin-workspace-timestamp-process)
-                         nil)
-                        (t
-                         ;; Process is finished and *timestamp-query* buffer is ready to be read
-                         (let* ((timestamp-string (with-current-buffer (get-buffer-create buffer-name)
-                                                    (goto-char (point-min))
-                                                    (buffer-substring (point) (line-end-position))))
-                                (timestamp (car (read-from-string timestamp-string)))
-                                (result (cond ((null catkin-workspace-timestamp) t)
-                                              ((> timestamp catkin-workspace-timestamp) t)
-                                              (t nil))))
-                           (setq catkin-workspace-timestamp timestamp)
-                           (setq catkin-workspace-timestamp-process nil)
-                           result))))
-                  )
+(use-package vertico
+  ;; :custom
+  ;; (vertico-scroll-margin 0) ;; Different scroll margin
+  ;; (vertico-count 20) ;; Show more candidates
+  ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+  ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+  :init
+  (vertico-mode)
+  :bind (:map vertico-map
+              ("C-s" . 'vertico-next)
+              ("C-r" . 'vertico-previous)
               )
-            (run-with-idle-timer 10 nil #'(lambda ()
-                                            (if (catkin-workspace-updated-p)
-                                                (update-catkin-packages-list))))
-
-            (defun my-ivy-switch-buffer-action (buffer)
-              "Customized ivy--switch-buffer-action."
-              (if (zerop (length buffer))
-                  (switch-to-buffer
-                   ivy-text nil 'force-same-window)
-
-                (let ((virtual (assoc buffer ivy--virtual-buffers))
-                      (view (assoc buffer ivy-views)))
-                  (cond ((and virtual (not (get-buffer buffer)))
-                         (find-file (cdr virtual)))
-                        (view
-                         (delete-other-windows)
-                         (let (
-                               ;; silence "Directory has changed on disk"
-                               (inhibit-message t))
-                           (ivy-set-view-recur (cadr view))))
-                        ;; This is the modification to the original ivy--switch-buffer-action.
-                        ;; If `buffer' is a file and the buffer of the file have not opened yet,
-                        ;; open the file.
-                        ;; This modification is designed to open catkin pacakge.
-                        ((and (not (get-buffer buffer))
-                              (file-exists-p (expand-file-name buffer)))
-                         (find-file buffer))
-                        (t
-                         (switch-to-buffer
-                          buffer nil 'force-same-window))))))
-
-            (defun my-counsel-git-files ()
-              (let* ((git-directory (ignore-errors (counsel-locate-git-root)))
-                     (counsel-git-cands (if git-directory (counsel-git-cands git-directory))))
-                (mapcar #'(lambda (cand) (concat git-directory cand))
-                        counsel-git-cands)))
-
-            ;; C-x b like helm-mini
-            (defun my-ivy-switch-buffer ()
-              "Customized version of ivy-switch-buffer."
-              (interactive)
-              (ivy-read ">> " #'internal-complete-buffer
-                        :keymap ivy-switch-buffer-map
-                        :preselect (buffer-name (other-buffer (current-buffer)))
-                        :action #'my-ivy-switch-buffer-action ;This is the modification.
-                        :matcher #'ivy--switch-buffer-matcher
-                        :caller 'my-ivy-switch-buffer)
-              )
-            ;; Customize sources of my-ivy-switch-buffer
-            (ivy-set-sources
-             'my-ivy-switch-buffer
-             '((original-source)
-               (ivy-source-views)
-               (my-counsel-git-files)
-               (get-cached-catkin-packages-list)
-               ;; (identity projectile-known-projects)
-               ))
-            (global-set-key (kbd "C-x b") 'my-ivy-switch-buffer)
-            (global-set-key "\C-s" 'swiper-isearch)
-            (global-set-key "\C-r" 'swiper-isearch-backward)
-            (global-set-key (kbd "C-c C-r") 'ivy-resume)
-            (global-set-key (kbd "<f6>") 'ivy-resume)
-            (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-            (global-set-key (kbd "C-c g") 'counsel-git)
-            (global-set-key (kbd "C-c j") 'counsel-git-grep)
-            (global-set-key (kbd "C-c k") 'counsel-ag)
-            (global-set-key (kbd "C-x l") 'counsel-locate)
-            ;; Do not run dired when hitting enter in find-file
-            (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
-            (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
-            (define-key ivy-minibuffer-map (kbd "C-RET") #'ivy-immediate-done)
-            (define-key ivy-minibuffer-map "\C-h" 'ivy-backward-delete-char)
-            )
   )
 
-(use-package ivy-prescient :ensure t)
+(use-package corfu
+  ;; Optional customizations
+  ;; :custom
+  ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+
+  ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
+  ;; :hook ((prog-mode . corfu-mode)
+  ;;        (shell-mode . corfu-mode)
+  ;;        (eshell-mode . corfu-mode))
+
+  ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
+  ;; be used globally (M-/).  See also the customization variable
+  ;; `global-corfu-modes' to exclude certain modes.
+  :init
+  (global-corfu-mode)
+  )
+
+(use-package marginalia
+  :config
+  (marginalia-mode 1))
+
+(use-package embark
+  :bind (("C-." . embark-act)
+         :map minibuffer-local-map
+         ("C-c C-c" . embark-collect)
+         ("C-c C-e" . embark-export)))
+
+(use-package embark-consult)
+
+(use-package consult
+  :bind
+  ("C-x b" . consult-buffer)
+  ("C-s" . consult-line)
+  )
+
+(use-package emacs
+  :custom
+  ;; TAB cycle if there are only few candidates
+  ;; (completion-cycle-threshold 3)
+
+  ;; Enable indentation+completion using the TAB key.
+  ;; `completion-at-point' is often bound to M-TAB.
+  (tab-always-indent 'complete)
+
+  ;; Emacs 30 and newer: Disable Ispell completion function.
+  ;; Try `cape-dict' as an alternative.
+  (text-mode-ispell-word-completion nil)
+
+  ;; Hide commands in M-x which do not apply to the current mode.  Corfu
+  ;; commands are hidden, since they are not used via M-x. This setting is
+  ;; useful beyond Corfu.
+  (read-extended-command-predicate #'command-completion-default-include-p)
+  ;; Support opening new minibuffers from inside existing minibuffers.
+  (enable-recursive-minibuffers t)
+  ;; Do not allow the cursor in the minibuffer prompt
+  (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt)))
+
+(use-package orderless
+  :custom
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch))
+  ;; (orderless-component-separator #'orderless-escapable-split-on-space)
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package avy :ensure t)
 (add-to-list 'load-path "~/.emacs.d/avy-migemo")
@@ -1212,7 +1147,6 @@ ivy-set-sources only supports function without arguments.
   :config
   (avy-migemo-mode 1)
   (setq avy-timeout-seconds nil)
-  (require 'avy-migemo-e.g.swiper)
   (global-set-key (kbd "C-M-;") 'avy-migemo-goto-char-timer)
   ;;  (global-set-key (kbd "M-g m m") 'avy-migemo-mode)
   )
@@ -2045,16 +1979,37 @@ ivy-set-sources only supports function without arguments.
    '(swiper--make-overlays-migemo
      (swiper--re-builder :around swiper--re-builder-migemo-around)
      (ivy--regex :around ivy--regex-migemo-around)
-     (ivy--regex-ignore-order :around ivy--regex-ignore-order-migemo-around)
+     (ivy--regex-ignore-order :around
+                              ivy--regex-ignore-order-migemo-around)
      (ivy--regex-plus :around ivy--regex-plus-migemo-around)
-     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo ivy-occur-press-migemo avy-migemo-goto-char avy-migemo-goto-char-2 avy-migemo-goto-char-in-line avy-migemo-goto-char-timer avy-migemo-goto-subword-1 avy-migemo-goto-word-1 avy-migemo-isearch avy-migemo-org-goto-heading-timer avy-migemo--overlay-at avy-migemo--overlay-at-full))
+     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo
+     ivy-occur-press-migemo avy-migemo-goto-char
+     avy-migemo-goto-char-2 avy-migemo-goto-char-in-line
+     avy-migemo-goto-char-timer avy-migemo-goto-subword-1
+     avy-migemo-goto-word-1 avy-migemo-isearch
+     avy-migemo-org-goto-heading-timer avy-migemo--overlay-at
+     avy-migemo--overlay-at-full))
  '(custom-safe-themes
-   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
+   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
+     default))
  '(lsp-pyls-plugins-jedi-completion-enabled t)
  '(lsp-pyls-plugins-jedi-hover-enabled t)
  '(lsp-pyls-plugins-pylint-enabled nil)
  '(lsp-pyls-plugins-yapf-enabled t)
  '(package-selected-packages
-   '(multi-vterm vterm vterm-toggle browse-at-remote counsel-projectile systemd company-statistics ivy-prescient udev-mode prettier-js capf typescript lsp-python-ms forge magit-gh-pulls transpose-frame gcmh switch-buffer-functions avy-migemo py-yapf lsp-treemacs dictionary auto-package-update org-download clang-format ivy-posframe esup counsel use-package cquery slack modern-cpp-font-lock total-lines solarized-theme origami nlinum minimap imenus imenu-list company base16-theme)))
+   '(auto-package-update avy-migemo base16-theme browse-at-remote capf
+                         clang-format company company-statistics
+                         consult consult-ag corfu counsel
+                         counsel-projectile cquery dictionary embark
+                         embark-consult esup forge gcmh imenu-list
+                         imenus ivy-posframe ivy-prescient
+                         lsp-python-ms lsp-treemacs magit-gh-pulls
+                         marginalia minimap modern-cpp-font-lock
+                         multi-vterm nlinum orderless org-download
+                         origami prettier-js py-yapf slack
+                         solarized-theme switch-buffer-functions
+                         systemd total-lines transpose-frame
+                         typescript udev-mode use-package vertico
+                         vterm vterm-toggle)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
