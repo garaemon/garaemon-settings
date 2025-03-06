@@ -1177,23 +1177,9 @@ Requires Flake8 3.0 or newer. See URL
 
 (use-package json-mode :ensure t :defer t)
 
-;; (use-package judge-indent :ensure t)
-
 (use-package less-css-mode :ensure t :defer t)
 
 (use-package lua-mode :ensure t :defer t)
-
-(use-package cquery :ensure t
-  :if nil
-  :config (setq cquery-executable "~/.local/bin/cquery")
-  )
-
-(use-package ccls :ensure t
-  :config
-  :hook ((c-mode c++-mode objc-mode) .
-         (lambda ()
-           (require 'ccls)
-            )))
 
 (use-package eglot
   :ensure t
