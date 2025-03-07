@@ -800,78 +800,14 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             ;; By assiging `flycheck-emacs-lisp-load-path` to 'inherit, flycheck runs emacs with
             ;; `load-path` inherited from the current emacs.
             (setq flycheck-emacs-lisp-load-path 'inherit)
-
-            ;; Do not use flycheck-pos-tip on cocoa emacs
-            (if (not (eq system-type 'darwin))
-                (progn
-                  (when (require 'flycheck-pos-tip nil t)
-                    (eval-after-load 'flycheck
-                      '(setq
-                        flycheck-display-errors-function #'flycheck-pos-tip-error-messages
-                        flycheck-disabled-checkers '(c/c++-clang
-                                                     c/c++-gcc
-                                                     javascript-jshint))))))
-            ;; disable clang and gcc linter
-            (setq-default flycheck-disabled-checkers '(c/c++-clang
-                                                       c/c++-gcc
-                                                       javascript-jshint))
-
-            ;; googlelint for C++
-            (eval-after-load 'flycheck
-              '(progn
-                 (when (require 'flycheck-google-cpplint nil t)
-                   (flycheck-add-next-checker 'c/c++-cppcheck '(warning . c/c++-googlelint)))))
-            (setq flycheck-googlelint-filter "-runtime/references,-readability/braces"
-                  flycheck-googlelint-verbose "3")
-
-            ;; python
-            ;; check flake8 version.
-            ;; If flake8 is newer than 2.0, it does not have --stdin-display-name.
-            (if (executable-find "flake8")
-                (let* ((version-command-output (with-temp-buffer (shell-command "flake8 --version"
-                                                                                (current-buffer))
-                                                                 (buffer-substring-no-properties
-                                                                  (point-min)
-                                                                  (point-max))))
-                       (version-string (car (split-string version-command-output " ")))
-                       (major-version (read (car (split-string version-string "\\."))))
-                       (error-filter-func #'(lambda (errors)
-                                              (let ((errors (flycheck-sanitize-errors errors)))
-                                                (seq-do #'flycheck-flake8-fix-error-level errors)
-                                                errors))))
-                  (if (>= major-version 2)
-                      (progn (message "flake8 vresion is larger than 2.0 %s" major-version)
-                             ;; Use eval ` to evaluate error-filter before quoting.
-                             (eval `(flycheck-define-checker python-flake8
-                                      "A Python syntax and style checker using Flake8.
-This patch is depending on https://github.com/flycheck/flycheck/issues/1078.
-
-Requires Flake8 3.0 or newer. See URL
-`https://flake8.readthedocs.io/'."
-                                      :command ("flake8"
-                                                ;; "--format=default"
-                                                ;; (config-file "--config" flycheck-flake8rc)
-                                                (option "--max-complexity"
-                                                        flycheck-flake8-maximum-complexity nil
-                                                        flycheck-option-int)
-                                                (option "--max-line-length"
-                                                        flycheck-flake8-maximum-line-length nil
-                                                        flycheck-option-int) "--ignore=E901" "-")
-                                        ;psource)
-                                      :standard-input t
-                                      :error-filter ,error-filter-func
-                                      :error-patterns
-                                      ((warning line-start "stdin:" line ":" (optional
-                                                                              column ":")
-                                                " " (id (one-or-more (any alpha))
-                                                        (one-or-more digit)) " " (message
-                                                        (one-or-more
-                                                         not-newline))
-                                                line-end))
-                                      :modes python-mode)))
-                    (message "flake8 vresion is smaller than 2.0"))))
             )
   )
+
+(use-package flycheck-eglot
+  :ensure t
+  :after (flycheck eglot)
+  :config
+  (global-flycheck-eglot-mode 1))
 
 (when nil
 (use-package flyspell :ensure t
@@ -1905,13 +1841,13 @@ Requires Flake8 3.0 or newer. See URL
                          clang-format company company-statistics
                          consult consult-ag corfu counsel
                          counsel-projectile cquery dictionary diff-hl
-                         embark embark-consult esup forge gcmh
-                         git-gutter imenu-list imenus ivy-posframe
-                         ivy-prescient lsp-python-ms lsp-treemacs
-                         magit-gh-pulls marginalia minimap
-                         modern-cpp-font-lock multi-vterm nlinum
-                         orderless org-download origami prettier-js
-                         py-yapf slack solarized-theme
+                         embark embark-consult esup flycheck-eglot
+                         forge gcmh git-gutter imenu-list imenus
+                         ivy-posframe ivy-prescient lsp-python-ms
+                         lsp-treemacs magit-gh-pulls marginalia
+                         minimap modern-cpp-font-lock multi-vterm
+                         nlinum orderless org-download origami
+                         prettier-js py-yapf slack solarized-theme
                          switch-buffer-functions systemd total-lines
                          transpose-frame typescript udev-mode
                          use-package vertico vterm vterm-toggle)))
