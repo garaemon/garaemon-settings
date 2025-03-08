@@ -1500,7 +1500,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package yaml-mode :ensure t
-  :init (add-to-list 'auto-mode-alist '("\\.\\(yml\\|yaml\\|rosinstall\\)$" . yaml-mode)))
+  :init (add-to-list 'auto-mode-alist '("\\.\\(yml\\|yaml\\|rosinstall\\|yml\\.package\\)$" . yaml-mode)))
 
 (use-package yasnippet :ensure t
   :config (progn
