@@ -1571,7 +1571,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package hl-line
-  :if nil
   :config (progn
             (defun global-hl-line-timer-function ()
               "Callback function for hl-line timer."
