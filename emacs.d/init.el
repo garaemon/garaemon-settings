@@ -1837,18 +1837,19 @@ unless you specify the optional argument: FORCE-REVERTING to true."
  '(lsp-pyls-plugins-yapf-enabled t)
  '(package-selected-packages
    '(auto-package-update avy-migemo base16-theme browse-at-remote capf
-                         clang-format company company-statistics
-                         consult consult-ag corfu counsel
-                         counsel-projectile cquery dictionary diff-hl
-                         embark embark-consult esup flycheck-eglot
-                         forge gcmh git-gutter imenu-list imenus
-                         ivy-posframe ivy-prescient lsp-python-ms
-                         lsp-treemacs magit-gh-pulls marginalia
-                         minimap modern-cpp-font-lock multi-vterm
-                         nlinum orderless org-download origami
-                         prettier-js py-yapf slack solarized-theme
-                         switch-buffer-functions systemd total-lines
-                         transpose-frame typescript udev-mode
-                         use-package vertico vterm vterm-toggle)))
+                         clang-format cmake-mode company
+                         company-statistics consult consult-ag corfu
+                         counsel counsel-projectile cquery dictionary
+                         diff-hl embark embark-consult esup
+                         flycheck-eglot forge gcmh git-gutter
+                         imenu-list imenus ivy-posframe ivy-prescient
+                         lsp-python-ms lsp-treemacs magit-gh-pulls
+                         marginalia minimap modern-cpp-font-lock
+                         multi-vterm nlinum orderless org-download
+                         origami prettier-js py-yapf slack
+                         solarized-theme switch-buffer-functions
+                         systemd total-lines transpose-frame
+                         typescript udev-mode use-package vertico
+                         vterm vterm-toggle)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
