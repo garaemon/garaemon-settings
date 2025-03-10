@@ -738,6 +738,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package exec-path-from-shell :ensure t
   :config (progn
             (add-to-list 'exec-path-from-shell-variables "CMAKE_PREFIX_PATH")
+            (add-to-list 'exec-path-from-shell-variables "EMACS_GEMINI_KEY")
             (exec-path-from-shell-initialize))
   )
 
@@ -1787,6 +1788,17 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 
+(use-package gptel :ensure t
+  :config
+  (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
+    (if gemini-key
+        (setq gptel-model 'gemini-2.0-flash-thinking-exp-01-21
+              gptel-backend (gptel-make-gemini "Gemini"
+                 :key gemini-key
+                 :stream t))
+      ))
+  )
+
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
 
@@ -1841,15 +1853,15 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                          company-statistics consult consult-ag corfu
                          counsel counsel-projectile cquery dictionary
                          diff-hl embark embark-consult esup
-                         flycheck-eglot forge gcmh git-gutter
-                         imenu-list imenus ivy-posframe ivy-prescient
-                         lsp-python-ms lsp-treemacs magit-gh-pulls
-                         marginalia minimap modern-cpp-font-lock
-                         multi-vterm nlinum orderless org-download
-                         origami prettier-js py-yapf slack
-                         solarized-theme switch-buffer-functions
-                         systemd total-lines transpose-frame
-                         typescript udev-mode use-package vertico
-                         vterm vterm-toggle)))
+                         exec-path-from-shell flycheck-eglot forge
+                         gcmh git-gutter gptel imenu-list imenus
+                         ivy-posframe ivy-prescient lsp-python-ms
+                         lsp-treemacs magit-gh-pulls marginalia
+                         minimap modern-cpp-font-lock multi-vterm
+                         nlinum orderless org-download origami
+                         prettier-js py-yapf slack solarized-theme
+                         switch-buffer-functions systemd total-lines
+                         transpose-frame typescript udev-mode
+                         use-package vertico vterm vterm-toggle)))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
