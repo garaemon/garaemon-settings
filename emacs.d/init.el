@@ -1053,17 +1053,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
 
-(use-package avy :ensure t)
-(add-to-list 'load-path "~/.emacs.d/avy-migemo")
-(use-package avy-migemo
-  ;; :ensure t
-  :config
-  (avy-migemo-mode 1)
-  (setq avy-timeout-seconds nil)
-  (global-set-key (kbd "C-M-;") 'avy-migemo-goto-char-timer)
-  ;;  (global-set-key (kbd "M-g m m") 'avy-migemo-mode)
-  )
-
 (use-package hyde :ensure t
   :config (progn
             (setq-default jekyll-root (expand-file-name "~/gprog/garaemon.github.io"))
@@ -1826,20 +1815,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(avy-migemo-function-names
-   '(swiper--make-overlays-migemo
-     (swiper--re-builder :around swiper--re-builder-migemo-around)
-     (ivy--regex :around ivy--regex-migemo-around)
-     (ivy--regex-ignore-order :around
-                              ivy--regex-ignore-order-migemo-around)
-     (ivy--regex-plus :around ivy--regex-plus-migemo-around)
-     ivy--highlight-default-migemo ivy-occur-revert-buffer-migemo
-     ivy-occur-press-migemo avy-migemo-goto-char
-     avy-migemo-goto-char-2 avy-migemo-goto-char-in-line
-     avy-migemo-goto-char-timer avy-migemo-goto-subword-1
-     avy-migemo-goto-word-1 avy-migemo-isearch
-     avy-migemo-org-goto-heading-timer avy-migemo--overlay-at
-     avy-migemo--overlay-at-full))
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
      default))
