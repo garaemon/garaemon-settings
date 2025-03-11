@@ -919,7 +919,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (("C-c C-g" . gist-region-or-buffer))
   )
 
-(use-package diff-hl :config (global-diff-hl-mode))
+(use-package diff-hl :ensure t :config (global-diff-hl-mode))
 
 
 (use-package go-mode :ensure t :defer t)
@@ -966,6 +966,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
     ))
 
 (use-package vertico
+  :ensure t
   ;; :custom
   ;; (vertico-scroll-margin 0) ;; Different scroll margin
   ;; (vertico-count 20) ;; Show more candidates
@@ -980,6 +981,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package corfu
+  :ensure t
   ;; Optional customizations
   :custom
   (corfu-auto t)
@@ -1004,18 +1006,21 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package marginalia
+  :ensure t
   :config
   (marginalia-mode 1))
 
 (use-package embark
+  :ensure t
   :bind (("C-." . embark-act)
          :map minibuffer-local-map
          ("C-c C-c" . embark-collect)
          ("C-c C-e" . embark-export)))
 
-(use-package embark-consult)
+(use-package embark-consult :ensure t)
 
 (use-package consult
+  :ensure t
   :bind
   ("C-x b" . consult-buffer)
   ("C-s" . consult-line)
@@ -1045,6 +1050,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
    '(read-only t cursor-intangible t face minibuffer-prompt)))
 
 (use-package orderless
+  :ensure t
   :custom
   ;; Configure a custom style dispatcher (see the Consult wiki)
   ;; (orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch))
@@ -1539,6 +1545,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package ucs-normalize)
 
 (use-package cmake-mode
+  :ensure t
   :init  (progn
            (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
            (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
@@ -1749,6 +1756,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 ;; vterm
 (use-package vterm
+  :ensure t
   :bind (:map vterm-mode-map
               ("\C-h" . 'vterm-send-backspace)
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
@@ -1768,7 +1776,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook (vterm-mode . (lambda () (display-line-numbers-mode -1)))
   )
 
-(use-package multi-vterm :ensure t)
+;; (use-package multi-vterm :ensure t)
+
 (use-package vterm-toggle :ensure t
   :bind
   ("\C-@" . 'vterm-toggle)
