@@ -1042,7 +1042,10 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :bind (:map corfu-map
               ;; Do not allow corfu to steal C-a and C-e
               ([remap move-end-of-line] . nil)
-              ([remap move-beginning-of-line] . nil))
+              ([remap move-beginning-of-line] . nil)
+              ([remap beginning-of-buffer] . nil)
+              ([remap end-of-buffer] . nil)
+              )
   )
 
 
