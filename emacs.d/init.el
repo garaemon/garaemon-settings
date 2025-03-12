@@ -1065,6 +1065,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :bind
   ("C-x b" . consult-buffer)
   ("C-s" . consult-line)
+  ("M-s" . consult-grep)
   )
 
 (use-package emacs
