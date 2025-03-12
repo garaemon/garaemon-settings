@@ -661,6 +661,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                    :italic t)))
   :config
   (global-blamer-mode 1)
+  ;; Overwrite blamer--async-start because Emacs.app cannot use `async-start' correctly.
+  ;; This function insert `cd' to synchronize the subprocess to the parent process.
   (defun blamer--async-start (start-func finish-func)
     "Optional wrapper over \\='async-start function.
 
@@ -676,7 +678,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
         (if finish-func
             (funcall finish-func (funcall start-func))
           (funcall start-func))))))
-
 
 (use-package bm :ensure t
   :bind ((("M-^" . 'bm-toggle)
