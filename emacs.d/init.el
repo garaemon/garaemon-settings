@@ -652,12 +652,13 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (blamer-idle-time 0.3)
   (blamer-min-offset 70)
   (blamer-show-avatar-p nil)
-  (blamer-type 'visual)
+  ;;(blamer-type 'both)
   (blamer-enable-async-execution-p t)
+  (blamer-max-commit-message-length 100)
   :custom-face
   (blamer-face ((t :foreground "#7a88cf"
-                   ;; :background nil
-                   ;;:height 140
+                   ;; Have to specify a bit shorter font than the default font.
+                   :height 110
                    :italic t)))
   :config
   (global-blamer-mode 1)
