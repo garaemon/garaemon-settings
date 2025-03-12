@@ -646,6 +646,38 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                 (load-theme 'base16-solarized-dark t)))
   )
 
+(use-package blamer
+  :ensure t
+  :custom
+  (blamer-idle-time 0.3)
+  (blamer-min-offset 70)
+  (blamer-show-avatar-p nil)
+  (blamer-type 'visual)
+  (blamer-enable-async-execution-p t)
+  :custom-face
+  (blamer-face ((t :foreground "#7a88cf"
+                   ;; :background nil
+                   ;;:height 140
+                   :italic t)))
+  :config
+  (global-blamer-mode 1)
+  (defun blamer--async-start (start-func finish-func)
+    "Optional wrapper over \\='async-start function.
+
+Needed for toggling async execution for better debug.
+START-FUNC - function to start
+FINISH-FUNC - callback which will be printed after main function finished"
+    (let ((async-prompt-for-password nil))
+      (ignore async-prompt-for-password)
+      (message "blamer--async-start: %s" blamer-enable-async-execution-p)
+      (if blamer-enable-async-execution-p
+          ;; The subprocess of Emacs.app does not inherit default-directory.
+          (async-start `(lambda() (cd ,default-directory) (funcall ,start-func)) finish-func)
+        (if finish-func
+            (funcall finish-func (funcall start-func))
+          (funcall start-func))))))
+
+
 (use-package bm :ensure t
   :bind ((("M-^" . 'bm-toggle)
           ("C-M-n" . 'bm-next)
