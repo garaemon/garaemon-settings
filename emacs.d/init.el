@@ -831,12 +831,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :requires (thingopt)
   :config (progn
             (setq flycheck-check-syntax-automatically '(mode-enabled save))
-            (global-flycheck-mode t)
             ;; flycheck runs emacs with `-Q` option to lint emacs lisp codes. It means that
             ;; load-path is not taken into account in linting.
             ;; By assiging `flycheck-emacs-lisp-load-path` to 'inherit, flycheck runs emacs with
             ;; `load-path` inherited from the current emacs.
             (setq flycheck-emacs-lisp-load-path 'inherit)
+            (global-flycheck-mode t)
             )
   )
 
