@@ -1039,7 +1039,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :init
   (global-corfu-mode)
   (corfu-popupinfo-mode)
+  :bind (:map corfu-map
+              ;; Do not allow corfu to steal C-a and C-e
+              ([remap move-end-of-line] . nil)
+              ([remap move-beginning-of-line] . nil))
   )
+
 
 (use-package marginalia
   :ensure t
