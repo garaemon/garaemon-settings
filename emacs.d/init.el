@@ -663,6 +663,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :config
   (global-blamer-mode 1)
   ;; Overwrite blamer--async-start because Emacs.app cannot use `async-start' correctly.
+  ;; The subprocess invoked by `async-start' does not inherit the working directory from the parent
+  ;; process.
   ;; This function insert `cd' to synchronize the subprocess to the parent process.
   (defun blamer--async-start (start-func finish-func)
     "Optional wrapper over \\='async-start function.
