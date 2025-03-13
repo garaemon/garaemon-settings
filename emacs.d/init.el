@@ -837,6 +837,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
             ;; `load-path` inherited from the current emacs.
             (setq flycheck-emacs-lisp-load-path 'inherit)
             (global-flycheck-mode t)
+            (flycheck-add-next-checker 'python-flake8 'python-pylint)
             )
   )
 
