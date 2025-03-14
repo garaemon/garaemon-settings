@@ -1816,7 +1816,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
               ("\C-c c" . 'multi-vterm) ; like tmux
               ("\C-c n" . 'multi-vterm-next)
               ("\C-c p" . 'multi-vterm-prev)
-              ("\C-@" . 'vterm-toggle)
+              ("\C-@" . 'my-vterm-toggle)
               )
   :config
   (setq vterm-max-scrollback  10000)
@@ -1830,8 +1830,29 @@ FINISH-FUNC - callback which will be printed after main function finished"
 ;; (use-package multi-vterm :ensure t)
 
 (use-package vterm-toggle :ensure t
+  :config
+  ;; Overwrite vterm-toggle. If the vterm buffer is not focused, focus to the buffer.
+  (defun my-vterm-toggle(&optional args)
+    "Vterm toggle.
+Optional argument ARGS ."
+    (interactive "P")
+    (cond
+     ((not (derived-mode-p 'vterm-mode))
+      (vterm-toggle-show))
+     ((or (derived-mode-p 'vterm-mode)
+          (and (vterm-toggle--get-window)
+               vterm-toggle-hide-method))
+      (if (equal (prefix-numeric-value args) 1)
+          (vterm-toggle-hide)
+        (vterm vterm-buffer-name)))
+     ((equal (prefix-numeric-value args) 1)
+      (vterm-toggle-show))
+     ((equal (prefix-numeric-value args) 4)
+      (let ((vterm-toggle-fullscreen-p
+             (not vterm-toggle-fullscreen-p)))
+        (vterm-toggle-show)))))
   :bind
-  ("\C-@" . 'vterm-toggle)
+  ("\C-@" . 'my-vterm-toggle)
   ;; ("\C-c t" . 'vterm-toggle)
   ;; ("\C-c T" . 'vterm-toggle-cd)
   )
