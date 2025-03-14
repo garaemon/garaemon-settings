@@ -1171,9 +1171,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
    ))
 
 (use-package magit :ensure t
+  :custom ( magit-refresh-status-buffer nil)
   :config (progn
             (global-set-key "\C-cl" 'magit-status)
             (global-set-key "\C-cL" 'magit-status)
+            (setq auto-revert-buffer-list-filter
+                  'magit-auto-revert-repository-buffer-p)
             )
   )
 
