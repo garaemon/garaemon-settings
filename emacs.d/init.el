@@ -467,10 +467,12 @@
   "Split window if there is enough space and switch to next window."
   (interactive)
   (when (one-window-p)
-    (if (>= (window-body-width) 300)
-        (let ((split-num (/ (window-body-width) 100)))
-          (split-window-horizontally-n split-num))
-      (split-window-horizontally)))
+    ;; 4 is for linum characters.
+    (let ((column-width (+ 100 4)))
+      (if (>= (window-body-width) (* 3 column-width))
+          (let ((split-num (/ (window-body-width) column-width)))
+            (split-window-horizontally-n split-num))
+        (split-window-horizontally))))
   (win-switch-dispatch))
 
 (global-set-key "\M-o" 'other-window-or-split)
