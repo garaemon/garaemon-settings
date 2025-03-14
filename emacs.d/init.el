@@ -956,7 +956,9 @@ FINISH-FUNC - callback which will be printed after main function finished"
   (("C-c C-g" . gist-region-or-buffer))
   )
 
-(use-package diff-hl :ensure t :config (global-diff-hl-mode))
+(use-package diff-hl :ensure t
+  :custom (diff-hl-disable-on-remote t)
+  :config (global-diff-hl-mode))
 
 
 (use-package go-mode :ensure t :defer t)
