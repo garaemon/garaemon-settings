@@ -1202,11 +1202,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
             (defvar markdown-mode-map)
             (define-key markdown-mode-map (kbd "M-p") nil)
             (define-key markdown-mode-map (kbd "M-n") nil)
-            (defun open-with-shiba ()
-              "Open a current markdown file with shiba."
-              (interactive)
-              (start-process "shiba" "*shiba*" "shiba" "--detach" buffer-file-name))
-            (define-key markdown-mode-map (kbd "C-c C-c") 'open-with-shiba)
             (define-key markdown-mode-map (kbd "C-c m") 'newline)
             ;; do not work?
             (setq markdown-display-remote-images t)
