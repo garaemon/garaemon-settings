@@ -654,7 +654,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (blamer-idle-time 0.3)
   (blamer-min-offset 70)
   (blamer-show-avatar-p nil)
-  ;;(blamer-type 'both)
   (blamer-enable-async-execution-p t)
   (blamer-max-commit-message-length 100)
   :custom-face
@@ -663,7 +662,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                    :height 110
                    :italic t)))
   :config
-  (global-blamer-mode 1)
   ;; Overwrite blamer--async-start because Emacs.app cannot use `async-start' correctly.
   ;; The subprocess invoked by `async-start' does not inherit the working directory from the parent
   ;; process.
@@ -676,13 +674,23 @@ START-FUNC - function to start
 FINISH-FUNC - callback which will be printed after main function finished"
     (let ((async-prompt-for-password nil))
       (ignore async-prompt-for-password)
-      ;; (message "blamer--async-start: %s" blamer-enable-async-execution-p)
       (if blamer-enable-async-execution-p
           ;; The subprocess of Emacs.app does not inherit default-directory.
-          (async-start `(lambda() (cd ,default-directory) (funcall ,start-func)) finish-func)
+          ;; Avoid `cd`; modify `default-directory` temporarily instead. `cd` is ineffective with
+          ;; remote directories.
+          ;; The subprocesses invoked by `async-start' run on the host computer even though the
+          ;; target files are rmeote files.
+          (async-start `(lambda() (let ((default-directory ,default-directory))
+                                    (funcall ,start-func))) finish-func)
         (if finish-func
             (funcall finish-func (funcall start-func))
-          (funcall start-func))))))
+          (funcall start-func)))))
+  ;; blamer tries to use local file name for remote files. However, we don't need to do this.
+  ;; All the vc functions such as `vc-backend', `vc-git--run-command-string' can handle remote files.
+  (defun blamer--get-local-name (filename)
+    filename)
+  (global-blamer-mode t)
+  )
 
 (use-package bm :ensure t
   :bind ((("M-^" . 'bm-toggle)
