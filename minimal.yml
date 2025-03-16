@@ -8,7 +8,6 @@
     - zsh
     - starship
     - peco
-    # - pyenv
     - nvm
     - ispell
     - tig
@@ -18,18 +17,3 @@
     #   when: ansible_os_family == "Debian"
     # - role: dictd
     #   when: ansible_os_family == "Debian"
-
-    # - rvm
-  vars:
-    # pyenv variables
-    # Initialize shell profile scripts
-    pyenv_init_shell: true
-    # Python versions to install
-    pyenv_python_versions:
-      - "3.9.4"
-    # Set global pyenv version
-    pyenv_global: "system"
-    # Define the shell profile scripts to initialize
-    pyenv_shell_profile_scripts:
-      - .bashrc
-      - .zshrc

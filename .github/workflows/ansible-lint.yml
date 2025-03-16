@@ -1,0 +1,26 @@
+name: Ansible Lint
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Ansible Playbooks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Ansible Lint
+        run: pip install ansible-lint
+
+      - name: Lint Ansible Playbooks
+        run: ansible-lint

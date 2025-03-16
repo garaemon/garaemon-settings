@@ -1,0 +1,14 @@
+---
+profile: basic
+
+skip_list:
+    - name
+    - var-naming
+    - yaml
+    - command-instead-of-module
+    - command-instead-of-shell
+    - no-free-form
+    - role-name
+    - schema
+    - jinja
+    - deprecated-local-action
