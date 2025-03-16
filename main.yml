@@ -16,7 +16,12 @@
     - gh
     - emacs
     - peco
-    - pyenv
+    - role: staticdev.pyenv
+      when: ansible_os_family == "Debian"
+    - role: staticdev.pyenv
+      when: ansible_os_family == "Darwin"
+      vars:
+        pyenv_owner_group: staff
     - nvm
     - font
     - ispell
@@ -41,13 +46,9 @@
     pyenv_python_versions:
       - "3.9.4"
     # Set global pyenv version
-    pyenv_global: "system"
+    pyenv_global:
+      - "system"
     # Define the shell profile scripts to initialiaze
     pyenv_shell_profile_scripts:
       - .bashrc
       - .zshrc
-    # rvm variables
-    rvm1_rubies:
-      - 'ruby-2.6.0'
-    rvm1_user: '{{ansible_env.USER}}'
-    rvm1_install_flags: '--user-install'

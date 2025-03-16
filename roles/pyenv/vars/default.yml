@@ -1,5 +1,0 @@
----
-
-pyenv_shell_profile_scripts:
-  - .bash_profile
-  - .zshrc
