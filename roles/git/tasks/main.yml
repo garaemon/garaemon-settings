@@ -24,3 +24,11 @@
   command: git config alias.remotes "remotes = remote -v"
 - name: git config rebase.autostash
   command: git config rebase.autostash true
+
+- name: git config core.excludesFile (global gitignore)
+  command: git config --global core.excludesFile ~/.gitignore
+
+- name: Copy the global gitignore
+  copy:
+    src: gitignore
+    dest: ~/.gitignore
