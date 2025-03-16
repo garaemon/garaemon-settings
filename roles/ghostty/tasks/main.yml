@@ -8,8 +8,7 @@
       mode: 0755
 
   - name: Copy config
-    file:
-      src: "{{ ansible_env.HOME }}/gprog/garaemon-settings/roles/ghostty/files/config"
-      path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
-      state: link
+    copy:
+      src: config
+      dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
       mode: 0644
