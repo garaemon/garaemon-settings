@@ -182,6 +182,10 @@
 
 (savehist-mode t)
 
+(defun reopen-file ()
+  (interactive)
+  (find-file (buffer-file-name)))
+
 ;;; }}}
 
 ;;; GUI setting {{{
