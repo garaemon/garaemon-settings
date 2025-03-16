@@ -1153,7 +1153,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :ensure t
   :config
   (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
-  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "ccls"))
   (setq-default eglot-workspace-configuration
                 '((:pylsp . (:configurationSources
                              ["flake8"] :plugins
