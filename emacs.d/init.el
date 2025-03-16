@@ -655,11 +655,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package blamer
   :ensure t
   :custom
-  (blamer-idle-time 0.3)
+  (blamer-idle-time 1.0)
   (blamer-min-offset 70)
   (blamer-show-avatar-p nil)
   (blamer-enable-async-execution-p t)
   (blamer-max-commit-message-length 100)
+  (blamer-type 'visual)
   :custom-face
   (blamer-face ((t :foreground "#7a88cf"
                    ;; Have to specify a bit shorter font than the default font.
