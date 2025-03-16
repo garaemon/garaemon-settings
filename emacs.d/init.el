@@ -996,24 +996,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
                  )
   )
 
-(use-package migemo :ensure t
-  :config
-  (progn
-    (setq migemo-command "cmigemo")
-    (setq migemo-options '("-q" "--emacs"))
-    (let ((migemo-dictionary-candiates
-           '("/usr/local/share/migemo/utf-8/migemo-dict"
-             "/usr/share/cmigemo/utf-8/migemo-dict")))
-      (dolist (candidate migemo-dictionary-candiates)
-        (if (file-exists-p candidate)
-            (setq migemo-dictionary candidate))))
-    (setq migemo-user-dictionary nil)
-    (setq migemo-regex-dictionary nil)
-    ;; charset encoding
-    (setq migemo-coding-system 'utf-8-unix)
-    (migemo-init)
-    ))
-
 (use-package vertico
   :ensure t
   ;; :custom
@@ -1235,20 +1217,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
   (setq dnd-view-inline t)
   (setq dnd-save-buffer-name nil)
   (setq dnd-capture-source t))
-
-(use-package migemo :ensure t
-  :if (executable-find "cmigemo")
-  :config (progn
-            (setq
-             migemo-command "cmigemo"
-             migemo-options '("-q" "--emacs")
-             migemo-dictionary "/usr/share/cmigemo/utf-8/migemo-dict"
-             migemo-user-dictionary nil
-             migemo-regex-dictionary nil
-             migemo-coding-system 'utf-8-unix)
-            (migemo-init)
-            )
-  )
 
 (use-package minimap :ensure t)
 
