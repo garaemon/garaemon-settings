@@ -659,7 +659,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :custom-face
   (blamer-face ((t :foreground "#7a88cf"
                    ;; Have to specify a bit shorter font than the default font.
-                   :height 110
+                   :height 0.9
                    :italic t)))
   :config
   ;; Overwrite blamer--async-start because Emacs.app cannot use `async-start' correctly.
