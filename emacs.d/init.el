@@ -658,7 +658,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (blamer-idle-time 1.0)
   (blamer-min-offset 70)
   (blamer-show-avatar-p nil)
-  (blamer-enable-async-execution-p t)
+  (blamer-enable-async-execution-p nil)
   (blamer-max-commit-message-length 100)
   (blamer-type 'visual)
   :custom-face
