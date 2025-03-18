@@ -1847,6 +1847,19 @@ Optional argument ARGS ."
       ))
   )
 
+(use-package persistent-scratch :ensure t
+  :config (persistent-scratch-setup-default))
+
+;; (use-package format-all
+;;   :ensure t
+;;   :commands format-all-mode
+;;   :hook (prog-mode . format-all-mode)
+;;   :bind ("C-c f" . format-all-buffer)
+;;   :config
+;;   (setq-default format-all-formatters
+;;                 '(("Python"     (yapf))
+;;                   ("C++" (clang-format)))))
+
 ;; See http://lists.gnu.org/archive/html/bug-gnu-emacs/2019-04/msg01249.html
 (setq inhibit-compacting-font-caches t)
 
@@ -1875,11 +1888,10 @@ Optional argument ARGS ."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
-   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
-     default))
- '(package-selected-packages nil)
+   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
+ '(package-selected-packages
+   '(persistent-scratch yatemplate yapfify yaml-mode win-switch which-key vterm-toggle volatile-highlights vertico undohist undo-tree udev-mode trr transpose-frame total-lines thingopt systemd symon sx switch-buffer-functions string-inflection sr-speedbar smartrep smart-mode-line smart-cursor-color slack rust-mode recentf-ext rainbow-delimiters qml-mode py-yapf puppet-mode protobuf-mode php-mode outshine org-download orderless nlinum neotree multiple-cursors multi-vterm modern-cpp-font-lock minimap migemo marginalia lua-mode json-mode imenus hydra hyde graphviz-dot-mode gptel google-this google-c-style go-mode gist gcmh format-all forge flycheck-eglot fill-column-indicator expand-region exec-path-from-shell esup embark-consult elpy dockerfile-mode diff-hl corfu coffee-mode cmake-mode clang-format calfw browse-at-remote bm blamer base16-theme backup-each-save anzu all-the-icons))
  '(tramp-ssh-controlmaster-options
-   (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-           "-o ControlMaster=auto -o ControlPersist=yes") t))
+   (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p " "-o ControlMaster=auto -o ControlPersist=yes") t))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
