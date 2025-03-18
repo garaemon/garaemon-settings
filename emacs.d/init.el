@@ -1578,14 +1578,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :init  (progn
            (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
            (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
-           (defun get-cmake-project-name ()
-             (interactive)              ;for debug
-             (let* ((full-current-file-name (buffer-file-name))
-                    (file-name (file-name-nondirectory full-current-file-name)))
-               (file-name-nondirectory
-                ;; Remove the tailing '/'
-                (substring (file-name-directory full-current-file-name) 0 -1))
-               ))
            )
   )
 
