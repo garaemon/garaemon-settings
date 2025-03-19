@@ -633,6 +633,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             (global-anzu-mode +1)
             (setq anzu-search-threshold 1000)))
 
+(use-package auto-highlight-symbol
+  :ensure t
+  :config (global-auto-highlight-symbol-mode t))
+
 (use-package backup-each-save :ensure t
   :config (progn
             (setq backup-each-save-mirror-location "~/.emacs.d/backups")
@@ -1872,6 +1876,7 @@ Optional argument ARGS ."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ahs-plugin-default-face ((t (:background "systemYellowColor" :foreground "Black"))))
  '(mode-line ((t (:background "color-16" :foreground "gray60" :inverse-video nil :box nil))))
  '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d")))))
 (custom-set-variables
