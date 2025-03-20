@@ -1442,9 +1442,10 @@ FINISH-FUNC - callback which will be printed after main function finished"
 
 (use-package tramp
   :config (progn
-            (setq tramp-debug-buffer t
+            (setq tramp-debug-buffer nil
                   tramp-verbose 6
                   tramp-default-method "ssh")
+            (setq tramp-pipe-stty-settings "")
             ;; (setq tramp-shell-prompt-pattern
             ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
             (defun tramp-cleanup-all ()
