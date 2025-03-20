@@ -866,8 +866,8 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :config
   (global-flycheck-eglot-mode 1))
 
-(when nil
 (use-package flyspell :ensure t
+  :if nil
   :config (progn
             ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
             ;; if (aspell installed) { use aspell}
@@ -960,7 +960,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
             (global-set-key "\M-." 'add-word-to-ispell-dictionary)
             )
   )
-)
 
 ;; (use-package flycheck-google-cpplint :ensure t)
 ;; (if (not (eq system-type 'darwin))
