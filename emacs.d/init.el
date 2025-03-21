@@ -1831,6 +1831,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
                         (display-line-numbers-mode -1)
                         (setq buffer-face-mode-face '(:family "Monaco Nerd Font"))
                         (buffer-face-mode)
+                        (display-fill-column-indicator-mode -1)
                         ))
   )
 
