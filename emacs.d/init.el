@@ -1879,6 +1879,7 @@ Optional argument ARGS ."
  ;; If there is more than one, they won't work right.
  '(ahs-plugin-default-face ((t (:background "systemYellowColor" :foreground "Black"))))
  '(mode-line ((t (:background "color-16" :foreground "gray60" :inverse-video nil :box nil))))
+ '(mode-line-active ((t (:inherit mode-line :background "cyan4"))))
  '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d")))))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
