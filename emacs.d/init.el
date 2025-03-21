@@ -1496,12 +1496,10 @@ FINISH-FUNC - callback which will be printed after main function finished"
 
 (use-package win-switch :ensure t
   :if (not (getenv "TRAVIS"))
+  :custom
+  (win-switch-idle-time 1.5)
+  (win-switch-window-threshold 1)
   :config (progn
-            (setq win-switch-feedback-background-color "yellow"
-                  win-switch-feedback-foreground-color "black"
-                  win-switch-idle-time 1.5
-                  win-switch-window-threshold 1)
-
             ;; switching window
             (win-switch-set-keys '("k") 'up)
             (win-switch-set-keys '("j") 'down)
