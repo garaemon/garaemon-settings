@@ -1762,6 +1762,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
   )
 
 (use-package gcmh :ensure t
+  :if nil
   :config (gcmh-mode 1)
   )
 
