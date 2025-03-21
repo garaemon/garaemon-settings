@@ -195,7 +195,7 @@
    (if (> (x-display-pixel-width) 1440)
        (setq default-face-height 120)
      (setq default-face-height 100))
-   (set-frame-font "Monaco Nerd Font Mono" 12)
+   (set-frame-font "Monaco" 12)
    (setq ns-command-modifier (quote meta))
    (setq ns-alternate-modifier (quote super))
    ;; Do not pass control key to mac OS X
@@ -1818,7 +1818,13 @@ FINISH-FUNC - callback which will be printed after main function finished"
   ;; Remove C-h from the original vterm-keymap-exceptions
   (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
                                   "C-y" "M-y"))
-  :hook (vterm-mode . (lambda () (display-line-numbers-mode -1)))
+  :hook (vterm-mode . (lambda ()
+                        (display-line-numbers-mode -1)
+                        ;;(set-frame-font "Monaco Nerd Font")
+                        (setq buffer-face-mode-face '(:family "Monaco Nerd Font"))
+                        (buffer-face-mode)
+                        ;;(set-face-attribute 'default nil :font "Monaco Nerd Font")
+                        ))
   )
 
 ;; (use-package multi-vterm :ensure t)
