@@ -1072,6 +1072,23 @@ FINISH-FUNC - callback which will be printed after main function finished"
   ("C-x b" . consult-buffer)
   ("C-s" . consult-line)
   ("M-s" . consult-grep)
+  :config
+  (progn
+    (defun my-get-git-files ()
+      (when (vc-root-dir)
+        (with-temp-buffer
+          (vc-git-command (current-buffer) t nil "ls-files")
+          (split-string (buffer-string) "\n" t))))
+
+    (setq my-git-files-source
+      `(:name "Git Files"
+              :narrow ?g
+              :category 'file
+              :items ,#'my-get-git-files
+              :state ,#'consult--buffer-state))
+    (setq consult-buffer-sources (append consult-buffer-sources
+                                         '(my-git-files-source)))
+    )
   )
 
 (use-package emacs
