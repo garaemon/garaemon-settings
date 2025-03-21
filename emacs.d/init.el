@@ -1075,10 +1075,16 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :config
   (progn
     (defun my-get-git-files ()
-      (when (vc-root-dir)
-        (with-temp-buffer
-          (vc-git-command (current-buffer) t nil "ls-files")
-          (split-string (buffer-string) "\n" t))))
+      (let ((root-dir (vc-root-dir)))
+        (when root-dir
+          (with-temp-buffer
+            (let ((default-directory root-dir))
+              (vc-git-command (current-buffer) t nil "ls-files"))
+            (let ((local-file-names (split-string (buffer-string) "\n" t)))
+              ;; TODO: cannot open the remote files
+              (mapcar #'(lambda (local-file)
+                          (file-name-concat root-dir local-file))
+                      local-file-names))))))
 
     (setq my-git-files-source
       `(:name "Git Files"
