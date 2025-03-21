@@ -1079,9 +1079,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
         (when root-dir
           (with-temp-buffer
             (let ((default-directory root-dir))
+              ;; Change default-directory to the root directory of the git project. This is because
+              ;; git ls-files returns the paths relative from the current working directory.
               (vc-git-command (current-buffer) t nil "ls-files"))
             (let ((local-file-names (split-string (buffer-string) "\n" t)))
               ;; TODO: cannot open the remote files
+              ;; local-file-names is a relative path from root-dir.
               (mapcar #'(lambda (local-file)
                           (file-name-concat root-dir local-file))
                       local-file-names))))))
