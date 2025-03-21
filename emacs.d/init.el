@@ -1177,6 +1177,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
             (global-set-key "\C-cL" 'magit-status)
             (setq auto-revert-buffer-list-filter
                   'magit-auto-revert-repository-buffer-p)
+            (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
+            ;;(remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
+            (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
+            (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
+            (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
+            (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
             )
   )
 
