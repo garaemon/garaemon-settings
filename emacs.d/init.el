@@ -1761,8 +1761,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
 (use-package emojify :ensure t
   :if (display-graphic-p)
   :hook (after-init . global-emojify-mode)
-  :bind
-  ("C-x e" . 'emojify-insert-emoji)
   )
 
 (use-package gcmh :ensure t
