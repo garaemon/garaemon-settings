@@ -1490,7 +1490,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
               (interactive)
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
-            (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+            ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
             ;; (customize-set-variable
             ;;  'tramp-ssh-controlmaster-options
             ;;  (concat
@@ -1502,8 +1502,9 @@ FINISH-FUNC - callback which will be printed after main function finished"
 (use-package trr :ensure t)
 
 (use-package undo-tree :ensure t
+  :if nil
   :custom
-  (undo-tree-visualizer-diff t)
+  (undo-tree-visualizer-diff nil)
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
   (undo-tree-visualizer-timestamps t)
   :config (progn
@@ -1513,6 +1514,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
   )
 
 (use-package undohist :ensure t
+  :if nil
   :config (progn
             (undohist-initialize)
             (setq undohist-ignored-files '("/tmp/"))
