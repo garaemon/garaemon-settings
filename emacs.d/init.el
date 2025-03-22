@@ -1096,11 +1096,11 @@ FINISH-FUNC - callback which will be printed after main function finished"
                       local-file-names))))))
 
     (setq my-git-files-source
-      `(:name "Git Files"
-              :narrow ?g
-              :category 'file
-              :items ,#'my-get-git-files
-              :state ,#'consult--buffer-state))
+          `( :name "Git Files"
+             :narrow ?g
+             :category 'file
+             :items ,#'my-get-git-files
+             :state ,#'consult--file-state))
     (setq consult-buffer-sources (append consult-buffer-sources
                                          '(my-git-files-source)))
     )
