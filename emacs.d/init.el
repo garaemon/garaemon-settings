@@ -1048,6 +1048,12 @@ FINISH-FUNC - callback which will be printed after main function finished"
               ([remap move-beginning-of-line] . nil)
               ([remap beginning-of-buffer] . nil)
               ([remap end-of-buffer] . nil)
+              ([remap next-line] . nil)
+              ([remap previous-line] . nil)
+              ([remap scroll-down-command] . nil)
+              ([remap scroll-up-command] . nil)
+              ("<tab>" . corfu-next)
+              ("S-<tab>" . corfu-previous)
               )
   )
 
