@@ -1835,7 +1835,7 @@ FINISH-FUNC - callback which will be printed after main function finished"
                                   "C-y" "M-y"))
   :hook (vterm-mode . (lambda ()
                         (display-line-numbers-mode -1)
-                        (setq buffer-face-mode-face '(:family "Monaco Nerd Font"))
+                        (setq buffer-face-mode-face '(:family "Monaco Nerd Font Mono"))
                         (buffer-face-mode)
                         (display-fill-column-indicator-mode -1)
                         ))
