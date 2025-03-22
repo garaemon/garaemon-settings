@@ -1502,7 +1502,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
 (use-package trr :ensure t)
 
 (use-package undo-tree :ensure t
-  :if nil
   :custom
   (undo-tree-visualizer-diff nil)
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
@@ -1510,14 +1509,6 @@ FINISH-FUNC - callback which will be printed after main function finished"
   :config (progn
             (global-undo-tree-mode)
             (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
-            )
-  )
-
-(use-package undohist :ensure t
-  :if nil
-  :config (progn
-            (undohist-initialize)
-            (setq undohist-ignored-files '("/tmp/"))
             )
   )
 
