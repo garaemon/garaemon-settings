@@ -671,29 +671,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                    :height 0.9
                    :italic t)))
   :config
-  ;; Overwrite blamer--async-start because Emacs.app cannot use `async-start' correctly.
-  ;; The subprocess invoked by `async-start' does not inherit the working directory from the parent
-  ;; process.
-  ;; This function insert `cd' to synchronize the subprocess to the parent process.
-  (defun blamer--async-start (start-func finish-func)
-    "Optional wrapper over \\='async-start function.
-
-Needed for toggling async execution for better debug.
-START-FUNC - function to start
-FINISH-FUNC - callback which will be printed after main function finished"
-    (let ((async-prompt-for-password nil))
-      (ignore async-prompt-for-password)
-      (if blamer-enable-async-execution-p
-          ;; The subprocess of Emacs.app does not inherit default-directory.
-          ;; Avoid `cd`; modify `default-directory` temporarily instead. `cd` is ineffective with
-          ;; remote directories.
-          ;; The subprocesses invoked by `async-start' run on the host computer even though the
-          ;; target files are rmeote files.
-          (async-start `(lambda() (let ((default-directory ,default-directory))
-                                    (funcall ,start-func))) finish-func)
-        (if finish-func
-            (funcall finish-func (funcall start-func))
-          (funcall start-func)))))
   ;; blamer tries to use local file name for remote files. However, we don't need to do this.
   ;; All the vc functions such as `vc-backend', `vc-git--run-command-string' can handle remote files.
   (defun blamer--get-local-name (filename)
