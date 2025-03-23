@@ -5,3 +5,4 @@ chef/Berksfile.lock
 *.yml-e
 inventory/
 *.log
+.aider*
