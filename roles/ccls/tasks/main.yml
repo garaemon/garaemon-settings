@@ -8,7 +8,7 @@
     state: directory
 - name: Install clang
   apt:
-    name: "{{packages}}"
+    name: "{{ packages }}"
     state: present
   become: true
   vars:

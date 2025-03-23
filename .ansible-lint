@@ -10,5 +10,4 @@ skip_list:
     - no-free-form
     - role-name
     - schema
-    - jinja
     - deprecated-local-action
