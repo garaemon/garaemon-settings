@@ -8,7 +8,7 @@
     state: directory
 - name: Copy RictyDiminished .ttf files to ~/.fonts
   copy:
-    src: "{{item}}"
+    src: "{{ item }}"
     dest: ~/.fonts/
   with_fileglob:
     - ~/gprog/RictyDiminished/*.ttf

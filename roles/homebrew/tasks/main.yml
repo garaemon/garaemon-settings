@@ -1,6 +1,6 @@
 - name: Install homebrew packages
   homebrew:
-    name: "{{packages}}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:
@@ -44,7 +44,7 @@
 #      - with-x265
 - name: Install homebrew cask packages
   homebrew_cask:
-    name: "{{packages}}"
+    name: "{{ packages }}"
     state: present
   vars:
     packages:
