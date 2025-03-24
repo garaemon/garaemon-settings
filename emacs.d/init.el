@@ -122,15 +122,12 @@
 ;; Highlight parens
 (show-paren-mode t)
 (setq show-paren-style 'mixed)
-;; Disable hard tabs
-(setq-default indent-tabs-mode nil)
 ;; Disable startup image
 (setq inhibit-startup-message t)
 ;; Force to use y-or-n-p
 (fset 'yes-or-no-p 'y-or-n-p)
 ;; ??
 (setq system-uses-terminfo nil)
-(setq-default tab-width 4)
 ;; scroll down compilation buffer when new output is available.
 (setq compilation-scroll-output t)
 ;; sort with ignoring case.
