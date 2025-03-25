@@ -1077,6 +1077,34 @@ unless you specify the optional argument: FORCE-REVERTING to true."
              :state ,#'consult--file-state))
     (setq consult-buffer-sources (append consult-buffer-sources
                                          '(my-git-files-source)))
+
+    ;; TODO: not working yet
+    (defun my-catkin-packages (env-sh)
+      ;; env-sh can be a remote file.
+      (let ((local-env-sh (if (file-remote-p env-sh)
+                              (tramp-file-name-localname (tramp-dissect-file-name env-sh))
+                            env-sh))
+            )
+        (let ((rospack-command (format "%s rospack list" env-sh)))
+          (let ((default-directory (or (file-remote-p env-sh) default-directory)))
+            (let ((rospack-process (start-file-process "rospack" (get-buffer-create "*rospack*")
+                                                       local-env-sh "rospack" "list")))
+              (set-process-sentinel rospack-process
+                                    (lambda (process event)
+                                      (message "event: %s" event)
+                                      (when (equal event "finished\n")
+                                        (let ((rospack-list-output (with-current-buffer (get-buffer "*rospack*")
+                                                                     (buffer-string))))
+                                          ;; rospack-list-output  packagename package-path
+                                          (mapcar #'(lambda (rospack-line)
+                                                      (let ((splitted-line (split-string rospack-line " ")))
+                                                        (message "package-path: %s" (cadr splitted-line))))
+                                                  (split-string rospack-list-output "\n"))
+                                        ;; (message "Process: %s had the event '%s'" process event))))
+                                          )
+                                        ))))))))
+
+
     )
   )
 
