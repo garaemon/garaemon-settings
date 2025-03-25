@@ -1078,7 +1078,22 @@ unless you specify the optional argument: FORCE-REVERTING to true."
     (setq consult-buffer-sources (append consult-buffer-sources
                                          '(my-git-files-source)))
 
+
     ;; TODO: not working yet
+    (defun my-run-rospack (env-sh &rest commands)
+      ;; env-sh can be a remote file.
+      (let ((local-env-sh (if (file-remote-p env-sh)
+                              (tramp-file-name-localname (tramp-dissect-file-name env-sh))
+                            env-sh)))
+        (let ((default-directory (or (file-remote-p env-sh) default-directory)))
+            (with-temp-buffer
+              (let ((rospack-process (apply #'start-file-process "rospack" (current-buffer)
+                                            local-env-sh "rospack" commands)))
+                (set-process-sentinel rospack-process
+                                      (lambda (process event)
+                                        (when (equal event "finished\n")
+                                          (buffer-string)))))))))
+
     (defun my-catkin-packages (env-sh)
       ;; env-sh can be a remote file.
       (let ((local-env-sh (if (file-remote-p env-sh)
@@ -1087,14 +1102,14 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             )
         (let ((rospack-command (format "%s rospack list" env-sh)))
           (let ((default-directory (or (file-remote-p env-sh) default-directory)))
-            (let ((rospack-process (start-file-process "rospack" (get-buffer-create "*rospack*")
+            (with-temp-buffer
+            (let ((rospack-process (start-file-process "rospack" (current-buffer)
                                                        local-env-sh "rospack" "list")))
               (set-process-sentinel rospack-process
                                     (lambda (process event)
                                       (message "event: %s" event)
                                       (when (equal event "finished\n")
-                                        (let ((rospack-list-output (with-current-buffer (get-buffer "*rospack*")
-                                                                     (buffer-string))))
+                                        (let ((rospack-list-output (buffer-string)))
                                           ;; rospack-list-output  packagename package-path
                                           (mapcar #'(lambda (rospack-line)
                                                       (let ((splitted-line (split-string rospack-line " ")))
@@ -1102,7 +1117,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
                                                   (split-string rospack-list-output "\n"))
                                         ;; (message "Process: %s had the event '%s'" process event))))
                                           )
-                                        ))))))))
+                                        )))))))))
 
 
     )
