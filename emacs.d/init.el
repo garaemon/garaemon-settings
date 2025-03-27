@@ -949,7 +949,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package diff-hl :ensure t
-  :custom (diff-hl-disable-on-remote t)
+  :custom (diff-hl-disable-on-remote nil)
   :config (global-diff-hl-mode))
 
 
