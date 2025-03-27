@@ -1050,7 +1050,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :ensure t
   :bind
   ("C-x b" . consult-buffer)
-  ("C-s" . consult-line)
   ("M-s" . consult-grep)
   :config
   (progn
@@ -1248,6 +1247,20 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package sx :ensure t)
+
+;; Use swiper for C-s, not consult-line.
+;; consult-lien has some issues:
+;; * does not highlight the matched texts on the same buffer.
+;; * does not work well sometimes especially for large files.
+(use-package swiper :ensure t
+  :bind
+  ("C-s" . 'swiper-isearch)
+  ("C-c C-r" . #'ivy-resume)
+  :config
+  (ivy-mode)
+  (setopt ivy-use-virtual-buffers t)
+  (setopt enable-recursive-minibuffers t)
+  )
 
 (use-package markdown-mode :ensure t
   :config (progn
