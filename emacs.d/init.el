@@ -1526,6 +1526,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :config (progn
             (global-undo-tree-mode)
             (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
+            (add-to-list 'undo-tree-incompatible-major-modes #'magit-status-mode)
             )
   )
 
