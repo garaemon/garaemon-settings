@@ -1816,7 +1816,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package emojify :ensure t
   :if (display-graphic-p)
-  :hook (after-init . global-emojify-mode)
   )
 
 (use-package gcmh :ensure t
