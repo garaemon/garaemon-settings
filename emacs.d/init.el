@@ -1299,13 +1299,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook (c++-mode . modern-c++-font-lock-mode))
 
 (use-package multiple-cursors :ensure t
-  :config (progn
-            (global-set-key (kbd "<C-M-return>") 'mc/edit-lines)
-            (global-set-key (kbd "C-M-j") 'mc/edit-lines)
-
-            (global-set-key (kbd "<C-M-down>") 'mc/mark-next-like-this)
-            (global-set-key (kbd "<C-M-up>") 'mc/mark-previous-like-this)
-            )
+  :bind
+  (("<C-M-return>" . 'mc/edit-lines)
+   ("C-M-j" . 'mc/edit-lines)
+   ("<C-M-down>" . 'mc/mark-next-like-this)
+   ("<C-M-up>" . 'mc/mark-previous-like-this)
+   )
   )
 
 (use-package switch-buffer-functions :ensure t)
