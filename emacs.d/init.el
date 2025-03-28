@@ -1257,7 +1257,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("C-s" . 'swiper-isearch)
   ("C-c C-r" . #'ivy-resume)
   :config
-  (ivy-mode)
   (setopt ivy-use-virtual-buffers t)
   (setopt enable-recursive-minibuffers t)
   )
