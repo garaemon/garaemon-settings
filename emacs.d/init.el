@@ -1052,74 +1052,81 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("C-x b" . consult-buffer)
   ("M-s" . consult-grep)
   :config
-  (progn
-    (defun my-get-git-files ()
-      (let ((root-dir (vc-root-dir)))
-        (when root-dir
-          (with-temp-buffer
-            (let ((default-directory root-dir))
-              ;; Change default-directory to the root directory of the git project. This is because
-              ;; git ls-files returns the paths relative from the current working directory.
-              (vc-git-command (current-buffer) t nil "ls-files"))
-            (let ((local-file-names (split-string (buffer-string) "\n" t)))
-              ;; TODO: cannot open the remote files
-              ;; local-file-names is a relative path from root-dir.
-              (mapcar #'(lambda (local-file)
-                          (file-name-concat root-dir local-file))
-                      local-file-names))))))
+  (defun my-get-git-files ()
+    (let ((root-dir (vc-root-dir)))
+      (when root-dir
+        (with-temp-buffer
+          (let ((default-directory root-dir))
+            ;; Change default-directory to the root directory of the git project. This is because
+            ;; git ls-files returns the paths relative from the current working directory.
+            (vc-git-command (current-buffer) t nil "ls-files"))
+          (let ((local-file-names (split-string (buffer-string) "\n" t)))
+            ;; local-file-names is a relative path from root-dir.
+            (mapcar #'(lambda (local-file)
+                        (file-name-concat root-dir local-file))
+                    local-file-names))))))
 
-    (setq my-git-files-source
-          `( :name "Git Files"
-             :narrow ?g
-             :category 'file
-             :items ,#'my-get-git-files
-             :state ,#'consult--file-state))
-    (setq consult-buffer-sources (append consult-buffer-sources
-                                         '(my-git-files-source)))
+  (setq my-git-files-source
+        `( :name "Git Files"
+           :narrow ?g
+           :category 'file
+           :items ,#'my-get-git-files
+           :state ,#'consult--file-state))
+  (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source)))
 
+  (defun my-consult-async-process (program process-function &rest program-args)
+    "Create a consult dynamic collection by running PROGRAM asynchronously.
 
-    ;; TODO: not working yet
-    (defun my-run-rospack (env-sh &rest commands)
-      ;; env-sh can be a remote file.
-      (let ((local-env-sh (if (file-remote-p env-sh)
-                              (tramp-file-name-localname (tramp-dissect-file-name env-sh))
-                            env-sh)))
-        (let ((default-directory (or (file-remote-p env-sh) default-directory)))
+PROGRAM is the executable file path (can be local or remote via Tramp).
+PROCESS-FUNCTION is a function called with the raw string output of PROGRAM.
+It should return a list of candidate strings.
+PROGRAM-ARGS are the command-line arguments passed to PROGRAM.
+
+The collection runs PROGRAM, processes its output with PROCESS-FUNCTION,
+filters the results based on user input, and passes them to the callback."
+    (lexical-let ((local-program (if (file-remote-p program)
+                                     (tramp-file-name-localname (tramp-dissect-file-name program))
+                                   program))
+                  (program program)
+                  (program-args program-args)
+                  (process-function process-function))
+      (consult--dynamic-collection
+          (lambda (input callback)
             (with-temp-buffer
-              (let ((rospack-process (apply #'start-file-process "rospack" (current-buffer)
-                                            local-env-sh "rospack" commands)))
-                (set-process-sentinel rospack-process
-                                      (lambda (process event)
-                                        (when (equal event "finished\n")
-                                          (buffer-string)))))))))
-
-    (defun my-catkin-packages (env-sh)
-      ;; env-sh can be a remote file.
-      (let ((local-env-sh (if (file-remote-p env-sh)
-                              (tramp-file-name-localname (tramp-dissect-file-name env-sh))
-                            env-sh))
-            )
-        (let ((rospack-command (format "%s rospack list" env-sh)))
-          (let ((default-directory (or (file-remote-p env-sh) default-directory)))
-            (with-temp-buffer
-            (let ((rospack-process (start-file-process "rospack" (current-buffer)
-                                                       local-env-sh "rospack" "list")))
-              (set-process-sentinel rospack-process
-                                    (lambda (process event)
-                                      (message "event: %s" event)
-                                      (when (equal event "finished\n")
-                                        (let ((rospack-list-output (buffer-string)))
-                                          ;; rospack-list-output  packagename package-path
-                                          (mapcar #'(lambda (rospack-line)
-                                                      (let ((splitted-line (split-string rospack-line " ")))
-                                                        (message "package-path: %s" (cadr splitted-line))))
-                                                  (split-string rospack-list-output "\n"))
-                                        ;; (message "Process: %s had the event '%s'" process event))))
-                                          )
-                                        )))))))))
+              ;; if program is a remote file, we have to set default-directory to run process on the
+              ;; remote host.
+              (let ((default-directory (or (file-remote-p program) default-directory)))
+                (apply #'process-file local-program nil (current-buffer) nil program-args)
+                ;; TODO: check return code
+                (let* ((program-output (buffer-string))
+                       (items (funcall process-function program-output))
+                       ;; find the path matches input. Why cannott consult-buffer handle matching?
+                       (filtered-items (cl-remove-if-not (lambda (path) (string-match-p input path))
+                                                         items)))
+                  (funcall callback filtered-items))))))))
 
 
-    )
+  (defun my-process-rospack-list (env-sh program-output)
+    "Process PROGRAM-OUTPUT from a 'rospack list'-like command.
+
+ENV-SH is a path used to determine if the context is remote (e.g., a ROS setup script).
+PROGRAM-OUTPUT is the raw string output, expected to contain lines of
+'package_name /path/to/package'.
+
+Returns a list of full package paths, adding a remote prefix
+if ENV-SH indicates a remote path. Relies on the helper function
+`my-separate-rospack-package-name-and-path`."
+    (let* ((rospackage-paths
+            (mapcar #'(lambda (rospack-line)
+                        ;; rospack-line := pacakge_name path/to/package
+                        (cadr (string-split rospack-line " ")))
+                    (split-string program-output "\n" t)))
+           ;; Append remote prefix if needed
+           (file-prefix (or (file-remote-p env-sh) ""))
+           (full-matched-package-paths
+            (mapcar #'(lambda (path) (message "%s%s" file-prefix path))
+                    rospackage-paths)))
+      full-matched-package-paths))
   )
 
 (use-package emacs
