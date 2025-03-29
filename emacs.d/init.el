@@ -1904,7 +1904,8 @@ Optional argument ARGS ."
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
-        (setq gptel-model 'gemini-2.0-flash-thinking-exp-01-21
+        ;; (setq gptel-model 'gemini-2.0-flash-thinking-exp-01-21
+        (setq gptel-model 'gemini-2.5-pro-exp-03-25
               gptel-backend (gptel-make-gemini "Gemini"
                  :key gemini-key
                  :stream t))
