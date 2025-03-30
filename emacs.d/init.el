@@ -1238,6 +1238,41 @@ if ENV-SH indicates a remote path. Relies on the helper function
             (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
             (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
             (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
+
+            ;; Rewrite magit-branch-read-args to automatically insert YYYY.MM.DD- as prefix
+            ;; of new branch names.
+            (defun magit-branch-read-args (prompt &optional default-start)
+              (if magit-branch-read-upstream-first
+                  (let ((choice (magit-read-starting-point prompt nil default-start)))
+                    (cond
+                     ((magit-rev-verify choice)
+                      (list (magit-read-string-ns
+                             (if magit-completing-read--silent-default
+                                 (format "%s (starting at `%s')" prompt choice)
+                               "Name for new branch")
+                             (or
+                              ;; Original implementation
+                              (let ((def (string-join (cdr (split-string choice "/")) "/")))
+                                (and (member choice (magit-list-remote-branch-names))
+                                     (not (member def (magit-list-local-branch-names)))
+                                     def))
+                              ;; Patch zone. If the original implementation returns nil, we use
+                              ;; YYYY.MM.DD- prefix as default.
+                              (format-time-string "%Y.%m.%d-")
+                              ))
+                            choice))
+                     ((eq magit-branch-read-upstream-first 'fallback)
+                      (list choice
+                            (magit-read-starting-point prompt choice default-start)))
+                     ((user-error "Not a valid starting-point: %s" choice))))
+                (let ((branch (magit-read-string-ns (concat prompt " named"))))
+                  (if (magit-branch-p branch)
+                      (magit-branch-read-args
+                       (format "Branch `%s' already exists; pick another name" branch)
+                       default-start)
+                    (list branch (magit-read-starting-point prompt branch default-start))))))
+
+
             )
   )
 
