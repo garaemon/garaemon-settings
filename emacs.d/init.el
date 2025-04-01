@@ -1546,7 +1546,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package tramp
   :config (progn
-            (setq tramp-debug-buffer nil
+            (setq tramp-debug-buffer t
                   tramp-verbose 6
                   tramp-default-method "ssh")
             (setq tramp-pipe-stty-settings "")
@@ -1590,38 +1590,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :config (progn
             (which-key-mode)
             (which-key-setup-side-window-bottom)
-            )
-  )
-
-(use-package win-switch :ensure t
-  :if (not (getenv "TRAVIS"))
-  :custom
-  (win-switch-idle-time 1.5)
-  (win-switch-window-threshold 1)
-  :config (progn
-            ;; switching window
-            (win-switch-set-keys '("k") 'up)
-            (win-switch-set-keys '("j") 'down)
-            (win-switch-set-keys '("h") 'left)
-            (win-switch-set-keys '("l") 'right)
-            (win-switch-set-keys '("o") 'next-window)
-            (win-switch-set-keys '("p") 'previous-window)
-            ;; resizing
-            (win-switch-set-keys '("K") 'enlarge-vertically)
-            (win-switch-set-keys '("J") 'shrink-vertically)
-            (win-switch-set-keys '("H") 'shrink-horizontally)
-            (win-switch-set-keys '("L") 'enlarge-horizontally)
-            ;; split
-            (win-switch-set-keys '("3") 'split-horizontally)
-            (win-switch-set-keys '("2") 'split-vertically)
-            (win-switch-set-keys '("0") 'delete-window)
-            (win-switch-set-keys '(" ") 'other-frame)
-            (win-switch-set-keys '("u" [return]) 'exit)
-            (win-switch-set-keys '("\M-\C-g") 'emergency-exit)
-            ;; replace C-x o
-            (global-set-key (kbd "C-x o") 'win-switch-dispatch)
-            ;;(global-set-key (kbd "C-x p")
-            ;; (win-switch-dispatch-with 'win-switch-previous-window))
             )
   )
 
