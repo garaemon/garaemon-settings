@@ -824,6 +824,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook ((typescript-mode . #'lsp))
   )
 
+(use-package lsp-ui :ensure t)
+
 (use-package flycheck :ensure t
   :requires (thingopt)
   :config (progn
