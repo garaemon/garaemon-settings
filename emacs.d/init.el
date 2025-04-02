@@ -820,6 +820,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (setq-default display-fill-column-indicator-column 100)
   (global-display-fill-column-indicator-mode))
 
+(use-package lsp-mode :ensure t
+  :hook ((typescript-mode . #'lsp))
+  )
+
 (use-package flycheck :ensure t
   :requires (thingopt)
   :config (progn
@@ -1911,6 +1915,8 @@ Optional argument ARGS ."
                  :stream t))
       ))
   )
+
+(use-package typescript-mode :ensure t)
 
 (use-package persistent-scratch :ensure t
   :config (persistent-scratch-setup-default))
