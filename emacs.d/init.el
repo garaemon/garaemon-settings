@@ -821,7 +821,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (global-display-fill-column-indicator-mode))
 
 (use-package lsp-mode :ensure t
-  :hook ((typescript-mode . #'lsp))
+  :hook ((typescript-mode . #'lsp)
+         (yaml-mode . #'lsp))
   )
 
 (use-package lsp-ui :ensure t)
