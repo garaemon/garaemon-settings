@@ -822,7 +822,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package lsp-mode :ensure t
   :hook ((typescript-mode . #'lsp)
-         (yaml-mode . #'lsp))
+         (yaml-mode . #'lsp)
+         (python-mode . #'lsp))
   )
 
 (use-package lsp-ui :ensure t)
@@ -841,11 +842,11 @@ unless you specify the optional argument: FORCE-REVERTING to true."
             )
   )
 
-(use-package flycheck-eglot
-  :ensure t
-  :after (flycheck eglot)
-  :config
-  (global-flycheck-eglot-mode 1))
+;; (use-package flycheck-eglot
+;;   :ensure t
+;;   :after (flycheck eglot)
+;;   :config
+;;   (global-flycheck-eglot-mode 1))
 
 (use-package flyspell :ensure t
   :if nil
@@ -1218,16 +1219,21 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package eglot
   :ensure t
   :config
-  (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
+  ;;(add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) "ccls"))
-  (setq-default eglot-workspace-configuration
-                '((:pylsp . (:configurationSources
-                             ["flake8"] :plugins
-                             (:pycodestyle (:enabled nil) :mccabe (:enabled nil) :flake8
-                                           (:enabled t))))))
+  ;; (setq-default eglot-workspace-configuration
+  ;;               '((:pylsp  (:plugins
+  ;;                            (:pycodestyle (:enabled :json-false))
+  ;;                            (:mccabe (:enabled :jason-false))
+  ;;                            (:flake8 (:enabled :jason-false))
+  ;;                            (:yapf (:enabled t))
+  ;;                            (:pylint (:enabled t))
+  ;;                             ))
+  ;;                 ))
 
   :hook
-  ((python-mode . eglot-ensure)
+  (
+   ;;(python-mode . eglot-ensure)
    (c-mode . eglot-ensure)
    (c++-mode . eglot-ensure)
    ))
