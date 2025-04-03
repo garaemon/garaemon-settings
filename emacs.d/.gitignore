@@ -36,3 +36,6 @@ elpy/
 company-statistics-cache.el
 
 projectile-bookmarks.eld
+.persistent-scratch
+history
+ellama-sessions/
