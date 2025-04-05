@@ -1882,7 +1882,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
                         ))
   )
 
-;; (use-package multi-vterm :ensure t)
+(use-package multi-vterm :ensure t)
 
 (use-package vterm-toggle :ensure t
   :config
