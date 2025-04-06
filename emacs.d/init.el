@@ -1211,6 +1211,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package imenus :ensure t)
 
+(use-package jinja2-mode :ensure t
+  :bind (:map jinja2-mode-map
+              ;; Do not allow jinja2-mode to take over M-o.
+              ("M-o" . 'other-window-or-split))
+  )
+
 (use-package json-mode :ensure t :defer t)
 
 (use-package less-css-mode :ensure t :defer t)
