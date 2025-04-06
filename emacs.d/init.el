@@ -823,7 +823,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package lsp-mode :ensure t
   :hook ((typescript-mode . #'lsp)
          (yaml-mode . #'lsp)
-         (python-mode . #'lsp))
+         (python-mode . #'lsp)
+         (shell-script-mode . #'lsp))
   )
 
 (use-package lsp-ui :ensure t)
