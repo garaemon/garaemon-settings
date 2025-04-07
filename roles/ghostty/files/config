@@ -1,4 +1,7 @@
 font-family = "Monaco Nerd Font Mono"
+# To fix the glitches of Japanese texts.
+# See https://github.com/ghostty-org/ghostty/discussions/5203
+font-feature = -dlig
 theme = "Spacedust"
 cursor-style = block
 cursor-style-blink = true
