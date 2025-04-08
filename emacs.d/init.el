@@ -431,6 +431,13 @@
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 ;;; }}}
 
+;;; Directories to ignored from grep {{{
+(use-package grep
+  :config
+  (add-to-list 'grep-find-ignored-directories "node_modules")
+  (add-to-list 'grep-find-ignored-directories "__pycache__"))
+;;; }}}
+
 ;;; insert date at current cursor {{{
 (defun insert-date ()
   "Insert date at current cursor."
