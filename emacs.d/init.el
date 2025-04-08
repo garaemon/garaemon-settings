@@ -1439,7 +1439,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
             ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
             ;;
             (setq org-capture-templates
-                  '(("m" "Memo" entry (file+headline
+                  '(("t" "Todo" entry (file+headline (lambda () (concat org-directory "Tasks.org"))
+                                                     "Tasks")
+                     "* TODO %?\n  CAPTURED_AT: %a\n  %i\n"
+                     )
+                    ("m" "Memo" entry (file+headline
                                        (lambda () (concat org-directory "INBOX.org"))
                                        "Memos")
                      "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
