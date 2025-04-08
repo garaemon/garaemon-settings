@@ -1939,7 +1939,8 @@ Optional argument ARGS ."
       ))
   )
 
-(use-package typescript-mode :ensure t)
+(use-package typescript-mode :ensure t
+  :custom (typescript-indent-level 2))
 
 (use-package persistent-scratch :ensure t
   :config (persistent-scratch-setup-default))
