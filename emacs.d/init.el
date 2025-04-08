@@ -631,6 +631,13 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; Need to run (all-the-icons-install-fonts)
 (use-package all-the-icons :ensure t)
 
+(use-package aider :ensure t
+  :custom (aider-args '("--dark-mode" "--model" "gemini/gemini-2.5-pro-exp-03-25"))
+  :config
+  (if (getenv "EMACS_GEMINI_KEY")
+      (setenv "GEMINI_API_KEY" (getenv "EMACS_GEMINI_KEY")))
+  )
+
 (use-package anzu :ensure t
   :defer t
   :config (progn
