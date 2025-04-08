@@ -435,7 +435,10 @@
 (use-package grep
   :config
   (add-to-list 'grep-find-ignored-directories "node_modules")
-  (add-to-list 'grep-find-ignored-directories "__pycache__"))
+  (add-to-list 'grep-find-ignored-directories "__pycache__")
+  (add-to-list 'grep-find-ignored-directories "build")
+  (add-to-list 'grep-find-ignored-directories "dist")
+  )
 ;;; }}}
 
 ;;; insert date at current cursor {{{
