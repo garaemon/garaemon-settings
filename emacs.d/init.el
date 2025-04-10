@@ -1438,6 +1438,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package org :ensure t
   :config (progn
             (setq org-directory (expand-file-name "~/GoogleDrive/org/"))
+            (setq org-agenda-files  '("~/GoogleDrive/org/"))
             ;; The special characters for org-capture-templates are described below:
             ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
             ;;
