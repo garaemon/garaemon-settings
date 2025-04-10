@@ -1587,7 +1587,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package tramp
   :config (progn
-            (setq tramp-debug-buffer t
+            (setq tramp-debug-buffer nil
                   tramp-verbose 6
                   tramp-default-method "ssh")
             (setq tramp-pipe-stty-settings "")
