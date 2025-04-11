@@ -1918,7 +1918,15 @@ if ENV-SH indicates a remote path. Relies on the helper function
                         ))
   )
 
-(use-package multi-vterm :ensure t)
+(use-package multi-vterm :ensure t
+  :config
+  ;; Make a new vterm terminal from local computer
+  (defun my-new-local-multi-vterm ()
+    (interactive)
+    (let ((default-directory (getenv "HOME")))
+      (multi-vterm)))
+  :bind (("C-M-t" . 'my-new-local-multi-vterm))
+  )
 
 (use-package vterm-toggle :ensure t
   :config
