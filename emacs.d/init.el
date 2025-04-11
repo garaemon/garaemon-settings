@@ -649,7 +649,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package auto-highlight-symbol
   :ensure t
-  :config (global-auto-highlight-symbol-mode t))
+  :config (global-auto-highlight-symbol-mode t)
+  :bind (:map auto-highlight-symbol-mode-map
+              ;; Do not allow ahs to steal M--
+              ("M--" . 'text-scale-)))
 
 (use-package backup-each-save :ensure t
   :config (progn
