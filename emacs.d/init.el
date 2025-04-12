@@ -1602,6 +1602,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
               (interactive)
               (tramp-cleanup-all-buffers)
               (call-interactively 'tramp-cleanup-all-connections))
+            (add-to-list 'tramp-remote-path "~/.local/bin")
+            ;; tramp does not expand ~
+            (add-to-list 'tramp-remote-path "/home/rueda/.local/bin")
             ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
             ;; (customize-set-variable
             ;;  'tramp-ssh-controlmaster-options
