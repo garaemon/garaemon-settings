@@ -845,6 +845,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (yaml-mode . #'lsp)
          (python-mode . #'lsp)
          (shell-script-mode . #'lsp))
+  :init
+  (add-to-list 'lsp-disabled-clients 'ruff-lsp)
   )
 
 (use-package lsp-ui :ensure t)
