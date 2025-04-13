@@ -15,7 +15,9 @@
     dest: ~/.emacs.d
     state: link
 
-- when: build_emacs
+- when:
+    - build_emacs
+    - ansible_os_family == "Debian"
   block:
     # Build emacs from source for Ubuntu. If install the latest emacs from ppa package,
     # ros-emacs may fail to be installed because of dependency to emacs-25.
@@ -23,21 +25,22 @@
       apt:
         name:
           - build-essential
+          - libgccjit-14-dev
           - ccache
           - libgnutls28-dev
           - libtiff-dev
-          - libgtk-3-dev
+          - libxpm-dev
+          - libgif-dev
+          - libgtk-4-dev
           - libtool # for libvterm
           - libtool-bin # for libvterm
       become: true
-      when: ansible_os_family == "Debian"
 
     - name: Clone the latest emacs
       git:
         repo: https://github.com/emacs-mirror/emacs
         dest: ~/gprog/emacs
-        version: emacs-28.1
-      when: ansible_os_family == "Debian"
+        version: emacs-30.1
 
     - name: Prepare configure for the latest emacs
       command: ./autogen.sh
@@ -46,7 +49,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-      when: ansible_os_family == "Debian"
 
     - name: Configure the latest emacs
       command: ./configure --prefix=$HOME/.local
@@ -55,7 +57,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-      when: ansible_os_family == "Debian"
 
     - name: Build the latest emacs
       command: make
@@ -64,7 +65,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-      when: ansible_os_family == "Debian"
 
     - name: Install the latest emacs
       command: make install
@@ -73,25 +73,3 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-      when: ansible_os_family == "Debian"
-
-    # # vterm
-    # - name: Clone libvterm
-    #   git:
-    #     repo: https://github.com/akermu/emacs-libvterm
-    #     dest: ~/gprog/emacs-libvterm
-
-    # - name: mkdir libvterm/build
-    #   file:
-    #     path: ~/gprog/emacs-libvterm/build
-    #     state: directory
-
-    # - name: configure libvterm
-    #   command: cmake ..
-    #   args:
-    #     chdir: ~/gprog/emacs-libvterm/build
-
-    # - name: build libvterm
-    #   command: make
-    #   args:
-    #     chdir: ~/gprog/emacs-libvterm/build
