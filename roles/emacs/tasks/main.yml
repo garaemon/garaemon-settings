@@ -15,12 +15,47 @@
     dest: ~/.emacs.d
     state: link
 
+- name: Set required Emacs version variable
+  ansible.builtin.set_fact:
+    required_emacs_version: "30.1"
+    emacs_install_path: "{{ ansible_user_dir }}/.local/bin/emacs"
+
+- name: Check if target Emacs exists
+  ansible.builtin.stat:
+    path: "{{ emacs_install_path }}"
+  register: emacs_stat
+
+- name: Get installed Emacs version if it exists
+  ansible.builtin.command:
+    cmd: "{{ emacs_install_path }} --batch --eval \"(message emacs-version)\""
+  register: emacs_version_output
+  when: emacs_stat.stat.exists
+  changed_when: false
+  failed_when: false
+
+- name: Parse installed Emacs version
+  ansible.builtin.set_fact:
+    installed_emacs_version: "{{ emacs_version_output.stderr | trim }}"
+  when:
+    - emacs_stat.stat.exists
+    - emacs_version_output.rc == 0
+    - emacs_version_output.stderr is defined
+    - emacs_version_output.stderr != ""
+
+- name: Emacs version
+  debug:
+    msg: "emacs vresion is {{ installed_emacs_version }}"
+
 - when:
+    - not (
+            emacs_stat.stat.exists and
+            installed_emacs_version is defined and
+            installed_emacs_version is version(required_emacs_version, '>=') and
+            ansible_distribution != 'Ubuntu' and
+            ansible_distribution != 'Debian'
+          )
     - build_emacs
-    - ansible_os_family == "Debian"
   block:
-    # Build emacs from source for Ubuntu. If install the latest emacs from ppa package,
-    # ros-emacs may fail to be installed because of dependency to emacs-25.
     - name: Install packages to build emacs
       apt:
         name:
@@ -35,13 +70,11 @@
           - libtool # for libvterm
           - libtool-bin # for libvterm
       become: true
-
     - name: Clone the latest emacs
       git:
         repo: https://github.com/emacs-mirror/emacs
         dest: ~/gprog/emacs
         version: emacs-30.1
-
     - name: Prepare configure for the latest emacs
       command: ./autogen.sh
       args:
@@ -49,7 +82,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-
     - name: Configure the latest emacs
       command: ./configure --prefix=$HOME/.local
       args:
@@ -57,7 +89,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-
     - name: Build the latest emacs
       command: make
       args:
@@ -65,7 +96,6 @@
       environment:
         CC: ccache gcc
         CXX: ccache g++
-
     - name: Install the latest emacs
       command: make install
       args:

@@ -45,7 +45,7 @@
     pyenv_init_shell: true
     # Python versions to install
     pyenv_python_versions:
-      - "3.9.4"
+      - "3.12.10"
     # Set global pyenv version
     pyenv_global:
       - "system"
