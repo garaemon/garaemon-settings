@@ -42,10 +42,6 @@
     - emacs_version_output.stderr is defined
     - emacs_version_output.stderr != ""
 
-- name: Emacs version
-  debug:
-    msg: "emacs vresion is {{ installed_emacs_version }}"
-
 - when:
     - not (
             emacs_stat.stat.exists and
