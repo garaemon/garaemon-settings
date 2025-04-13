@@ -55,17 +55,8 @@
     - name: Install packages to build emacs
       apt:
         name:
-          - build-essential
-          - libgccjit-14-dev
-          - ccache
-          - libgnutls28-dev
-          - libtiff-dev
-          - libxpm-dev
-          - libgif-dev
-          - libgtk-4-dev
-          - libx11-dev
-          - libtool # for libvterm
-          - libtool-bin # for libvterm
+          - emacs
+        state: build-dep
       become: true
     - name: Clone the latest emacs
       git:
