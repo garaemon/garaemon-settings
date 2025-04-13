@@ -39,6 +39,7 @@
     - typescript-language-server
     - ghostty
   vars:
+    build_emacs: true
     # pyenv variables
     # Initialize shell profile scripts
     pyenv_init_shell: true
