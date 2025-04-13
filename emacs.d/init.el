@@ -1479,6 +1479,29 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package org-download :ensure t
   :config (setq-default org-download-image-dir "~/GoogleDrive/org/images"))
 
+(use-package org-roam
+  :ensure t
+  :config
+  (let ((org-roam-directory "~/GoogleDrive/org/org-roam/"))
+    (if (not (file-exists-p org-roam-directory))
+        (make-directory org-roam-directory)))
+  (org-roam-db-autosync-mode)
+  :custom
+  (org-roam-db-update-method 'immediate)
+  (org-roam-db-location "~/.emacs.d/org-roam.db")
+  (org-roam-directory "~/GoogleDrive/org/org-roam/")
+  (org-roam-index-file "~/GoogleDrive/org/org-roam/Index.org")
+  (org-roam-capture-templates
+   '(("d" "default" plain "%?"
+     :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                        "#+title: ${title}\n#+date: %T\n#+filetags: \n")
+     :unnarrowed t)))
+  :bind
+  (
+   ("C-c n f" . 'org-roam-node-find)
+   ("C-c n i" . 'org-roam-node-insert)
+  ))
+
 (use-package outshine :ensure t
   :hook (outline-minor-mode . outshine-hook-function))
 
