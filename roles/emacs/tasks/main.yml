@@ -63,6 +63,7 @@
           - libxpm-dev
           - libgif-dev
           - libgtk-4-dev
+          - libx11-dev
           - libtool # for libvterm
           - libtool-bin # for libvterm
       become: true
