@@ -39,3 +39,4 @@ projectile-bookmarks.eld
 .persistent-scratch
 history
 ellama-sessions/
+*.db
