@@ -1644,6 +1644,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package trr :ensure t)
 
 (use-package undo-tree :ensure t
+  :if nil
   :custom
   (undo-tree-visualizer-diff nil)
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
@@ -1653,6 +1654,17 @@ if ENV-SH indicates a remote path. Relies on the helper function
             (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
             (add-to-list 'undo-tree-incompatible-major-modes #'magit-status-mode)
             )
+  )
+
+(use-package vundo :ensure t
+  :bind (
+         ("C-x u" . vundo)
+         (:map vundo-mode-map
+               ("C-f" . 'vundo-forward)
+               ("C-b" . 'vundo-backward)
+               ("C-p" . 'vundo-previous)
+               ("C-n" . 'vundo-next)
+               ))
   )
 
 (use-package uniquify
