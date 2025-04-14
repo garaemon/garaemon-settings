@@ -1476,7 +1476,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
             )
   )
 
-(use-package org-tempo :ensure t)
+(use-package org-tempo :after org)
 
 (use-package org-download :ensure t
   :config (setq-default org-download-image-dir "~/GoogleDrive/org/images"))
