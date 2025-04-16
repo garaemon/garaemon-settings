@@ -1514,6 +1514,17 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package org-modern :ensure t
   :custom
   (org-modern-block-indent t)
+  (org-modern-fold-stars
+   '(("▶" . "▼")
+     ("▷" . "▽")
+     ("▸" . "▾")
+     ("▹" . "▿")))
+  (org-modern-checkbox
+   '((?X . "✔")
+     (?- . "┅")
+     (?\s . " ")))
+  ;; TODO: update the face configuration to make stars visible
+  (org-modern-hide-stars nil)
   :config (global-org-modern-mode)
   )
 
