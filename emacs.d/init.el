@@ -1441,6 +1441,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package org :ensure t
+  :custom (org-startup-indented t)
   :config (progn
             (setq org-directory (expand-file-name "~/GoogleDrive/org/"))
             (setq org-agenda-files  '("~/GoogleDrive/org/"))
@@ -1487,6 +1488,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (let ((org-roam-directory "~/GoogleDrive/org/org-roam/"))
     (if (not (file-exists-p org-roam-directory))
         (make-directory org-roam-directory)))
+  (require 'org-roam-dailies)
   (org-roam-db-autosync-mode)
   :custom
   (org-roam-db-update-method 'immediate)
@@ -1502,7 +1504,18 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (
    ("C-c n f" . 'org-roam-node-find)
    ("C-c n i" . 'org-roam-node-insert)
-  ))
+   :map org-roam-dailies-map
+   ("Y" . org-roam-dailies-capture-yesterday)
+   ("T" . org-roam-dailies-capture-tomorrow)
+   )
+  :bind-keymap ("C-c n d" . org-roam-dailies-map)
+  )
+
+(use-package org-modern :ensure t
+  :custom
+  (org-modern-block-indent t)
+  :config (global-org-modern-mode)
+  )
 
 (use-package outshine :ensure t
   :hook (outline-minor-mode . outshine-hook-function))
