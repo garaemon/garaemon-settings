@@ -1272,8 +1272,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (("\C-cl" . 'magit-status)
          ("\C-cL" . 'magit-status))
   :config
-  (setq auto-revert-buffer-list-filter
-        'magit-auto-revert-repository-buffer-p)
+  ;; The following configuration is recommended to improve the performance of magit.
+  ;; (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p)
   (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
   ;;(remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
   (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
