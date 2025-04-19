@@ -2083,10 +2083,31 @@ Optional argument ARGS ."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
-   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default))
+   '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
+     default))
  '(package-selected-packages
-   '(persistent-scratch yatemplate yapfify yaml-mode win-switch which-key vterm-toggle volatile-highlights vertico undohist undo-tree udev-mode trr transpose-frame total-lines thingopt systemd symon sx switch-buffer-functions string-inflection sr-speedbar smartrep smart-mode-line smart-cursor-color slack rust-mode recentf-ext rainbow-delimiters qml-mode py-yapf puppet-mode protobuf-mode php-mode outshine org-download orderless nlinum neotree multiple-cursors multi-vterm modern-cpp-font-lock minimap migemo marginalia lua-mode json-mode imenus hydra hyde graphviz-dot-mode gptel google-this google-c-style go-mode gist gcmh format-all forge flycheck-eglot fill-column-indicator expand-region exec-path-from-shell esup embark-consult elpy dockerfile-mode diff-hl corfu coffee-mode cmake-mode clang-format calfw browse-at-remote bm blamer base16-theme backup-each-save anzu all-the-icons))
+   '(0x0 aider all-the-icons anzu auto-highlight-symbol backup-each-save
+         base16-theme blamer bm browse-at-remote calfw ccls
+         clang-format cmake-mode coffee-mode company-statistics
+         consult-ag corfu counsel-projectile counsel-tramp cquery
+         diff-hl dockerfile-mode elpy embark-consult esup
+         exec-path-from-shell expand-region fill-column-indicator
+         flycheck-eglot forge gcmh gist git-gutter go-mode
+         google-c-style google-this gptel graphviz-dot-mode hyde
+         imenus ivy-prescient jinja2-mode json-mode lsp-treemacs
+         lsp-ui lua-mode marginalia migemo minimap
+         modern-cpp-font-lock multi-vterm multiple-cursors neotree
+         nlinum orderless org-download org-modern org-roam outshine
+         persistent-scratch php-mode prettier-js protobuf-mode
+         puppet-mode py-yapf qml-mode rainbow-delimiters recentf-ext
+         rust-mode slack smart-cursor-color smart-mode-line smartrep
+         sr-speedbar string-inflection switch-buffer-functions sx
+         symon systemd thingopt tide total-lines transpose-frame trr
+         typescript-mode typespec-ts-mode udev-mode undo-tree undohist
+         vertico volatile-highlights vterm-toggle vundo web-mode
+         win-switch yaml-mode yatemplate))
  '(tramp-ssh-controlmaster-options
-   (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p " "-o ControlMaster=auto -o ControlPersist=yes") t))
+   (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+           "-o ControlMaster=auto -o ControlPersist=yes") t))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
