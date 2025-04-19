@@ -1476,7 +1476,17 @@ if ENV-SH indicates a remote path. Relies on the helper function
               (insert content)
               (org-capture-finalize))
             (global-set-key (kbd "C-M-c") 'org/note-right-now)
+
+            (defun my-org-mode-wrap-inline-code (start end)
+              "Wrap the region between START and END with backticks."
+              (interactive "r")
+              (let ((text (buffer-substring-no-properties start end)))
+                (delete-region start end)
+                ;; TODO: do not insert whitespaces around = if no need
+                (insert " =" text "= ")))
             )
+  :bind (:map org-mode-map
+              ("M-e" . 'my-org-mode-wrap-inline-code))
   )
 
 (use-package org-tempo :after org)
