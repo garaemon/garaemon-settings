@@ -1444,6 +1444,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
+  (org-startup-with-latex-preview t)
   :config (progn
             (setq org-directory (expand-file-name "~/Google Drive/My Drive/org/"))
             (setq org-agenda-files  (list org-directory))
