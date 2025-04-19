@@ -1445,8 +1445,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
   :config (progn
-            (setq org-directory (expand-file-name "~/GoogleDrive/org/"))
-            (setq org-agenda-files  '("~/GoogleDrive/org/"))
+            (setq org-directory (expand-file-name "~/Google Drive/My Drive/org/"))
+            (setq org-agenda-files  (list org-directory))
             ;; The special characters for org-capture-templates are described below:
             ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
             ;;
@@ -1482,12 +1482,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package org-tempo :after org)
 
 (use-package org-download :ensure t
-  :config (setq-default org-download-image-dir "~/GoogleDrive/org/images"))
+  :config (setq-default org-download-image-dir (concat org-directory "/images")))
 
 (use-package org-roam
   :ensure t
   :config
-  (let ((org-roam-directory "~/GoogleDrive/org/org-roam/"))
+  (let ((org-roam-directory (concat org-directory "org-roam/")))
     (if (not (file-exists-p org-roam-directory))
         (make-directory org-roam-directory)))
   (require 'org-roam-dailies)
@@ -1495,8 +1495,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom
   (org-roam-db-update-method 'immediate)
   (org-roam-db-location "~/.emacs.d/org-roam.db")
-  (org-roam-directory "~/GoogleDrive/org/org-roam/")
-  (org-roam-index-file "~/GoogleDrive/org/org-roam/Index.org")
+  (org-roam-directory (concat org-directory "org-roam/"))
+  (org-roam-index-file (concat org-directory "org-roam/Index.org"))
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
