@@ -4,31 +4,38 @@
     state: present
   vars:
     packages:
+      - ag
+      - alt-tab
       - aspell
-      - ccls
-      - tmux
-      - wget
-      - w3m
-      - findutils
-      - imagemagick
-      - gnu-sed
       - ccache
+      - ccls
+      - clang-format
+      - cmake
       - cmigemo
       - coreutils
       - cowsay
-      - hub
-      - ag
-      - hg
-      - mosh
-      - clang-format
-      - zlib
-      - llvm # for clangd
-      - gpg
-      - reattach-to-user-namespace
+      - emacs
+      - findutils
       - fontconfig
-      - cmake
+      - gnu-sed
+      - google-japanese-ime
+      - gpg
+      - hg
+      - hub
+      - imagemagick
+      - latexit
       - libvterm
+      - llvm # for clangd
       - mactex
+      - meshlab
+      - mosh
+      - raycast
+      - reattach-to-user-namespace
+      - tmux
+      - vlc
+      - w3m
+      - wget
+      - zlib
 #- name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
@@ -43,18 +50,3 @@
 #      - with-libvpx
 #      - with-opus
 #      - with-x265
-- name: Install homebrew cask packages
-  homebrew_cask:
-    name: "{{ packages }}"
-    state: present
-  vars:
-    packages:
-      - vlc
-      - skype
-      - google-japanese-ime
-      - meshlab
-      - emacs
-      - iterm2
-      - latexit
-      - alt-tab
-      - raycast
