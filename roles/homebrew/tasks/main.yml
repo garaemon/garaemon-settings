@@ -28,6 +28,7 @@
       - fontconfig
       - cmake
       - libvterm
+      - mactex
 #- name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
