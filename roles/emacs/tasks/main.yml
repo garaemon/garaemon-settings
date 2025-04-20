@@ -81,27 +81,15 @@
           command: ./autogen.sh
           args:
             chdir: ~/gprog/emacs
-          environment:
-            CC: ccache gcc
-            CXX: ccache g++
         - name: Configure the latest emacs
           command: ./configure --prefix=$HOME/.local
           args:
             chdir: ~/gprog/emacs
-          environment:
-            CC: ccache gcc
-            CXX: ccache g++
         - name: Build the latest emacs
-          command: make
+          command: make CC="ccache gcc" CXX="ccache g++"
           args:
             chdir: ~/gprog/emacs
-          environment:
-            CC: ccache gcc
-            CXX: ccache g++
         - name: Install the latest emacs
           command: make install
           args:
             chdir: ~/gprog/emacs
-          environment:
-            CC: ccache gcc
-            CXX: ccache g++
