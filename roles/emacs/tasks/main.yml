@@ -76,7 +76,7 @@
           git:
             repo: https://github.com/emacs-mirror/emacs
             dest: ~/gprog/emacs
-            version: emacs-30.1
+            version: "{{ emacs_version }}"
         - name: Prepare configure for the latest emacs
           command: ./autogen.sh
           args:
