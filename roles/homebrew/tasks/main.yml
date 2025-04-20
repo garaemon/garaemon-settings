@@ -29,6 +29,13 @@
       - cmake
       - libvterm
       - mactex
+      - emacs
+      - vlc
+      - meshlab
+      - latexit
+      - alt-tab
+      - raycast
+      - google-japanese-ime
 #- name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
@@ -43,18 +50,3 @@
 #      - with-libvpx
 #      - with-opus
 #      - with-x265
-- name: Install homebrew cask packages
-  homebrew_cask:
-    name: "{{ packages }}"
-    state: present
-  vars:
-    packages:
-      - vlc
-      - skype
-      - google-japanese-ime
-      - meshlab
-      - emacs
-      - iterm2
-      - latexit
-      - alt-tab
-      - raycast
