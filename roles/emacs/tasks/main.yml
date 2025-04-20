@@ -16,8 +16,8 @@
     state: link
 
 # Only for ubuntu
-- when: ansible_os_family == "Debian"
-  name: Build emacs for Debian
+- name: Build emacs for Debian
+  when: ansible_os_family == "Debian"
   block:
     - name: Set required Emacs version variable
       ansible.builtin.set_fact:
