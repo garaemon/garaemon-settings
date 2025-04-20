@@ -1485,6 +1485,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
                 (delete-region start end)
                 ;; TODO: do not insert whitespaces around = if no need
                 (insert " =" text "= ")))
+
+            (defun my-org-schedule-if-todo ()
+              "When an item becomes a TODO state, schedule it for today if not already scheduled."
+              (when (equal org-state "TODO")
+                (org-schedule nil (with-temp-buffer (org-time-stamp '(16)) (buffer-string)))))
+
+            (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
+            (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
             )
   :bind (:map org-mode-map
               ("M-e" . 'my-org-mode-wrap-inline-code))
