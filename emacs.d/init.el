@@ -1503,6 +1503,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
         (make-directory org-roam-directory)))
   (require 'org-roam-dailies)
   (org-roam-db-autosync-mode)
+  (add-to-list 'org-agenda-files org-roam-directory)
   :custom
   (org-roam-db-update-method 'immediate)
   (org-roam-db-location "~/.emacs.d/org-roam.db")
