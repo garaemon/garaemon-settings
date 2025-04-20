@@ -48,7 +48,7 @@ jobs:
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ github.job }}-${{ runner.os }}-${{ github.ref }}
+          key: ${{ github.job }}-${{ runner.os }}
 
       - name: Install Ansible
         run: pip install ansible
