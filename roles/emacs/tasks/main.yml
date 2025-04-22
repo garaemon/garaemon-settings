@@ -85,8 +85,13 @@
           command: ./configure --prefix=$HOME/.local
           args:
             chdir: ~/gprog/emacs
+        - name: Decide parallel job numbers
+          set_fact:
+            emacs_build_parallel_jobs: "{{ [ansible_processor_count, 4] | min }}"
+        - debug:
+            msg: "make builds emacs with -j {{ emacs_build_parallel_jobs }}"
         - name: Build the latest emacs
-          command: make CC="ccache gcc" CXX="ccache g++" -j {{ [ansible_processor_count, 4] | min }}
+          command: make CC="ccache gcc" CXX="ccache g++" -j {{ emacs_build_parallel_jobs }}
           args:
             chdir: ~/gprog/emacs
         - name: Install the latest emacs
