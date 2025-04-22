@@ -1490,7 +1490,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
          ("C-c a" . 'org-agenda)
          ("C-M-c" . 'org/note-right-now)
          :map org-mode-map
-              ("M-e" . 'my-org-mode-wrap-inline-code))
+         ("M-e" . 'my-org-mode-wrap-inline-code))
   )
 
 (use-package org-tempo :after org)
