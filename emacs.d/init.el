@@ -1445,92 +1445,92 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview t)
-  :config (progn
-            (setq org-directory (expand-file-name "~/Google Drive/My Drive/org/"))
-            (add-to-list 'org-agenda-files org-directory)
-            ;; The special characters for org-capture-templates are described below:
-            ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
-            ;;
-            (setq org-capture-templates
-                  '(("t" "Todo" entry (file+headline (lambda () (concat org-directory "Tasks.org"))
-                                                     "Tasks")
-                     "* TODO %?\n  CAPTURED_AT: %a\n  %i\n"
-                     )
-                    ("m" "Memo" entry (file+headline
-                                       (lambda () (concat org-directory "INBOX.org"))
-                                       "Memos")
-                     "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
-                     :unarrowed t
-                     :prepend t
-                     )
-                    )
-                  )
-            (global-set-key (kbd "C-c c") 'org-capture)
-            ;; Is it ok? minor-modes such as magit takes over this key bind?
-            (global-set-key (kbd "C-c C-c") 'org-capture)
-            (global-set-key (kbd "C-c a") 'org-agenda)
-            ;; Write content to org-capture from MINI Buffer
-            ;; http://ganmacs.hatenablog.com/entry/2016/04/01/164245
-            (defun org/note-right-now (content)
-              (interactive "sContent for org-capture quick memo: ")
-              (org-capture nil "m")
-              (insert content)
-              (org-capture-finalize))
-            (global-set-key (kbd "C-M-c") 'org/note-right-now)
+  (org-directory (expand-file-name "~/Google Drive/My Drive/org/"))
+  ;; The special characters for org-capture-templates are described below:
+  ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
+  (org-capture-templates
+   '(("t" "Todo" entry (file+headline (lambda () (concat org-directory "Tasks.org"))
+                                      "Tasks")
+      "* TODO %?\n  CAPTURED_AT: %a\n  %i\n"
+      )
+     ("m" "Memo" entry (file+headline
+                        (lambda () (concat org-directory "INBOX.org"))
+                        "Memos")
+      "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
+      :unarrowed t
+      :prepend t)
+     ))
+  :config
+  (add-to-list 'org-agenda-files org-directory)
+  ;; Write content to org-capture from MINI Buffer
+  ;; http://ganmacs.hatenablog.com/entry/2016/04/01/164245
+  (defun org/note-right-now (content)
+    (interactive "sContent for org-capture quick memo: ")
+    (org-capture nil "m")
+    (insert content)
+    (org-capture-finalize))
 
-            (defun my-org-mode-wrap-inline-code (start end)
-              "Wrap the region between START and END with backticks."
-              (interactive "r")
-              (let ((text (buffer-substring-no-properties start end)))
-                (delete-region start end)
-                ;; TODO: do not insert whitespaces around = if no need
-                (insert " =" text "= ")))
+  (defun my-org-mode-wrap-inline-code (start end)
+    "Wrap the region between START and END with backticks."
+    (interactive "r")
+    (let ((text (buffer-substring-no-properties start end)))
+      (delete-region start end)
+      ;; TODO: do not insert whitespaces around = if no need
+      (insert " =" text "= ")))
 
-            (defun my-org-schedule-if-todo ()
-              "When an item becomes a TODO state, schedule it for today if not already scheduled."
-              (when (equal org-state "TODO")
-                (org-schedule nil (with-temp-buffer (org-time-stamp '(16)) (buffer-string)))))
+  (defun my-org-schedule-if-todo ()
+    "When an item becomes a TODO state, schedule it for today if not already scheduled."
+    (when (equal org-state "TODO")
+      (org-schedule nil (with-temp-buffer (org-time-stamp '(16)) (buffer-string)))))
 
-            (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
-            (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
-            )
-  :bind (:map org-mode-map
+  (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
+  (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
+  :bind (("C-c c" . 'org-capture)
+         ("C-c C-c" . 'org-capture)
+         ("C-c a" . 'org-agenda)
+         ("C-M-c" . 'org/note-right-now)
+         :map org-mode-map
               ("M-e" . 'my-org-mode-wrap-inline-code))
   )
 
 (use-package org-tempo :after org)
 
-(use-package org-download :ensure t
-  :config (setq-default org-download-image-dir (concat org-directory "/images")))
+(use-package org-download :ensure t :after org
+  :custom (org-download-image-dir (concat org-directory "/images"))
+  )
 
 (use-package org-roam
   :ensure t
-  :config
-  (let ((org-roam-directory (concat org-directory "org-roam/")))
-    (if (not (file-exists-p org-roam-directory))
-        (make-directory org-roam-directory)))
-  (require 'org-roam-dailies)
-  (org-roam-db-autosync-mode)
-  (add-to-list 'org-agenda-files org-roam-directory)
-  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :custom
   (org-roam-db-update-method 'immediate)
   (org-roam-db-location "~/.emacs.d/org-roam.db")
   (org-roam-directory (concat org-directory "org-roam/"))
-  (org-roam-index-file (concat org-directory "org-roam/Index.org"))
+  (org-roam-index-file (concat org-roam-directory "Index.org"))
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                         "#+title: ${title}\n#+date: %T\n#+filetags: \n")
      :unnarrowed t)))
+  :config
+  (if (not (file-exists-p org-roam-directory))
+      (make-directory org-roam-directory))
+  (org-roam-db-autosync-mode)
+  (add-to-list 'org-agenda-files org-roam-directory)
   :bind
-  (
-   ("C-c n f" . 'org-roam-node-find)
-   ("C-c n i" . 'org-roam-node-insert)
-   :map org-roam-dailies-map
-   ("Y" . org-roam-dailies-capture-yesterday)
-   ("T" . org-roam-dailies-capture-tomorrow)
-   )
+  (("C-c n f" . 'org-roam-node-find)
+   ("C-c n i" . 'org-roam-node-insert))
+  )
+
+(use-package org-roam-dailies :after org-roam
+  :custom
+  (org-roam-dailies-capture-templates
+   ;; Insert timestamp automatically for org-agenda
+   '(("d" "default" entry
+      "* %T %?\n "
+      :target (file+head "%<%Y-%m-%d>.org"
+                         "#+title: %<%Y-%m-%d>\n"))))
+  :config
+  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :bind-keymap ("C-c n d" . org-roam-dailies-map)
   )
 
@@ -2095,27 +2095,7 @@ Optional argument ARGS ."
  '(custom-safe-themes
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
      default))
- '(package-selected-packages
-   '(0x0 aider all-the-icons anzu auto-highlight-symbol backup-each-save
-         base16-theme blamer bm browse-at-remote calfw ccls
-         clang-format cmake-mode coffee-mode company-statistics
-         consult-ag corfu counsel-projectile counsel-tramp cquery
-         diff-hl dockerfile-mode elpy embark-consult esup
-         exec-path-from-shell expand-region fill-column-indicator
-         flycheck-eglot forge gcmh gist git-gutter go-mode
-         google-c-style google-this gptel graphviz-dot-mode hyde
-         imenus ivy-prescient jinja2-mode json-mode lsp-treemacs
-         lsp-ui lua-mode marginalia migemo minimap
-         modern-cpp-font-lock multi-vterm multiple-cursors neotree
-         nlinum orderless org-download org-modern org-roam outshine
-         persistent-scratch php-mode prettier-js protobuf-mode
-         puppet-mode py-yapf qml-mode rainbow-delimiters recentf-ext
-         rust-mode slack smart-cursor-color smart-mode-line smartrep
-         sr-speedbar string-inflection switch-buffer-functions sx
-         symon systemd thingopt tide total-lines transpose-frame trr
-         typescript-mode typespec-ts-mode udev-mode undo-tree undohist
-         vertico volatile-highlights vterm-toggle vundo web-mode
-         win-switch yaml-mode yatemplate))
+ '(package-selected-packages nil)
  '(tramp-ssh-controlmaster-options
    (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
            "-o ControlMaster=auto -o ControlPersist=yes") t))
