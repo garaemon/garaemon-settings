@@ -1447,7 +1447,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-with-latex-preview t)
   :config (progn
             (setq org-directory (expand-file-name "~/Google Drive/My Drive/org/"))
-            (setq org-agenda-files  (list org-directory))
+            (add-to-list 'org-agenda-files org-directory)
             ;; The special characters for org-capture-templates are described below:
             ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
             ;;
@@ -1512,6 +1512,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (require 'org-roam-dailies)
   (org-roam-db-autosync-mode)
   (add-to-list 'org-agenda-files org-roam-directory)
+  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :custom
   (org-roam-db-update-method 'immediate)
   (org-roam-db-location "~/.emacs.d/org-roam.db")
