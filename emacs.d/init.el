@@ -484,7 +484,7 @@
           (let ((split-num (/ (window-body-width) column-width)))
             (split-window-horizontally-n split-num))
         (split-window-horizontally))))
-  (win-switch-dispatch))
+  (other-window 1))
 
 (global-set-key "\M-o" 'other-window-or-split)
 (global-set-key "\C-x@" '(lambda ()
