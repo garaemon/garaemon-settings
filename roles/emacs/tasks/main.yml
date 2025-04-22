@@ -86,7 +86,7 @@
           args:
             chdir: ~/gprog/emacs
         - name: Build the latest emacs
-          command: make CC="ccache gcc" CXX="ccache g++"
+          command: make CC="ccache gcc" CXX="ccache g++" -j {{ [ansible_processor_count, 4] | min }}
           args:
             chdir: ~/gprog/emacs
         - name: Install the latest emacs
