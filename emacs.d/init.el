@@ -1795,19 +1795,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package hl-line
   :config (progn
-            (defun global-hl-line-timer-function ()
-              "Callback function for hl-line timer."
-              (global-hl-line-unhighlight-all)
-              (let ((global-hl-line-mode t))
-                (global-hl-line-highlight)))
-            (setq global-hl-line-timer
-                  (run-with-idle-timer 0.03 t 'global-hl-line-timer-function))
-            ;; http://bit.ly/2FqHdIK
-            ;; is it required?
-            (add-hook 'after-make-frame-functions
-                      (lambda (frame)
-                        (message "after-make-frame-functions")
-                        (hl-line-color-on-after-init frame)))
+            (global-hl-line-mode t)
             )
   )
 
@@ -2002,6 +1990,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
                         (setq buffer-face-mode-face '(:family "Monaco Nerd Font Mono"))
                         (buffer-face-mode)
                         (display-fill-column-indicator-mode -1)
+                        ;; Disable hl-line-mode for vterm-mode. (hl-line-mode -1) does not work.
+                        (setq-local global-hl-line-mode nil)
                         ))
   )
 
