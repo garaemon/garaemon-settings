@@ -1972,6 +1972,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package systemd :ensure t)
 
+(use-package browse-url)
+
 (use-package browse-at-remote :ensure t
   :bind (("C-c b" . 'echo-url-at-remote))
   :config
@@ -1983,6 +1985,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 ;; vterm
 (use-package vterm
   :ensure t
+  :after browse-url
   :bind (:map vterm-mode-map
               ("\C-h" . 'vterm-send-backspace)
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
@@ -1992,6 +1995,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ("\C-c n" . 'multi-vterm-next)
               ("\C-c p" . 'multi-vterm-prev)
               ("\C-@" . 'my-vterm-toggle)
+              ("<mouse-1>" . 'browse-url-at-point)
               )
   :config
   (setq vterm-max-scrollback  10000)
