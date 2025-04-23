@@ -397,8 +397,10 @@
 ;;; }}}
 
 ;;; ruby {{{
-(add-to-list 'auto-mode-alist '("\\.thor$" . ruby-mode))
-(defvar ruby-indent-level 2)
+(use-package ruby-mode
+  :mode ("\\.thor$" . ruby-mode)
+  :custom (ruby-indent-level 2)
+  )
 ;;; }}}
 
 ;;; objective-c {{{
