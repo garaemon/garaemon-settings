@@ -358,15 +358,11 @@ function catkin-test-results() {
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
-# Cache pyenv init - in .pyenvrc to speed up
-if [ -e "$HOME/.pyenv" ]; then
-  if [ ! -e "$HOME/.pyenvrc" ]; then
-      pyenv init - > "$HOME/.pyenvrc"
-  fi
-  source "$HOME/.pyenvrc"
+if [ -e "$HOME/pyenv/.pyenvrc" ]; then
+  source "$HOME/pyenv/.pyenvrc"
 fi
-if [ -e "$HOME/.pyenv/completions/pyenv.zsh" ]; then
-  source $HOME/.pyenv/completions/pyenv.zsh
+if [ -e "$HOME/pyenv/completions/pyenv.zsh" ]; then
+  source $HOME/pyenv/completions/pyenv.zsh
 fi
 
 if which gh > /dev/null; then
@@ -504,11 +500,6 @@ if [ -z "$TMUX" ]; then
       echo "${RED}[tmux] No tmux session${DEFAULT}"
   fi
 fi
-# BEGIN ANSIBLE MANAGED BLOCK: pyenv
-if [ -e "$HOME/.pyenv/.pyenvrc" ]; then
-  source $HOME/.pyenv/.pyenvrc
-fi
-# END ANSIBLE MANAGED BLOCK: pyenv
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # ssh agent
