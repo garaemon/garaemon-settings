@@ -1487,6 +1487,17 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
   (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
   (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
+  ;; org-babel
+  (org-babel-do-load-languages 'org-babel-load-languages
+                               '((plantuml . t)
+                                 (sql . t)
+                                 (gnuplot . t)
+                                 (emacs-lisp . t)
+                                 (python . t)
+                                 (shell . t)
+                                 (js . t)
+                                 (org . t)
+                                 (ruby . t)))
   :bind (("C-c c" . 'org-capture)
          ("C-c C-c" . 'org-capture)
          ("C-c a" . 'org-agenda)
