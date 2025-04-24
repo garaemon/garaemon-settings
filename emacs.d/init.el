@@ -2026,7 +2026,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package vterm-toggle :ensure t
   :config
   ;; Overwrite vterm-toggle. If the vterm buffer is not focused, focus to the buffer.
-  (defun my-vterm-toggle(&optional args)
+  (defun my-vterm-toggle (&optional args)
     "Vterm toggle.
 Optional argument ARGS ."
     (interactive "P")
