@@ -719,6 +719,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package udev-mode :ensure t)
 
 (use-package python
+  :custom (gud-pdb-command-name "python3 -m pdb")
   :config
   (let ((ipython-executable (if (executable-find "ipython2") "ipython2" "ipython3")))
     ;; Verify ipython version
