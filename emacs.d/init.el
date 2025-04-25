@@ -849,7 +849,21 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (python-mode . #'lsp)
          (shell-script-mode . #'lsp))
   :config
-  (add-to-list 'lsp-disabled-clients 'ruff-lsp)
+  (add-to-list 'lsp-disabled-clients 'ruff)
+  :custom
+  (lsp-pylsp-plugins-yapf-enabled t)
+  (lsp-pylsp-plugins-black-enabled nil)
+  (lsp-pylsp-plugins-autopep8-enabled nil)
+  ;; (lsp-python-server-settings
+  ;;    '((pylsp . ((plugins . ((yapf . ((enabled . t)))
+  ;;                            (black . ((enabled . nil)))
+  ;;                            (autopep8 . ((enabled . nil))))
+  ;;                         )))))p
+  ;; debug
+  ;; (lsp-log-io t)
+  ;; (lsp-log-process-output t)
+  ;; :init
+  ;; (setq lsp-pylsp-server-command '("pylsp" "--verbose" "--log-file" "pylsp.log"))
   )
 
 (use-package lsp-ui :ensure t)
