@@ -1063,6 +1063,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
               ("<tab>" . corfu-next)
               ("S-<tab>" . corfu-previous)
               )
+  :hook ((lsp-mode-hook . (lambda ()
+                            (when (bound-and-true-p lsp-ui-mode)
+                              (corfu-mode -1)))))
   )
 
 
