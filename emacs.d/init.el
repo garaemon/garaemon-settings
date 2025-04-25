@@ -791,6 +791,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :config (progn
             (add-to-list 'exec-path-from-shell-variables "CMAKE_PREFIX_PATH")
             (add-to-list 'exec-path-from-shell-variables "EMACS_GEMINI_KEY")
+            (add-to-list 'exec-path-from-shell-variables "PYTHONPATH")
+            (add-to-list 'exec-path-from-shell-variables "PYTHONHOME")
             (exec-path-from-shell-initialize))
   )
 
