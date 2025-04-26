@@ -1483,11 +1483,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
       :unarrowed t
       :prepend t)
      ))
-  ;; C-c C-q to insert tag
-  (org-tag-alist '((:startgroup . nil)
-                   ("@work" . ?w)
-                   ("@home" . ?h)
-                   (:endgroup . nil)))
+  ;; Use C-c C-q to insert tag.
+  ;; To update the tag list from the agenda files, I set
+  ;; `org-complete-tags-always-offer-all-agenda-tags' t.
+  (org-complete-tags-always-offer-all-agenda-tags t)
   :config
   (add-to-list 'org-agenda-files org-directory)
   ;; Write content to org-capture from MINI Buffer
