@@ -1482,6 +1482,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
       :unarrowed t
       :prepend t)
      ))
+  ;; C-c C-q to insert tag
+  (org-tag-alist '((:startgroup . nil)
+                   ("@work" . ?w)
+                   ("@home" . ?h)
+                   (:endgroup . nil)))
   :config
   (add-to-list 'org-agenda-files org-directory)
   ;; Write content to org-capture from MINI Buffer
