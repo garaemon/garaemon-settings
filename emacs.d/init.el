@@ -645,9 +645,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package anzu :ensure t
   :defer t
-  :config (progn
-            (global-anzu-mode +1)
-            (setq anzu-search-threshold 1000)))
+  :config
+  (global-anzu-mode +1)
+  (setq anzu-search-threshold 1000))
 
 (use-package auto-highlight-symbol
   :ensure t
@@ -657,22 +657,22 @@ unless you specify the optional argument: FORCE-REVERTING to true."
               ("M--" . 'text-scale-)))
 
 (use-package backup-each-save :ensure t
-  :config (progn
-            (setq backup-each-save-mirror-location "~/.emacs.d/backups")
-            ;; suffix for backup file
-            (setq backup-each-save-time-format "%y%m%d_%H%M%S")
-            ;; the size limit of backup files
-            (setq backup-each-save-size-limit 5000000)
-            ;; backup all the files
-            (setq backup-each-save-filter-function 'identity))
+  :config
+  (setq backup-each-save-mirror-location "~/.emacs.d/backups")
+  ;; suffix for backup file
+  (setq backup-each-save-time-format "%y%m%d_%H%M%S")
+  ;; the size limit of backup files
+  (setq backup-each-save-size-limit 5000000)
+  ;; backup all the files
+  (setq backup-each-save-filter-function 'identity)
   :init (add-hook 'after-save #'backup-each-save)
   )
 
 (use-package base16-theme :ensure t
-  :config (progn
-            (setq base16-distinct-fringe-background nil)
-            (if (display-graphic-p)
-                (load-theme 'base16-solarized-dark t)))
+  :config
+  (setq base16-distinct-fringe-background nil)
+  (if (display-graphic-p)
+      (load-theme 'base16-solarized-dark t))
   )
 
 (use-package blamer
@@ -701,10 +701,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :bind ((("M-^" . 'bm-toggle)
           ("C-M-n" . 'bm-next)
           ("C-M-p" . 'bm-previous)))
-  :config (progn
-            (global-set-key [?\C-\M-\ ] 'bm-toggle) ;not work
-            (set-face-background bm-face "orange")
-            (set-face-foreground bm-face "black"))
+  :config
+  (global-set-key [?\C-\M-\ ] 'bm-toggle) ;not work
+  (set-face-background bm-face "orange")
+  (set-face-foreground bm-face "black")
   )
 
 (use-package calfw :ensure t :defer t)
@@ -766,80 +766,79 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package elpy :ensure t :if nil
-  :config (progn
-            (elpy-enable)
-            ;; use ipython for interactive shell
-            (setq python-shell-interpreter "ipython"
-                  python-shell-interpreter-args "-i --no-confirm-exit"
-                  python-shell-enable-font-lock nil)
-            (defun elpy-shell-send-region-or-statement ()
-              "Send region or statement to python shell."
-              (interactive)
-              (if (use-region-p)
-                  (progn
-                    (elpy-shell-send-region-or-buffer)
-                    (deactivate-mark))
-                (elpy-shell-send-statement)
-                ))
-            (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
-            (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
-            (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
-            (add-hook 'elpy-mode-hook (lambda () (highlight-indentation-mode -1)))
-            ))
+  :config
+  (elpy-enable)
+  ;; use ipython for interactive shell
+  (setq python-shell-interpreter "ipython"
+        python-shell-interpreter-args "-i --no-confirm-exit"
+        python-shell-enable-font-lock nil)
+  (defun elpy-shell-send-region-or-statement ()
+    "Send region or statement to python shell."
+    (interactive)
+    (if (use-region-p)
+        (progn
+          (elpy-shell-send-region-or-buffer)
+          (deactivate-mark))
+      (elpy-shell-send-statement)
+      ))
+  (define-key python-mode-map "\C-x\C-E" 'elpy-shell-send-region-or-statement)
+  (define-key python-mode-map "\C-cE" 'elpy-shell-switch-to-shell)
+  (global-set-key "\C-cE" 'elpy-shell-switch-to-shell)
+  (add-hook 'elpy-mode-hook (lambda () (highlight-indentation-mode -1)))
+  )
 
 (use-package exec-path-from-shell :ensure t
-  :config (progn
-            (add-to-list 'exec-path-from-shell-variables "CMAKE_PREFIX_PATH")
-            (add-to-list 'exec-path-from-shell-variables "EMACS_GEMINI_KEY")
-            (add-to-list 'exec-path-from-shell-variables "PYTHONPATH")
-            (add-to-list 'exec-path-from-shell-variables "PYTHONHOME")
-            (exec-path-from-shell-initialize))
+  :config
+  (add-to-list 'exec-path-from-shell-variables "CMAKE_PREFIX_PATH")
+  (add-to-list 'exec-path-from-shell-variables "EMACS_GEMINI_KEY")
+  (add-to-list 'exec-path-from-shell-variables "PYTHONPATH")
+  (add-to-list 'exec-path-from-shell-variables "PYTHONHOME")
+  (exec-path-from-shell-initialize)
   )
 
 (use-package expand-region :ensure t
-  :config (progn
-            (when (<= emacs-major-version 24)
-              (defmacro save-mark-and-excursion
-                  (&rest
-                   body)
-                `(save-excursion ,@body)))
-            (global-set-key (kbd "C-^") 'er/expand-region)
-            (global-set-key (kbd "C-M-^") 'er/contract-region)
-            ;; Dummy functions to ignore deprecated functions.
-            (defun org-outline-overlay-data (&rest args))
-            (defun org-set-outline-overlay-data (&rest args)))
+  :config
+  (when (<= emacs-major-version 24)
+    (defmacro save-mark-and-excursion
+        (&rest
+         body)
+      `(save-excursion ,@body)))
+  (global-set-key (kbd "C-^") 'er/expand-region)
+  (global-set-key (kbd "C-M-^") 'er/contract-region)
+  ;; Dummy functions to ignore deprecated functions.
+  (defun org-outline-overlay-data (&rest args))
+  (defun org-set-outline-overlay-data (&rest args))
   )
 
 ;; It does not work with lsp mode
 (use-package fill-column-indicator :ensure t :if (<= emacs-major-version 26)
   :hook ((prog-mode) . fci-mode)
-  :config (progn
-            (setq-default fci-rule-column 100)
-            ;; Automatically hide fci ruler if window is too narrow
-            ;; See http://bit.ly/2Yw3XiE
-            (defvar i42/fci-mode-suppressed nil)
-            (make-variable-buffer-local 'i42/fci-mode-suppressed)
+  :config
+  (setq-default fci-rule-column 100)
+  ;; Automatically hide fci ruler if window is too narrow
+  ;; See http://bit.ly/2Yw3XiE
+  (defvar i42/fci-mode-suppressed nil)
+  (make-variable-buffer-local 'i42/fci-mode-suppressed)
 
-            (defun fci-width-workaround (frame)
-              (let ((fci-enabled (symbol-value 'fci-mode))
-                    (fci-column (if fci-rule-column fci-rule-column fill-column))
-                    (current-window-list (window-list frame 'no-minibuf)))
-                (dolist (window current-window-list)
-                  (with-selected-window window
-                    (if i42/fci-mode-suppressed
-                        (when (and (eq fci-enabled nil)
-                                   (< fci-column
-                                      (+ (window-width) (window-hscroll))))
-                          (setq i42/fci-mode-suppressed nil)
-                          (turn-on-fci-mode))
-                      ;; i42/fci-mode-suppressed == nil
-                      (when (and fci-enabled fci-column
-                                 (>= fci-column
-                                     (+ (window-width) (window-hscroll))))
-                        (setq i42/fci-mode-suppressed t)
-                        (turn-off-fci-mode)))))))
-            (add-hook 'window-size-change-functions 'fci-width-workaround)
-            )
+  (defun fci-width-workaround (frame)
+    (let ((fci-enabled (symbol-value 'fci-mode))
+          (fci-column (if fci-rule-column fci-rule-column fill-column))
+          (current-window-list (window-list frame 'no-minibuf)))
+      (dolist (window current-window-list)
+        (with-selected-window window
+          (if i42/fci-mode-suppressed
+              (when (and (eq fci-enabled nil)
+                         (< fci-column
+                            (+ (window-width) (window-hscroll))))
+                (setq i42/fci-mode-suppressed nil)
+                (turn-on-fci-mode))
+            ;; i42/fci-mode-suppressed == nil
+            (when (and fci-enabled fci-column
+                       (>= fci-column
+                           (+ (window-width) (window-hscroll))))
+              (setq i42/fci-mode-suppressed t)
+              (turn-off-fci-mode)))))))
+  (add-hook 'window-size-change-functions 'fci-width-workaround)
   )
 (when (>= emacs-major-version 27)
   (setq-default display-fill-column-indicator-column 100)
@@ -872,16 +871,15 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package flycheck :ensure t
   :requires (thingopt)
-  :config (progn
-            (setq flycheck-check-syntax-automatically '(mode-enabled save))
-            ;; flycheck runs emacs with `-Q` option to lint emacs lisp codes. It means that
-            ;; load-path is not taken into account in linting.
-            ;; By assiging `flycheck-emacs-lisp-load-path` to 'inherit, flycheck runs emacs with
-            ;; `load-path` inherited from the current emacs.
-            (setq flycheck-emacs-lisp-load-path 'inherit)
-            (global-flycheck-mode t)
-            (flycheck-add-next-checker 'python-flake8 'python-pylint)
-            )
+  :config
+  (setq flycheck-check-syntax-automatically '(mode-enabled save))
+  ;; flycheck runs emacs with `-Q` option to lint emacs lisp codes. It means that
+  ;; load-path is not taken into account in linting.
+  ;; By assiging `flycheck-emacs-lisp-load-path` to 'inherit, flycheck runs emacs with
+  ;; `load-path` inherited from the current emacs.
+  (setq flycheck-emacs-lisp-load-path 'inherit)
+  (global-flycheck-mode t)
+  (flycheck-add-next-checker 'python-flake8 'python-pylint)
   )
 
 ;; (use-package flycheck-eglot
@@ -892,97 +890,96 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package flyspell :ensure t
   :if nil
-  :config (progn
-            ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
-            ;; if (aspell installed) { use aspell}
-            ;; else if (hunspell installed) { use hunspell }
-            ;; whatever spell checker I use, I always use English dictionary
-            ;; I prefer use aspell because:
-            ;; 1. aspell is older
-            ;; 2. looks Kevin Atkinson still get some road map for aspell:
-            ;; @see http://lists.gnu.org/archive/html/aspell-announce/2011-09/msg00000.html
-            (defun flyspell-detect-ispell-args (&optional run-together)
-              "If RUN-TOGETHER is true, spell check the CamelCase words."
-              (let (args)
-                (cond
-                 ((string-match  "aspell$" ispell-program-name)
-                  ;; Force the English dictionary for aspell
-                  ;; Support Camel Case spelling check (tested with aspell 0.6)
-                  (setq args (list "--sug-mode=ultra" "--lang=en_US"))
-                  (if run-together
-                      (setq args (append args
-                                         '("--run-together" "--run-together-limit=5" "--run-together-min=2")))))
-                 ((string-match "hunspell$" ispell-program-name)
-                  ;; Force the English dictionary for hunspell
-                  (setq args "-d en_US")))
-                args))
+  :config
+  ;; see http://blog.binchen.org/posts/what-s-the-best-spell-check-set-up-in-emacs.html
+  ;; if (aspell installed) { use aspell}
+  ;; else if (hunspell installed) { use hunspell }
+  ;; whatever spell checker I use, I always use English dictionary
+  ;; I prefer use aspell because:
+  ;; 1. aspell is older
+  ;; 2. looks Kevin Atkinson still get some road map for aspell:
+  ;; @see http://lists.gnu.org/archive/html/aspell-announce/2011-09/msg00000.html
+  (defun flyspell-detect-ispell-args (&optional run-together)
+    "If RUN-TOGETHER is true, spell check the CamelCase words."
+    (let (args)
+      (cond
+       ((string-match  "aspell$" ispell-program-name)
+        ;; Force the English dictionary for aspell
+        ;; Support Camel Case spelling check (tested with aspell 0.6)
+        (setq args (list "--sug-mode=ultra" "--lang=en_US"))
+        (if run-together
+            (setq args (append args
+                               '("--run-together" "--run-together-limit=5" "--run-together-min=2")))))
+       ((string-match "hunspell$" ispell-program-name)
+        ;; Force the English dictionary for hunspell
+        (setq args "-d en_US")))
+      args))
 
-            (cond
-             ((executable-find "aspell")
-              ;; you may also need `ispell-extra-args'
-              (setq ispell-program-name "aspell"))
-             ((executable-find "hunspell")
-              (setq ispell-program-name "hunspell")
+  (cond
+   ((executable-find "aspell")
+    ;; you may also need `ispell-extra-args'
+    (setq ispell-program-name "aspell"))
+   ((executable-find "hunspell")
+    (setq ispell-program-name "hunspell")
 
-              ;; Please note that `ispell-local-dictionary` itself will be passed to hunspell cli with "-d"
-              ;; it's also used as the key to lookup ispell-local-dictionary-alist
-              ;; if we use different dictionary
-              (setq ispell-local-dictionary "en_US")
-              (setq ispell-local-dictionary-alist
-                    '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']"
-                       nil ("-d" "en_US") nil utf-8))))
-             (t (setq ispell-program-name nil)))
+    ;; Please note that `ispell-local-dictionary` itself will be passed to hunspell cli with "-d"
+    ;; it's also used as the key to lookup ispell-local-dictionary-alist
+    ;; if we use different dictionary
+    (setq ispell-local-dictionary "en_US")
+    (setq ispell-local-dictionary-alist
+          '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']"
+             nil ("-d" "en_US") nil utf-8))))
+   (t (setq ispell-program-name nil)))
 
-            ;; ispell-cmd-args is useless, it's the list of *extra* arguments we will append to the ispell process when "ispell-word" is called.
-            ;; ispell-extra-args is the command arguments which will *always* be used when start ispell process
-            ;; Please note when you use hunspell, ispell-extra-args will NOT be used.
-            ;; Hack ispell-local-dictionary-alist instead.
-            (setq-default ispell-extra-args (flyspell-detect-ispell-args t))
-            ;; (setq ispell-cmd-args (flyspell-detect-ispell-args))
-            (defadvice ispell-word (around my-ispell-word activate)
-              (let ((old-ispell-extra-args ispell-extra-args))
-                (ispell-kill-ispell t)
-                (setq ispell-extra-args (flyspell-detect-ispell-args))
-                ad-do-it
-                (setq ispell-extra-args old-ispell-extra-args)
-                (ispell-kill-ispell t)
-                ))
+  ;; ispell-cmd-args is useless, it's the list of *extra* arguments we will append to the ispell process when "ispell-word" is called.
+  ;; ispell-extra-args is the command arguments which will *always* be used when start ispell process
+  ;; Please note when you use hunspell, ispell-extra-args will NOT be used.
+  ;; Hack ispell-local-dictionary-alist instead.
+  (setq-default ispell-extra-args (flyspell-detect-ispell-args t))
+  ;; (setq ispell-cmd-args (flyspell-detect-ispell-args))
+  (defadvice ispell-word (around my-ispell-word activate)
+    (let ((old-ispell-extra-args ispell-extra-args))
+      (ispell-kill-ispell t)
+      (setq ispell-extra-args (flyspell-detect-ispell-args))
+      ad-do-it
+      (setq ispell-extra-args old-ispell-extra-args)
+      (ispell-kill-ispell t)
+      ))
 
-            (defadvice flyspell-auto-correct-word (around my-flyspell-auto-correct-word activate)
-              (let ((old-ispell-extra-args ispell-extra-args))
-                (ispell-kill-ispell t)
-                ;; use emacs original arguments
-                (setq ispell-extra-args (flyspell-detect-ispell-args))
-                ad-do-it
-                ;; restore our own ispell arguments
-                (setq ispell-extra-args old-ispell-extra-args)
-                (ispell-kill-ispell t)
-                ))
+  (defadvice flyspell-auto-correct-word (around my-flyspell-auto-correct-word activate)
+    (let ((old-ispell-extra-args ispell-extra-args))
+      (ispell-kill-ispell t)
+      ;; use emacs original arguments
+      (setq ispell-extra-args (flyspell-detect-ispell-args))
+      ad-do-it
+      ;; restore our own ispell arguments
+      (setq ispell-extra-args old-ispell-extra-args)
+      (ispell-kill-ispell t)
+      ))
 
-            (defun text-mode-hook-setup ()
-              ;; Turn off RUN-TOGETHER option when spell check text-mode
-              (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
-            (add-hook 'text-mode-hook 'text-mode-hook-setup)
+  (defun text-mode-hook-setup ()
+    ;; Turn off RUN-TOGETHER option when spell check text-mode
+    (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
+  (add-hook 'text-mode-hook 'text-mode-hook-setup)
 
-            (defun add-word-to-ispell-dictionary ()
-              "Add word to dictionary file for ispell."
-              (interactive)
-              (let ((user-dictionary-file (expand-file-name "~/.aspell.en.pws")))
-                (let ((buf (find-file-noselect user-dictionary-file)))
-                  (if (not (file-exists-p user-dictionary-file))
-                      (with-current-buffer buf
-                        (insert "personal_ws-1.1 en 0\n")
-                        (save-buffer)))
-                  (let ((theword (thing-at-point 'word)))
-                    (if theword
-                        (with-current-buffer buf
-                          (goto-char (point-max))
-                          (insert (format "%s\n" theword))
-                          (save-buffer))))
-                  )))
+  (defun add-word-to-ispell-dictionary ()
+    "Add word to dictionary file for ispell."
+    (interactive)
+    (let ((user-dictionary-file (expand-file-name "~/.aspell.en.pws")))
+      (let ((buf (find-file-noselect user-dictionary-file)))
+        (if (not (file-exists-p user-dictionary-file))
+            (with-current-buffer buf
+              (insert "personal_ws-1.1 en 0\n")
+              (save-buffer)))
+        (let ((theword (thing-at-point 'word)))
+          (if theword
+              (with-current-buffer buf
+                (goto-char (point-max))
+                (insert (format "%s\n" theword))
+                (save-buffer))))
+        )))
 
-            (global-set-key "\M-." 'add-word-to-ispell-dictionary)
-            )
+  (global-set-key "\M-." 'add-word-to-ispell-dictionary)
   )
 
 ;; (use-package flycheck-google-cpplint :ensure t)
@@ -1006,26 +1003,26 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package go-mode :ensure t :defer t)
 
 (use-package google-c-style :ensure t
-  :config (progn
-            (setf (cdr (assoc 'c-basic-offset google-c-style)) 2)
-            )
+  :config
+  (setf (cdr (assoc 'c-basic-offset google-c-style)) 2)
   :hook ((c-mode-common . google-set-c-style)
          (c-mode-common . google-make-newline-indent))
   )
 
 (use-package google-this :ensure t
-  :config (progn (global-set-key (kbd "C-x g") 'google-this-mode-submap)
-                 (global-set-key (kbd "C-c g") 'google-this)))
+  :config
+  (global-set-key (kbd "C-x g") 'google-this-mode-submap)
+  (global-set-key (kbd "C-c g") 'google-this)
+  )
 
 (use-package graphviz-dot-mode :ensure t
-  :config (progn (defun graphviz-compile-preview ()
-                   "Compile and preview graphviz dot file."
-                   (interactive)
-                   (compile compile-command)
-                   (sleep-for 1)
-                   (graphviz-dot-preview))
-                 ;;(global-set-key [f5] 'graphviz-compile-preview)
-                 )
+  :config
+  (defun graphviz-compile-preview ()
+    "Compile and preview graphviz dot file."
+    (interactive)
+    (compile compile-command)
+    (sleep-for 1)
+    (graphviz-dot-preview))
   )
 
 (use-package vertico
@@ -1216,41 +1213,40 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package hyde :ensure t
-  :config (progn
-            (setq-default jekyll-root (expand-file-name "~/gprog/garaemon.github.io"))
-            (setq-default hyde-home (expand-file-name "~/gprog/garaemon.github.io"))
-            (defun ghyde ()
-              "Run hyde mode on HYDE-HOME."
-              (interactive)
-              (hyde hyde-home))
+  :config
+  (setq-default jekyll-root (expand-file-name "~/gprog/garaemon.github.io"))
+  (setq-default hyde-home (expand-file-name "~/gprog/garaemon.github.io"))
+  (defun ghyde ()
+    "Run hyde mode on HYDE-HOME."
+    (interactive)
+    (hyde hyde-home))
 
-            (defun jekyll-new-post (title)
-              "Create a new post for jekyll with TITLE and date."
-              (interactive "MEnter post title: ")
-              (let* ((YYYY-MM-DD (format-time-string "%Y-%m-%d" nil t))
-                     (file-name (format "%s/_posts/%s-%s.md" jekyll-root YYYY-MM-DD title)))
-                ;; template header
-                (save-excursion
-                  (find-file file-name)
-                  (insert "---\n")
-                  (insert "layout: post\n")
-                  (insert (format "title: %s\n" title))
-                  (insert (format "date: %s\n" (format-time-string "%Y-%m-%dT%H:%M:%SJST")))
-                  (insert "descriptions:\n")
-                  (insert "categories:\n")
-                  (insert "- blog\n")
-                  (insert "---\n")
-                  (insert "\n"))
-                (find-file file-name)))
-            ))
+  (defun jekyll-new-post (title)
+    "Create a new post for jekyll with TITLE and date."
+    (interactive "MEnter post title: ")
+    (let* ((YYYY-MM-DD (format-time-string "%Y-%m-%d" nil t))
+           (file-name (format "%s/_posts/%s-%s.md" jekyll-root YYYY-MM-DD title)))
+      ;; template header
+      (save-excursion
+        (find-file file-name)
+        (insert "---\n")
+        (insert "layout: post\n")
+        (insert (format "title: %s\n" title))
+        (insert (format "date: %s\n" (format-time-string "%Y-%m-%dT%H:%M:%SJST")))
+        (insert "descriptions:\n")
+        (insert "categories:\n")
+        (insert "- blog\n")
+        (insert "---\n")
+        (insert "\n"))
+      (find-file file-name)))
+  )
 
 (use-package hydra :ensure t
-  :config (progn
-            (defhydra hydra-zoom (global-map "<f2>")
-              "zoom"
-              ("g" text-scale-increase "in")
-              ("l" text-scale-decrease "out"))
-            )
+  :config
+  (defhydra hydra-zoom (global-map "<f2>")
+    "zoom"
+    ("g" text-scale-increase "in")
+    ("l" text-scale-decrease "out"))
   )
 
 (use-package imenus :ensure t)
@@ -1365,28 +1361,28 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package markdown-mode :ensure t
-  :config (progn
-            (setq auto-mode-alist (cons '("\\.md" . markdown-mode) auto-mode-alist))
-            (defvar markdown-mode-map)
-            (define-key markdown-mode-map (kbd "M-p") nil)
-            (define-key markdown-mode-map (kbd "M-n") nil)
-            (define-key markdown-mode-map (kbd "C-c m") 'newline)
-            ;; do not work?
-            (setq markdown-display-remote-images t)
-            (setq markdown-max-image-size '(600 . 600))
-            (setq markdown-enable-math t)
-            ;; syntax highlight for code block
-            (setq markdown-fontify-code-blocks-natively t)
-            ;; Do not change font in code block
-            (set-face-attribute 'markdown-code-face nil
-                                :inherit 'default)
-            (set-face-attribute 'markdown-inline-code-face nil
-                                :inherit 'default
-                                :foreground (face-attribute font-lock-type-face :foreground))
-            ;; For emacs 24
-            (add-hook 'markdown-mode-hook '(lambda ()
-                                             (electric-indent-local-mode -1)))
-            ))
+  :config
+  (setq auto-mode-alist (cons '("\\.md" . markdown-mode) auto-mode-alist))
+  (defvar markdown-mode-map)
+  (define-key markdown-mode-map (kbd "M-p") nil)
+  (define-key markdown-mode-map (kbd "M-n") nil)
+  (define-key markdown-mode-map (kbd "C-c m") 'newline)
+  ;; do not work?
+  (setq markdown-display-remote-images t)
+  (setq markdown-max-image-size '(600 . 600))
+  (setq markdown-enable-math t)
+  ;; syntax highlight for code block
+  (setq markdown-fontify-code-blocks-natively t)
+  ;; Do not change font in code block
+  (set-face-attribute 'markdown-code-face nil
+                      :inherit 'default)
+  (set-face-attribute 'markdown-inline-code-face nil
+                      :inherit 'default
+                      :foreground (face-attribute font-lock-type-face :foreground))
+  ;; For emacs 24
+  (add-hook 'markdown-mode-hook '(lambda ()
+                                   (electric-indent-local-mode -1)))
+  )
 
 (add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
 (use-package markdown-dnd-images
@@ -1414,55 +1410,55 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package neotree :ensure t
   :requires (all-the-icons)
-  :config (progn
-            (global-set-key [f8] 'neotree-toggle)
-            ;; all-the-icons is required
-            (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-            (setq neo-smart-open t)
-            (add-hook 'switch-buffer-functions
-                      (lambda (prev current)
-                        (let ((neotree-buffer (neo-global--get-buffer)))
-                          (if (and
-                               ;; Ignore if new buffer is neotree
-                               (not (eq current neotree-buffer))
-                               ;; Ignore if the buffer is not assosiated with a file
-                               buffer-file-name
-                               ;; Ignore if neotree is not active
-                               (neo-global--window-exists-p))
-                              (progn
-                                (neo-buffer--change-root default-directory)
-                                (switch-to-buffer current)
-                                )
-                            )
-                          )
-                        )))
+  :config
+  (global-set-key [f8] 'neotree-toggle)
+  ;; all-the-icons is required
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+  (setq neo-smart-open t)
+  (add-hook 'switch-buffer-functions
+            (lambda (prev current)
+              (let ((neotree-buffer (neo-global--get-buffer)))
+                (if (and
+                     ;; Ignore if new buffer is neotree
+                     (not (eq current neotree-buffer))
+                     ;; Ignore if the buffer is not assosiated with a file
+                     buffer-file-name
+                     ;; Ignore if neotree is not active
+                     (neo-global--window-exists-p))
+                    (progn
+                      (neo-buffer--change-root default-directory)
+                      (switch-to-buffer current)
+                      )
+                  )
+                )
+              ))
   )
 
 (use-package nlinum :ensure t
   :if (not (functionp 'global-display-line-numbers-mode))
-  :config (progn
-            (global-nlinum-mode)
-            ;; these linum-delay and linum-schedule are required even if nlinum-mode is used?
-            (setq linum-delay t)
-            (defadvice linum-schedule (around my-linum-schedule () activate)
-              "Set scheduler of linux-mode."
-              (run-with-idle-timer 0.2 nil #'linum-update-current))
+  :config
+  (global-nlinum-mode)
+  ;; these linum-delay and linum-schedule are required even if nlinum-mode is used?
+  (setq linum-delay t)
+  (defadvice linum-schedule (around my-linum-schedule () activate)
+    "Set scheduler of linux-mode."
+    (run-with-idle-timer 0.2 nil #'linum-update-current))
 
-            ;; Use darker color when `emacsclient -nw` is used.
-            (defun linum-color-on-after-init (frame)
-              "Hook function executed after FRAME is generated."
-              (unless (display-graphic-p frame)
-                (set-face-background
-                 'linum
-                 (plist-get base16-solarized-dark-colors :base01))))
+  ;; Use darker color when `emacsclient -nw` is used.
+  (defun linum-color-on-after-init (frame)
+    "Hook function executed after FRAME is generated."
+    (unless (display-graphic-p frame)
+      (set-face-background
+       'linum
+       (plist-get base16-solarized-dark-colors :base01))))
 
-            (add-hook 'after-make-frame-functions
-                      (lambda (frame)
-                        (linum-color-on-after-init frame)))
-            )
+  (add-hook 'after-make-frame-functions
+            (lambda (frame)
+              (linum-color-on-after-init frame)))
   )
 
 (use-package org :ensure t
+  :requires (cl-lib)
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
@@ -1596,13 +1592,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package protobuf-mode :ensure t
   :init (add-to-list 'auto-mode-alist '("\\.proto$" . protobuf-mode))
-  :config (progn
-            (add-hook 'protobuf-mode-hook
-                      (lambda ()
-                        (c-add-style "my-style" '((c-basic-offset . 4)
-                                                  (indent-tabs-mode . nil))
-                                     t)))
-            )
+  :config
+  (add-hook 'protobuf-mode-hook
+            (lambda ()
+              (c-add-style "my-style" '((c-basic-offset . 4)
+                                        (indent-tabs-mode . nil))
+                           t)))
   )
 
 (use-package puppet-mode :ensure t :defer t
@@ -1620,15 +1615,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package slack :ensure t
   :if (file-exists-p (expand-file-name "~/.slack.el"))
-  :config (progn
-            (setq slack-private-file (expand-file-name "~/.slack.el"))
-            (setq slack-buffer-emojify t)
-            (setq slack-prefer-current-team t)
-            ;; use Shift+Enter and Ctrl+Enter as newline
-            (define-key slack-mode-map '[S-return] 'newline)
-            (define-key slack-mode-map '[C-return] 'newline)
-            (load slack-private-file)
-            )
+  :config
+  (setq slack-private-file (expand-file-name "~/.slack.el"))
+  (setq slack-buffer-emojify t)
+  (setq slack-prefer-current-team t)
+  ;; use Shift+Enter and Ctrl+Enter as newline
+  (define-key slack-mode-map '[S-return] 'newline)
+  (define-key slack-mode-map '[C-return] 'newline)
+  (load slack-private-file)
   )
 
 (use-package smart-cursor-color :ensure t
@@ -1636,40 +1630,38 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package smart-mode-line :ensure t
   :if nil
-  :config (progn
-            (setq sml/no-confirm-load-theme t)
-            (setq sml/theme 'dark)
-            (setq sml/shorten-directory -1)
-            (sml/setup)
-            (remove-hook 'post-command-hook 'sml/generate-position-help)
-            (add-hook 'post-command-hook
-                      (lambda ()
-                        (run-with-idle-timer 0.2 nil #'sml/generate-position-help)))
-            )
+  :config
+  (setq sml/no-confirm-load-theme t)
+  (setq sml/theme 'dark)
+  (setq sml/shorten-directory -1)
+  (sml/setup)
+  (remove-hook 'post-command-hook 'sml/generate-position-help)
+  (add-hook 'post-command-hook
+            (lambda ()
+              (run-with-idle-timer 0.2 nil #'sml/generate-position-help)))
   )
 
 (use-package smartrep :ensure t
-  :config (progn
-            (declare-function smartrep-define-key "smartrep")
-            (global-unset-key "\C-q")
-            (defun define-smartrep-keys ()
-              "Setup smartrep keys."
-              (smartrep-define-key global-map "C-q"
-                '(("C-t"      . 'mc/mark-next-like-this)
-                  ("n"        . 'mc/mark-next-like-this)
-                  ("p"        . 'mc/mark-previous-like-this)
-                  ("m"        . 'mc/mark-more-like-this-extended)
-                  ("u"        . 'mc/unmark-next-like-this)
-                  ("U"        . 'mc/unmark-previous-like-this)
-                  ("s"        . 'mc/skip-to-next-like-this)
-                  ("S"        . 'mc/skip-to-previous-like-this)
-                  ("*"        . 'mc/mark-all-like-this)
-                  ("d"        . 'mc/mark-all-like-this-dwim)
-                  ("i"        . 'mc/insert-numbers)
-                  ("o"        . 'mc/sort-regions)
-                  ("O"        . 'mc/reverse-regions))))
-            (define-smartrep-keys)
-            )
+  :config
+  (declare-function smartrep-define-key "smartrep")
+  (global-unset-key "\C-q")
+  (defun define-smartrep-keys ()
+    "Setup smartrep keys."
+    (smartrep-define-key global-map "C-q"
+      '(("C-t"      . 'mc/mark-next-like-this)
+        ("n"        . 'mc/mark-next-like-this)
+        ("p"        . 'mc/mark-previous-like-this)
+        ("m"        . 'mc/mark-more-like-this-extended)
+        ("u"        . 'mc/unmark-next-like-this)
+        ("U"        . 'mc/unmark-previous-like-this)
+        ("s"        . 'mc/skip-to-next-like-this)
+        ("S"        . 'mc/skip-to-previous-like-this)
+        ("*"        . 'mc/mark-all-like-this)
+        ("d"        . 'mc/mark-all-like-this-dwim)
+        ("i"        . 'mc/insert-numbers)
+        ("o"        . 'mc/sort-regions)
+        ("O"        . 'mc/reverse-regions))))
+  (define-smartrep-keys)
   )
 
 (use-package sr-speedbar :ensure t
@@ -1680,49 +1672,46 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package symon :ensure t
   :if (eq system-type 'gnu/linux)
-  :config (progn
-            (setq symon-sparkline-type 'symon-sparkline-type-gridded)
-            (setq symon-delay 100)
-            (symon-mode)
-            )
+  :config
+  (setq symon-sparkline-type 'symon-sparkline-type-gridded)
+  (setq symon-delay 100)
+  (symon-mode)
   )
 
 (use-package thingopt :ensure t)
 
 (use-package total-lines :ensure t
-  :config (progn
-            (global-total-lines-mode t)
-            (defun my-set-line-numbers ()
-              "Init hook to setup total lines."
-              (setq-default mode-line-front-space
-                            (append mode-line-front-space
-                                    '((:eval (format " (%d)" (- total-lines 1)))))))
-            (add-hook 'after-init-hook 'my-set-line-numbers)
-            )
+  :config
+  (global-total-lines-mode t)
+  (defun my-set-line-numbers ()
+    "Init hook to setup total lines."
+    (setq-default mode-line-front-space
+                  (append mode-line-front-space
+                          '((:eval (format " (%d)" (- total-lines 1)))))))
+  (add-hook 'after-init-hook 'my-set-line-numbers)
   )
 
 (use-package tramp
-  :config (progn
-            ;; (setq tramp-debug-buffer nil tramp-verbose 6)
-            (setq tramp-default-method "ssh")
-            (setq tramp-pipe-stty-settings "")
-            ;; (setq tramp-shell-prompt-pattern
-            ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
-            (defun tramp-cleanup-all ()
-              "Cleanup all tramp connection and buffers"
-              (interactive)
-              (tramp-cleanup-all-buffers)
-              (call-interactively 'tramp-cleanup-all-connections))
-            (add-to-list 'tramp-remote-path "~/.local/bin")
-            ;; tramp does not expand ~
-            (add-to-list 'tramp-remote-path "/home/rueda/.local/bin")
-            ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-            ;; (customize-set-variable
-            ;;  'tramp-ssh-controlmaster-options
-            ;;  (concat
-            ;;   "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-            ;;   "-o ControlMaster=auto -o ControlPersist=yes"))
-            )
+  :config
+  ;; (setq tramp-debug-buffer nil tramp-verbose 6)
+  (setq tramp-default-method "ssh")
+  (setq tramp-pipe-stty-settings "")
+  ;; (setq tramp-shell-prompt-pattern
+  ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+  (defun tramp-cleanup-all ()
+    "Cleanup all tramp connection and buffers"
+    (interactive)
+    (tramp-cleanup-all-buffers)
+    (call-interactively 'tramp-cleanup-all-connections))
+  (add-to-list 'tramp-remote-path "~/.local/bin")
+  ;; tramp does not expand ~
+  (add-to-list 'tramp-remote-path "/home/rueda/.local/bin")
+  ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  ;; (customize-set-variable
+  ;;  'tramp-ssh-controlmaster-options
+  ;;  (concat
+  ;;   "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+  ;;   "-o ControlMaster=auto -o ControlPersist=yes"))
   )
 
 (use-package trr :ensure t)
@@ -1733,11 +1722,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (undo-tree-visualizer-diff nil)
   (undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
   (undo-tree-visualizer-timestamps t)
-  :config (progn
-            (global-undo-tree-mode)
-            (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
-            (add-to-list 'undo-tree-incompatible-major-modes #'magit-status-mode)
-            )
+  :config
+  (global-undo-tree-mode)
+  (define-key undo-tree-visualizer-mode-map "\C-m" 'undo-tree-visualizer-quit)
+  (add-to-list 'undo-tree-incompatible-major-modes #'magit-status-mode)
   )
 
 (use-package vundo :ensure t
@@ -1758,57 +1746,54 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :config (volatile-highlights-mode))
 
 (use-package which-key :ensure t
-  :config (progn
-            (which-key-mode)
-            (which-key-setup-side-window-bottom)
-            )
+  :config
+  (which-key-mode)
+  (which-key-setup-side-window-bottom)
   )
 
 (use-package yaml-mode :ensure t
   :init (add-to-list 'auto-mode-alist '("\\.\\(yml\\|yaml\\|rosinstall\\|yml\\.package\\)$" . yaml-mode)))
 
 (use-package yasnippet :ensure t
-  :config (progn
-            (setq yas-snippet-dirs '("~/.emacs.d/snippets"
-                                     "~/.emacs.d/yasnippet-snippets/snippets"))
-            (setq yas-trigger-key "Enter")
-            (yas-global-mode 1)
-            ;;(custom-set-variables '(yas-trigger-key "TAB"))
+  :config
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets"
+                           "~/.emacs.d/yasnippet-snippets/snippets"))
+  (setq yas-trigger-key "Enter")
+  (yas-global-mode 1)
+  ;;(custom-set-variables '(yas-trigger-key "TAB"))
 
-            ;; insert new snippet
-            (define-key yas-minor-mode-map (kbd "C-x i i") 'yas-insert-snippet)
-            ;; create a new snippet
-            (define-key yas-minor-mode-map (kbd "C-x i n") 'yas-new-snippet)
-            ;; edit a snippet
-            (define-key yas-minor-mode-map (kbd "C-x i v") 'yas-visit-snippet-file)
-            )
+  ;; insert new snippet
+  (define-key yas-minor-mode-map (kbd "C-x i i") 'yas-insert-snippet)
+  ;; create a new snippet
+  (define-key yas-minor-mode-map (kbd "C-x i n") 'yas-new-snippet)
+  ;; edit a snippet
+  (define-key yas-minor-mode-map (kbd "C-x i v") 'yas-visit-snippet-file)
   :hook ((prog-mode . yas-minor-mode)
          (cmake-mode . yas-minor-mode))
   )
 
 (use-package yatemplate :ensure t
-  :config (progn
-            (setq auto-insert-alist '(()))
-            (setq yatemplate-dir (expand-file-name "~/.emacs.d/templates"))
-            (yatemplate-fill-alist)
-            (auto-insert-mode 1)
-            (defun after-save-hook--yatemplate ()
-              (when (string-match "emacs.*/templates/" buffer-file-name)
-                (yatemplate-fill-alist)))
-            (add-hook 'after-save-hook 'after-save-hook--yatemplate)
-            ))
+  :config
+  (setq auto-insert-alist '(()))
+  (setq yatemplate-dir (expand-file-name "~/.emacs.d/templates"))
+  (yatemplate-fill-alist)
+  (auto-insert-mode 1)
+  (defun after-save-hook--yatemplate ()
+    (when (string-match "emacs.*/templates/" buffer-file-name)
+      (yatemplate-fill-alist)))
+  (add-hook 'after-save-hook 'after-save-hook--yatemplate)
+  )
 
 
 (use-package esup :ensure t)
 
 (use-package whitespace
-  :config (progn
-            (global-whitespace-mode 1)
-            (set-face-foreground 'whitespace-space "LightSlateGray")
-            (set-face-background 'whitespace-space "DarkSlateGray")
-            (set-face-foreground 'whitespace-tab "LightSlateGray")
-            (set-face-background 'whitespace-tab "DarkSlateGray")
-            )
+  :config
+  (global-whitespace-mode 1)
+  (set-face-foreground 'whitespace-space "LightSlateGray")
+  (set-face-background 'whitespace-space "DarkSlateGray")
+  (set-face-foreground 'whitespace-tab "LightSlateGray")
+  (set-face-background 'whitespace-tab "DarkSlateGray")
   )
 
 (use-package ucs-normalize)
@@ -1826,95 +1811,91 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package wdired
-  :config (progn
-            (setq wdired-allow-to-change-permissions t)
-            (define-key dired-mode-map "e" 'wdired-change-to-wdired-mode)
-            )
+  :config
+  (setq wdired-allow-to-change-permissions t)
+  (define-key dired-mode-map "e" 'wdired-change-to-wdired-mode)
   )
 
 (use-package hl-line
-  :config (progn
-            (global-hl-line-mode t)
-            )
+  :config
+  (global-hl-line-mode t)
   )
 
 (use-package cmuscheme
   :init (progn
           (autoload 'scheme-mode "cmuscheme" "Major mode for Scheme." t)
           (autoload 'run-scheme "cmuscheme" "Run an inferior Scheme process." t))
-  :config (progn
-            (setq process-coding-system-alist
-                  (cons '("gosh" utf-8 . utf-8) process-coding-system-alist))
-            (setq
-             scheme-program-name "gosh"
-             gosh-program-name "/usr/bin/env gosh -i"
-             scheme-program-name "gosh -i")
+  :config
+  (setq process-coding-system-alist
+        (cons '("gosh" utf-8 . utf-8) process-coding-system-alist))
+  (setq
+   scheme-program-name "gosh"
+   gosh-program-name "/usr/bin/env gosh -i"
+   scheme-program-name "gosh -i")
 
-            (defun scheme-other-window ()
-              "Run scheme on other window."
-              (interactive)
-              (switch-to-buffer-other-window (get-buffer-create "*scheme*"))
-              (run-scheme scheme-program-name))
-            (define-key global-map "\C-cS" 'scheme-other-window)
-            (put 'if 'scheme-indent-function 2)
-            (put 'dotimes 'scheme-indent-function 1)
-            (put 'dolist 'scheme-indent-function 1)
-            (put 'instance 'scheme-indent-function 1)
-            (put 'set! 'scheme-indent-function 1)
-            (put 'let-keywords* 'scheme-indent-function 2)
-            (put 'defun 'scheme-indent-function 2)
-            (put 'defclass 'scheme-indent-function 2)
-            (put 'defmethod 'scheme-indent-function 2)
-            (put 'define-method* 'scheme-indent-function 2)
-            (put 'define-class* 'scheme-indent-function 2)
-            (put 'define-function* 'scheme-indent-function 1)
-            (put 'let-keywords 'scheme-indent-function 2)
-            (put 'let-optionals* 'scheme-indent-function 2)
-            (put 'let-optionals 'scheme-indent-function 2)
-            (put 'let-values 'scheme-indent-function 2)
-            (put 'receive 'scheme-indent-function 1)
-            (put 'mutex-block 'scheme-indent-function 2)
-            (put 'unless 'scheme-indent-function 1)
-            (put 'when 'scheme-indent-function 1)
-            (put 'while 'scheme-indent-function 1)
-            (put 'defmethod 'scheme-indent-function 1)
+  (defun scheme-other-window ()
+    "Run scheme on other window."
+    (interactive)
+    (switch-to-buffer-other-window (get-buffer-create "*scheme*"))
+    (run-scheme scheme-program-name))
+  (define-key global-map "\C-cS" 'scheme-other-window)
+  (put 'if 'scheme-indent-function 2)
+  (put 'dotimes 'scheme-indent-function 1)
+  (put 'dolist 'scheme-indent-function 1)
+  (put 'instance 'scheme-indent-function 1)
+  (put 'set! 'scheme-indent-function 1)
+  (put 'let-keywords* 'scheme-indent-function 2)
+  (put 'defun 'scheme-indent-function 2)
+  (put 'defclass 'scheme-indent-function 2)
+  (put 'defmethod 'scheme-indent-function 2)
+  (put 'define-method* 'scheme-indent-function 2)
+  (put 'define-class* 'scheme-indent-function 2)
+  (put 'define-function* 'scheme-indent-function 1)
+  (put 'let-keywords 'scheme-indent-function 2)
+  (put 'let-optionals* 'scheme-indent-function 2)
+  (put 'let-optionals 'scheme-indent-function 2)
+  (put 'let-values 'scheme-indent-function 2)
+  (put 'receive 'scheme-indent-function 1)
+  (put 'mutex-block 'scheme-indent-function 2)
+  (put 'unless 'scheme-indent-function 1)
+  (put 'when 'scheme-indent-function 1)
+  (put 'while 'scheme-indent-function 1)
+  (put 'defmethod 'scheme-indent-function 1)
 
-            ;;font-lock
-            (font-lock-add-keywords
-             'scheme-mode
-             (list
-              (list (concat "(" (regexp-opt '("use") t) "\\>")
-                    '(1 font-lock-keyword-face nil t))
-              (list "\\(self\\)\\>" '(1 font-lock-constant-face nil t))
-              (list "\\(\\*\\w\+\\*\\)\\>" '(1 font-lock-constant-face nil t))
-              (list "\\(#\\(\\+\\|\\-\\)\.\*\\)" '(1 font-lock-variable-name-face))
-              (cons "\\(dotimes\\|unless\\|when\\|dolist\\|while\\)\\>" 1)
-              (cons
-               "\\(let-\\(keywords\\|optionals\\|values\\|keywords\\*\\|optionals\\*\\|values\\*\\)\\)\\>"
-               1)
-              (list "\\(warn\\)\\>" '(1 font-lock-warning-face))
-              (list "\\(#t\\|#f\\)\\>" '(1 font-lock-constant-face))
-              (cons "\\(defclass\\|defmethod\\)\\>" 1)
-              (cons "\\(define-\\(function\\*\\|class\\*\\|method\\*\\)\\)\\>" 1)))
-            )
+  ;;font-lock
+  (font-lock-add-keywords
+   'scheme-mode
+   (list
+    (list (concat "(" (regexp-opt '("use") t) "\\>")
+          '(1 font-lock-keyword-face nil t))
+    (list "\\(self\\)\\>" '(1 font-lock-constant-face nil t))
+    (list "\\(\\*\\w\+\\*\\)\\>" '(1 font-lock-constant-face nil t))
+    (list "\\(#\\(\\+\\|\\-\\)\.\*\\)" '(1 font-lock-variable-name-face))
+    (cons "\\(dotimes\\|unless\\|when\\|dolist\\|while\\)\\>" 1)
+    (cons
+     "\\(let-\\(keywords\\|optionals\\|values\\|keywords\\*\\|optionals\\*\\|values\\*\\)\\)\\>"
+     1)
+    (list "\\(warn\\)\\>" '(1 font-lock-warning-face))
+    (list "\\(#t\\|#f\\)\\>" '(1 font-lock-constant-face))
+    (cons "\\(defclass\\|defmethod\\)\\>" 1)
+    (cons "\\(define-\\(function\\*\\|class\\*\\|method\\*\\)\\)\\>" 1)))
   )
 
 (use-package euslisp-mode
   :init (setq auto-mode-alist (cons (cons "\\.l$" 'euslisp-mode) auto-mode-alist))
-  :config (progn
-            (defvar inferior-euslisp-program)
-            (defun lisp-other-window ()
-              "Run Lisp on other window."
-              (interactive)
-              (if (not (string= (buffer-name) "*inferior-lisp*"))
-                  (switch-to-buffer-other-window (get-buffer-create "*inferior-lisp*")))
-              (run-lisp inferior-euslisp-program))
+  :config
+  (defvar inferior-euslisp-program)
+  (defun lisp-other-window ()
+    "Run Lisp on other window."
+    (interactive)
+    (if (not (string= (buffer-name) "*inferior-lisp*"))
+        (switch-to-buffer-other-window (get-buffer-create "*inferior-lisp*")))
+    (run-lisp inferior-euslisp-program))
 
-            (set-variable 'inferior-euslisp-program "~/.emacs.d/roseus.sh")
+  (set-variable 'inferior-euslisp-program "~/.emacs.d/roseus.sh")
 
-            ;; Do not set C-cE for lisp-other-window
-            ;; (global-set-key "\C-cE" 'lisp-other-window)
-            )
+  ;; Do not set C-cE for lisp-other-window
+  ;; (global-set-key "\C-cE" 'lisp-other-window)
   )
 
 (use-package goby
@@ -1950,10 +1931,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ("C-c c p" . emacs-clang-rename-at-point)
               ("C-c c q" . emacs-clang-rename-qualified-name)
               ("C-c c a" . emacs-clang-rename-qualified-name-all))
-  :config (progn
-            (if (executable-find "clang-rename-6.0")
-                (setq emacs-clang-rename-binary "clang-rename-6.0"))
-            )
+  :config
+  (if (executable-find "clang-rename-6.0")
+      (setq emacs-clang-rename-binary "clang-rename-6.0"))
   )
 
 (use-package py-yapf :ensure t
@@ -1961,25 +1941,23 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package qml-mode :ensure t
-  :config (progn
-            (setq js-indent-level 2)
-            )
+  :config
+  (setq js-indent-level 2)
   )
 
 (use-package dictionary :ensure t
-  :config (progn
-            (setq dictionary-server "localhost")
-            (setq dictionary-default-strategy "prefix")
-            (defun dictionary-popup-matching-region-or-words ()
-              (interactive)
-              (let ((word
-                     (if (use-region-p)
-                         (buffer-substring (region-beginning) (region-end) )
-                       (current-word))))
-                (dictionary-popup-matching-words word)
-                ))
-            (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
-            )
+  :config
+  (setq dictionary-server "localhost")
+  (setq dictionary-default-strategy "prefix")
+  (defun dictionary-popup-matching-region-or-words ()
+    (interactive)
+    (let ((word
+           (if (use-region-p)
+               (buffer-substring (region-beginning) (region-end) )
+             (current-word))))
+      (dictionary-popup-matching-words word)
+      ))
+  (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
   )
 
 (use-package emojify :ensure t
