@@ -1346,8 +1346,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;;     1. repo
   ;;     2. user
   ;;     3. read:org
-  :config
-  (setq forge-owned-accounts '(("garaemon")))
+  :custom
+  (forge-owned-accounts '(("garaemon")))
   )
 
 (use-package sx :ensure t)
@@ -1391,11 +1391,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
 (use-package markdown-dnd-images
-  :config
-  (setq dnd-save-directory "images")
-  (setq dnd-view-inline t)
-  (setq dnd-save-buffer-name nil)
-  (setq dnd-capture-source t))
+  :custom
+  (dnd-save-directory "images")
+  (dnd-view-inline t)
+  (dnd-save-buffer-name nil)
+  (dnd-capture-source t)
+  )
 
 (use-package minimap :ensure t)
 
