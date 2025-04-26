@@ -23,6 +23,7 @@
       - hg
       - hub
       - imagemagick
+      - keycastr
       - latexit
       - libvterm
       - llvm # for clangd
