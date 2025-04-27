@@ -853,7 +853,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook ((typescript-mode . #'lsp)
          (yaml-mode . #'lsp)
          (python-mode . #'lsp)
-         (shell-script-mode . #'lsp))
+         (shell-script-mode . #'lsp)
+         (go-mode . #'lsp))
   :config
   (add-to-list 'lsp-disabled-clients 'ruff)
   :custom
