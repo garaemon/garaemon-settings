@@ -871,6 +871,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; (lsp-log-process-output t)
   ;; :init
   ;; (setq lsp-pylsp-server-command '("pylsp" "--verbose" "--log-file" "pylsp.log"))
+  :bind ("C-c f" . 'lsp-format-buffer)
   )
 
 (use-package lsp-ui :ensure t)
