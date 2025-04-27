@@ -1553,6 +1553,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-structure-template-alist
    '(("A" . "ai")
      ("a" . "ai")
+     ("ai" . "ai")
      ;;("a" . "export ascii")
      ("c" . "center")
      ("C" . "comment")
