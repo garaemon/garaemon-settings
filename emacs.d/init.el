@@ -1540,8 +1540,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;; We need a different keymap.
   ("C-c x" . 'org-ai-complete-block)
   :custom
+  ;; Use Geimini
   (org-ai-service 'google)
   (org-ai-default-chat-model "gemini-2.5-pro-preview-03-25")
+  (org-ai-auto-fill t)
   ;; ~/.authinfo should have
   ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
   )
