@@ -1532,7 +1532,40 @@ if ENV-SH indicates a remote path. Relies on the helper function
          ("M-e" . 'my-org-mode-wrap-inline-code))
   )
 
-(use-package org-tempo :after org)
+;; TODO: the result does not respect the indent of the code block.
+(use-package org-ai :ensure t :after org
+  ;; C-c C-c (=org-ai-complete-block) to get AI response.
+  :bind
+  ;; In org capture mode, C-c C-c is used to finish a capture.
+  ;; We need a different keymap.
+  ("C-c x" . 'org-ai-complete-block)
+  :custom
+  (org-ai-service 'google)
+  (org-ai-default-chat-model "gemini-2.5-pro-preview-03-25")
+  ;; ~/.authinfo should have
+  ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
+  )
+
+(use-package org-tempo :after org
+  :custom
+  (org-structure-template-alist
+   '(("A" . "ai")
+     ("a" . "ai")
+     ;;("a" . "export ascii")
+     ("c" . "center")
+     ("C" . "comment")
+     ("e" . "example")
+     ("E" . "export")
+     ("h" . "export html")
+     ("l" . "export latex")
+     ("q" . "quote")
+     ("s" . "src")
+     ("v" . "verse")
+     ))
+  ;; The keys of org-tempo-keywords-alist and org-structure-template-alist have to be unique.
+  ;; To simplify it, clean up org-tempo-keywords-alist.
+  (org-tempo-keywords-alist nil)
+  )
 
 (use-package org-download :ensure t :after org
   :custom (org-download-image-dir (concat org-directory "/images"))
