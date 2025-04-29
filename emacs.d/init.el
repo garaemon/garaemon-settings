@@ -856,7 +856,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (shell-script-mode . #'lsp)
          (go-mode . #'lsp))
   :config
-  (add-to-list 'lsp-disabled-clients 'ruff)
+  (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
+  ;; Disable ruff in tramp environment too
+  (add-to-list 'lsp-disabled-clients '(python-mode . ruff-tramp))
   :custom
   (lsp-pylsp-plugins-yapf-enabled t)
   (lsp-pylsp-plugins-black-enabled nil)
