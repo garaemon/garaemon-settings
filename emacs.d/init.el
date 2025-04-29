@@ -1465,6 +1465,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
               (linum-color-on-after-init frame)))
   )
 
+;; Enable it in ~/gprog/org
+(use-package git-auto-commit-mode :ensure t)
+
 (use-package org :ensure t
   :requires (cl-lib)
   :custom
