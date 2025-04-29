@@ -1611,7 +1611,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
    ("C-c n i" . 'org-roam-node-insert))
   )
 
-(use-package org-roam-dailies :after org-roam
+(use-package org-roam-dailies
+  :after org-roam
   :custom
   (org-roam-dailies-capture-templates
    ;; Insert timestamp automatically for org-agenda
