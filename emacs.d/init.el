@@ -1603,6 +1603,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
       (make-directory org-roam-directory))
   (org-roam-db-autosync-mode)
   (add-to-list 'org-agenda-files org-roam-directory)
+  ;; Why do we need this? Without this require, (use-package org-roam-dailies) does not load the
+  ;; configuration.
+  (require 'org-roam-dailies)
   :bind
   (("C-c n f" . 'org-roam-node-find)
    ("C-c n i" . 'org-roam-node-insert))
