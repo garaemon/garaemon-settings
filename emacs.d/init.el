@@ -1009,7 +1009,13 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :config (global-diff-hl-mode))
 
 
-(use-package go-mode :ensure t :defer t)
+(use-package go-mode :ensure t :defer t
+  :hook ((go-mode . (lambda ()
+                      (make-local-variable 'whitespace-style)
+                      (setq whitespace-style (delete 'tabs whitespace-style))
+                      (setq whitespace-style (delete 'tab-mark whitespace-style))
+                      )))
+  )
 
 (use-package google-c-style :ensure t
   :config
