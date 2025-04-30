@@ -1477,7 +1477,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package git-auto-commit-mode :ensure t)
 
 (use-package org :ensure t
-  :requires (cl-lib)
+  :requires (cl-lib git-auto-commit-mode)
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
@@ -1545,6 +1545,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
          ("C-M-c" . 'org/note-right-now)
          :map org-mode-map
          ("M-e" . 'my-org-mode-wrap-inline-code))
+  :hook ((org-mode . (lambda ()
+                       ;; Enable
+                       (when (and buffer-file-name
+                                  (string-prefix-p org-directory
+                                                   (file-name-directory buffer-file-name)))
+                         (git-auto-commit-mode t)
+                         (setq gac-automatically-push-p t)
+                         (setq gac-automatically-add-new-files-p t)
+                         (setq gac-debounce-interval 1)
+                       ))))
   )
 
 ;; TODO: the result does not respect the indent of the code block.
