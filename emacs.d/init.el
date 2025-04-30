@@ -1553,7 +1553,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
                          (git-auto-commit-mode t)
                          (setq gac-automatically-push-p t)
                          (setq gac-automatically-add-new-files-p t)
-                         (setq gac-debounce-interval 1)
+                         (setq gac-debounce-interval (* 60 60))
                        ))))
   )
 
