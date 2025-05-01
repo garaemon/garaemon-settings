@@ -1991,8 +1991,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package clang-format :ensure t
-  :bind (:map c-mode-base-map
-              ("C-c f" . 'clang-format-buffer)))
+  ;; :bind (:map c-mode-base-map
+  ;;             ("C-c f" . 'clang-format-buffer))
+  )
 
 (if (not (file-directory-p "~/.emacs.d/plugins/"))
     (make-directory "~/.emacs.d/plugins/"))
@@ -2011,7 +2012,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
       (setq emacs-clang-rename-binary "clang-rename-6.0"))
   )
 
-(use-package py-yapf :ensure t
+(use-package py-yapf :ensure t :if nil
   :hook ((python-mode . (lambda () (define-key python-mode-map "\C-cf" 'py-yapf-buffer))))
   )
 
