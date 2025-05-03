@@ -1604,6 +1604,19 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom (org-download-image-dir (concat org-directory "/images"))
   )
 
+(use-package ob-mermaid :ensure t
+  :requires (org)
+  ;; npm install -g @mermaid-js/mermaid-cli
+  :init
+  (if (not (executable-find "mmdc"))
+      (call-process-shell-command "npm install -g @mermaid-js/mermaid-cli"))
+  :config
+  (add-to-list 'org-babel-load-languages '(mermaid . t))
+  (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+  :custom
+  (ob-mermaid-cli-path (executable-find "mmdc"))
+  )
+
 (use-package org-roam
   :ensure t
   :custom
