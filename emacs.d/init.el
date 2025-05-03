@@ -2153,6 +2153,7 @@ Optional argument ARGS ."
                  :key gemini-key
                  :stream t))
       ))
+  :custom (gptel-default-mode 'org-mode)
   )
 
 (use-package typescript-mode :ensure t
