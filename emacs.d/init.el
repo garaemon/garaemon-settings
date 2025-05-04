@@ -2160,7 +2160,15 @@ Optional argument ARGS ."
   :custom (typescript-indent-level 2))
 
 (use-package persistent-scratch :ensure t
-  :config (persistent-scratch-setup-default))
+  :custom
+  (persistent-scratch-scratch-buffer-p-function
+   (lambda ()
+     "Return non-nil iff the current buffer's name is *scratch* or *Gemini*."
+     (or (string= (buffer-name) "*scratch*")
+         (string= (buffer-name) "*Gemini*"))))
+  :config
+  (persistent-scratch-setup-default)
+  )
 
 ;; (use-package format-all
 ;;   :ensure t
