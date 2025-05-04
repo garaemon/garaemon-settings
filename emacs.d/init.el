@@ -1570,7 +1570,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;; Use Geimini
   (org-ai-service 'google)
   (org-ai-default-chat-model "gemini-2.5-flash-preview-04-17")
-  (org-ai-auto-fill t)
+  (org-ai-auto-fill nil)
   ;; ~/.authinfo should have
   ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
   )
