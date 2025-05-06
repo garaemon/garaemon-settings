@@ -1119,6 +1119,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("C-x b" . consult-buffer)
   ("M-s" . consult-grep)
   :config
+  ;; TODO: the function does not work if git does not handle a current file.
+  ;; This is because `(vc-root-dir)' returns nil.
   (defun my-get-git-files ()
     (let ((root-dir (vc-root-dir)))
       (when root-dir
