@@ -1579,6 +1579,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-ai-auto-fill nil)
   ;; ~/.authinfo should have
   ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
+  :config
+  ;; Fix the indent of ai response in ai block.
+  ;; https://github.com/rksm/org-ai/issues/18#issuecomment-1737931580
+  (defun dss/-org-ai-after-chat-insertion-hook (type _text)
+    (when (and (eq type 'end) (eq major-mode 'org-mode)
+               (memq 'org-indent-mode minor-mode-list))
+      (org-indent-indent-buffer)))
+  (add-hook 'org-ai-after-chat-insertion-hook #'dss/-org-ai-after-chat-insertion-hook)
   )
 
 (use-package org-tempo :after org
