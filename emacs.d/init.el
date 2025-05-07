@@ -1558,7 +1558,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
                          (setq gac-automatically-push-p t)
                          (setq gac-automatically-add-new-files-p t)
                          (setq gac-debounce-interval (* 60 5)) ; 5 minutes
-                       ))))
+                       )))
+         (org-agenda-mode . (lambda ()
+                              (display-line-numbers-mode -1)
+                              (display-fill-column-indicator-mode -1)))
+         )
   )
 
 ;; TODO: the result does not respect the indent of the code block.
