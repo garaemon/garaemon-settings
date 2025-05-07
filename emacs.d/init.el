@@ -1193,7 +1193,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
            ;; Append remote prefix if needed
            (file-prefix (or (file-remote-p env-sh) ""))
            (full-matched-package-paths
-            (mapcar #'(lambda (path) (message "%s%s" file-prefix path))
+            (mapcar #'(lambda (path) (format "%s%s" file-prefix path))
                     rospackage-paths)))
       full-matched-package-paths))
   )
