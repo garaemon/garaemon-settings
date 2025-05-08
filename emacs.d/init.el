@@ -1796,21 +1796,21 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package tramp
+  :custom
+  ;; for debug
+  ;; (tramp-debug-buffer t)
+  ;; (tramp-verbose 6)
   :config
-  ;; (setq tramp-debug-buffer nil tramp-verbose 6)
   (setq tramp-default-method "ssh")
   (setq tramp-pipe-stty-settings "")
-  ;; (setq tramp-shell-prompt-pattern
-  ;;       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
   (defun tramp-cleanup-all ()
     "Cleanup all tramp connection and buffers"
     (interactive)
     (tramp-cleanup-all-buffers)
     (call-interactively 'tramp-cleanup-all-connections))
-  (add-to-list 'tramp-remote-path "~/.local/bin")
-  ;; tramp does not expand ~
-  (add-to-list 'tramp-remote-path "/home/rueda/.local/bin")
-  ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  ;; By adding 'tramp-own-remote-path to tramp-remote-path, tramp can use the PATH value that
+  ;; the remote shell sets by default. For example, tramp can use the PATH value set by ~/.zshenv.
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
   ;; (customize-set-variable
   ;;  'tramp-ssh-controlmaster-options
   ;;  (concat
