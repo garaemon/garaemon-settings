@@ -9,3 +9,16 @@
 if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprofile"
 fi
+
+export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
+# PATH under the home directory
+export PATH=$PATH:$HOME/.bin:$HOME/bin/:$HOME/.local/bin:$HOME/gprog/garaemon-settings/scripts/utils
+
+if [ -e "$HOME/pyenv/.pyenvrc" ]; then
+  source "$HOME/pyenv/.pyenvrc"
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+export TRAMP_ZSHENV_LOADED="yes"
