@@ -1796,7 +1796,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package tramp
-  :custom
+  ;; :custom
   ;; for debug
   ;; (tramp-debug-buffer t)
   ;; (tramp-verbose 6)
