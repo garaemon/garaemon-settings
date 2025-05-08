@@ -1550,6 +1550,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
          :map org-mode-map
          ("M-e" . 'my-org-mode-wrap-inline-code))
   :hook ((org-mode . (lambda ()
+                       ;; To wrap texts
+                       (visual-line-mode)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
