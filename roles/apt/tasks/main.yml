@@ -9,6 +9,7 @@
       - anthy-el
       - bison
       - build-essential
+      - ccls
       - cmigemo
       - curl
       - ffmpeg
