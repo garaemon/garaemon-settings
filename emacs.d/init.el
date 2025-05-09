@@ -1057,6 +1057,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
               )
   )
 
+(use-package vertico-posframe :ensure t
+  :after (vertico)
+  :config
+  (vertico-posframe-mode)
+  )
+
 (use-package corfu
   :ensure t
   ;; Optional customizations
