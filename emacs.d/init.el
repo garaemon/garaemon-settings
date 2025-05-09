@@ -1428,32 +1428,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package switch-buffer-functions :ensure t)
 
-(use-package neotree :ensure t
-  :requires (all-the-icons)
-  :config
-  (global-set-key [f8] 'neotree-toggle)
-  ;; all-the-icons is required
-  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-  (setq neo-smart-open t)
-  (add-hook 'switch-buffer-functions
-            (lambda (prev current)
-              (let ((neotree-buffer (neo-global--get-buffer)))
-                (if (and
-                     ;; Ignore if new buffer is neotree
-                     (not (eq current neotree-buffer))
-                     ;; Ignore if the buffer is not assosiated with a file
-                     buffer-file-name
-                     ;; Ignore if neotree is not active
-                     (neo-global--window-exists-p))
-                    (progn
-                      (neo-buffer--change-root default-directory)
-                      (switch-to-buffer current)
-                      )
-                  )
-                )
-              ))
-  )
-
 (use-package nlinum :ensure t
   :if (not (functionp 'global-display-line-numbers-mode))
   :config
@@ -1816,6 +1790,24 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;;  (concat
   ;;   "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
   ;;   "-o ControlMaster=auto -o ControlPersist=yes"))
+  )
+
+(use-package treemacs :ensure t
+  :after (all-the-icons)
+  :config
+  ;; (treemacs-start-on-boot)
+  ;; (add-hook 'treemacs-mode-hook (lambda ()
+  ;;                     (display-line-numbers-mode -1)
+  ;;                     (display-fill-column-indicator-mode -1)
+  ;;                     (setq-local global-hl-line-mode nil)
+  ;;                     ))
+  :hook
+  ((treemacs-mode . (lambda ()
+                      (display-line-numbers-mode -1)
+                      (display-fill-column-indicator-mode -1)
+                      (setq-local global-hl-line-mode nil)
+                      ))
+   )
   )
 
 (use-package trr :ensure t)
