@@ -66,14 +66,6 @@
 
 (add-hook 'highlight-indentation-mode (lambda () (highlight-indentation-mode -1)))
 
-;; Bind C-x # to switch back to tmux window where emacsclient run.
-;; In order to use this feature, the window index should be stored in ~/.emacs.d/emacsclient-window.
-(global-set-key
- "\C-x#"
- (lambda ()
-   (interactive)
-   (shell-command "tmux select-window -t \`cat ~/.emacs.d/emacsclient-window\`")))
-
 (require 'garaemon-util)
 (eval-when-compile
   (require 'cl))
