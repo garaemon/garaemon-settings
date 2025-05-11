@@ -1816,6 +1816,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
    )
   )
 
+(use-package treemacs-magit
+  :after (treemacs magit)
+  :ensure t)
+
 (use-package trr :ensure t)
 
 (use-package undo-tree :ensure t
