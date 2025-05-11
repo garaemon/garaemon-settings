@@ -869,7 +869,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; (lsp-log-io t)
   ;; (lsp-log-process-output t)
   ;; :init
-  ;; (setq lsp-pylsp-server-command '("pylsp" "--verbose" "--log-file" "pylsp.log"))
+  (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
+                              "--log-file" "pylsp.log"))
   :bind ("C-c f" . 'lsp-format-buffer)
   )
 
