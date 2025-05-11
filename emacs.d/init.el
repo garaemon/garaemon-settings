@@ -2221,7 +2221,8 @@ Optional argument ARGS ."
  '(ahs-plugin-default-face ((t (:background "systemYellowColor" :foreground "Black"))))
  '(mode-line ((t (:background "color-16" :foreground "gray60" :inverse-video nil :box nil))))
  '(mode-line-active ((t (:inherit mode-line :background "DodgerBlue4"))))
- '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d")))))
+ '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d"))))
+ '(treemacs-root-face ((t (:inherit font-lock-constant-face :underline t :weight bold :height 1.0)))))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
