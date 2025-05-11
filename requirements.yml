@@ -1,5 +1,3 @@
 ---
 collections:
   - name: community.general
-roles:
-  - name: staticdev.pyenv

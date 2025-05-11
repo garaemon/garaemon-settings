@@ -7,6 +7,7 @@
     - tmux
     - zsh
     - starship
+    - uv
     - peco
     - nvm
     - ispell

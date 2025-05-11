@@ -1,0 +1,40 @@
+- name: Check if uv is already installed
+  command: which uv
+  register: uv_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Check if uvx is already installed
+  command: which uvx
+  register: uvx_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Determine if uv needs to be installed
+  set_fact:
+    uv_install_needed: "{{ uv_check.rc != 0 or uvx_check.rc != 0 }}"
+  changed_when: false
+
+- when: uv_install_needed
+  block:
+
+    - name: Create temporary file for uv install script
+      tempfile:
+        state: file
+        suffix: ".sh"
+      register: install_script_temp
+
+    - name: Download uv install script
+      get_url:
+        url: https://astral.sh/uv/install.sh
+        dest: "{{ install_script_temp.path }}"
+        mode: '0755' # Make the script executable
+        force: yes
+
+    - name: Execute uv install script
+      command: "{{ install_script_temp.path }}"
+
+    - name: Clean up uv install script
+      file:
+        path: "{{ install_script_temp.path }}"
+        state: absent

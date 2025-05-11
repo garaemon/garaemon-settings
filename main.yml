@@ -12,16 +12,11 @@
       when: ansible_os_family == "Debian"
     - role: homebrew
       when: ansible_os_family == "Darwin"
+    - uv
     - clang-format
     - gh
     - emacs
     - peco
-    - role: staticdev.pyenv
-      when: ansible_os_family == "Debian"
-    - role: staticdev.pyenv
-      when: ansible_os_family == "Darwin"
-      vars:
-        pyenv_owner_group: staff
     - nvm
     - font
     - ispell
@@ -40,16 +35,3 @@
     - ghostty
   vars:
     build_emacs: true
-    # pyenv variables
-    # Initialize shell profile scripts
-    pyenv_init_shell: true
-    # Python versions to install
-    pyenv_python_versions:
-      - "3.12.10"
-    # Set global pyenv version
-    pyenv_global:
-      - "system"
-    # Define the shell profile scripts to initialiaze
-    pyenv_shell_profile_scripts:
-      - .bashrc
-      - .zshrc

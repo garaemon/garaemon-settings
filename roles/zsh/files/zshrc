@@ -356,10 +356,6 @@ function catkin-test-results() {
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
-if [ -e "$HOME/pyenv/completions/pyenv.zsh" ]; then
-  source $HOME/pyenv/completions/pyenv.zsh
-fi
-
 if which gh > /dev/null; then
   if [ ! -e ~/.completions/_gh ]; then
     echo Installing gh completion
