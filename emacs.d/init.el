@@ -703,6 +703,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package coffee-mode :ensure t :defer t)
 
+(use-package docker
+  :ensure t)
+
 (use-package dockerfile-mode :ensure t :defer t
   :init (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode)))
 ;; (use-package elisp-format
