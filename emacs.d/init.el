@@ -1549,7 +1549,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind
   ;; In org capture mode, C-c C-c is used to finish a capture.
   ;; We need a different keymap.
-  ("C-c x" . 'org-ai-complete-block)
+  ("C-c x" . 'org-execute-block-src-or-ai)
   :custom
   ;; Use Geimini
   (org-ai-service 'google)
@@ -1565,6 +1565,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
                (memq 'org-indent-mode minor-mode-list))
       (org-indent-indent-buffer)))
   (add-hook 'org-ai-after-chat-insertion-hook #'dss/-org-ai-after-chat-insertion-hook)
+  (defun org-execute-block-src-or-ai ()
+    (interactive)
+    (if (eq (car (org-element-context)) 'src-block)
+        (org-babel-execute-src-block)
+      (org-ai-complete-block)))
   )
 
 (use-package org-tempo :after org
