@@ -1543,7 +1543,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
          )
   )
 
-;; TODO: the result does not respect the indent of the code block.
 (use-package org-ai :ensure t :after org
   ;; C-c C-c (=org-ai-complete-block) to get AI response.
   :bind
