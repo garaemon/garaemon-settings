@@ -1528,6 +1528,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :hook ((org-mode . (lambda ()
                        ;; To wrap texts
                        (visual-line-mode)
+                       ;; Show images inline automatically
+                       (setq org-startup-with-inline-images t)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
