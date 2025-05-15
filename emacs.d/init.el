@@ -1520,7 +1520,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
                                  (org . t)
                                  (ruby . t)))
   :bind (("C-c c" . 'org-capture)
-         ("C-c C-c" . 'org-capture)
          ("C-c a" . 'org-agenda)
          ("C-M-c" . 'org/note-right-now)
          :map org-mode-map
