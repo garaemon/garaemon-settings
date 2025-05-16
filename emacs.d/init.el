@@ -1073,11 +1073,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (corfu-preselect 'prompt)      ;; Preselect the prompt
   (corfu-on-exact-match nil)     ;; Configure handling of exact matches
 
-  ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
-  ;; :hook ((prog-mode . corfu-mode)
-  ;;        (shell-mode . corfu-mode)
-  ;;        (eshell-mode . corfu-mode))
-
   ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
   ;; be used globally (M-/).  See also the customization variable
   ;; `global-corfu-modes' to exclude certain modes.
@@ -1772,11 +1767,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;; By adding 'tramp-own-remote-path to tramp-remote-path, tramp can use the PATH value that
   ;; the remote shell sets by default. For example, tramp can use the PATH value set by ~/.zshenv.
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-  ;; (customize-set-variable
-  ;;  'tramp-ssh-controlmaster-options
-  ;;  (concat
-  ;;   "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-  ;;   "-o ControlMaster=auto -o ControlPersist=yes"))
   )
 
 (use-package treemacs :ensure t
