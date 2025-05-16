@@ -851,6 +851,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (yaml-mode . #'lsp)
          (python-mode . #'lsp)
          (shell-script-mode . #'lsp)
+         (c-mode . #'lsp)
+         (cpp-mode . #'lsp)
          (go-mode . #'lsp))
   :config
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
@@ -1283,28 +1285,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package less-css-mode :ensure t :defer t)
 
 (use-package lua-mode :ensure t :defer t)
-
-(use-package eglot
-  :ensure t
-  :config
-  ;;(add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
-  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "ccls"))
-  ;; (setq-default eglot-workspace-configuration
-  ;;               '((:pylsp  (:plugins
-  ;;                            (:pycodestyle (:enabled :json-false))
-  ;;                            (:mccabe (:enabled :jason-false))
-  ;;                            (:flake8 (:enabled :jason-false))
-  ;;                            (:yapf (:enabled t))
-  ;;                            (:pylint (:enabled t))
-  ;;                             ))
-  ;;                 ))
-
-  :hook
-  (
-   ;;(python-mode . eglot-ensure)
-   (c-mode . eglot-ensure)
-   (c++-mode . eglot-ensure)
-   ))
 
 (use-package magit :ensure t
   ;; :custom (magit-refresh-status-buffer nil)
