@@ -1877,10 +1877,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package cmake-mode
   :ensure t
-  :init  (progn
-           (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
-           (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
-           )
+  :init
+  (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
+  (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
   )
 
 (use-package dired
@@ -1899,9 +1898,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package cmuscheme
-  :init (progn
-          (autoload 'scheme-mode "cmuscheme" "Major mode for Scheme." t)
-          (autoload 'run-scheme "cmuscheme" "Run an inferior Scheme process." t))
+  :init
+  (autoload 'scheme-mode "cmuscheme" "Major mode for Scheme." t)
+  (autoload 'run-scheme "cmuscheme" "Run an inferior Scheme process." t)
   :config
   (setq process-coding-system-alist
         (cons '("gosh" utf-8 . utf-8) process-coding-system-alist))
@@ -1980,16 +1979,15 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :init (autoload 'goby "goby" nil t))
 
 (use-package ansi-color
-  :init (progn
-          (defun endless/colorize-compilation ()
-            "Colorize from `compilation-filter-start' to `point'."
-            (let ((inhibit-read-only t))
-              (ansi-color-apply-on-region
-               compilation-filter-start (point))))
+  :init
+  (defun endless/colorize-compilation ()
+    "Colorize from `compilation-filter-start' to `point'."
+    (let ((inhibit-read-only t))
+      (ansi-color-apply-on-region
+       compilation-filter-start (point))))
 
-          (add-hook 'compilation-filter-hook
-                    #'endless/colorize-compilation)
-          )
+  (add-hook 'compilation-filter-hook
+            #'endless/colorize-compilation)
   )
 
 (use-package clang-format :ensure t
