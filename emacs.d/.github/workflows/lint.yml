@@ -1,0 +1,19 @@
+name: Lint Emacs Lisp
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: '29.1' # 必要に応じてバージョンを変更してください
+    - name: Lint init.el
+      run: emacs -batch -l init.el -f batch-byte-compile init.el
