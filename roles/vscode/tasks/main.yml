@@ -4,7 +4,7 @@
   shell: |
     curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
 - name: Install microsoft.gpg
-  shell:
+  command:
     install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
   become: true
 

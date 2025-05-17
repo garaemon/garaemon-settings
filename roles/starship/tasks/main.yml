@@ -1,5 +1,5 @@
 - name: Check if starship is installed or not
-  shell: which starship
+  command: which starship
   ignore_errors: true
   register: which_starship
 

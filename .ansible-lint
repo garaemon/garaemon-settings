@@ -6,7 +6,6 @@ skip_list:
     - var-naming
     - yaml
     - command-instead-of-module
-    - command-instead-of-shell
     - no-free-form
     - role-name
     - schema
