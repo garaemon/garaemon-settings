@@ -14,8 +14,8 @@
 ;; (profiler-report)
 ;; (profiler-stop)
 
-(add-to-list 'load-path "~/.emacs.d/lisp")
-(add-to-list 'load-path "~/.emacs.d/plugins")
+(add-to-list 'load-path (concat (file-name-directory load-file-name) "lisp"))
+(add-to-list 'load-path (concat (file-name-directory load-file-name) "plugins"))
 
 ;; remove tramp file first to clean up old tramp connection
 (let ((tramp-old-file (expand-file-name "~/.emacs.d/tramp")))
