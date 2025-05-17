@@ -227,8 +227,8 @@
 ;;; }}}
 
 ;;; theme {{{
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
-(setq custom-theme-directory "~/.emacs.d/themes")
+(add-to-list 'custom-theme-load-path (concat (file-name-directory load-file-name) "themes"))
+(setq custom-theme-directory (concat (file-name-directory load-file-name) "themes"))
 (if (not (display-graphic-p))
   (load-theme 'garaemon-solarized-dark t))
 ;;; }}}
