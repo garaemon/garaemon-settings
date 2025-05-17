@@ -2,9 +2,9 @@ name: Lint Emacs Lisp
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   lint:
@@ -14,6 +14,6 @@ jobs:
     - name: Set up Emacs
       uses: purcell/setup-emacs@master
       with:
-        version: '29.1' # 必要に応じてバージョンを変更してください
+        version: '30.1'
     - name: Lint init.el
       run: emacs -batch -l init.el -f batch-byte-compile init.el

@@ -14,8 +14,8 @@
 ;; (profiler-report)
 ;; (profiler-stop)
 
-(add-to-list 'load-path "~/.emacs.d/lisp")
-(add-to-list 'load-path "~/.emacs.d/plugins")
+(add-to-list 'load-path (concat (file-name-directory load-file-name) "lisp"))
+(add-to-list 'load-path (concat (file-name-directory load-file-name) "plugins"))
 
 ;; remove tramp file first to clean up old tramp connection
 (let ((tramp-old-file (expand-file-name "~/.emacs.d/tramp")))
@@ -96,12 +96,13 @@
 (global-unset-key "\C-\\")
 (prefer-coding-system 'utf-8)
 (setq column-number-mode t) ; show column number
-;; no scroll bar
-(scroll-bar-mode -1)
-;; no menu bar
-(menu-bar-mode -1)
-;; no tool bar
-(tool-bar-mode -1)
+(when (display-graphic-p)
+  ;; no scroll bar
+  (scroll-bar-mode -1)
+  ;; no menu bar
+  (menu-bar-mode -1)
+  ;; no tool bar
+  (tool-bar-mode -1))
 ;; The default of find-name-arg is "-name".
 ;; In order to exclude git directory from `find-name-dired', add option to exclude .git directory.
 (setq find-name-arg "-not -path '*/\.git*' -name")
@@ -226,8 +227,8 @@
 ;;; }}}
 
 ;;; theme {{{
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
-(setq custom-theme-directory "~/.emacs.d/themes")
+(add-to-list 'custom-theme-load-path (concat (file-name-directory load-file-name) "themes"))
+(setq custom-theme-directory (concat (file-name-directory load-file-name) "themes"))
 (if (not (display-graphic-p))
   (load-theme 'garaemon-solarized-dark t))
 ;;; }}}
