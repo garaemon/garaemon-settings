@@ -32,7 +32,59 @@ jobs:
         run: ansible-galaxy role install -r requirements.yml
 
       - name: Execute minimal.yml
-        run: ansible-playbook -i localhost, -c local minimal.yml -v
+        run: |
+          pwd
+          ansible-playbook -i localhost, -c local minimal.yml -v | tee minimal_playbook.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Process minimal.yml results
+        if: always() # Run this step even if the playbook failed
+        run: |
+          echo "--- Ansible Playbook Execution Summary (minimal.yml) ---"
+          if [ -f minimal_playbook.log ]; then
+            echo -e "\n--- Task Execution Profile (from profile_tasks) ---"
+            # Extract from "TASK PROFILE" to "PLAY RECAP", excluding "PLAY RECAP" itself
+            sed -n '/TASK PROFILE/,/PLAY RECAP/p' minimal_playbook.log | sed '$d' 
+
+            echo -e "\n--- Play Recap & Success Percentage ---"
+            PLAY_RECAP_LINE=$(grep "PLAY RECAP" minimal_playbook.log | tail -n 1) # Get the last PLAY RECAP line
+            echo "PLAY RECAP line: $PLAY_RECAP_LINE"
+
+            OK_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'ok=\K[0-9]+')
+            CHANGED_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'changed=\K[0-9]+')
+            UNREACHABLE_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'unreachable=\K[0-9]+')
+            FAILED_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'failed=\K[0-9]+')
+            
+            OK_COUNT=${OK_COUNT:-0}
+            CHANGED_COUNT=${CHANGED_COUNT:-0}
+            UNREACHABLE_COUNT=${UNREACHABLE_COUNT:-0}
+            FAILED_COUNT=${FAILED_COUNT:-0}
+            
+            TOTAL_ATTEMPTED=$((OK_COUNT + CHANGED_COUNT + UNREACHABLE_COUNT + FAILED_COUNT))
+            SUCCESSFUL_TASKS=$((OK_COUNT + CHANGED_COUNT))
+            
+            if [ "$TOTAL_ATTEMPTED" -gt 0 ]; then
+              SUCCESS_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", ($SUCCESSFUL_TASKS/$TOTAL_ATTEMPTED)*100}")
+              echo "Successful tasks (ok + changed): $SUCCESSFUL_TASKS"
+              echo "Total attempted tasks (ok + changed + unreachable + failed): $TOTAL_ATTEMPTED"
+              echo "Success Percentage: $SUCCESS_PERCENTAGE%"
+            else
+              if grep -q "TASK \[" minimal_playbook.log && ! grep -q "PLAY RECAP" minimal_playbook.log; then
+                 echo "Playbook started but PLAY RECAP not found. Check for errors."
+                 echo "Success Percentage: 0.00%" 
+              elif grep -q "ok=0.*changed=0.*failed=0.*unreachable=0" <<< "$PLAY_RECAP_LINE"; then
+                 echo "All tasks were skipped or no changes made and no failures."
+                 echo "Success Percentage: 100.00% (assuming skipped tasks are not failures if no tasks attempted)"
+              elif ! grep -q "TASK \[" minimal_playbook.log; then
+                 echo "No tasks seem to have been executed."
+                 echo "Success Percentage: N/A"
+              else
+                 echo "Could not parse PLAY RECAP for percentage. Please check the log."
+              fi
+            fi
+          else
+            echo "minimal_playbook.log not found."
+          fi
 
   main:
     runs-on: ${{ matrix.os }}
@@ -60,4 +112,56 @@ jobs:
         run: ansible-galaxy role install -r requirements.yml
 
       - name: Execute main.yml
-        run: ansible-playbook -i localhost, -c local main.yml -v
+        run: |
+          pwd
+          ansible-playbook -i localhost, -c local main.yml -v | tee main_playbook.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Process main.yml results
+        if: always() # Run this step even if the playbook failed
+        run: |
+          echo "--- Ansible Playbook Execution Summary (main.yml) ---"
+          if [ -f main_playbook.log ]; then
+            echo -e "\n--- Task Execution Profile (from profile_tasks) ---"
+            # Extract from "TASK PROFILE" to "PLAY RECAP", excluding "PLAY RECAP" itself
+            sed -n '/TASK PROFILE/,/PLAY RECAP/p' main_playbook.log | sed '$d'
+
+            echo -e "\n--- Play Recap & Success Percentage ---"
+            PLAY_RECAP_LINE=$(grep "PLAY RECAP" main_playbook.log | tail -n 1) # Get the last PLAY RECAP line
+            echo "PLAY RECAP line: $PLAY_RECAP_LINE"
+
+            OK_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'ok=\K[0-9]+')
+            CHANGED_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'changed=\K[0-9]+')
+            UNREACHABLE_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'unreachable=\K[0-9]+')
+            FAILED_COUNT=$(echo "$PLAY_RECAP_LINE" | grep -oP 'failed=\K[0-9]+')
+
+            OK_COUNT=${OK_COUNT:-0}
+            CHANGED_COUNT=${CHANGED_COUNT:-0}
+            UNREACHABLE_COUNT=${UNREACHABLE_COUNT:-0}
+            FAILED_COUNT=${FAILED_COUNT:-0}
+
+            TOTAL_ATTEMPTED=$((OK_COUNT + CHANGED_COUNT + UNREACHABLE_COUNT + FAILED_COUNT))
+            SUCCESSFUL_TASKS=$((OK_COUNT + CHANGED_COUNT))
+
+            if [ "$TOTAL_ATTEMPTED" -gt 0 ]; then
+              SUCCESS_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", ($SUCCESSFUL_TASKS/$TOTAL_ATTEMPTED)*100}")
+              echo "Successful tasks (ok + changed): $SUCCESSFUL_TASKS"
+              echo "Total attempted tasks (ok + changed + unreachable + failed): $TOTAL_ATTEMPTED"
+              echo "Success Percentage: $SUCCESS_PERCENTAGE%"
+            else
+              if grep -q "TASK \[" main_playbook.log && ! grep -q "PLAY RECAP" main_playbook.log; then
+                 echo "Playbook started but PLAY RECAP not found. Check for errors."
+                 echo "Success Percentage: 0.00%"
+              elif grep -q "ok=0.*changed=0.*failed=0.*unreachable=0" <<< "$PLAY_RECAP_LINE"; then
+                 echo "All tasks were skipped or no changes made and no failures."
+                 echo "Success Percentage: 100.00% (assuming skipped tasks are not failures if no tasks attempted)"
+              elif ! grep -q "TASK \[" main_playbook.log; then
+                 echo "No tasks seem to have been executed."
+                 echo "Success Percentage: N/A"
+              else
+                 echo "Could not parse PLAY RECAP for percentage. Please check the log."
+              fi
+            fi
+          else
+            echo "main_playbook.log not found."
+          fi
