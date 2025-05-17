@@ -37,7 +37,7 @@
       - w3m
       - wget
       - zlib
-#- name: Install ffmpeg with special options
+# - name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
 #    state: present

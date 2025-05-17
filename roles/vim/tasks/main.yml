@@ -2,4 +2,4 @@
   copy:
     src: vimrc
     dest: ~/.vimrc
-    remote_src: no
+    remote_src: false

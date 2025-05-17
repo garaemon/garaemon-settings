@@ -21,7 +21,11 @@
 - name: git config alias.uncommit
   command: git config --global alias.uncommit "reset --mixed HEAD~"
 - name: git config alias.graph
-  command: git config --global alias.graph "log --graph -10 --branches --remotes --tags  --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
+  command: |
+    git config --global alias.graph \
+      "log --graph -10 --branches --remotes --tags \
+      --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' \
+      --date-order"
 - name: git config alias.precommit
   command: git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
 - name: git config alias.unmerged

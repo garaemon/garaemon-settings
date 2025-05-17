@@ -4,7 +4,6 @@ profile: basic
 skip_list:
     - name
     - var-naming
-    - yaml
     - command-instead-of-module
     - no-free-form
     - role-name

@@ -1,7 +1,7 @@
 - name: Clone RictyDiminished
   git:
     repo: https://github.com/edihbrandon/RictyDiminished.git
-    dest:  ~/gprog/RictyDiminished
+    dest: ~/gprog/RictyDiminished
 - name: Create ~/.fonts
   file:
     path: ~/.fonts
