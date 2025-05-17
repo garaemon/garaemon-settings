@@ -29,7 +29,7 @@
         url: https://astral.sh/uv/install.sh
         dest: "{{ install_script_temp.path }}"
         mode: '0755' # Make the script executable
-        force: yes
+        force: true
 
     - name: Execute uv install script
       command: "{{ install_script_temp.path }}"

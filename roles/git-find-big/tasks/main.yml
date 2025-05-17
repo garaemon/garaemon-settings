@@ -6,4 +6,4 @@
   get_url:
     url: https://confluence.atlassian.com/bitbucket/files/321848291/321979854/1/1360604134990/git_find_big.sh
     dest: ~/.local/bin/git_find_big.sh
-    mode: 0755
+    mode: "0755"

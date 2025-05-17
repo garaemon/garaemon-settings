@@ -1,14 +1,14 @@
 - when: ansible_os_family == 'Darwin'
   block:
 
-  - name: Make directory for config
+    - name: Make directory for config
     file:
       path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty"
       state: directory
-      mode: 0755
+      mode: "0755"
 
-  - name: Copy config
+    - name: Copy config
     copy:
       src: config
       dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
-      mode: 0644
+      mode: "0644"

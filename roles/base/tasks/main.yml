@@ -7,7 +7,7 @@
   stat:
     path: "{{ ansible_env.HOME }}/.ssh/id_rsa"
   register: id_rsa
-  changed_when: no
+  changed_when: false
 
 - name: Create ssh key if it does not exist
   command: ssh-keygen -t rsa -C "" -N "" -f "{{ ansible_env.HOME }}/.ssh/id_rsa"
@@ -16,7 +16,7 @@
 - name: Get hostname
   command: hostname
   register: hostname
-  changed_when: no
+  changed_when: false
 
 - name: Make temp directory to copy the remote public key
   local_action:

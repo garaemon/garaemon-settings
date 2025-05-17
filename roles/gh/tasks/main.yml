@@ -18,7 +18,7 @@
       file:
         path: /etc/apt/keyrings
         state: directory
-        mode: 0755
+        mode: "0755"
       become: true
 
     - name: Download the GitHub CLI keyring
@@ -41,12 +41,15 @@
     - name: Add the GitHub CLI repository
       copy:
         dest: /etc/apt/sources.list.d/github-cli.list
-        content: "deb [arch={{ dpkg_arch_output.stdout }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+        content: >
+          deb [arch={{ dpkg_arch_output.stdout }}
+          signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg]
+          https://cli.github.com/packages stable main
       become: true
 
     - name: Update apt
       apt:
-        update_cache: yes
+        update_cache: true
       become: true
 
     - name: Install gh
