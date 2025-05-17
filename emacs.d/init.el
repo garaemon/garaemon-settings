@@ -96,12 +96,13 @@
 (global-unset-key "\C-\\")
 (prefer-coding-system 'utf-8)
 (setq column-number-mode t) ; show column number
-;; no scroll bar
-(scroll-bar-mode -1)
-;; no menu bar
-(menu-bar-mode -1)
-;; no tool bar
-(tool-bar-mode -1)
+(when (display-graphic-p)
+  ;; no scroll bar
+  (scroll-bar-mode -1)
+  ;; no menu bar
+  (menu-bar-mode -1)
+  ;; no tool bar
+  (tool-bar-mode -1))
 ;; The default of find-name-arg is "-name".
 ;; In order to exclude git directory from `find-name-dired', add option to exclude .git directory.
 (setq find-name-arg "-not -path '*/\.git*' -name")
