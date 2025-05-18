@@ -57,7 +57,7 @@
   unarchive:
     src: "{{ peco_tempfile_darwin.path }}"
     dest: "{{ peco_extract_dir_darwin.path }}"
-    remote_src: yes
+    remote_src: true
 
 - name: Create tempfile for peco download (debian)
   tempfile:
@@ -97,7 +97,7 @@
     src: "{{ peco_extract_dir_darwin.path }}/peco_darwin_{{ peco_arch }}/peco"
     dest: ~/.local/bin/peco
     mode: "0755"
-    remote_src: yes
+    remote_src: true
   when: ansible_os_family == "Darwin" and peco_download_darwin.changed
 
 - name: Copy to .local/bin/ (debian)
@@ -105,5 +105,5 @@
     src: "{{ peco_extract_dir_debian.path }}/peco_linux_{{ peco_arch }}/peco"
     dest: ~/.local/bin/peco
     mode: "0755"
-    remote_src: yes
+    remote_src: true
   when: ansible_os_family == "Debian" and peco_download_debian.changed
