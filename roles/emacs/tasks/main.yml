@@ -54,7 +54,7 @@
                 ansible_distribution != 'Ubuntu' and
                 ansible_distribution != 'Debian'
               )
-        - build_emacs
+        - emacs_build_emacs
       block:
         - name: Install packages to build emacs
           apt:
