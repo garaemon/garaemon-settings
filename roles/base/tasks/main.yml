@@ -19,8 +19,9 @@
   changed_when: false
 
 - name: Make temp directory to copy the remote public key
-  local_action:
-    module: tempfile
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.tempfile:
     state: directory
   register: local_temp_directory_for_ssh_key
 
@@ -44,8 +45,9 @@
   when: gh_exists.rc == 0
 
 - name: Register the key
-  local_action:
-    module: command
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command:
     cmd: gh ssh-key add -t '{{ hostname.stdout }} (Automatically registered by ansible)' "{{ local_temp_directory_for_ssh_key.path }}/id_rsa.pub"
   when:
     - gh_exists.rc == 0
