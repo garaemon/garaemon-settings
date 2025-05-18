@@ -5,38 +5,75 @@
   when: ansible_os_family == "Debian"
 
 - name: git config core.page
-  command: git config --global core.pager "diff-so-fancy | less --tabs=4 -RFX"
+  community.general.git_config:
+    name: core.pager
+    scope: global
+    value: "diff-so-fancy | less --tabs=4 -RFX"
 - name: git config alias.see
-  command: git config --global alias.see browse
+  community.general.git_config:
+    name: alias.see
+    scope: global
+    value: browse
 - name: git config alias.p
-  command: git config --global alias.p pull-request
+  community.general.git_config:
+    name: alias.p
+    scope: global
+    value: pull-request
 - name: git config alilas.br
-  command: git config --global alias.br branch
+  community.general.git_config:
+    name: alias.br
+    scope: global
+    value: branch
 - name: git config alias.co
-  command: git config --global alias.co checkout
+  community.general.git_config:
+    name: alias.co
+    scope: global
+    value: checkout
 - name: git config alias.st
-  command: git config --global alias.st status
+  community.general.git_config:
+    name: alias.st
+    scope: global
+    value: status
 - name: git config alias.unstage
-  command: git config --global alias.unstage "reset -q HEAD --"
+  community.general.git_config:
+    name: alias.unstage
+    scope: global
+    value: "reset -q HEAD --"
 - name: git config alias.uncommit
-  command: git config --global alias.uncommit "reset --mixed HEAD~"
+  community.general.git_config:
+    name: alias.uncommit
+    scope: global
+    value: "reset --mixed HEAD~"
 - name: git config alias.graph
-  command: |
-    git config --global alias.graph \
-      "log --graph -10 --branches --remotes --tags \
-      --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' \
-      --date-order"
+  community.general.git_config:
+    name: alias.graph
+    scope: global
+    value: "log --graph -10 --branches --remotes --tags --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
 - name: git config alias.precommit
-  command: git config --global alias.precommit "diff --cached --diff-algorithm=minimal -w"
+  community.general.git_config:
+    name: alias.precommit
+    scope: global
+    value: "diff --cached --diff-algorithm=minimal -w"
 - name: git config alias.unmerged
-  command: git config --global alias.unmerged "diff --name-only --diff-filter=U"
+  community.general.git_config:
+    name: alias.unmerged
+    scope: global
+    value: "diff --name-only --diff-filter=U"
 - name: git config alias.remotes
-  command: git config --global alias.remotes "remotes = remote -v"
+  community.general.git_config:
+    name: alias.remotes
+    scope: global
+    value: "remote -v"
 - name: git config rebase.autostash
-  command: git config --global rebase.autostash true
-
+  community.general.git_config:
+    name: rebase.autostash
+    scope: global
+    value: "true"
 - name: git config core.excludesFile (global gitignore)
-  command: git config --global core.excludesFile ~/.gitignore
+  community.general.git_config:
+    name: core.excludesFile
+    scope: global
+    value: "~/.gitignore"
 
 - name: Copy the global gitignore
   copy:

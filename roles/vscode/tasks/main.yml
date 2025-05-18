@@ -1,8 +1,14 @@
 # Based on https://code.visualstudio.com/docs/setup/linux
 
-- name: Download microsoft.gpg
-  shell: |
-    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
+- name: Download microsoft.asc
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: /tmp/microsoft.asc
+
+- name: Convert microsoft.asc to gpg
+  command: gpg --dearmor -o /tmp/microsoft.gpg /tmp/microsoft.asc
+  args:
+    creates: /tmp/microsoft.gpg
 - name: Install microsoft.gpg
   command:
     install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/

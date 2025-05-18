@@ -1,7 +1,15 @@
 - name: Get latest peco version
-  shell: >
-    curl -sI https://github.com/peco/peco/releases/latest | awk -F '/' '/^location:/{print $NF}'
-  register: peco_latest_version
+  uri:
+    url: https://github.com/peco/peco/releases/latest
+    method: HEAD
+    follow_redirects: true
+    return_content: false
+  register: peco_latest_version_response
+
+- name: Set peco_latest_version
+  set_fact:
+    peco_latest_version:
+      stdout: "{{ peco_latest_version_response.url.split('/')[-1] }}"
 
 - name: Set OS Name (darwin)
   set_fact:
@@ -45,7 +53,10 @@
 
 - name: Extract peco (debian)
   when: download_peco.changed and ansible_os_family == "Debian"
-  command: tar -xvzf /tmp/peco_linux_{{ peco_arch }}.tar.gz chdir=/tmp/
+  unarchive:
+    src: /tmp/peco_linux_{{ peco_arch }}.tar.gz
+    dest: /tmp/
+    remote_src: true
 
 - name: Create .local/bin
   file:

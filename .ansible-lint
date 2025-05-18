@@ -4,7 +4,6 @@ profile: basic
 skip_list:
     - name
     - var-naming
-    - command-instead-of-module
     - no-free-form
     - role-name
     - schema

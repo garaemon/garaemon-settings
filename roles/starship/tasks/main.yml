@@ -9,9 +9,16 @@
   when: which_starship.rc == 0
   register: starship_installed_version
 
+- name: Download starship install script
+  get_url:
+    url: https://starship.rs/install.sh
+    dest: /tmp/install_starship.sh
+    mode: "0755"
+  when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+
 - name: Install starship
   shell:
-    curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir $HOME/.local/bin
+    /tmp/install_starship.sh -y --bin-dir $HOME/.local/bin
   when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
 
 - name: Create config directory
