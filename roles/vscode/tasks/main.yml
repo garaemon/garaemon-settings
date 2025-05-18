@@ -1,12 +1,34 @@
 # Based on https://code.visualstudio.com/docs/setup/linux
 
-- name: Download microsoft.gpg
-  shell: |
-    curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
+- name: Create tempfile for microsoft.asc
+  tempfile:
+    state: file
+    suffix: microsoft_asc
+  register: microsoft_asc_tempfile
+
+- name: Download microsoft.asc
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: "{{ microsoft_asc_tempfile.path }}"
+  register: microsoft_asc_download
+
+- name: Create tempfile for microsoft.gpg
+  tempfile:
+    state: file
+    suffix: microsoft_gpg
+  register: microsoft_gpg_tempfile
+
+- name: Convert microsoft.asc to gpg
+  command: "gpg --dearmor -o {{ microsoft_gpg_tempfile.path }} {{ microsoft_asc_tempfile.path }}"
+  args:
+    creates: "{{ microsoft_gpg_tempfile.path }}"
+  when: microsoft_asc_download.changed
+
 - name: Install microsoft.gpg
   command:
-    install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
+    install -o root -g root -m 644 "{{ microsoft_gpg_tempfile.path }}" /etc/apt/trusted.gpg.d/
   become: true
+  when: microsoft_asc_download.changed # Only run if gpg file was (re)created
 
 - name: Add microsoft apt repository
   lineinfile:
