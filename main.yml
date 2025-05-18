@@ -34,4 +34,4 @@
     - typescript-language-server
     - ghostty
   vars:
-    build_emacs: true
+    emacs_build_emacs: true
