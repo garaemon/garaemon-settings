@@ -1,8 +1,6 @@
 ---
-profile: basic
 
 skip_list:
     - name
-    - no-free-form
     - role-name
     - schema
