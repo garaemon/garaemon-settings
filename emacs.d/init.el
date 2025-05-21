@@ -630,7 +630,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package all-the-icons :ensure t)
 
 (use-package aider :ensure t
-  :custom (aider-args '("--dark-mode" "--model" "gemini/gemini-2.5-flash-preview-04-17"))
+  :custom
+  (aider-program "uv")
+  (aider-args '("tool" "run" "--from" "aider-chat" "aider"
+                "--dark-mode" "--model" "gemini/gemini-2.5-flash-preview-04-17"))
   :config
   (if (getenv "EMACS_GEMINI_KEY")
       (setenv "GEMINI_API_KEY" (getenv "EMACS_GEMINI_KEY")))
