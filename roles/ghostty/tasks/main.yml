@@ -1,4 +1,5 @@
-- when: ansible_os_family == 'Darwin'
+- name: Configure Ghostty on Darwin
+  when: ansible_os_family == 'Darwin'
   block:
 
     - name: Make directory for config

@@ -1,4 +1,5 @@
-- hosts: all
+- name: Apply minimal settings to all hosts
+  hosts: all
   roles:
     - base
     - git
