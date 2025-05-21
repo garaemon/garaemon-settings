@@ -21,12 +21,12 @@
     os_name: "linux"
   when: ansible_os_family == "Debian"
 
-- name: set architecture
+- name: Set architecture to amd64
   set_fact:
     peco_arch: amd64
   when: ansible_architecture == 'amd64' or ansible_architecture == 'x86_64'
 
-- name: set architecture
+- name: Set architecture to arm64
   set_fact:
     peco_arch: arm64
   when: ansible_architecture == 'aarch64' or ansible_architecture == 'arm64'

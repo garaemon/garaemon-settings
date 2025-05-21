@@ -46,7 +46,8 @@
         - emacs_version_output.stderr is defined
         - emacs_version_output.stderr != ""
 
-    - when:
+    - name: Build Emacs if not already installed or version is too old
+      when:
         - not (
                 emacs_stat.stat.exists and
                 installed_emacs_version is defined and
@@ -90,7 +91,8 @@
           set_fact:
             emacs_build_parallel_jobs:
               "{{ [ansible_processor_threads_per_core * ansible_processor_cores, 4] | min }}"
-        - debug:
+        - name: Display Emacs build parallel jobs
+          debug:
             msg: "make builds emacs with -j {{ emacs_build_parallel_jobs }}"
         - name: Build the latest emacs
           command: make CC="ccache gcc" CXX="ccache g++" -j {{ emacs_build_parallel_jobs }}

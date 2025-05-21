@@ -15,7 +15,8 @@
     uv_install_needed: "{{ uv_check.rc != 0 or uvx_check.rc != 0 }}"
   changed_when: false
 
-- when: uv_install_needed
+- name: Install uv and uvx if needed
+  when: uv_install_needed
   block:
 
     - name: Create temporary file for uv install script

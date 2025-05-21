@@ -13,6 +13,6 @@
   with_fileglob:
     - ~/gprog/RictyDiminished/*.ttf
 
-- name: updat fc-cache
+- name: Update fc-cache
   command: fc-cache -vf
   become: true
