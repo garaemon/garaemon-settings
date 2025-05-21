@@ -4,72 +4,72 @@
   become: true
   when: ansible_os_family == "Debian"
 
-- name: git config core.page
+- name: Git config core.pager
   community.general.git_config:
     name: core.pager
     scope: global
     value: "diff-so-fancy | less --tabs=4 -RFX"
-- name: git config alias.see
+- name: Git config alias.see
   community.general.git_config:
     name: alias.see
     scope: global
     value: browse
-- name: git config alias.p
+- name: Git config alias.p
   community.general.git_config:
     name: alias.p
     scope: global
     value: pull-request
-- name: git config alilas.br
+- name: Git config alias.br
   community.general.git_config:
     name: alias.br
     scope: global
     value: branch
-- name: git config alias.co
+- name: Git config alias.co
   community.general.git_config:
     name: alias.co
     scope: global
     value: checkout
-- name: git config alias.st
+- name: Git config alias.st
   community.general.git_config:
     name: alias.st
     scope: global
     value: status
-- name: git config alias.unstage
+- name: Git config alias.unstage
   community.general.git_config:
     name: alias.unstage
     scope: global
     value: "reset -q HEAD --"
-- name: git config alias.uncommit
+- name: Git config alias.uncommit
   community.general.git_config:
     name: alias.uncommit
     scope: global
     value: "reset --mixed HEAD~"
-- name: git config alias.graph
+- name: Git config alias.graph
   community.general.git_config:
     name: alias.graph
     scope: global
     value: "log --graph -10 --branches --remotes --tags --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order"
-- name: git config alias.precommit
+- name: Git config alias.precommit
   community.general.git_config:
     name: alias.precommit
     scope: global
     value: "diff --cached --diff-algorithm=minimal -w"
-- name: git config alias.unmerged
+- name: Git config alias.unmerged
   community.general.git_config:
     name: alias.unmerged
     scope: global
     value: "diff --name-only --diff-filter=U"
-- name: git config alias.remotes
+- name: Git config alias.remotes
   community.general.git_config:
     name: alias.remotes
     scope: global
     value: "remote -v"
-- name: git config rebase.autostash
+- name: Git config rebase.autostash
   community.general.git_config:
     name: rebase.autostash
     scope: global
     value: "true"
-- name: git config core.excludesFile (global gitignore)
+- name: Git config core.excludesFile (global gitignore)
   community.general.git_config:
     name: core.excludesFile
     scope: global
