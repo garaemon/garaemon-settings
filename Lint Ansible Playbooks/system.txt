@@ -1,0 +1,5 @@
+2025-05-21T07:22:24.9715931Z Requested labels: ubuntu-latest
+2025-05-21T07:22:24.9715931Z Job defined at: garaemon/garaemon-settings/.github/workflows/ansible-lint.yml@refs/pull/70/merge
+2025-05-21T07:22:24.9715931Z Waiting for a runner to pick up this job...
+2025-05-21T07:22:25.8084252Z Job is waiting for a hosted runner to come online.
+2025-05-21T07:22:25.8084377Z Job is about to start running on the hosted runner: GitHub Actions 1000000400
