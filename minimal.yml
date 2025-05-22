@@ -3,7 +3,7 @@
   roles:
     - base
     - git
-    - git-find-big
+    - git_find_big
     - vim
     - tmux
     - zsh
@@ -13,9 +13,9 @@
     - nvm
     - ispell
     - tig
-    - dircolors-solarized
+    - dircolors_solarized
     - ghostty
-    # - role: base16-gnome-terminal
+    # - role: base16_gnome_terminal
     #   when: ansible_os_family == "Debian"
     # - role: dictd
     #   when: ansible_os_family == "Debian"
