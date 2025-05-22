@@ -1,6 +1,4 @@
 ---
 profile: basic
-
 skip_list:
-    - role-name
-    - schema
+  - role-name
