@@ -2,9 +2,9 @@
   hosts: all
   roles:
     - base
-    - sudo_no_password
+    - sudo-no-password
     - git
-    - git_find_big
+    - git-find-big
     - vim
     - tmux
     - zsh
@@ -14,7 +14,7 @@
     - role: homebrew
       when: ansible_os_family == "Darwin"
     - uv
-    - clang_format
+    - clang-format
     - gh
     - emacs
     - peco
@@ -22,8 +22,8 @@
     - font
     - ispell
     - tig
-    - dircolors_solarized
-    - role: base16_gnome_terminal
+    - dircolors-solarized
+    - role: base16-gnome-terminal
       when: ansible_os_family == "Debian"
     - role: dictd
       when: ansible_os_family == "Debian"
@@ -31,8 +31,8 @@
       when:
         - ansible_os_family == "Debian"
         - ansible_architecture != 'aarch64'
-    - python_language_server
-    - typescript_language_server
+    - python-language-server
+    - typescript-language-server
     - ghostty
   vars:
     emacs_build_emacs: true
