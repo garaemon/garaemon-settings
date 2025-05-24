@@ -18,7 +18,6 @@
       - findutils
       - fontconfig
       - gnu-sed
-      - google-japanese-ime
       - gpg
       - hg
       - hub

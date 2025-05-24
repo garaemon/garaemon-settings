@@ -7,9 +7,6 @@
 * [ここ](https://gist.github.com/rogual/6824790627960fc93077)からインストールする.
 * Terminal.appでフォントをMonaco -> Monaco for powerlnieに変更する.
 
-## ~~日本語変換~~ (brew caskでインストール)
-* [Google日本語変換](https://www.google.co.jp/ime/)
-
 ## ~~Alt+Tabの挙動~~(brew caskでインストール)
 * [hyperswitch](https://bahoom.com/hyperswitch)を使う
 
