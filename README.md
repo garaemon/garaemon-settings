@@ -1,4 +1,4 @@
-# garaemon-settings [![Build Status](https://travis-ci.org/garaemon/garaemon-settings.png)](https://travis-ci.org/garaemon/garaemon-settings)
+# garaemon-settings [![Ansible Lint](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml) [![Ansible Playbook](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml)
 
 some script to setup garaemon's environment
 
