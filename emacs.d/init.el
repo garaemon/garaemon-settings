@@ -1742,6 +1742,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (symon-mode)
   )
 
+(use-package swift-mode :ensure t)
+
 (use-package thingopt :ensure t)
 
 (use-package total-lines :ensure t
