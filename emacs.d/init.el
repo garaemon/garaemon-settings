@@ -633,7 +633,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :custom
   (aider-program "uv")
   (aider-args '("tool" "run" "--from" "aider-chat" "aider"
-                "--dark-mode" "--model" "gemini/gemini-2.5-flash-preview-04-17"))
+                "--dark-mode" "--model" "gemini/gemini-2.5-flash-preview-05-20"))
   :config
   (if (getenv "EMACS_GEMINI_KEY")
       (setenv "GEMINI_API_KEY" (getenv "EMACS_GEMINI_KEY")))
@@ -1532,7 +1532,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom
   ;; Use Geimini
   (org-ai-service 'google)
-  (org-ai-default-chat-model "gemini-2.5-flash-preview-04-17")
+  (org-ai-default-chat-model "gemini-2.5-flash-preview-05-20")
   (org-ai-auto-fill nil)
   ;; ~/.authinfo should have
   ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
@@ -2141,7 +2141,7 @@ Optional argument ARGS ."
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
-        (setq gptel-model 'gemini-2.5-flash-preview-04-17
+        (setq gptel-model 'gemini-2.5-flash-preview-05-20
               gptel-backend (gptel-make-gemini "Gemini"
                  :key gemini-key
                  :stream t))
