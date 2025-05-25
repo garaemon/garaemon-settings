@@ -857,7 +857,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (shell-script-mode . #'lsp)
          (c-mode . #'lsp)
          (cpp-mode . #'lsp)
-         (go-mode . #'lsp))
+         (go-mode . #'lsp)
+         (swift-mode . #'lsp))
   :config
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
   ;; Disable ruff in tramp environment too
@@ -881,6 +882,15 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package lsp-ui :ensure t)
+
+;; lsp for swift
+(use-package lsp-sourcekit
+  :ensure t
+  :after lsp-mode
+  :custom
+  (lsp-sourcekit-executable
+   "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")
+  )
 
 (use-package flycheck :ensure t
   :requires (thingopt)
