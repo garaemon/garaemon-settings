@@ -8,7 +8,7 @@
 * Terminal.appでフォントをMonaco -> Monaco for powerlnieに変更する.
 
 ## ~~Alt+Tabの挙動~~(brew caskでインストール)
-* [hyperswitch](https://bahoom.com/hyperswitch)を使う
+* [AltTab](https://alt-tab-macos.netlify.app/)を使う
 
 ## Windowのスナップ
 * BetterSnapTool (via AppStore)で設定
