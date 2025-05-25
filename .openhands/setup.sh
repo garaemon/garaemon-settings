@@ -1,4 +1,4 @@
 #!/bin/bash
 
-git config --global user.name "Ryohei Ueda (bot)"
-git config --global user.email "garaemon@gmail.com"
+git config --global user.name "$GIT_COMMITTER_NAME"
+git config --global user.email "$GIT_COMMITTER_EMAIL"
