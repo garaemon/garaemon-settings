@@ -809,18 +809,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (exec-path-from-shell-initialize)
   )
 
-(use-package expand-region :ensure t
-  :config
-  (when (<= emacs-major-version 24)
-    (defmacro save-mark-and-excursion
-        (&rest
-         body)
-      `(save-excursion ,@body)))
-  (global-set-key (kbd "C-^") 'er/expand-region)
-  (global-set-key (kbd "C-M-^") 'er/contract-region)
-  ;; Dummy functions to ignore deprecated functions.
-  (defun org-outline-overlay-data (&rest args))
-  (defun org-set-outline-overlay-data (&rest args))
+(use-package expreg
+  :ensure t
+  :bind (("\C-^" . 'expreg-expand))
   )
 
 ;; It does not work with lsp mode
