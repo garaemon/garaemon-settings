@@ -624,6 +624,24 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; Install use-package
   (package-install 'use-package))
 
+(use-package ace-window
+  :ensure t
+  :config
+  (defun ace-window-or-split ()
+    "Split window if there is enough space and switch to next window."
+    (interactive)
+    (if (one-window-p)
+        ;; 4 is for linum characters.
+        (let ((column-width (+ 100 4)))
+          (if (>= (window-body-width) (* 3 column-width))
+              (let ((split-num (/ (window-body-width) column-width)))
+                (split-window-horizontally-n split-num))
+            (split-window-horizontally)))
+      (call-interactively 'ace-window)))
+
+  :bind ("M-o" . 'ace-window-or-split)
+  )
+
 ;; (when (executable-find "pdftex")
 ;;   (use-package auctex :ensure t)) ;; it depends on tex
 ;; Need to run (all-the-icons-install-fonts)
