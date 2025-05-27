@@ -631,7 +631,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package aidermacs
   :ensure t
-  :bind (("C-c a" . aidermacs-transient-menu))
+  ;; :bind (("C-c a" . aidermacs-transient-menu))
   :config
   ;; Use gemini as default LLM
   (if (getenv "EMACS_GEMINI_KEY")
