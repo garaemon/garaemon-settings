@@ -629,14 +629,21 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; Need to run (all-the-icons-install-fonts)
 (use-package all-the-icons :ensure t)
 
-(use-package aider :ensure t
-  :custom
-  (aider-program "uv")
-  (aider-args '("tool" "run" "--from" "aider-chat" "aider"
-                "--dark-mode" "--model" "gemini/gemini-2.5-flash-preview-05-20"))
+(use-package aidermacs
+  :ensure t
+  :bind (("C-c a" . aidermacs-transient-menu))
   :config
+  ;; Use gemini as default LLM
   (if (getenv "EMACS_GEMINI_KEY")
       (setenv "GEMINI_API_KEY" (getenv "EMACS_GEMINI_KEY")))
+
+  (let* ((uv-tool-dir (string-trim (shell-command-to-string "uv tool dir")))
+         (aider-exec (format "%s/aider-chat/bin/aider" uv-tool-dir)))
+    (setq aidermacs-program aider-exec))
+  :custom
+  ; See the Configuration section below
+  (aidermacs-use-architect-mode t)
+  (aidermacs-default-model "gemini/gemini-2.5-flash-preview-05-20")
   )
 
 (use-package anzu :ensure t
