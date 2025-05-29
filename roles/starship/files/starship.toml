@@ -26,6 +26,7 @@ $scala\
 $docker_context\
 [](fg:#06969A bg:#33658A)\
 $time\
+$cmd_duration\
 [ ](fg:#33658A) $character
 \\$ """
 
@@ -162,3 +163,8 @@ format = '[ ♥ $time ]($style)'
 [python]
 # Remove "via" from the original format
 format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\))]($style)'
+style = "bg:#5CAB97"
+
+[cmd_duration]
+format = '[took $duration]($style)'
+style = "bg:#DC322F"
