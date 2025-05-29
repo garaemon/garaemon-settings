@@ -1636,7 +1636,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
    '(("d" "default" plain "%?"
      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                         "#+title: ${title}\n#+date: %T\n#+filetags: \n")
-     :unnarrowed t)))
+     :unnarrowed t
+     :jump-to-captured t)))
   :config
   (if (not (file-exists-p org-roam-directory))
       (make-directory org-roam-directory))
@@ -1657,8 +1658,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
    ;; Insert timestamp automatically for org-agenda
    '(("d" "default" entry
       "* %T %?\n "
-      :target (file+head "%<%Y-%m-%d>.org"
-                         "#+title: %<%Y-%m-%d>\n"))))
+      :target (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n")
+      :jump-to-captured t)))
   :config
   (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :bind-keymap ("C-c n d" . org-roam-dailies-map)
