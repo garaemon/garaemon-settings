@@ -900,7 +900,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; :init
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
-  :bind ("C-c f" . 'lsp-format-buffer)
+  :bind (
+         ("C-c f" . 'lsp-format-buffer)
+         ("M-." . 'lsp-find-definition)
+         )
   )
 
 (use-package lsp-ui :ensure t)
