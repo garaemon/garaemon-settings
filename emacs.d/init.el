@@ -663,6 +663,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ; See the Configuration section below
   (aidermacs-use-architect-mode t)
   (aidermacs-default-model "gemini/gemini-2.5-flash-preview-05-20")
+  :hook (aidermacs-comint-mode . (lambda ()
+                                   (display-line-numbers-mode -1)
+                                   (display-fill-column-indicator-mode -1)
+                                   (setq-local global-hl-line-mode nil)))
   )
 
 (use-package anzu :ensure t
