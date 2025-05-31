@@ -940,6 +940,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :custom
   (ispell-silently-savep t)
   :config
+  (setq ispell-personal-dictionary-filename "~/.emacs.d/aspell/aspell-personal.pws")
+  (make-directory (file-name-directory ispell-personal-dictionary-filename) t)
   (flycheck-aspell-define-checker "org"
     "Org" ("--add-filter" "url")
     (org-mode))
