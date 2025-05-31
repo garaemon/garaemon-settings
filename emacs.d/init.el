@@ -648,7 +648,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package all-the-icons :ensure t)
 
 (use-package aidermacs
-  :after (exec-path-from-shell)
+  :defer t
   :ensure t
   ;; :bind (("C-c a" . aidermacs-transient-menu))
   :config
