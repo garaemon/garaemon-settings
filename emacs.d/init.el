@@ -648,6 +648,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package all-the-icons :ensure t)
 
 (use-package aidermacs
+  :after (exec-path-from-shell)
   :ensure t
   ;; :bind (("C-c a" . aidermacs-transient-menu))
   :config
@@ -2174,6 +2175,7 @@ Optional argument ARGS ."
 
 
 (use-package gptel :ensure t
+  :after (exec-path-from-shell)
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
