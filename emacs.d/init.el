@@ -957,6 +957,33 @@ unless you specify the optional argument: FORCE-REVERTING to true."
     (add-to-list 'flycheck-checkers checker))
   )
 
+(use-package minuet
+  :ensure t
+  :bind
+  (:map minuet-active-mode-map
+   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
+   ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
+   ;; Accept the first line of completion, or N lines with a numeric-prefix:
+   ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+   ("M-a" . #'minuet-accept-suggestion-line)
+   ("M-e" . #'minuet-dismiss-suggestion))
+  :hook (prog-mode . minuet-auto-suggestion-mode)
+  :custom
+  (minuet-provider 'openai-fim-compatible)
+  (minuet-n-completions 1)
+  (minuet-context-window 512)
+  :config
+  (plist-put minuet-openai-fim-compatible-options
+             :end-point "http://localhost:11434/v1/completions")
+  ;; an arbitrary non-null environment variable as placeholder.
+  ;; For Windows users, TERM may not be present in environment variables.
+  ;; Consider using APPDATA instead.
+  (plist-put minuet-openai-fim-compatible-options :name "Ollama")
+  (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
+  (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
+
+  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
+
 ;; (use-package flycheck-eglot
 ;;   :ensure t
 ;;   :after (flycheck eglot)
