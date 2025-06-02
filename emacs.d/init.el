@@ -998,6 +998,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; Consider using APPDATA instead.
   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
+  ;; TODO: Install qwen2.5-coder:3b automatically
   (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
 
   (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
