@@ -8,7 +8,7 @@ $directory\
 [](fg:#DA627D bg:#FCA17D)\
 $git_branch\
 $git_status\
-[](fg:#FCA17D bg:#86BBD8)\
+[](fg:#FCA17D)
 $c\
 $elixir\
 $elm\
@@ -24,7 +24,7 @@ $rust\
 $scala\
 [](fg:#86BBD8 bg:#06969A)\
 $docker_context\
-[](fg:#06969A bg:#33658A)\
+[](fg:#06969A)
 $time\
 $cmd_duration\
 [ ](fg:#33658A) $character
