@@ -924,7 +924,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
   :bind (
-         ("C-c f" . 'lsp-format-buffer)
+         ("C-c f" . 'lsp-format-region)
          ("M-." . 'lsp-find-definition)
          )
   )
