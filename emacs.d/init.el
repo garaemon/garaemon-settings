@@ -770,12 +770,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :config
   (dashboard-setup-startup-hook))
 
-;; You may have to execute (nerd-icons-install-fonts)
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode t)
-  )
-
 (use-package udev-mode :ensure t)
 
 (use-package python
