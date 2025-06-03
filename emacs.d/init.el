@@ -491,6 +491,29 @@
 ;;; }}}
 
 
+(defun profiler-auto-start-and-report (duration-seconds)
+  "Starts the Emacs profiler and automatically stops it after a specified duration,
+then generates a report. Prompts the user for the duration in seconds."
+  (interactive "nNumber of seconds to profile: ")
+  (unless (> duration-seconds 0)
+    (user-error "Duration must be a positive number."))
+
+  (message "Profiler started for %s seconds..." duration-seconds)
+  (profiler-start 'cpu+mem)
+
+  ;; Set a timer to stop the profiler and generate a report after the specified time
+  (run-at-time
+   (format "%s sec" duration-seconds) ; Time specification
+   nil                             ; Do not repeat (nil)
+   (lambda ()
+     (message "Stopping profiler and generating report...")
+     (profiler-stop)
+     (profiler-report)
+     (message "Profiling complete."))
+   )
+  (message "Profiler is running. It will stop and report automatically in %s seconds." duration-seconds))
+
+
 ;;; code-format-view {{{
 (when (require 'code-format nil t)
   ;; (global-set-key "\M-[" 'code-format-view)
