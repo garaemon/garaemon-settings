@@ -743,10 +743,16 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   )
 
 (use-package base16-theme :ensure t
+  :if (display-graphic-p)
   :config
   (setq base16-distinct-fringe-background nil)
-  (if (display-graphic-p)
-      (load-theme 'base16-solarized-dark t))
+  ;; (load-theme 'base16-solarized-dark t)
+  )
+
+(use-package solarized-theme :ensure t
+  :if (display-graphic-p)
+  :config
+  (load-theme 'solarized-dark t)
   )
 
 (use-package blamer
