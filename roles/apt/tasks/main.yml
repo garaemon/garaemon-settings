@@ -23,6 +23,7 @@
       - mercurial
       - python3-pip
       - r-base
+      - ripgrep
       - rlwrap
       - silversearcher-ag
       - sqlite3
