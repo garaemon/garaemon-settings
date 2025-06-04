@@ -491,6 +491,15 @@
 ;;; }}}
 
 
+;; Increase the default width of a new window.
+(when (display-graphic-p)
+  (add-hook 'after-init-hook
+            (lambda()
+              ;; The original size is 80x30.
+              (set-frame-size (selected-frame) 160 30)
+              nil))
+  )
+
 (defun profiler-auto-start-and-report (duration-seconds)
   "Starts the Emacs profiler and automatically stops it after a specified duration,
 then generates a report. Prompts the user for the duration in seconds."
