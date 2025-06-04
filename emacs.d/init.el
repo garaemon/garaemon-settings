@@ -1158,7 +1158,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :ensure t
   :bind
   ("C-x b" . consult-buffer)
-  ("M-s" . consult-grep)
+  ("M-s" . consult-ripgrep)
   :config
   ;; TODO: the function does not work if git does not handle a current file.
   ;; This is because `(vc-root-dir)' returns nil.
