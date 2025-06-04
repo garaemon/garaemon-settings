@@ -43,7 +43,6 @@
 
 - N the number of the lines to scroll up"
   (interactive "p")
-  ;;(line-move-visual (- n) t)
   (forward-line (- n))
   (scroll-down n))
 
@@ -52,7 +51,6 @@
 
 - N the number of the lines to scroll down"
   (interactive "p")
-  ;;(line-move-visual n t)
   (forward-line n)
   (scroll-up n))
 
@@ -490,6 +488,15 @@
                            (split-window-horizontally-n 3)))
 ;;; }}}
 
+
+;; Increase the default width of a new window.
+(when (display-graphic-p)
+  (add-hook 'after-init-hook
+            (lambda()
+              ;; The original size is 80x30.
+              (set-frame-size (selected-frame) 160 30)
+              nil))
+  )
 
 (defun profiler-auto-start-and-report (duration-seconds)
   "Starts the Emacs profiler and automatically stops it after a specified duration,
