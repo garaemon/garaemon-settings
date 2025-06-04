@@ -406,18 +406,8 @@
 
 ;;; nlinum or display-line-numbers {{{
 (if (functionp 'global-display-line-numbers-mode)
-    (progn
-      (global-display-line-numbers-mode)
-      (defun display-line-numbers-color-on-after-init (frame)
-        "Hook function executed after FRAME is generated."
-        (unless (display-graphic-p frame)
-          (set-face-background
-           'line-number
-           (plist-get base16-solarized-dark-colors :base01))))
-      (add-hook 'after-make-frame-functions
-                (lambda (frame)
-                  (display-line-numbers-color-on-after-init frame)))
-      ))
+    (global-display-line-numbers-mode)
+  )
 ;;; }}}
 
 ;;; Delete trailing whitespaces when saving the file. {{{
