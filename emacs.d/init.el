@@ -43,7 +43,6 @@
 
 - N the number of the lines to scroll up"
   (interactive "p")
-  ;;(line-move-visual (- n) t)
   (forward-line (- n))
   (scroll-down n))
 
@@ -52,7 +51,6 @@
 
 - N the number of the lines to scroll down"
   (interactive "p")
-  ;;(line-move-visual n t)
   (forward-line n)
   (scroll-up n))
 
