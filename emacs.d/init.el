@@ -798,6 +798,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package udev-mode :ensure t)
 
+(use-package powerline
+  :ensure t
+  :config (powerline-default-theme)
+  ;; TODO: update face color for solarized theme
+  )
+
 (use-package python
   :custom (gud-pdb-command-name "python3 -m pdb")
   :config
