@@ -1014,6 +1014,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook (prog-mode . minuet-auto-suggestion-mode)
   :custom
   (minuet-provider 'openai-fim-compatible)
+  (minuet-auto-suggestion-debounce-delay 1.0)
   (minuet-n-completions 1)
   (minuet-context-window 512)
   :config
@@ -1040,7 +1041,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; This line should be placed AFTER `minuet-auto-suggestion-mode` is loaded or enabled.
   (advice-add 'minuet-auto-suggestion--trigger-function :around #'my-minuet-eol-only-advice)
 
-  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
+  (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56)
+  )
 
 ;; (use-package flycheck-eglot
 ;;   :ensure t
