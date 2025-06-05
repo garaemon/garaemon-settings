@@ -1386,7 +1386,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
           (list branch (magit-read-starting-point prompt branch default-start))))))
   )
 
-(use-package forge :after magit :ensure t
+(use-package forge
+  :after magit
+  :ensure t
   ;; How to setup forge:
   ;;   Create ~/.authinfo file and write an entry like:
   ;;     machine api.github.com login garaemon^forge password {token}
@@ -1396,6 +1398,15 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;;     3. read:org
   :custom
   (forge-owned-accounts '(("garaemon")))
+  :config
+  (defun my-forge-create-pullreq ()
+    (interactive)
+    (call-interactively 'forge-create-pullreq)
+    ;; Insert the last commit to the current buffer.
+    ;; After calling forge-create-pullreq, the current buffer should be a buffer to edit the title
+    ;; and the description of the new pull request.
+    (insert (magit-git-string "log" "-1" "--pretty=%B"))
+    )
   )
 
 (use-package sx :ensure t)
