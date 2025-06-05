@@ -1017,6 +1017,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (minuet-auto-suggestion-debounce-delay 1.0)
   (minuet-n-completions 1)
   (minuet-context-window 512)
+  ;; Do not show the completion when the cursor is NOT at the end of lines.
+  (minuet-auto-suggestion-block-functions '(minuet-evil-not-insert-state-p my-not-eolp))
   :config
   (plist-put minuet-openai-fim-compatible-options
              :end-point "http://localhost:11434/v1/completions")
@@ -1028,18 +1030,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; TODO: Install qwen2.5-coder:3b automatically
   (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
 
-  (defun my-minuet-eol-only-advice (original-function &rest args)
-    "Advice for Minuet auto-suggestion to only trigger at end of line.
-   ORIGINAL-FUNCTION is the function being advised."
-    (interactive) ; Ensure it can be called interactively if needed
-    (if (eolp)
-        ;; If at end of line, proceed with the original function.
-        (apply original-function args)
-      ;; Otherwise, do nothing.
-      nil))
-  ;; Replace 'minuet-auto-suggestion--trigger-function' with the actual function name you found.
-  ;; This line should be placed AFTER `minuet-auto-suggestion-mode` is loaded or enabled.
-  (advice-add 'minuet-auto-suggestion--trigger-function :around #'my-minuet-eol-only-advice)
+  (defun my-not-eolp ()
+    (not (eolp)))
 
   (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56)
   )
