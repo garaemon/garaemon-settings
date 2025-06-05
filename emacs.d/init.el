@@ -1014,6 +1014,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook (prog-mode . minuet-auto-suggestion-mode)
   :custom
   (minuet-provider 'openai-fim-compatible)
+  (minuet-auto-suggestion-debounce-delay 1.0)
   (minuet-n-completions 1)
   (minuet-context-window 512)
   :config
