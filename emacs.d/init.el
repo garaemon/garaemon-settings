@@ -1027,6 +1027,19 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; TODO: Install qwen2.5-coder:3b automatically
   (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
 
+  (defun my-minuet-eol-only-advice (original-function &rest args)
+    "Advice for Minuet auto-suggestion to only trigger at end of line.
+   ORIGINAL-FUNCTION is the function being advised."
+    (interactive) ; Ensure it can be called interactively if needed
+    (if (eolp)
+        ;; If at end of line, proceed with the original function.
+        (apply original-function args)
+      ;; Otherwise, do nothing.
+      nil))
+  ;; Replace 'minuet-auto-suggestion--trigger-function' with the actual function name you found.
+  ;; This line should be placed AFTER `minuet-auto-suggestion-mode` is loaded or enabled.
+  (advice-add 'minuet-auto-suggestion--trigger-function :around #'my-minuet-eol-only-advice)
+
   (minuet-set-optional-options minuet-openai-fim-compatible-options :max_tokens 56))
 
 ;; (use-package flycheck-eglot
