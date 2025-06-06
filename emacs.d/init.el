@@ -1399,7 +1399,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
     ;; Insert the last commit to the current buffer.
     ;; After calling forge-create-pullreq, the current buffer should be a buffer to edit the title
     ;; and the description of the new pull request.
-    (insert (magit-git-string "log" "-1" "--pretty=%B"))
+    (magit-git-insert "log" "-1" "--pretty=%B")
     )
   )
 
