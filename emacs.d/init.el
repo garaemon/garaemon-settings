@@ -1701,7 +1701,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
      ("▹" . "▿")))
   (org-modern-checkbox
    '((?X . "✅")
-     (?- . "➡️")                         ; Do we need this?
+     (?- . "🏃‍➡️")
      (?\s . "⬜")))
   ;; TODO: update the face configuration to make stars visible
   (org-modern-hide-stars nil)
