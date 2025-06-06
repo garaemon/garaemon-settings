@@ -2208,6 +2208,27 @@ Optional argument ARGS ."
                  :key gemini-key
                  :stream t))
       ))
+  (defvar my-gptel-minibuffer--history nil)
+  (defun my-gptel-minibuffer (prompt)
+    (interactive (list (read-string "Ask AI: " (car my-gptel-lookup--history)
+                                    'my-gptel-lookup--history)))
+    (when (string= prompt "") (user-error "A prompt is required."))
+    (gptel-request
+        prompt
+      :callback
+      (lambda (response info)
+        (if (not response)
+            (message "gptel-lookup failed with message: %s" (plist-get info :status))
+          (with-current-buffer (get-buffer-create "*gptel-lookup*")
+            (let ((inhibit-read-only t))
+              (erase-buffer)
+              (insert response))
+            (special-mode)
+            (display-buffer (current-buffer)
+                            `((display-buffer-in-side-window)
+                              (side . bottom)
+                              (window-height . ,#'fit-window-to-buffer))))))))
+
   :custom (gptel-default-mode 'org-mode)
   )
 
