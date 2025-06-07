@@ -2277,6 +2277,8 @@ Optional argument ARGS ."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ahs-plugin-default-face ((t (:background "systemYellowColor" :foreground "Black"))))
+ ;; the color of fill-column-indicator is the same to the comment color of solarized theme.
+ '(fill-column-indicator ((((class color) (min-colors 89)) (:foreground "#586e75" :weight semilight))))
  '(mode-line-active ((t (:inherit mode-line :background "DodgerBlue4"))))
  '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d"))))
  '(treemacs-root-face ((t (:inherit font-lock-constant-face :underline t :weight bold :height 1.0)))))
