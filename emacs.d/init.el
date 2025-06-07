@@ -404,7 +404,7 @@
 (add-to-list 'auto-mode-alist '("\\.m$" . objc-mode))
 ;;; }}}
 
-;;; nlinum or display-line-numbers {{{
+;;; display-line-numbers {{{
 (if (functionp 'global-display-line-numbers-mode)
     (global-display-line-numbers-mode)
   )
