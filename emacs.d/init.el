@@ -2210,8 +2210,8 @@ Optional argument ARGS ."
       ))
   (defvar my-gptel-minibuffer--history nil)
   (defun my-gptel-minibuffer (prompt)
-    (interactive (list (read-string "Ask AI: " (car my-gptel-lookup--history)
-                                    'my-gptel-lookup--history)))
+    (interactive (list (read-string "Ask AI: " (car my-gptel-minibuffer--history)
+                                    'my-gptel-minibuffer--history)))
     (when (string= prompt "") (user-error "A prompt is required."))
     (gptel-request
         prompt
