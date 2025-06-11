@@ -1950,7 +1950,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package dired
   :bind (:map dired-mode-map
               ("M-s" . 'consult-grep)
-              ("F" . 'magit-pull))
+              ("F" . 'magit-pull)
+              ("b" . 'magit-branch))
   )
 
 (use-package wdired
