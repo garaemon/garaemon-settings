@@ -2237,13 +2237,14 @@ Optional argument ARGS ."
 (use-package treesit
   :custom
   (treesit-font-lock-level 4)
+  (treesit-language-source-alist '((json "https://github.com/tree-sitter/tree-sitter-json")
+                                   (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+                                   (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+                                   (go "https://github.com/tree-sitter/tree-sitter-go")
+                                   (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+                                   (python "https://github.com/tree-sitter/tree-sitter-python")))
   :config
-  (dolist (element '((json "https://github.com/tree-sitter/tree-sitter-json")
-                     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-                     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-                     (go "https://github.com/tree-sitter/tree-sitter-go")
-                     (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-                     (python "https://github.com/tree-sitter/tree-sitter-python")))
+  (dolist (element treesit-language-source-alist)
     (let* ((lang (car element)))
       (if (treesit-language-available-p lang)
           (message "treesit: %s is already installed" lang)
