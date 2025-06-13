@@ -922,6 +922,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (global-display-fill-column-indicator-mode))
 
 (use-package lsp-mode :ensure t
+  ;; npm install -g typescript-language-server typescript
   :hook ((typescript-mode . #'lsp)
          (yaml-mode . #'lsp)
          (python-mode . #'lsp)
@@ -2233,8 +2234,30 @@ Optional argument ARGS ."
   :custom (gptel-default-mode 'org-mode)
   )
 
-(use-package typescript-mode :ensure t
-  :custom (typescript-indent-level 2))
+(use-package treesit
+  :custom
+  (treesit-font-lock-level 4)
+  :config
+  (dolist (element '((json "https://github.com/tree-sitter/tree-sitter-json")
+                     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+                     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+                     (go "https://github.com/tree-sitter/tree-sitter-go")
+                     (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+                     (python "https://github.com/tree-sitter/tree-sitter-python")))
+    (let* ((lang (car element)))
+      (if (treesit-language-available-p lang)
+          (message "treesit: %s is already installed" lang)
+        (message "treesit: %s is not installed" lang)
+        (treesit-install-language-grammar lang))))
+  )
+
+(use-package tsx-ts-mode
+  :after (treesit)
+  :straight '(tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el" :branch "emacs30")
+  :defer t
+  :mode "\\.tsx\\'"
+  :custom
+  (tsx-mode-enable-css-in-js t))
 
 (use-package persistent-scratch :ensure t
   :custom
@@ -2245,6 +2268,10 @@ Optional argument ARGS ."
          (string= (buffer-name) "*Gemini*"))))
   :config
   (persistent-scratch-setup-default)
+  )
+
+(use-package typescript-mode :ensure t
+  :custom (typescript-indent-level 2)
   )
 
 ;; (use-package format-all
