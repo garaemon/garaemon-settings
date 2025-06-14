@@ -14,6 +14,11 @@ export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bi
 # PATH under the home directory
 export PATH=$PATH:$HOME/.bin:$HOME/bin/:$HOME/.local/bin:$HOME/gprog/garaemon-settings/scripts/utils
 
+# On mac os x, emacsclient is availale under Emacs.app.
+if [ -e /Applications/Emacs.app/Contents/MacOS/bin ]; then
+  export PATH=/Applications/Emacs.app/Contents/MacOS/bin:$PATH
+fi
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
