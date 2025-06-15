@@ -60,8 +60,14 @@
 - name: Add github.com to known_hosts
   shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
 
-- name: Update garaemon-settings
+- name: Check current branch of garaemon-settings
+  shell: git -C ~/gprog/garaemon-settings branch --show-current
+  register: current_branch
+  ignore_errors: yes
+  changed_when: false
+
+- name: Update garaemon-settings only if on master branch
   git:
     repo: git@github.com:garaemon/garaemon-settings.git
     dest: ~/gprog/garaemon-settings
-  ignore_errors: true
+  when: current_branch.rc != 0 or current_branch.stdout == "master"
