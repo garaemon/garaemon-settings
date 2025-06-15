@@ -63,13 +63,13 @@
 - name: Check current branch of garaemon-settings
   shell: git -C ~/gprog/garaemon-settings branch --show-current
   register: current_branch
-  ignore_errors: yes
+  ignore_errors: true
   changed_when: false
 
 - name: Test SSH connection to GitHub
   shell: ssh -T git@github.com
   register: ssh_test
-  ignore_errors: yes
+  ignore_errors: true
   changed_when: false
 
 - name: Update garaemon-settings only if on master branch (SSH)
