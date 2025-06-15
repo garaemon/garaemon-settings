@@ -57,3 +57,7 @@ Roles use Ansible conditionals for cross-platform compatibility:
 - `ansible_os_family == "Darwin"` for macOS-specific tasks
 - `ansible_os_family == "Debian"` for Linux-specific tasks
 - `ansible_architecture != 'aarch64'` for architecture-specific exclusions
+
+## Memories
+
+- Check the code by linter every time you change the code by `act -j lint`.
