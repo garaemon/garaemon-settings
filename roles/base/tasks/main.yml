@@ -61,13 +61,13 @@
   shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
 
 - name: Check current branch of garaemon-settings
-  shell: git -C ~/gprog/garaemon-settings branch --show-current
+  command: git -C ~/gprog/garaemon-settings branch --show-current
   register: current_branch
   ignore_errors: true
   changed_when: false
 
 - name: Test SSH connection to GitHub
-  shell: ssh -T git@github.com
+  command: ssh -T git@github.com
   register: ssh_test
   ignore_errors: true
   changed_when: false
