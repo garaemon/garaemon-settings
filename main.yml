@@ -34,5 +34,6 @@
     - python_language_server
     - typescript_language_server
     - ghostty
+    - karabiner
   vars:
     emacs_build_emacs: true

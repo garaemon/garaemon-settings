@@ -1,0 +1,11 @@
+- name: Create karabiner config directory
+  file:
+    path: ~/.config/karabiner
+    state: directory
+  when: ansible_os_family == "Darwin"
+
+- name: Copy karabiner configuration
+  copy:
+    src: karabiner.json
+    dest: ~/.config/karabiner/karabiner.json
+  when: ansible_os_family == "Darwin"
