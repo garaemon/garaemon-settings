@@ -1560,8 +1560,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (("C-c c" . 'org-capture)
          ("C-c a" . 'org-agenda)
          ("C-M-c" . 'org/note-right-now)
+         ("C-c /" . 'consult-org-agenda)
          :map org-mode-map
-         ("M-e" . 'my-org-mode-wrap-inline-code))
+         ("M-e" . 'my-org-mode-wrap-inline-code)
+         ("C-c /" . 'consult-org-agenda))
   :hook ((org-mode . (lambda ()
                        ;; To wrap texts
                        (visual-line-mode)
