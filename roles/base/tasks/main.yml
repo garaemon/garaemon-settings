@@ -66,8 +66,24 @@
   ignore_errors: yes
   changed_when: false
 
-- name: Update garaemon-settings only if on master branch
+- name: Test SSH connection to GitHub
+  shell: ssh -T git@github.com
+  register: ssh_test
+  ignore_errors: yes
+  changed_when: false
+
+- name: Update garaemon-settings only if on master branch (SSH)
   git:
     repo: git@github.com:garaemon/garaemon-settings.git
     dest: ~/gprog/garaemon-settings
-  when: current_branch.rc != 0 or current_branch.stdout == "master"
+  when: 
+    - current_branch.rc != 0 or current_branch.stdout == "master"
+    - ssh_test.rc == 1
+
+- name: Update garaemon-settings only if on master branch (HTTPS)
+  git:
+    repo: https://github.com/garaemon/garaemon-settings.git
+    dest: ~/gprog/garaemon-settings
+  when: 
+    - current_branch.rc != 0 or current_branch.stdout == "master"
+    - ssh_test.rc != 1
