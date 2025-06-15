@@ -1,4 +1,11 @@
-- name: Copy tigrc
-  copy:
-    src: tigrc
+- name: Check if tigrc exists and is not a symlink
+  stat:
+    path: ~/.tigrc
+  register: tigrc_stat
+  failed_when: tigrc_stat.stat.exists and not tigrc_stat.stat.islnk
+
+- name: Create symlink for tigrc
+  file:
+    src: ~/gprog/garaemon-settings/roles/tig/files/tigrc
     dest: ~/.tigrc
+    state: link

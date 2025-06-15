@@ -1,4 +1,11 @@
-- name: Copy tmux.conf
-  copy:
-    src: tmux.conf
+- name: Check if tmux.conf exists and is not a symlink
+  stat:
+    path: ~/.tmux.conf
+  register: tmux_conf_stat
+  failed_when: tmux_conf_stat.stat.exists and not tmux_conf_stat.stat.islnk
+
+- name: Create symlink for tmux.conf
+  file:
+    src: ~/gprog/garaemon-settings/roles/tmux/files/tmux.conf
     dest: ~/.tmux.conf
+    state: link

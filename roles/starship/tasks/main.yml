@@ -33,7 +33,14 @@
     path: '{{ ansible_env.HOME }}/.config'
     state: directory
 
-- name: Copy starship.toml
-  copy:
+- name: Check if starship.toml exists and is not a symlink
+  stat:
+    path: '{{ ansible_env.HOME }}/.config/starship.toml'
+  register: starship_toml_stat
+  failed_when: starship_toml_stat.stat.exists and not starship_toml_stat.stat.islnk
+
+- name: Create symlink for starship.toml
+  file:
+    src: ~/gprog/garaemon-settings/roles/starship/files/starship.toml
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
-    src: starship.toml
+    state: link

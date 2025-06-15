@@ -75,7 +75,14 @@
     scope: global
     value: "~/.gitignore"
 
-- name: Copy the global gitignore
-  copy:
-    src: gitignore
+- name: Check if gitignore exists and is not a symlink
+  stat:
+    path: ~/.gitignore
+  register: gitignore_stat
+  failed_when: gitignore_stat.stat.exists and not gitignore_stat.stat.islnk
+
+- name: Create symlink for global gitignore
+  file:
+    src: ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
     dest: ~/.gitignore
+    state: link

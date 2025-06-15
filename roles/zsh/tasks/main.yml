@@ -1,24 +1,71 @@
-- name: Copy for zshrc
-  copy:
-    src: zshrc
+- name: Check if zshrc exists and is not a symlink
+  stat:
+    path: ~/.zshrc
+  register: zshrc_stat
+  failed_when: zshrc_stat.stat.exists and not zshrc_stat.stat.islnk
+
+- name: Check if zlogin exists and is not a symlink
+  stat:
+    path: ~/.zlogin
+  register: zlogin_stat
+  failed_when: zlogin_stat.stat.exists and not zlogin_stat.stat.islnk
+
+- name: Check if zlogout exists and is not a symlink
+  stat:
+    path: ~/.zlogout
+  register: zlogout_stat
+  failed_when: zlogout_stat.stat.exists and not zlogout_stat.stat.islnk
+
+- name: Check if zprofile exists and is not a symlink
+  stat:
+    path: ~/.zprofile
+  register: zprofile_stat
+  failed_when: zprofile_stat.stat.exists and not zprofile_stat.stat.islnk
+
+- name: Check if zshenv exists and is not a symlink
+  stat:
+    path: ~/.zshenv
+  register: zshenv_stat
+  failed_when: zshenv_stat.stat.exists and not zshenv_stat.stat.islnk
+
+- name: Check if zshrc.zplug exists and is not a symlink
+  stat:
+    path: ~/.zshrc.zplug
+  register: zshrc_zplug_stat
+  failed_when: zshrc_zplug_stat.stat.exists and not zshrc_zplug_stat.stat.islnk
+
+- name: Create symlink for zshrc
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshrc
     dest: ~/.zshrc
-- name: Copy for zlogin
-  copy:
-    src: zlogin
+    state: link
+
+- name: Create symlink for zlogin
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zlogin
     dest: ~/.zlogin
-- name: Copy for zlogout
-  copy:
-    src: zlogout
+    state: link
+
+- name: Create symlink for zlogout
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zlogout
     dest: ~/.zlogout
-- name: Copy for zprofile
-  copy:
-    src: zprofile
+    state: link
+
+- name: Create symlink for zprofile
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zprofile
     dest: ~/.zprofile
-- name: Copy for zshenv
-  copy:
-    src: zshenv
+    state: link
+
+- name: Create symlink for zshenv
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshenv
     dest: ~/.zshenv
-- name: Copy for zshrc.zplug
-  copy:
-    src: zshrc.zplug
+    state: link
+
+- name: Create symlink for zshrc.zplug
+  file:
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshrc.zplug
     dest: ~/.zshrc.zplug
+    state: link

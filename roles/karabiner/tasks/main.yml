@@ -4,8 +4,16 @@
     state: directory
   when: ansible_os_family == "Darwin"
 
-- name: Copy karabiner configuration
-  copy:
-    src: karabiner.json
+- name: Check if karabiner config exists and is not a symlink
+  stat:
+    path: ~/.config/karabiner/karabiner.json
+  register: karabiner_stat
+  failed_when: karabiner_stat.stat.exists and not karabiner_stat.stat.islnk
+  when: ansible_os_family == "Darwin"
+
+- name: Create symlink for karabiner configuration
+  file:
+    src: ~/gprog/garaemon-settings/roles/karabiner/files/karabiner.json
     dest: ~/.config/karabiner/karabiner.json
+    state: link
   when: ansible_os_family == "Darwin"

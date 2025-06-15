@@ -8,8 +8,14 @@
         state: directory
         mode: "0755"
 
-    - name: Copy config
-      copy:
-        src: config
+    - name: Check if ghostty config exists and is not a symlink
+      stat:
+        path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+      register: ghostty_config_stat
+      failed_when: ghostty_config_stat.stat.exists and not ghostty_config_stat.stat.islnk
+
+    - name: Create symlink for ghostty config
+      file:
+        src: ~/gprog/garaemon-settings/roles/ghostty/files/config
         dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
-        mode: "0644"
+        state: link
