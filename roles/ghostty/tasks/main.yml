@@ -16,6 +16,6 @@
 
     - name: Create symlink for ghostty config
       file:
-        src: "{{ playbook_dir }}/roles/ghostty/files/config"
+        src: ~/gprog/garaemon-settings/roles/ghostty/files/config
         dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         state: link

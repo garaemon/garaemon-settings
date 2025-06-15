@@ -6,6 +6,6 @@
 
 - name: Create symlink for tigrc
   file:
-    src: "{{ playbook_dir }}/roles/tig/files/tigrc"
+    src: ~/gprog/garaemon-settings/roles/tig/files/tigrc
     dest: ~/.tigrc
     state: link

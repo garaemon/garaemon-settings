@@ -41,6 +41,6 @@
 
 - name: Create symlink for starship.toml
   file:
-    src: "{{ playbook_dir }}/roles/starship/files/starship.toml"
+    src: ~/gprog/garaemon-settings/roles/starship/files/starship.toml
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
     state: link

@@ -6,6 +6,6 @@
 
 - name: Create symlink for vimrc
   file:
-    src: "{{ playbook_dir }}/roles/vim/files/vimrc"
+    src: ~/gprog/garaemon-settings/roles/vim/files/vimrc
     dest: ~/.vimrc
     state: link

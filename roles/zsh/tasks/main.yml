@@ -36,36 +36,36 @@
 
 - name: Create symlink for zshrc
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zshrc"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshrc
     dest: ~/.zshrc
     state: link
 
 - name: Create symlink for zlogin
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zlogin"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zlogin
     dest: ~/.zlogin
     state: link
 
 - name: Create symlink for zlogout
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zlogout"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zlogout
     dest: ~/.zlogout
     state: link
 
 - name: Create symlink for zprofile
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zprofile"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zprofile
     dest: ~/.zprofile
     state: link
 
 - name: Create symlink for zshenv
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zshenv"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshenv
     dest: ~/.zshenv
     state: link
 
 - name: Create symlink for zshrc.zplug
   file:
-    src: "{{ playbook_dir }}/roles/zsh/files/zshrc.zplug"
+    src: ~/gprog/garaemon-settings/roles/zsh/files/zshrc.zplug
     dest: ~/.zshrc.zplug
     state: link

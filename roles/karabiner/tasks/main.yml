@@ -13,7 +13,7 @@
 
 - name: Create symlink for karabiner configuration
   file:
-    src: "{{ playbook_dir }}/roles/karabiner/files/karabiner.json"
+    src: ~/gprog/garaemon-settings/roles/karabiner/files/karabiner.json
     dest: ~/.config/karabiner/karabiner.json
     state: link
   when: ansible_os_family == "Darwin"

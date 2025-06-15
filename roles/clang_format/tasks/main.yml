@@ -13,6 +13,6 @@
 
 - name: Create symlink for clang-format
   file:
-    src: "{{ playbook_dir }}/roles/clang_format/files/clang-format"
+    src: ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
     dest: ~/.clang-format
     state: link

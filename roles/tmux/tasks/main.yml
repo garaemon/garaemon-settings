@@ -6,6 +6,6 @@
 
 - name: Create symlink for tmux.conf
   file:
-    src: "{{ playbook_dir }}/roles/tmux/files/tmux.conf"
+    src: ~/gprog/garaemon-settings/roles/tmux/files/tmux.conf
     dest: ~/.tmux.conf
     state: link

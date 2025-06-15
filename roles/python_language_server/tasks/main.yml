@@ -12,6 +12,6 @@
 
 - name: Create symlink for pycodestyle config
   file:
-    src: "{{ playbook_dir }}/roles/python_language_server/files/pycodestyle"
+    src: ~/gprog/garaemon-settings/roles/python_language_server/files/pycodestyle
     dest: ~/.config/pycodestyle
     state: link

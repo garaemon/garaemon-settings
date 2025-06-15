@@ -83,6 +83,6 @@
 
 - name: Create symlink for global gitignore
   file:
-    src: "{{ playbook_dir }}/roles/git/tasks/files/gitignore"
+    src: ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
     dest: ~/.gitignore
     state: link
