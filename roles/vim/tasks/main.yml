@@ -1,5 +1,11 @@
-- name: Copy vimrc
-  copy:
-    src: vimrc
+- name: Check if vimrc exists and is not a symlink
+  stat:
+    path: ~/.vimrc
+  register: vimrc_stat
+  failed_when: vimrc_stat.stat.exists and not vimrc_stat.stat.islnk
+
+- name: Create symlink for vimrc
+  file:
+    src: "{{ playbook_dir }}/roles/vim/files/vimrc"
     dest: ~/.vimrc
-    remote_src: false
+    state: link
