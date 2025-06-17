@@ -8,11 +8,26 @@
         state: directory
         mode: "0755"
 
-    - name: Check if ghostty config exists and is not a symlink
+    - name: Check if ghostty config exists
       stat:
         path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
       register: ghostty_config_stat
-      failed_when: ghostty_config_stat.stat.exists and not ghostty_config_stat.stat.islnk
+
+    - name: Check file differences for ghostty config
+      command: diff "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config" ~/gprog/garaemon-settings/roles/ghostty/files/config
+      register: ghostty_config_diff
+      failed_when: false
+      changed_when: false
+      when: ghostty_config_stat.stat.exists and not ghostty_config_stat.stat.islnk
+
+    - name: Remove existing ghostty config if identical to target
+      file:
+        path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        state: absent
+      when:
+        - ghostty_config_stat.stat.exists
+        - not ghostty_config_stat.stat.islnk
+        - ghostty_config_diff.rc == 0
 
     - name: Create symlink for ghostty config
       file:

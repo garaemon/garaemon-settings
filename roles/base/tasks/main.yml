@@ -81,18 +81,22 @@
   ignore_errors: true
   changed_when: false
 
+- name: Check if SSH authentication is working
+  set_fact:
+    ssh_auth_working: "{{ 'successfully authenticated' in ssh_test.stderr }}"
+
 - name: Update garaemon-settings only if on master branch (SSH)
   git:
     repo: git@github.com:garaemon/garaemon-settings.git
     dest: ~/gprog/garaemon-settings
   when:
-    - not repo_exists.stat.exists or (git_status is defined and git_status.version == "master")
-    - ssh_test.rc == 1
+    - not repo_exists.stat.exists or (git_status is defined and git_status.after == "master")
+    - ssh_auth_working | bool
 
 - name: Update garaemon-settings only if on master branch (HTTPS)
   git:
     repo: https://github.com/garaemon/garaemon-settings.git
     dest: ~/gprog/garaemon-settings
   when:
-    - not repo_exists.stat.exists or (git_status is defined and git_status.version == "master")
-    - ssh_test.rc != 1
+    - not repo_exists.stat.exists or (git_status is defined and git_status.after == "master")
+    - not (ssh_auth_working | bool)

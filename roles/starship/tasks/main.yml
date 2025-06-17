@@ -33,11 +33,26 @@
     path: '{{ ansible_env.HOME }}/.config'
     state: directory
 
-- name: Check if starship.toml exists and is not a symlink
+- name: Check if starship.toml exists
   stat:
     path: '{{ ansible_env.HOME }}/.config/starship.toml'
   register: starship_toml_stat
-  failed_when: starship_toml_stat.stat.exists and not starship_toml_stat.stat.islnk
+
+- name: Check file differences for starship.toml
+  command: diff '{{ ansible_env.HOME }}/.config/starship.toml' ~/gprog/garaemon-settings/roles/starship/files/starship.toml
+  register: starship_toml_diff
+  failed_when: false
+  changed_when: false
+  when: starship_toml_stat.stat.exists and not starship_toml_stat.stat.islnk
+
+- name: Remove existing starship.toml if identical to target
+  file:
+    path: '{{ ansible_env.HOME }}/.config/starship.toml'
+    state: absent
+  when:
+    - starship_toml_stat.stat.exists
+    - not starship_toml_stat.stat.islnk
+    - starship_toml_diff.rc == 0
 
 - name: Create symlink for starship.toml
   file:

@@ -9,6 +9,27 @@
     dest: "{{ ansible_env.HOME }}/gprog/emacs.d"
   when: not emacs_d_exists.stat.exists
 
+- name: Check if .emacs.d exists
+  stat:
+    path: ~/.emacs.d
+  register: emacs_d_link_stat
+
+- name: Check if .emacs.d directories are identical
+  command: diff -r ~/.emacs.d ~/gprog/emacs.d
+  register: emacs_d_diff
+  failed_when: false
+  changed_when: false
+  when: emacs_d_link_stat.stat.exists and not emacs_d_link_stat.stat.islnk
+
+- name: Remove existing .emacs.d if identical to target
+  file:
+    path: ~/.emacs.d
+    state: absent
+  when:
+    - emacs_d_link_stat.stat.exists
+    - not emacs_d_link_stat.stat.islnk
+    - emacs_d_diff.rc == 0
+
 - name: Symlink for emacs.d
   file:
     src: ~/gprog/emacs.d
