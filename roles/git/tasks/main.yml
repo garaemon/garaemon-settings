@@ -1,8 +1,18 @@
+- name: Check if git is installed
+  apt:
+    name: git
+    state: present
+  check_mode: true
+  register: git_check
+  when: ansible_os_family == "Debian"
+
 - name: Install git
   apt:
     name: git
   become: true
-  when: ansible_os_family == "Debian"
+  when:
+    - ansible_os_family == "Debian"
+    - git_check.changed
 
 - name: Git config core.pager
   community.general.git_config:
