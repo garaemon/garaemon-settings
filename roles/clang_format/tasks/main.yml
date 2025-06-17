@@ -5,11 +5,26 @@
   become: true
   when: ansible_os_family == "Debian"
 
-- name: Check if clang-format exists and is not a symlink
+- name: Check if clang-format exists
   stat:
     path: ~/.clang-format
   register: clang_format_stat
-  failed_when: clang_format_stat.stat.exists and not clang_format_stat.stat.islnk
+
+- name: Check file differences for clang-format
+  command: diff ~/.clang-format ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
+  register: clang_format_diff
+  failed_when: false
+  changed_when: false
+  when: clang_format_stat.stat.exists and not clang_format_stat.stat.islnk
+
+- name: Remove existing clang-format if identical to target
+  file:
+    path: ~/.clang-format
+    state: absent
+  when:
+    - clang_format_stat.stat.exists
+    - not clang_format_stat.stat.islnk
+    - clang_format_diff.rc == 0
 
 - name: Create symlink for clang-format
   file:

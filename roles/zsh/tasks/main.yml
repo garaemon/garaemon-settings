@@ -1,38 +1,128 @@
-- name: Check if zshrc exists and is not a symlink
+- name: Check if zshrc exists
   stat:
     path: ~/.zshrc
   register: zshrc_stat
-  failed_when: zshrc_stat.stat.exists and not zshrc_stat.stat.islnk
 
-- name: Check if zlogin exists and is not a symlink
+- name: Check file differences for zshrc
+  command: diff ~/.zshrc ~/gprog/garaemon-settings/roles/zsh/files/zshrc
+  register: zshrc_diff
+  failed_when: false
+  changed_when: false
+  when: zshrc_stat.stat.exists and not zshrc_stat.stat.islnk
+
+- name: Remove existing zshrc if identical to target
+  file:
+    path: ~/.zshrc
+    state: absent
+  when:
+    - zshrc_stat.stat.exists
+    - not zshrc_stat.stat.islnk
+    - zshrc_diff.rc == 0
+
+- name: Check if zlogin exists
   stat:
     path: ~/.zlogin
   register: zlogin_stat
-  failed_when: zlogin_stat.stat.exists and not zlogin_stat.stat.islnk
 
-- name: Check if zlogout exists and is not a symlink
+- name: Check file differences for zlogin
+  command: diff ~/.zlogin ~/gprog/garaemon-settings/roles/zsh/files/zlogin
+  register: zlogin_diff
+  failed_when: false
+  changed_when: false
+  when: zlogin_stat.stat.exists and not zlogin_stat.stat.islnk
+
+- name: Remove existing zlogin if identical to target
+  file:
+    path: ~/.zlogin
+    state: absent
+  when:
+    - zlogin_stat.stat.exists
+    - not zlogin_stat.stat.islnk
+    - zlogin_diff.rc == 0
+
+- name: Check if zlogout exists
   stat:
     path: ~/.zlogout
   register: zlogout_stat
-  failed_when: zlogout_stat.stat.exists and not zlogout_stat.stat.islnk
 
-- name: Check if zprofile exists and is not a symlink
+- name: Check file differences for zlogout
+  command: diff ~/.zlogout ~/gprog/garaemon-settings/roles/zsh/files/zlogout
+  register: zlogout_diff
+  failed_when: false
+  changed_when: false
+  when: zlogout_stat.stat.exists and not zlogout_stat.stat.islnk
+
+- name: Remove existing zlogout if identical to target
+  file:
+    path: ~/.zlogout
+    state: absent
+  when:
+    - zlogout_stat.stat.exists
+    - not zlogout_stat.stat.islnk
+    - zlogout_diff.rc == 0
+
+- name: Check if zprofile exists
   stat:
     path: ~/.zprofile
   register: zprofile_stat
-  failed_when: zprofile_stat.stat.exists and not zprofile_stat.stat.islnk
 
-- name: Check if zshenv exists and is not a symlink
+- name: Check file differences for zprofile
+  command: diff ~/.zprofile ~/gprog/garaemon-settings/roles/zsh/files/zprofile
+  register: zprofile_diff
+  failed_when: false
+  changed_when: false
+  when: zprofile_stat.stat.exists and not zprofile_stat.stat.islnk
+
+- name: Remove existing zprofile if identical to target
+  file:
+    path: ~/.zprofile
+    state: absent
+  when:
+    - zprofile_stat.stat.exists
+    - not zprofile_stat.stat.islnk
+    - zprofile_diff.rc == 0
+
+- name: Check if zshenv exists
   stat:
     path: ~/.zshenv
   register: zshenv_stat
-  failed_when: zshenv_stat.stat.exists and not zshenv_stat.stat.islnk
 
-- name: Check if zshrc.zplug exists and is not a symlink
+- name: Check file differences for zshenv
+  command: diff ~/.zshenv ~/gprog/garaemon-settings/roles/zsh/files/zshenv
+  register: zshenv_diff
+  failed_when: false
+  changed_when: false
+  when: zshenv_stat.stat.exists and not zshenv_stat.stat.islnk
+
+- name: Remove existing zshenv if identical to target
+  file:
+    path: ~/.zshenv
+    state: absent
+  when:
+    - zshenv_stat.stat.exists
+    - not zshenv_stat.stat.islnk
+    - zshenv_diff.rc == 0
+
+- name: Check if zshrc.zplug exists
   stat:
     path: ~/.zshrc.zplug
   register: zshrc_zplug_stat
-  failed_when: zshrc_zplug_stat.stat.exists and not zshrc_zplug_stat.stat.islnk
+
+- name: Check file differences for zshrc.zplug
+  command: diff ~/.zshrc.zplug ~/gprog/garaemon-settings/roles/zsh/files/zshrc.zplug
+  register: zshrc_zplug_diff
+  failed_when: false
+  changed_when: false
+  when: zshrc_zplug_stat.stat.exists and not zshrc_zplug_stat.stat.islnk
+
+- name: Remove existing zshrc.zplug if identical to target
+  file:
+    path: ~/.zshrc.zplug
+    state: absent
+  when:
+    - zshrc_zplug_stat.stat.exists
+    - not zshrc_zplug_stat.stat.islnk
+    - zshrc_zplug_diff.rc == 0
 
 - name: Create symlink for zshrc
   file:

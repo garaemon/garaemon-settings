@@ -1,8 +1,23 @@
-- name: Check if tmux.conf exists and is not a symlink
+- name: Check if tmux.conf exists
   stat:
     path: ~/.tmux.conf
   register: tmux_conf_stat
-  failed_when: tmux_conf_stat.stat.exists and not tmux_conf_stat.stat.islnk
+
+- name: Check file differences for tmux.conf
+  command: diff ~/.tmux.conf ~/gprog/garaemon-settings/roles/tmux/files/tmux.conf
+  register: tmux_conf_diff
+  failed_when: false
+  changed_when: false
+  when: tmux_conf_stat.stat.exists and not tmux_conf_stat.stat.islnk
+
+- name: Remove existing tmux.conf if identical to target
+  file:
+    path: ~/.tmux.conf
+    state: absent
+  when:
+    - tmux_conf_stat.stat.exists
+    - not tmux_conf_stat.stat.islnk
+    - tmux_conf_diff.rc == 0
 
 - name: Create symlink for tmux.conf
   file:

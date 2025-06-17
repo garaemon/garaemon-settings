@@ -4,11 +4,26 @@
 #     . ~/.pyenv/.pyenvrc &&
 #     pyenv shell 3.7.2
 #     pip install 'python-language-server[all]'
-- name: Check if pycodestyle config exists and is not a symlink
+- name: Check if pycodestyle config exists
   stat:
     path: ~/.config/pycodestyle
   register: pycodestyle_stat
-  failed_when: pycodestyle_stat.stat.exists and not pycodestyle_stat.stat.islnk
+
+- name: Check file differences for pycodestyle
+  command: diff ~/.config/pycodestyle ~/gprog/garaemon-settings/roles/python_language_server/files/pycodestyle
+  register: pycodestyle_diff
+  failed_when: false
+  changed_when: false
+  when: pycodestyle_stat.stat.exists and not pycodestyle_stat.stat.islnk
+
+- name: Remove existing pycodestyle if identical to target
+  file:
+    path: ~/.config/pycodestyle
+    state: absent
+  when:
+    - pycodestyle_stat.stat.exists
+    - not pycodestyle_stat.stat.islnk
+    - pycodestyle_diff.rc == 0
 
 - name: Create symlink for pycodestyle config
   file:
