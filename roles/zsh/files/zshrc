@@ -527,33 +527,6 @@ alias git-graph="git log --graph --decorate --oneline"
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 alias c=code
 
-# Check if copied rc files have diff or not
-
-(
-  repo_dir="$HOME/gprog/garaemon-settings"
-  if [ ! -e ${repo_dir} ]; then
-    return
-  fi
-
-  declare -A file_mapping
-  file_mapping[roles/zsh/files/zlogin]="$HOME/.zlogin"
-  file_mapping[roles/zsh/files/zlogout]="$HOME/.zlogout"
-  file_mapping[roles/zsh/files/zprofile]="$HOME/.zprofile"
-  file_mapping[roles/zsh/files/zshenv]="$HOME/.zshenv"
-  file_mapping[roles/zsh/files/zshrc]="$HOME/.zshrc"
-  file_mapping[roles/zsh/files/zshrc.zplug]="$HOME/.zshrc.zplug"
-  file_mapping[roles/tmux/files/tmux.conf]="$HOME/.tmux.conf"
-
-  for repo_file installed_file in "${file_mapping[@]}"; do
-    repo_path="$repo_dir/$repo_file"
-
-    if ! diff -q "$installed_file" "$repo_path" > /dev/null 2>&1; then
-      echo "Warning: ${installed_file} has been modified from the repository version." >&2
-      echo "Please consider updating your repository or reverting your local changes." >&2
-    fi
-  done
-)
-
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 # uv
