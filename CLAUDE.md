@@ -21,8 +21,11 @@ This is an Ansible-based dotfiles and system configuration repository for settin
 # Full setup
 ansible-playbook -i localhost, -c local main.yml --ask-become-pass
 
-# Minimal setup
+# Minimal setup (can run without sudo if git is already installed)
 ansible-playbook -i localhost, -c local minimal.yml --ask-become-pass
+
+# Minimal setup without sudo (when git is pre-installed)
+ansible-playbook -i localhost, -c local minimal.yml
 
 # Install specific role
 ansible-playbook -i localhost, -c local --tags "role_name" main.yml --ask-become-pass
@@ -57,6 +60,19 @@ Roles use Ansible conditionals for cross-platform compatibility:
 - `ansible_os_family == "Darwin"` for macOS-specific tasks
 - `ansible_os_family == "Debian"` for Linux-specific tasks
 - `ansible_architecture != 'aarch64'` for architecture-specific exclusions
+
+## Sudo Policy
+
+### minimal.yml
+- **Can run without sudo** when git is already installed on the system
+- Only requires sudo for git package installation on Debian/Ubuntu systems
+- The git role checks if git is installed before attempting installation with sudo
+- All other roles (dotfiles, symlinks, configurations) run without sudo privileges
+
+### main.yml
+- **Requires sudo** for package installation and system-level configuration
+- Uses `--ask-become-pass` flag for elevated privileges
+- Installs system packages via apt (Linux) or homebrew (macOS)
 
 ## Memories
 
