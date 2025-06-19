@@ -1,0 +1,32 @@
+- name: Ensure .claude directory exists
+  file:
+    path: ~/.claude
+    state: directory
+    mode: '0755'
+
+- name: Check if CLAUDE.md exists
+  stat:
+    path: ~/.claude/CLAUDE.md
+  register: claude_md_stat
+
+- name: Check file differences for CLAUDE.md
+  command: diff ~/.claude/CLAUDE.md {{ playbook_dir }}/roles/claude/files/CLAUDE.md
+  register: claude_md_diff
+  failed_when: false
+  changed_when: false
+  when: claude_md_stat.stat.exists and not claude_md_stat.stat.islnk
+
+- name: Remove existing CLAUDE.md if identical to target
+  file:
+    path: ~/.claude/CLAUDE.md
+    state: absent
+  when:
+    - claude_md_stat.stat.exists
+    - not claude_md_stat.stat.islnk
+    - claude_md_diff.rc == 0
+
+- name: Create symlink for CLAUDE.md
+  file:
+    src: "{{ playbook_dir }}/roles/claude/files/CLAUDE.md"
+    dest: ~/.claude/CLAUDE.md
+    state: link

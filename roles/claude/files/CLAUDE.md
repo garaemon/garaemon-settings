@@ -1,0 +1,9 @@
+- Before you make a PR, always run tests including linters.
+- You don't need to include test programs in linter.
+- Keep the function shorter. One function is recommended to be shorter than 90 lines.
+- Don't implement many things at once. Always compile programs or run test codes after you modify the code.
+- Always start functions and methods with verbs.
+- Always use descriptive names for variables.
+- Avoid class inheritance basically. You should not use class inheritance to reduce duplicated codes. The exceptional cases are 1. libraries require inheritance. 2. You need inheritance of types.
+- When you make a branch, Add YYYY.MM.DD- prefix to the name.
+- Do not add trailing spaces
