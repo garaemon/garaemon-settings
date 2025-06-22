@@ -2194,6 +2194,64 @@ Optional argument ARGS ."
                  :key gemini-key
                  :stream t))
       ))
+  ;; (gptel-make-ollama "Ollama"             ;Any name of your choosing
+  ;;   :host "localhost:11434"               ;Where it's running
+  ;;   :stream t                             ;Stream responses
+  ;;   :models '(gemma3:4b))          ;List of models
+
+  (defun my-gptel-generate-git-commit ()
+    "Generate a Git commit message for staged changes using gptel-request.
+
+This function finds the Git repository root, gets the staged
+diff, sends it to the pre-configured Ollama service, and
+inserts the generated commit message into the current buffer."
+    (interactive)
+    (magit-commit-create)
+    (let* (;; Ensure we run the git command from the repository's root directory
+           (default-directory (or (vc-root-dir) default-directory))
+           ;; Get the staged changes
+           (diff (shell-command-to-string "git diff --staged")))
+
+      ;; Check if there are any staged changes
+      (if (string-blank-p diff)
+          (message "No staged changes to generate a commit message from.")
+        ;; If there are changes, construct the prompt, call gptel, and insert the result.
+        (let* ((prompt (format
+                        (concat
+                         "Based on the following git diff, please generate a concise and descriptive commit message.\n"
+                         "The git diff is wrapped around <diff> and </diff>\n"
+                         "You have to follow the following order:\n"
+                         "1. Do not include the diff in your response. Include only the commit message itself.\n\n"
+                         "2. The message should follow the Conventional Commits specification.\n"
+                         "The structure should be:\n"
+                         "<type>[optional scope]: <description>\n\n"
+                         "[optional body]\n\n"
+                         "3. The title should be shorter than 60 chars."
+                         "4. Each line of the body should be shorter than 80 chars."
+                         "<diff>\n"
+                         "\n%s\n"
+                         "</diff>\n"
+                         )
+                        diff))
+               (commit-message
+                (progn
+
+                  (message "Sending diff to Ollama...")
+                  (let ((gptel-model 'gemma3:4b)
+                        (gptel-backend (gptel-make-ollama "Ollama" ;Any name of your choosing
+                                         :host "localhost:11434"               ;Where it's running
+                                         :stream t                             ;Stream responses
+                                         :models '(gemma3:4b))))
+                  (gptel-request
+                      prompt
+                      :callback (lambda (response info)
+                                  (message "response: %s" response)
+                                  (insert (string-trim response)))
+                      )))))
+          ))))
+
+;; Initialize an instance of gptel using your credentials and configurations
+;; Here's an example where we use
   (defvar my-gptel-minibuffer--history nil)
   (defun my-gptel-minibuffer (prompt)
     (interactive (list (read-string "Ask AI: " (car my-gptel-minibuffer--history)
