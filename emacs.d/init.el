@@ -2214,7 +2214,23 @@ Optional argument ARGS ."
                             `((display-buffer-in-side-window)
                               (side . bottom)
                               (window-height . ,#'fit-window-to-buffer))))))))
+  ;; TODO: Cannot use the other tools
+  (defun my-gemini-add-search-grounding (orig-fun backend prompts)
+    "Add google_search tool to Gemini requests when needed."
+    (let ((result (funcall orig-fun backend prompts)))
+      (when (and (gptel-gemini-p backend)
+                 my-enable-search-grounding)  ; Your custom variable
+        (let ((existing-tools (plist-get result :tools)))
+          (plist-put result :tools
+                     (vconcat (or existing-tools [])
+                              [(:google_search ())]))))
+      (message "updated parameter: %s" result)
+      result))
 
+  (advice-add 'gptel--request-data :around #'my-gemini-add-search-grounding)
+
+  (defvar my-enable-search-grounding t
+    "Enable search grounding for Gemini requests.")
   :custom (gptel-default-mode 'org-mode)
   )
 
