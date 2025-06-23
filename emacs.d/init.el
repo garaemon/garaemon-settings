@@ -2226,7 +2226,7 @@ inserts the generated commit message into the current buffer."
                          "1. Do not include the diff in your response. Include only the commit message itself.\n\n"
                          "2. The message should follow the Conventional Commits specification.\n"
                          "The structure should be:\n"
-                         "<type>[optional scope]: <description>\n\n"
+                         "<title>\n\n"
                          "[optional body]\n\n"
                          "3. Keep the title to be shorter than 60 chars.\n"
                          "4. Keep each line of the body to be shorter than 80 chars.\n"
@@ -2244,9 +2244,9 @@ inserts the generated commit message into the current buffer."
 
                   (message "Sending diff to Ollama...")
                   (let ((gptel-model 'gemma3:4b)
-                        (gptel-backend (gptel-make-ollama "Ollama" ;Any name of your choosing
-                                         :host "localhost:11434"               ;Where it's running
-                                         :stream t                             ;Stream responses
+                        (gptel-backend (gptel-make-ollama "Ollama"
+                                         :host "localhost:11434"
+                                         :stream t
                                          :models '(gemma3:4b))))
                   (gptel-request
                       prompt
