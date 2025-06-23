@@ -2249,6 +2249,11 @@ inserts the generated commit message into the current buffer."
                                   (insert (string-trim response)))
                       )))))
           ))))
+  (transient-append-suffix 'magit-commit '(1 -1)
+    ["Ollama Commit"
+     :if magit-anything-staged-p
+     ("G" "Generate" my-gptel-generate-git-commit)
+     ])
 
 ;; Initialize an instance of gptel using your credentials and configurations
 ;; Here's an example where we use
