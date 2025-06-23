@@ -2216,7 +2216,7 @@ inserts the generated commit message into the current buffer."
       (if (string-blank-p diff)
           (message "No staged changes to generate a commit message from.")
         ;; If there are changes, construct the prompt, call gptel, and insert the result.
-        (let* ((prompt (format
+        (let* ((system-prompt
                         (concat
                          "You are an expert programmer writing a Git commit message.\n"
                          "You have carefully reviewed every file diff included in this commit.\n"
@@ -2233,28 +2233,20 @@ inserts the generated commit message into the current buffer."
                          "5. Use the imperative tense (e.g., 'Add logging' not 'Added logging')\n"
                          "6. Ensure the message reflects a clear and cohesive change\n"
                          "7. Do not end the title with a period.\n"
-                         "\n"
-                         "<diff>\n"
-                         "\n%s\n"
-                         "</diff>\n"
-                         )
-                        diff))
-               (commit-message
-                (progn
-
-                  (message "Sending diff to Ollama...")
-                  (let ((gptel-model 'gemma3:4b)
-                        (gptel-backend (gptel-make-ollama "Ollama"
-                                         :host "localhost:11434"
-                                         :stream t
-                                         :models '(gemma3:4b))))
-                  (gptel-request
-                      prompt
-                      :callback (lambda (response info)
-                                  (message "response: %s" response)
-                                  (insert (string-trim response)))
-                      )))))
-          ))))
+                         )))
+          (message "Sending diff to Ollama...")
+          (let ((gptel-model 'gemma3:4b)
+                (gptel-backend (gptel-make-ollama "Ollama"
+                                 :host "localhost:11434"
+                                 :stream t
+                                 :models '(gemma3:4b))))
+            (gptel-request
+                (concat "<diff>\n" diff "\n" "</diff>\n")
+              :system system-prompt
+              :callback (lambda (response info)
+                          (message "response: %s" response)
+                          (insert (string-trim response)))
+              ))))))
   (transient-append-suffix 'magit-commit '(1 -1)
     ["Ollama Commit"
      :if magit-anything-staged-p
