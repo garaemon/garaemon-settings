@@ -2257,7 +2257,7 @@ you have to separate it into some lines.
   (transient-append-suffix 'magit-commit '(1 -1)
     ["Ollama Commit"
      :if magit-anything-staged-p
-     ("G" "Generate" my-gptel-generate-git-commit)
+     ("g" "Generate" my-gptel-generate-git-commit)
      ])
 
 ;; Initialize an instance of gptel using your credentials and configurations
