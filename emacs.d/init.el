@@ -2216,24 +2216,27 @@ inserts the generated commit message into the current buffer."
       (if (string-blank-p diff)
           (message "No staged changes to generate a commit message from.")
         ;; If there are changes, construct the prompt, call gptel, and insert the result.
-        (let* ((system-prompt
-                        (concat
-                         "You are an expert programmer writing a Git commit message.\n"
-                         "You have carefully reviewed every file diff included in this commit.\n"
-                         "Based on the following git diff, please generate a concise and descriptive commit message.\n"
-                         "The git diff is wrapped around <diff> and </diff>\n"
-                         "You have to follow the following order:\n"
-                         "1. Do not include the diff in your response. Include only the commit message itself.\n\n"
-                         "2. The message should follow the Conventional Commits specification.\n"
-                         "The structure should be:\n"
-                         "<title>\n\n"
-                         "[optional body]\n\n"
-                         "3. Keep the title to be shorter than 60 chars.\n"
-                         "4. Keep each line of the body to be shorter than 80 chars.\n"
-                         "5. Use the imperative tense (e.g., 'Add logging' not 'Added logging')\n"
-                         "6. Ensure the message reflects a clear and cohesive change\n"
-                         "7. Do not end the title with a period.\n"
-                         )))
+        (let ((system-prompt
+                "You are an expert programmer writing a Git commit message.
+You have carefully reviewed every file diff included in this commit.
+Based on the following git diff, please generate a concise and descriptive commit message.
+The git diff is wrapped around <diff> and </diff>
+You have to follow the following order:
+1. Do not include the diff in your response. Include only the commit message itself.
+
+2. The message should follow the Conventional Commits specification.
+The structure should be:
+```
+<title>
+
+[optional body]
+```
+3. Keep the title to be shorter than 60 chars.
+4. Keep each line of the body to be shorter than 80 chars. If a line is longer than 80 chars,
+you have to separate it into some lines.
+5. Use the imperative tense (e.g., 'Add logging' not 'Added logging').
+6. Ensure the message reflects a clear and cohesive change.
+7. Do not end the title with a period."))
           (message "Sending diff to Ollama...")
           (let ((gptel-model 'gemma3:4b)
                 (gptel-backend (gptel-make-ollama "Ollama"
