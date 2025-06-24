@@ -2240,6 +2240,34 @@ you have to separate it into some lines.
 6. Ensure the message reflects a clear and cohesive change.
 7. Do not end the title with a period.
 8. Utilize bullet points in the body section.
+
+Here are some examples of the commit.
+<example>
+Increase down command unit test coverage to 100%
+
+Add comprehensive unit tests for stopAndRemoveContainer function:
+- Container does not exist scenario
+- Container exists and is running (stop + remove)
+- Container exists but stopped (remove only)
+- Container with multiple names handling
+- Docker API error scenarios (list, stop, remove)
+- Operation verification (tracks stopped/removed containers)
+
+Refactor down.go to use DownDockerClient interface for dependency
+injection, enabling proper mocking in tests.
+
+Coverage improved:
+- stopAndRemoveContainer: 34.4% → 100.0%
+- Overall cmd package: 57.3% → 62.2%
+</example>
+<example>
+Implement down command to stop and delete containers
+
+- Add stopAndRemoveContainer function that stops running containers and removes them
+- Include comprehensive error handling and user feedback
+- Add unit tests for down command functionality
+- Follow existing code patterns from stop command implementation
+</example>
 "))
           (message "Sending diff to Ollama...")
           (let ((gptel-model 'gemma3:4b)
