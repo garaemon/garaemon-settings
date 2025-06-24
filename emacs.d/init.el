@@ -2321,6 +2321,7 @@ you have to separate it into some lines.
   )
 
 (use-package flymake-jsts
+  :defer t
   :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts"
                            :branch "main")
   )
