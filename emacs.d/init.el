@@ -2320,19 +2320,30 @@ you have to separate it into some lines.
         (treesit-install-language-grammar lang))))
   )
 
-(use-package flymake-jsts
-  :defer t
-  :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts"
-                           :branch "main")
-  )
+;; (use-package flymake-jsts
+;;   :defer t
+;;   :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts"
+;;                            :branch "main")
+;;   )
 
-(use-package tsx-ts-mode
+(use-package tsx-mode
+  :ensure t
   :after (treesit flymake-jsts)
-  :straight '(tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el" :branch "emacs30")
-  :defer t
-  :mode "\\.tsx\\'"
+  :straight '(tsx-mode :type git
+                       :host github
+                       ;; The latest emacs30 branch depends on flymaks-jsts.
+                       ;; `(use-package flymake-jsts)' does not work well.
+                       ;; We revert the latest change.
+                       ;; To do so, I forked tsx-mode.el and removed the latest commit.
+                       :repo "garaemon/tsx-mode.el"
+                       :branch "emacs30"
+                       )
+  ;; :defer t
+  :mode (("\\.tsx\\'" . tsx-ts-mode)
+         ("\\.jsx\\'" . tsx-ts-mode))
   :custom
-  (tsx-mode-enable-css-in-js t))
+  (tsx-mode-enable-css-in-js t)
+  )
 
 (use-package persistent-scratch :ensure t
   :custom
