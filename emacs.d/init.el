@@ -2220,23 +2220,27 @@ inserts the generated commit message into the current buffer."
                 "You are an expert programmer writing a Git commit message.
 You have carefully reviewed every file diff included in this commit.
 Based on the following git diff, please generate a concise and descriptive commit message.
-The git diff is wrapped around <diff> and </diff>
-You have to follow the following order:
+The git diff is wrapped around <diff> and </diff>.
+You have to follow the following orders:
 1. Do not include the diff in your response. Include only the commit message itself.
 
-2. The message should follow the Conventional Commits specification.
-The structure should be:
+2. The message should follow the structure:
 ```
 <title>
 
-[optional body]
+[optional body line 1]
+[optional body line 2]
+[optional body line 3]
+...
 ```
 3. Keep the title to be shorter than 60 chars.
 4. Keep each line of the body to be shorter than 80 chars. If a line is longer than 80 chars,
 you have to separate it into some lines.
 5. Use the imperative tense (e.g., 'Add logging' not 'Added logging').
 6. Ensure the message reflects a clear and cohesive change.
-7. Do not end the title with a period."))
+7. Do not end the title with a period.
+8. Utilize bullet points in the body section.
+"))
           (message "Sending diff to Ollama...")
           (let ((gptel-model 'gemma3:4b)
                 (gptel-backend (gptel-make-ollama "Ollama"
