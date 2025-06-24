@@ -2321,8 +2321,13 @@ inserts the generated commit message into the current buffer."
         (treesit-install-language-grammar lang))))
   )
 
+(use-package flymake-jsts
+  :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts"
+                           :branch "main")
+  )
+
 (use-package tsx-ts-mode
-  :after (treesit)
+  :after (treesit flymake-jsts)
   :straight '(tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el" :branch "emacs30")
   :defer t
   :mode "\\.tsx\\'"
