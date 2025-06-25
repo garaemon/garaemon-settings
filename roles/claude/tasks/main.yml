@@ -10,7 +10,7 @@
   register: claude_md_stat
 
 - name: Check file differences for CLAUDE.md
-  command: diff ~/.claude/CLAUDE.md {{ playbook_dir }}/roles/claude/files/CLAUDE.md
+  command: diff ~/.claude/CLAUDE.md ~/gprog/garaemon-settings/roles/claude/files/CLAUDE.md
   register: claude_md_diff
   failed_when: false
   changed_when: false
@@ -27,6 +27,6 @@
 
 - name: Create symlink for CLAUDE.md
   file:
-    src: "{{ playbook_dir }}/roles/claude/files/CLAUDE.md"
+    src: ~/gprog/garaemon-settings/roles/claude/files/CLAUDE.md
     dest: ~/.claude/CLAUDE.md
     state: link
