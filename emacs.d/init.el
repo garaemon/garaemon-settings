@@ -2356,7 +2356,7 @@ Implement down command to stop and delete containers
 
 (use-package tsx-mode
   :ensure t
-  :after (treesit flymake-jsts)
+  :after (treesit)
   :straight '(tsx-mode :type git
                        :host github
                        ;; The latest emacs30 branch depends on flymaks-jsts.
