@@ -1152,10 +1152,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("C-x b" . consult-buffer)
   ("M-s" . consult-ripgrep)
   :config
-  ;; TODO: the function does not work if git does not handle a current file.
-  ;; This is because `(vc-root-dir)' returns nil.
   (defun my-get-git-files ()
-    (let ((root-dir (vc-root-dir)))
+    (let ((root-dir (magit-toplevel "")))
       (when root-dir
         (with-temp-buffer
           (let ((default-directory root-dir))
