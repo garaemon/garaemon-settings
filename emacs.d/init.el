@@ -759,6 +759,14 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (set-face-foreground bm-face "black")
   )
 
+(use-package buffer-move :ensure t
+  :bind
+  ("\C-c <down>" . buf-move-down)
+  ("\C-c <up>" . buf-move-up)
+  ("\C-c <right>" . buf-move-right)
+  ("\C-c <left>" . buf-move-left)
+  )
+
 (use-package calfw :ensure t :defer t)
 
 (use-package coffee-mode :ensure t :defer t)
@@ -2121,9 +2129,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
               ;; key.
               ("\C-c [" . 'vterm-copy-mode) ; like tmux
-              ("\C-c c" . 'multi-vterm) ; like tmux
-              ("\C-c n" . 'multi-vterm-next)
-              ("\C-c p" . 'multi-vterm-prev)
               ("\C-@" . 'my-vterm-toggle)
               ("<mouse-1>" . 'browse-url-at-point)
               )
