@@ -2202,6 +2202,15 @@ Optional argument ARGS ."
   ;;   :stream t                             ;Stream responses
   ;;   :models '(gemma3:4b))          ;List of models
 
+  ;; Customize system prompt
+  (setf (alist-get 'default gptel-directives)
+      "You are a large language model living in Emacs and a helpful assistant. You have to follow the following orders:
+
+- Respond concisely.
+- Respont in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
+- Answer conclusions first.
+- ")
+
   (defun my-gptel-generate-git-commit ()
     "Generate a Git commit message for staged changes using gptel-request.
 
