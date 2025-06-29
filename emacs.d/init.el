@@ -2300,8 +2300,56 @@ Implement down command to stop and delete containers
      ("g" "Generate" my-gptel-generate-git-commit)
      ])
 
-;; Initialize an instance of gptel using your credentials and configurations
-;; Here's an example where we use
+  ;; The original prompt is here https://ray.so/prompts/raycast.
+  (defun my-gptel-improve-writing (beginning end)
+    (interactive "r")
+    (let ((original-string (buffer-substring-no-properties beginning end))
+          ;; Use local LLM to share any sentences safely.
+          (gptel-model 'gemma3:4b)
+          (gptel-backend (gptel-make-ollama "Ollama"
+                           :host "localhost:11434"
+                           :stream t
+                           :models '(gemma3:4b))))
+    (if original-string
+        (gptel-request
+            (concat
+"
+Act as a spelling corrector, content writer, and text improver/editor.
+
+Reply to each message only with the rewritten text
+Stricly follow these rules:
+- Correct spelling, grammar, and punctuation errors in the given text
+- Enhance clarity and conciseness without altering the original meaning
+- Divide lengthy sentences into shorter, more readable ones
+- Eliminate unnecessary repetition while preserving important points
+- Prioritize active voice over passive voice for a more engaging tone
+- Opt for simpler, more accessible vocabulary when possible
+- ALWAYS ensure the original meaning and intention of the given text
+- ALWAYS maintain the existing tone of voice and style, e.g. formal, casual, polite, etc.
+- NEVER surround the improved text with quotes or any additional formatting
+- If the text is already well-written and requires no improvement, don't change the given text
+- Keep comment characters. The original text may include or start with comment characters such as
+//, /* and ;. This is because the user wants to imrove comments in source codes. If so, keep the
+comment characters.
+
+Text: " original-string
+"
+
+Improved Text:")
+          :system "You are a large language model living in Emacs and a helpful assistant."
+          :callback (lambda (response info)
+                      (let ((prompt (format "Improved text: %s\nYou want to replace?" response)))
+                        (if (and (region-active-p) (yes-or-no-p prompt))
+                            (progn
+                              (delete-region (region-beginning) (region-end))
+                              (insert response)
+                              (deactivate-mark)
+                              (message "Updated the text"))))))
+      (message "You have not selected a region"))
+    ))
+
+  ;; Initialize an instance of gptel using your credentials and configurations.
+  ;; Here's an example where we use.
   (defvar my-gptel-minibuffer--history nil)
   (defun my-gptel-minibuffer (prompt)
     (interactive (list (read-string "Ask AI: " (car my-gptel-minibuffer--history)
