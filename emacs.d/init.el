@@ -2328,9 +2328,8 @@ Stricly follow these rules:
 - ALWAYS maintain the existing tone of voice and style, e.g. formal, casual, polite, etc.
 - NEVER surround the improved text with quotes or any additional formatting
 - If the text is already well-written and requires no improvement, don't change the given text
-- Keep comment characters. The original text may include or start with comment characters such as
-//, /* and ;. This is because the user wants to imrove comments in source codes. If so, keep the
-comment characters.
+- Keep comment delimiters. The original text may include or start with comment characters such as
+//, /* and ;. This is because the user wants to imrove comments in source codes.
 
 Text: " original-string
 "
