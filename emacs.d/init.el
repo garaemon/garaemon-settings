@@ -2193,6 +2193,8 @@ Optional argument ARGS ."
 
 (use-package gptel :ensure t
   :after (exec-path-from-shell)
+  ;; TODO: Should I use \?
+  :bind ("C-¥" . gptel)
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
