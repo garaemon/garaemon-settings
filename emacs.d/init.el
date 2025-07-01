@@ -2095,6 +2095,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
   )
 
+(use-package emoji
+  :bind (("C-:" . 'emoji-search))
+  )
+
 (use-package emojify :ensure t
   :if (display-graphic-p)
   )
