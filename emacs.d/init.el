@@ -1007,7 +1007,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (minuet-provider 'openai-fim-compatible)
   (minuet-auto-suggestion-debounce-delay 1.0)
   (minuet-n-completions 1)
-  (minuet-context-window 512)
+  (minuet-context-window 1024)
   ;; Do not show the completion when the cursor is NOT at the end of lines.
   (minuet-auto-suggestion-block-functions '(minuet-evil-not-insert-state-p my-not-eolp))
   :config
