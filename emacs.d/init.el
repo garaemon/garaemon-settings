@@ -110,9 +110,16 @@
 ;; Disable bell
 (setq visible-bell nil)
 (setq ring-bell-function 'ignore)
+;; TODO: Use use-package paren.
 ;; Highlight parens
 (show-paren-mode t)
-(setq show-paren-style 'mixed)
+;; Highlight the content isnide parenthesis even if the entire content is visible in the buffer.
+(setq show-paren-style 'expression)
+;; Highlight the content ignoring the spaces before and after the parenthesis.
+(setq show-paren-when-point-in-periphery t)
+;; Do not highlight the content if the cursor is on the closing parenthesis.
+(setq show-paren-when-point-inside-paren nil)
+
 ;; Disable startup image
 (setq inhibit-startup-message t)
 ;; Force to use y-or-n-p
