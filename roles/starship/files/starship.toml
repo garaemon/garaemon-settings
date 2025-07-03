@@ -163,7 +163,7 @@ format = '[ ♥ $time ]($style)'
 [python]
 # Remove "via" from the original format
 format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\))]($style)'
-style = "bg:#5CAB97"
+style = "bg:#002B36"
 
 [cmd_duration]
 format = '[took $duration]($style)'
