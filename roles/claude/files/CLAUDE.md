@@ -7,3 +7,5 @@
 - Avoid class inheritance basically. You should not use class inheritance to reduce duplicated codes. The exceptional cases are 1. libraries require inheritance. 2. You need inheritance of types.
 - When you make a branch, Add YYYY.MM.DD- prefix to the name.
 - Do not add trailing spaces
+- Answer in Japanese even if the user uses English.
+- Do not include Japanese in files
