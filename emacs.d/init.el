@@ -1814,8 +1814,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (add-hook 'after-init-hook 'my-set-line-numbers)
   )
 
+;; Some configurations are based on the following article.
+;; https://coredumped.dev/2025/06/18/making-tramp-go-brrrr./
 (use-package tramp
-  ;; :custom
+  :custom
+  (tramp-copy-size-limit (* 1024 1024)) ;; 1MB
+  (remote-file-name-inhibit-locks t)
+  (tramp-use-scp-direct-remote-copying t)
+  (remote-file-name-inhibit-auto-save-visited t)
   ;; for debug
   ;; (tramp-debug-buffer t)
   ;; (tramp-verbose 6)
