@@ -30,3 +30,9 @@
     src: ~/gprog/garaemon-settings/roles/claude/files/CLAUDE.md
     dest: ~/.claude/CLAUDE.md
     state: link
+
+- name: Install Claude Code via npm
+  shell: |
+    source ~/.nvm/nvm.sh && npm install -g @anthropic-ai/claude-code
+  args:
+    executable: /bin/bash
