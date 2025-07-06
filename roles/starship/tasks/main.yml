@@ -9,7 +9,8 @@
   when: which_starship.rc == 0
   register: starship_installed_version
 
-- when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+- name: Install starship if not installed or version is outdated
+  when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
   block:
     - name: Create tempfile for starship install script
       tempfile:
