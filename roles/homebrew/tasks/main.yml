@@ -17,6 +17,7 @@
       - emacs
       - findutils
       - fontconfig
+      - git
       - gnu-sed
       - gpg
       - hg
