@@ -9,20 +9,22 @@
   when: which_starship.rc == 0
   register: starship_installed_version
 
-- name: Create tempfile for starship install script
-  tempfile:
-    state: file
-    suffix: install_starship_sh
-  register: starship_tempfile
-  when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+- when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+  block:
+    - name: Create tempfile for starship install script
+      tempfile:
+        state: file
+        suffix: install_starship_sh
+      register: starship_tempfile
 
-- name: Download starship install script
-  get_url:
-    url: https://starship.rs/install.sh
-    dest: "{{ starship_tempfile.path }}"
-    mode: "0755"
-  register: starship_download
-  when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+    - name: Download starship install script
+      get_url:
+        url: https://starship.rs/install.sh
+        dest: "{{ starship_tempfile.path }}"
+        mode: "0755"
+        # force: true is needed because ansible skips download install.sh because of 304 status.
+        force: true
+      register: starship_download
 
 - name: Install starship
   shell: "{{ starship_tempfile.path }} -y --bin-dir $HOME/.local/bin"
@@ -43,7 +45,9 @@
   register: starship_toml_diff
   failed_when: false
   changed_when: false
-  when: starship_toml_stat.stat.exists and not starship_toml_stat.stat.islnk
+  when:
+    - starship_toml_stat.stat.exists
+    - not starship_toml_stat.stat.islnk
 
 - name: Remove existing starship.toml if identical to target
   file:
