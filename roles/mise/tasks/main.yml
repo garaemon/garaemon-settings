@@ -1,0 +1,35 @@
+- name: Check if mise is already installed
+  command: which mise
+  register: mise_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Determine if mise needs to be installed
+  set_fact:
+    mise_install_needed: "{{ mise_check.rc != 0 }}"
+  changed_when: false
+
+- name: Install mise if needed
+  when: mise_install_needed
+  block:
+
+    - name: Create temporary file for mise install script
+      tempfile:
+        state: file
+        suffix: ".sh"
+      register: install_script_temp
+
+    - name: Download mise install script
+      get_url:
+        url: https://mise.run
+        dest: "{{ install_script_temp.path }}"
+        mode: '0755'
+        force: true
+
+    - name: Execute mise install script
+      command: "{{ install_script_temp.path }}"
+
+    - name: Clean up mise install script
+      file:
+        path: "{{ install_script_temp.path }}"
+        state: absent
