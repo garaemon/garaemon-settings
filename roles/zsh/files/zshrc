@@ -533,6 +533,11 @@ export NVM_DIR="$HOME/.nvm"
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
 
+# mise
+if which mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
+
 # hook for vterm
 vterm_printf(){
   if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
