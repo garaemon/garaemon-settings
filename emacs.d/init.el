@@ -1329,10 +1329,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package lua-mode :ensure t :defer t)
 
 (use-package magit :ensure t
-  ;; :custom (magit-refresh-status-buffer nil)
+  ;; (magit-refresh-status-buffer nil)
   :bind (("\C-cl" . 'magit-status)
          ("\C-cL" . 'magit-status))
+
   :config
+  ;; homebrew's git is faster than apple's git.
+  ;; https://gregnewman.io/blog/speed-up-magit-on-macos/
+  (if (file-exists-p "/opt/homebrew/bin/git")
+      (setq magit-git-executable "/opt/homebrew/bin/git"))
+
   ;; The following configuration is recommended to improve the performance of magit.
   ;; (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p)
   (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
