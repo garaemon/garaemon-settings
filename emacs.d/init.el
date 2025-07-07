@@ -1405,6 +1405,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
     )
   )
 
+;; Use markdown-mode for commit messages.
+(use-package git-commit
+  :init
+  (setq git-commit-major-mode 'markdown-mode)
+  (add-hook 'git-commit-setup-hook
+            (lambda ()
+              (setq-local markdown-indent-on-enter 'indent-and-new-item)
+              (auto-fill-mode 1)))
+  )
+
 (use-package sx :ensure t)
 
 ;; Use swiper for C-s, not consult-line.
