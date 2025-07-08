@@ -2444,7 +2444,6 @@ Improved Text:")
 
   (defvar my-enable-search-grounding t
     "Enable search grounding for Gemini requests.")
-  :custom (gptel-default-mode 'org-mode)
   )
 
 (use-package treesit
