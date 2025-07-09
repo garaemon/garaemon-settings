@@ -1,4 +1,4 @@
-name: Lint Emacs Lisp
+name: Test Emacs Lisp
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,5 +15,5 @@ jobs:
       uses: purcell/setup-emacs@master
       with:
         version: '30.1'
-    - name: Lint init.el
+    - name: Test init.el
       run: emacs -batch -l init.el -f batch-byte-compile init.el
