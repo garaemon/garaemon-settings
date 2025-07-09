@@ -1332,7 +1332,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package magit :ensure t
   ;; (magit-refresh-status-buffer nil)
   :bind (("\C-cl" . 'magit-status)
-         ("\C-cL" . 'magit-status))
+         ("\C-cL" . 'magit-status)
          ("\C-cm" . 'magit-dispatch))
   :config
   ;; homebrew's git is faster than apple's git.
