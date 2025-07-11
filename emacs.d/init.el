@@ -922,6 +922,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (use-package lsp-mode :ensure t
   ;; npm install -g typescript-language-server typescript
   :hook ((typescript-mode . #'lsp)
+         (typescript-ts-mode . #'lsp)
          (yaml-mode . #'lsp)
          (python-mode . #'lsp)
          (shell-script-mode . #'lsp)
