@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: yesterday
+# key: @yesterday
+# --
+`(format-time-string "<%Y-%m-%d>" (time-subtract (current-time) (seconds-to-time (* 24 60 60))))`
