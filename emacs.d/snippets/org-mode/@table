@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: table
+# key: @table
+# --
+| Column1  | Column2 | Column3 |
+|----------+---------+---------|
+|          |         |         |
+|          |         |         |
