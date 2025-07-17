@@ -1112,6 +1112,16 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (vertico-posframe-mode)
   )
 
+(use-package cape
+  :after corfu
+  :ensure t
+  :config
+  ;; (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  ;; (remove-hook 'completion-at-point-functions #'cape-dabbrev)
+  ;; (add-hook 'completion-at-point-functions #'cape-file)
+  ;; (add-hook 'completion-at-point-functions #'cape-elisp-block)
+  )
+
 (use-package corfu
   :ensure t
   ;; Optional customizations
@@ -1968,6 +1978,13 @@ If the file is new, it will be populated with a default template."
   (define-key yas-minor-mode-map (kbd "C-x i v") 'yas-visit-snippet-file)
   :hook ((prog-mode . yas-minor-mode)
          (cmake-mode . yas-minor-mode))
+  )
+
+(use-package yasnippet-capf
+  :ensure t
+  :after cape
+  :config
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf)
   )
 
 (use-package yatemplate :ensure t
