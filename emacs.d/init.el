@@ -2276,9 +2276,23 @@ Optional argument ARGS ."
 (use-package gptel :ensure t
   :after (exec-path-from-shell)
   ;; TODO: Should I use \?
-  :bind (("C-¥" . gptel)
+  :bind (("C-¥" . my-gptel-toggle)
          :map gptel-mode-map
          ("C-c C-c" . gptel-send))
+  :custom
+  '(gptel-directives
+   '((default
+      . "You are a large language model living in Emacs and a helpful assistant.
+You have to follow the following orders:
+- Respond concisely.
+- Respont in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
+- Answer conclusions first.")
+     (programming
+      . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
+     (writing
+      . "You are a large language model and a writing assistant. Respond concisely.")
+     (chat
+      . "You are a large language model and a conversation partner. Respond concisely.")))
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
@@ -2292,14 +2306,21 @@ Optional argument ARGS ."
   ;;   :stream t                             ;Stream responses
   ;;   :models '(gemma3:4b))          ;List of models
 
-  ;; Customize system prompt
-  (setf (alist-get 'default gptel-directives)
-      "You are a large language model living in Emacs and a helpful assistant. You have to follow the following orders:
+  (defun my-gptel-get-buffer ()
+    (car (cl-remove-if #'null
+                       (mapcar #'(lambda (buf)
+                                   (with-current-buffer buf
+                                     (if (member 'gptel-mode local-minor-modes)
+                                         buf)))
+                               (buffer-list)))))
 
-- Respond concisely.
-- Respont in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
-- Answer conclusions first.
-- ")
+  (defun my-gptel-toggle ()
+    (interactive)
+    (let ((gptel-buffer (my-gptel-get-buffer)))
+      (if gptel-buffer
+          (switch-to-buffer gptel-buffer)
+        (call-interactively 'gptel)
+      )))
 
   (defun my-gptel-generate-git-commit ()
     "Generate a Git commit message for staged changes using gptel-request.
