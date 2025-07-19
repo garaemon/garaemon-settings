@@ -1,4 +1,3 @@
-
 ;;; dot.emacs --- entrypoint of setting emacs
 
 ;;; This elisp provides minimum settings for coding and load
@@ -2589,6 +2588,11 @@ Improved Text:")
             (split-window-horizontally)))
       (switch-window)))
   :bind ("M-o" . 'switch-window-or-split)
+  )
+
+(use-package rich-compile
+  :bind (:map python-mode-map
+              ("C-c C-r" . rich-compile-run-menu))
   )
 
 ;; (use-package format-all
