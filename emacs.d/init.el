@@ -2591,8 +2591,11 @@ Improved Text:")
   )
 
 (use-package rich-compile
-  :bind (:map python-mode-map
-              ("C-c C-r" . rich-compile-run-menu))
+  :bind ( :map python-mode-map
+          ("C-c C-r" . rich-compile-run-menu)
+          :map go-mode-map
+          ("C-c C-r" . rich-compile-run-menu)
+          )
   )
 
 ;; (use-package format-all
