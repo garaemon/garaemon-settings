@@ -85,7 +85,7 @@
          (file-name (file-name-nondirectory file-path))
          (project-root (rich-compile--find-project-root))
          (activate-prefix (rich-compile--get-venv-activate-prefix project-root))
-         (python-interpreter "python"))
+         (python-interpreter "python3"))
 
     (rich-compile--run-command-in-compilation-buffer
      (concat activate-prefix python-interpreter " " (shell-quote-argument file-path))
