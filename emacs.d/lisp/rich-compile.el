@@ -91,20 +91,51 @@
      (concat activate-prefix python-interpreter " " (shell-quote-argument file-path))
      (format "*Python Run: %s*" file-name))))
 
-(defun rich-compile-run-menu ()
-  "Menu to select and run a command for Python files."
+(defun rich-compile-run-go-on-current-file ()
+  "Runs the current Go file with the Go interpreter."
   (interactive)
-  (unless (derived-mode-p 'python-mode)
-    (message "Not in Python mode.")
-    (error "Not in Python mode"))
+  (unless (derived-mode-p 'go-mode)
+    (message "Not in Go mode.")
+    (error "Not in Go mode"))
+  (unless (buffer-file-name)
+    (message "Buffer not associated with a file.")
+    (error "Buffer not associated with a file"))
+  (unless (string-equal (file-name-extension (buffer-file-name)) "go")
+    (message "Current file is not a .go file.")
+    (error "Not a .go file"))
+
+  (let* ((file-path (buffer-file-name))
+         (file-name (file-name-nondirectory file-path))
+         (go-interpreter "go"))
+
+    (rich-compile--run-command-in-compilation-buffer
+     (concat go-interpreter " run " (shell-quote-argument file-path))
+     (format "*Go Run: %s*" file-name))))
+
+(defun rich-compile-run-menu ()
+  "Menu to select and run a command for the current file."
+  (interactive)
   (unless (buffer-file-name)
     (message "Buffer not associated with a file.")
     (error "Buffer not associated with a file"))
 
-  (let* ((choices '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
-                   ("Run current file with Python" . rich-compile-run-python-on-current-file)))
-         (choice (completing-read "Choose Python run command: " choices nil t)))
-    (when choice
-      (funcall (cdr (assoc choice choices))))))
+  (let* ((choices (cond
+                   ((derived-mode-p 'python-mode)
+                    '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
+                      ("Run current file with Python" . rich-compile-run-python-on-current-file)))
+                   ((derived-mode-p 'go-mode)
+                    '(("Run current file with Go" . rich-compile-run-go-on-current-file)))
+                   (t
+                    '())))
+         (prompt (cond
+                  ((derived-mode-p 'python-mode) "Choose Python run command: ")
+                  ((derived-mode-p 'go-mode) "Choose Go run command: ")
+                  (t "No run commands available for this file type.")))
+         (choice (when choices (completing-read prompt choices nil t))))
+    (cond
+     ((null choices)
+      (message "No run commands available for this file type."))
+     (choice
+      (funcall (cdr (assoc choice choices)))))))
 
 (provide 'rich-compile)
