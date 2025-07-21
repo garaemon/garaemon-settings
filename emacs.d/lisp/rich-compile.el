@@ -11,12 +11,13 @@
             (setq project-root (project-root proj)))))
 
       ;; 2. Fallback if `project.el` is not used or no project found
-      ;; Search for .git or .venv directory in parent directories
+      ;; Search for .git, .venv, or package.xml in parent directories
       (unless project-root
         (let ((dir (file-name-directory file-path)))
           (while (and dir (not (string= dir "/")))
             (when (or (file-directory-p (expand-file-name ".git" dir))
-                      (file-directory-p (expand-file-name ".venv" dir)))
+                      (file-directory-p (expand-file-name ".venv" dir))
+                      (file-exists-p (expand-file-name "package.xml" dir)))
               (setq project-root dir)
               (cl-return)) ;; Exit loop
             (setq dir (file-name-directory (directory-file-name dir)))))))
@@ -112,6 +113,46 @@
      (concat go-interpreter " run " (shell-quote-argument file-path))
      (format "*Go Run: %s*" file-name))))
 
+(defun rich-compile--is-ros-project (project-root)
+  "Check if the project root contains package.xml (ROS package)."
+  (file-exists-p (expand-file-name "package.xml" project-root)))
+
+(defun rich-compile-catkin-build-this ()
+  "Run catkin build --this for the current ROS package."
+  (interactive)
+  (let ((project-root (rich-compile--find-project-root)))
+    (unless (rich-compile--is-ros-project project-root)
+      (message "Not in a ROS package (no package.xml found).")
+      (error "Not in a ROS package"))
+    (let ((default-directory project-root))
+      (rich-compile--run-command-in-compilation-buffer
+       "catkin build --this"
+       "*Catkin Build This*"))))
+
+(defun rich-compile-catkin-build-this-no-deps ()
+  "Run catkin build --this --no-deps for the current ROS package."
+  (interactive)
+  (let ((project-root (rich-compile--find-project-root)))
+    (unless (rich-compile--is-ros-project project-root)
+      (message "Not in a ROS package (no package.xml found).")
+      (error "Not in a ROS package"))
+    (let ((default-directory project-root))
+      (rich-compile--run-command-in-compilation-buffer
+       "catkin build --this --no-deps"
+       "*Catkin Build This No Deps*"))))
+
+(defun rich-compile-catkin-run-tests-this-no-deps ()
+  "Run catkin run_tests --this --no-deps for the current ROS package."
+  (interactive)
+  (let ((project-root (rich-compile--find-project-root)))
+    (unless (rich-compile--is-ros-project project-root)
+      (message "Not in a ROS package (no package.xml found).")
+      (error "Not in a ROS package"))
+    (let ((default-directory project-root))
+      (rich-compile--run-command-in-compilation-buffer
+       "catkin run_tests --this --no-deps"
+       "*Catkin Run Tests This No Deps*"))))
+
 (defun rich-compile-run-menu ()
   "Menu to select and run a command for the current file."
   (interactive)
@@ -119,17 +160,27 @@
     (message "Buffer not associated with a file.")
     (error "Buffer not associated with a file"))
 
-  (let* ((choices (cond
-                   ((derived-mode-p 'python-mode)
-                    '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
-                      ("Run current file with Python" . rich-compile-run-python-on-current-file)))
-                   ((derived-mode-p 'go-mode)
-                    '(("Run current file with Go" . rich-compile-run-go-on-current-file)))
-                   (t
-                    '())))
+  (let* ((project-root (rich-compile--find-project-root))
+         (is-ros-project (rich-compile--is-ros-project project-root))
+         (mode-choices (cond
+                        ((derived-mode-p 'python-mode)
+                         '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
+                           ("Run current file with Python" . rich-compile-run-python-on-current-file)))
+                        ((derived-mode-p 'go-mode)
+                         '(("Run current file with Go" . rich-compile-run-go-on-current-file)))
+                        (t
+                         '())))
+         (ros-choices (when is-ros-project
+                        '(("Catkin build --this" . rich-compile-catkin-build-this)
+                          ("Catkin build --this --no-deps" . rich-compile-catkin-build-this-no-deps)
+                          ("Catkin run_tests --this --no-deps" . rich-compile-catkin-run-tests-this-no-deps))))
+         (choices (append mode-choices ros-choices))
          (prompt (cond
+                  ((and (derived-mode-p 'python-mode) is-ros-project) "Choose Python/ROS run command: ")
+                  ((and (derived-mode-p 'go-mode) is-ros-project) "Choose Go/ROS run command: ")
                   ((derived-mode-p 'python-mode) "Choose Python run command: ")
                   ((derived-mode-p 'go-mode) "Choose Go run command: ")
+                  (is-ros-project "Choose ROS run command: ")
                   (t "No run commands available for this file type.")))
          (choice (when choices (completing-read prompt choices nil t))))
     (cond
