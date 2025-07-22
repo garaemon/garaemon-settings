@@ -156,9 +156,6 @@
 (defun rich-compile-run-menu ()
   "Menu to select and run a command for the current file."
   (interactive)
-  (unless (buffer-file-name)
-    (message "Buffer not associated with a file.")
-    (error "Buffer not associated with a file"))
 
   (let* ((project-root (rich-compile--find-project-root))
          (is-ros-project (rich-compile--is-ros-project project-root))
