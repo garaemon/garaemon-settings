@@ -1435,7 +1435,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package swiper :ensure t
   :bind
   ("C-s" . 'swiper-isearch)
-  ("C-c C-r" . #'ivy-resume)
   :config
   (setopt ivy-use-virtual-buffers t)
   (setopt enable-recursive-minibuffers t)
@@ -2591,11 +2590,7 @@ Improved Text:")
   )
 
 (use-package rich-compile
-  :bind ( :map python-mode-map
-          ("C-c C-r" . rich-compile-run-menu)
-          :map go-mode-map
-          ("C-c C-r" . rich-compile-run-menu)
-          )
+  :bind (("C-c C-r" . rich-compile-run-menu))
   )
 
 ;; (use-package format-all
