@@ -938,6 +938,11 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
   ;; Disable ruff in tramp environment too
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff-tramp))
+  (defun my-lsp-format (s e)
+    (interactive "r")
+    (if (region-active-p)
+        (lsp-format-region s e)
+      (lsp-format-buffer)))
   :custom
   (lsp-pylsp-plugins-yapf-enabled t)
   (lsp-pylsp-plugins-black-enabled nil)
@@ -955,7 +960,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
   :bind (
-         ("C-c f" . 'lsp-format-region)
+         ("C-c f" . 'my-lsp-format)
          ("M-." . 'lsp-find-definition)
          )
   )
