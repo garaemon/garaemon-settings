@@ -928,7 +928,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (c-mode . #'lsp)
          (cpp-mode . #'lsp)
          (go-mode . #'lsp)
-         (swift-mode . #'lsp))
+         (swift-mode . #'lsp)
+         (lsp-completion-mode . my-lsp-mode-setup-completion))
+  :init
+  (defun my-lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless)))
   :config
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
   ;; Disable ruff in tramp environment too
@@ -937,6 +942,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (lsp-pylsp-plugins-yapf-enabled t)
   (lsp-pylsp-plugins-black-enabled nil)
   (lsp-pylsp-plugins-autopep8-enabled nil)
+  (lsp-completion-provider :none) ;; we use Corfu!
   ;; (lsp-python-server-settings
   ;;    '((pylsp . ((plugins . ((yapf . ((enabled . t)))
   ;;                            (black . ((enabled . nil)))
@@ -1152,9 +1158,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
               ("<tab>" . corfu-next)
               ("S-<tab>" . corfu-previous)
               )
-  :hook ((lsp-mode . (lambda ()
-                       (when (bound-and-true-p lsp-ui-mode)
-                         (corfu-mode -1)))))
   )
 
 
