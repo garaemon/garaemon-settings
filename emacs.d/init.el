@@ -1991,6 +1991,10 @@ If the file is new, it will be populated with a default template."
   :after cape
   :config
   (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+  (defun my-add-at-sign-to-syntax ()
+    "Add @ to word syntax."
+    (modify-syntax-entry ?@ "w"))
+  (add-hook 'org-mode-hook #'my-add-at-sign-to-syntax)
   )
 
 (use-package yatemplate :ensure t
