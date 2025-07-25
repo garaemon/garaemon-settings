@@ -926,7 +926,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (python-mode . #'lsp)
          (shell-script-mode . #'lsp)
          (c-mode . #'lsp)
-         (cpp-mode . #'lsp)
+         (c++-mode . #'lsp)
          (go-mode . #'lsp)
          (swift-mode . #'lsp)
          (lsp-completion-mode . my-lsp-mode-setup-completion))
