@@ -1524,10 +1524,18 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package git-auto-commit-mode
   :ensure t
   :config
-  ;; Run `git pull` before committing codes.
   (defun gac-pull-hook (buffer)
+    "Run `git pull` before committing codes."
+    (message "buffer is %s and file-name is %s" buffer (buffer-file-name buffer))
     (unwind-protect
-        (vc-pull)))
+        (with-current-buffer buffer
+          (let* ((pull-output-buffer (generate-new-buffer "*Git Pull Output*"))
+                 (exit-code
+                  (call-process "git" nil pull-output-buffer nil "pull"))
+                 (output-string (with-current-buffer pull-output-buffer (buffer-string))))
+            (if (not (eq exit-code 0))
+                (message "Failed to run git pull: %s" output-string)
+              (message "Successfully automatically pulled the repo"))))))
   (advice-add 'gac-commit :before #'gac-pull-hook)
   )
 
