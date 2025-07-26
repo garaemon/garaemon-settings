@@ -1521,11 +1521,13 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 ;; Enable it in ~/gprog/org
-(use-package git-auto-commit-mode :ensure t
+(use-package git-auto-commit-mode
+  :ensure t
   :config
   ;; Run `git pull` before committing codes.
-  (defun gac-pull-hook ()
-    (vc-pull))
+  (defun gac-pull-hook (buffer)
+    (unwind-protect
+        (vc-pull)))
   (advice-add 'gac-commit :before #'gac-pull-hook)
   )
 
