@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Movie Entry
+# key: @movie
+# --
+** WATCHED $0
+   :PROPERTIES:
+   :DIRECTOR:
+   :VENUE:
+   :DATE:
+   :END:

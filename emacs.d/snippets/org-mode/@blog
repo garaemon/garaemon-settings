@@ -1,0 +1,3 @@
+#+TITLE: $0
+#+DATE: `(format-time-string "<%Y-%m-%d>")`
+#+FILETAGS:
