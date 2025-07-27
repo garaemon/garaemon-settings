@@ -1366,7 +1366,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
   (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
   (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
-
+  (add-hook 'git-commit-setup-hook 'git-commit-turn-on-flyspell)
   ;; Rewrite magit-branch-read-args to automatically insert YYYY.MM.DD- as prefix
   ;; of new branch names.
   (defun magit-branch-read-args (prompt &optional default-start)
