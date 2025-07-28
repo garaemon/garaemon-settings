@@ -2611,6 +2611,10 @@ Improved Text:")
   :bind ("M-o" . 'switch-window-or-split)
   )
 
+(use-package terraform-mode
+  :ensure t
+  )
+
 (use-package rich-compile
   :bind (("C-c C-r" . rich-compile-run-menu))
   )
