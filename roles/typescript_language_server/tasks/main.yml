@@ -1,2 +1,2 @@
 - name: Install typescript-language-server
-  command: bash -lc "source ~/.nvm/nvm.sh && npm install typescript-language-server"
+  command: mise exec -- npm install -g typescript-language-server

@@ -33,3 +33,11 @@
       file:
         path: "{{ install_script_temp.path }}"
         state: absent
+
+- name: Install node {{ mise_node_versions }}
+  command: mise install node@{{ item }}
+  loop: "{{ mise_node_versions }}"
+
+- name: Set global node version to latest installed
+  command: mise global node@{{ mise_node_versions | last }}
+  when: mise_node_versions | length > 0

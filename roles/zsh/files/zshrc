@@ -438,7 +438,6 @@ function roscode() {
 
 compctl -K "_roscomplete" "roscode"
 
-[ -s "$NVM_DIR/zsh_completion" ] && \. "$NVM_DIR/zsh_completion" # This loads nvm bash_completion
 
 
 if [ -e $HOME/.dotnet ]; then
@@ -488,7 +487,6 @@ if [ -z "$TMUX" ]; then
       echo "${RED}[tmux] No tmux session${DEFAULT}"
   fi
 fi
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # ssh agent
 # eval "$(ssh-agent -s)"
@@ -527,8 +525,7 @@ alias git-graph="git log --graph --decorate --oneline"
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 alias c=code
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+eval "$(mise activate zsh)"
 # uv
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"

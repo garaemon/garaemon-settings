@@ -31,8 +31,5 @@
     dest: ~/.claude/CLAUDE.md
     state: link
 
-- name: Install Claude Code via npm
-  shell: |
-    source ~/.nvm/nvm.sh && npm install -g @anthropic-ai/claude-code
-  args:
-    executable: /bin/bash
+- name: Install Claude Code via mise
+  command: mise use -g claude
