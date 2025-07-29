@@ -786,13 +786,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 ;; (use-package elisp-format
 ;;   :url "http://www.emacswiki.org/emacs/download/elisp-format.el")
 
-(use-package dashboard
-  :ensure t
-  :custom
-  (dashboard-items '((recents . 20) (agenda . 20) (bookmarks . 5)))
-  :config
-  (dashboard-setup-startup-hook))
-
 (use-package udev-mode :ensure t)
 
 (use-package powerline
