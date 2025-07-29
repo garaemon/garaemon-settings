@@ -1634,9 +1634,11 @@ If the file is new, it will be populated with a default template."
          ("C-c a" . 'org-agenda)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link)
          :map org-mode-map
          ("M-e" . 'my-org-mode-wrap-inline-code)
-         ("C-c /" . 'consult-org-agenda))
+         ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
                        ;; To wrap texts
                        (visual-line-mode)
@@ -2194,7 +2196,6 @@ If the file is new, it will be populated with a default template."
              (current-word))))
       (dictionary-popup-matching-words word)
       ))
-  (global-set-key "\C-cs" 'dictionary-popup-matching-region-or-words)
   )
 
 (use-package emoji
