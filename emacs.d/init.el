@@ -1698,6 +1698,7 @@ If the file is new, it will be populated with a default template."
      ("l" . "export latex")
      ("q" . "quote")
      ("s" . "src")
+     ("sh" . "src shell")
      ("v" . "verse")
      ))
   ;; The keys of org-tempo-keywords-alist and org-structure-template-alist have to be unique.
