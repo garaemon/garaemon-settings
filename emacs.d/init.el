@@ -689,7 +689,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :custom
   ; See the Configuration section below
   (aidermacs-use-architect-mode t)
-  (aidermacs-default-model "gemini/gemini-2.5-flash-preview-05-20")
+  (aidermacs-default-model "gemini/gemini-2.5-flash")
   :hook (aidermacs-comint-mode . (lambda ()
                                    (display-line-numbers-mode -1)
                                    (display-fill-column-indicator-mode -1)
@@ -1661,7 +1661,7 @@ If the file is new, it will be populated with a default template."
   :custom
   ;; Use Geimini
   (org-ai-service 'google)
-  (org-ai-default-chat-model "gemini-2.5-flash-preview-05-20")
+  (org-ai-default-chat-model "gemini-2.5-flash")
   (org-ai-auto-fill nil)
   ;; ~/.authinfo should have
   ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
@@ -2310,7 +2310,7 @@ You have to follow the following orders:
   :config
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
-        (setq gptel-model 'gemini-2.5-flash-preview-05-20
+        (setq gptel-model 'gemini-2.5-flash
               gptel-backend (gptel-make-gemini "Gemini"
                  :key gemini-key
                  :stream t))
