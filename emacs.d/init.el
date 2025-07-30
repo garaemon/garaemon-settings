@@ -2301,6 +2301,7 @@ Optional argument ARGS ."
 You have to follow the following orders:
 - Respond concisely.
 - Respont in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
+- Use English in program examples.
 - Answer conclusions first.")
      (programming
       . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
