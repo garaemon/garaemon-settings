@@ -1537,7 +1537,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
-  (org-startup-with-latex-preview t)
+  (org-startup-with-latex-preview nil)
   (org-directory (expand-file-name "~/gprog/org/"))
   ;; The special characters for org-capture-templates are described below:
   ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
