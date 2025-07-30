@@ -117,6 +117,10 @@
   "Check if the project root contains package.xml (ROS package)."
   (file-exists-p (expand-file-name "package.xml" project-root)))
 
+(defun rich-compile--has-vscode-tasks (project-root)
+  "Check if the project root contains .vscode/tasks.json (VS Code tasks)."
+  (file-exists-p (expand-file-name ".vscode/tasks.json" project-root)))
+
 (defun rich-compile-catkin-build-this ()
   "Run catkin build --this for the current ROS package."
   (interactive)
@@ -153,12 +157,41 @@
        "catkin run_tests --this --no-deps"
        "*Catkin Run Tests This No Deps*"))))
 
+(defun rich-compile--get-vscode-tasks (project-root)
+  "Get list of available VS Code tasks from tasks.json."
+  (let ((tasks-json-path (expand-file-name ".vscode/tasks.json" project-root))
+        (default-directory project-root))
+    (when (file-exists-p tasks-json-path)
+      (let ((output (shell-command-to-string
+                     (format "tasks-json-cli list -c %s -q" (shell-quote-argument tasks-json-path)))))
+        (when (and output (not (string-empty-p (string-trim output))))
+          (split-string (string-trim output) "\n" t))))))
+
+(defun rich-compile-run-vscode-task (task-name)
+  "Run a VS Code task using tasks-json-cli."
+  (interactive)
+  (let* ((project-root (rich-compile--find-project-root))
+         (tasks-json-path (expand-file-name ".vscode/tasks.json" project-root))
+         (default-directory project-root)
+         (current-file (when (buffer-file-name) (buffer-file-name)))
+         (command (format "tasks-json-cli run %s -c %s%s"
+                         (shell-quote-argument task-name)
+                         (shell-quote-argument tasks-json-path)
+                         (if current-file
+                             (format " --file %s" (shell-quote-argument current-file))
+                           ""))))
+    (rich-compile--run-command-in-compilation-buffer
+     command
+     (format "*VS Code Task: %s*" task-name))))
+
 (defun rich-compile-run-menu ()
   "Menu to select and run a command for the current file."
   (interactive)
 
   (let* ((project-root (rich-compile--find-project-root))
          (is-ros-project (rich-compile--is-ros-project project-root))
+         (has-vscode-tasks (rich-compile--has-vscode-tasks project-root))
+         (vscode-tasks (when has-vscode-tasks (rich-compile--get-vscode-tasks project-root)))
          (mode-choices (cond
                         ((derived-mode-p 'python-mode)
                          '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
@@ -171,13 +204,27 @@
                         '(("Catkin build --this" . rich-compile-catkin-build-this)
                           ("Catkin build --this --no-deps" . rich-compile-catkin-build-this-no-deps)
                           ("Catkin run_tests --this --no-deps" . rich-compile-catkin-run-tests-this-no-deps))))
-         (choices (append mode-choices ros-choices))
+         (vscode-choices (when vscode-tasks
+                           (mapcar (lambda (task)
+                                     (cons (format "VS Code Task: %s" task)
+                                           `(lambda () (rich-compile-run-vscode-task ,task))))
+                                   vscode-tasks)))
+         (choices (append mode-choices ros-choices vscode-choices))
          (prompt (cond
-                  ((and (derived-mode-p 'python-mode) is-ros-project) "Choose Python/ROS run command: ")
-                  ((and (derived-mode-p 'go-mode) is-ros-project) "Choose Go/ROS run command: ")
+                  ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks)
+                   "Choose Python/ROS/VS Code run command: ")
+                  ((and (derived-mode-p 'go-mode) is-ros-project has-vscode-tasks)
+                   "Choose Go/ROS/VS Code run command: ")
+                  ((and (derived-mode-p 'python-mode) has-vscode-tasks)
+                   "Choose Python/VS Code run command: ")
+                  ((and (derived-mode-p 'go-mode) has-vscode-tasks)
+                   "Choose Go/VS Code run command: ")
+                  ((and is-ros-project has-vscode-tasks)
+                   "Choose ROS/VS Code run command: ")
                   ((derived-mode-p 'python-mode) "Choose Python run command: ")
                   ((derived-mode-p 'go-mode) "Choose Go run command: ")
                   (is-ros-project "Choose ROS run command: ")
+                  (has-vscode-tasks "Choose VS Code run command: ")
                   (t "No run commands available for this file type.")))
          (choice (when choices (completing-read prompt choices nil t))))
     (cond
