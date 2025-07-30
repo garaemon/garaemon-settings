@@ -45,6 +45,12 @@
   (message "Running: %s" command)
   (compilation-start command t #'(lambda (mode-name) buffer-name)))
 
+(defun rich-compile-run-command-interactively (initial-command &optional buffer-name)
+  "Run a command interactively, allowing the user to edit it before execution."
+  (interactive "sInitial command: ")
+  (let ((edited-command (read-string "Edit command: " initial-command)))
+    (rich-compile--run-command-in-compilation-buffer edited-command buffer-name)))
+
 (defun rich-compile-run-pytest-on-current-file ()
   "Runs pytest on the current Python test file."
   (interactive)
@@ -67,6 +73,31 @@
 
     (rich-compile--run-command-in-compilation-buffer
      (concat activate-prefix pytest-cmd " " (shell-quote-argument file-path))
+     (format "*Pytest: %s*" file-name))))
+
+(defun rich-compile-run-pytest-on-current-file-interactive ()
+  "Runs pytest on the current Python test file with interactive command editing."
+  (interactive)
+  (unless (derived-mode-p 'python-mode)
+    (message "Not in Python mode.")
+    (error "Not in Python mode"))
+  (unless (buffer-file-name)
+    (message "Buffer not associated with a file.")
+    (error "Buffer not associated with a file"))
+
+  (let* ((file-path (buffer-file-name))
+         (file-name (file-name-nondirectory file-path))
+         (project-root (rich-compile--find-project-root))
+         (activate-prefix (rich-compile--get-venv-activate-prefix project-root))
+         (pytest-cmd "pytest")
+         (initial-command (concat activate-prefix pytest-cmd " " (shell-quote-argument file-path))))
+
+    (unless (string-match-p "\\`test_.*\\.py\\'" file-name)
+      (message "Current file '%s' does not match 'test_*.py' pattern." file-name)
+      (error "Not a pytest file"))
+
+    (rich-compile-run-command-interactively
+     initial-command
      (format "*Pytest: %s*" file-name))))
 
 (defun rich-compile-run-python-on-current-file ()
@@ -92,6 +123,30 @@
      (concat activate-prefix python-interpreter " " (shell-quote-argument file-path))
      (format "*Python Run: %s*" file-name))))
 
+(defun rich-compile-run-python-on-current-file-interactive ()
+  "Runs the current Python file with the Python interpreter with interactive command editing."
+  (interactive)
+  (unless (derived-mode-p 'python-mode)
+    (message "Not in Python mode.")
+    (error "Not in Python mode"))
+  (unless (buffer-file-name)
+    (message "Buffer not associated with a file.")
+    (error "Buffer not associated with a file"))
+  (unless (string-equal (file-name-extension (buffer-file-name)) "py")
+    (message "Current file is not a .py file.")
+    (error "Not a .py file"))
+
+  (let* ((file-path (buffer-file-name))
+         (file-name (file-name-nondirectory file-path))
+         (project-root (rich-compile--find-project-root))
+         (activate-prefix (rich-compile--get-venv-activate-prefix project-root))
+         (python-interpreter "python3")
+         (initial-command (concat activate-prefix python-interpreter " " (shell-quote-argument file-path))))
+
+    (rich-compile-run-command-interactively
+     initial-command
+     (format "*Python Run: %s*" file-name))))
+
 (defun rich-compile-run-go-on-current-file ()
   "Runs the current Go file with the Go interpreter."
   (interactive)
@@ -111,6 +166,28 @@
 
     (rich-compile--run-command-in-compilation-buffer
      (concat go-interpreter " run " (shell-quote-argument file-path))
+     (format "*Go Run: %s*" file-name))))
+
+(defun rich-compile-run-go-on-current-file-interactive ()
+  "Runs the current Go file with the Go interpreter with interactive command editing."
+  (interactive)
+  (unless (derived-mode-p 'go-mode)
+    (message "Not in Go mode.")
+    (error "Not in Go mode"))
+  (unless (buffer-file-name)
+    (message "Buffer not associated with a file.")
+    (error "Buffer not associated with a file"))
+  (unless (string-equal (file-name-extension (buffer-file-name)) "go")
+    (message "Current file is not a .go file.")
+    (error "Not a .go file"))
+
+  (let* ((file-path (buffer-file-name))
+         (file-name (file-name-nondirectory file-path))
+         (go-interpreter "go")
+         (initial-command (concat go-interpreter " run " (shell-quote-argument file-path))))
+
+    (rich-compile-run-command-interactively
+     initial-command
      (format "*Go Run: %s*" file-name))))
 
 (defun rich-compile--is-ros-project (project-root)
@@ -133,6 +210,18 @@
        "catkin build --this"
        "*Catkin Build This*"))))
 
+(defun rich-compile-catkin-build-this-interactive ()
+  "Run catkin build --this for the current ROS package with interactive command editing."
+  (interactive)
+  (let ((project-root (rich-compile--find-project-root)))
+    (unless (rich-compile--is-ros-project project-root)
+      (message "Not in a ROS package (no package.xml found).")
+      (error "Not in a ROS package"))
+    (let ((default-directory project-root))
+      (rich-compile-run-command-interactively
+       "catkin build --this"
+       "*Catkin Build This*"))))
+
 (defun rich-compile-catkin-build-this-no-deps ()
   "Run catkin build --this --no-deps for the current ROS package."
   (interactive)
@@ -141,7 +230,7 @@
       (message "Not in a ROS package (no package.xml found).")
       (error "Not in a ROS package"))
     (let ((default-directory project-root))
-      (rich-compile--run-command-in-compilation-buffer
+      (rich-compile-run-command-interactively
        "catkin build --this --no-deps"
        "*Catkin Build This No Deps*"))))
 
@@ -153,7 +242,7 @@
       (message "Not in a ROS package (no package.xml found).")
       (error "Not in a ROS package"))
     (let ((default-directory project-root))
-      (rich-compile--run-command-in-compilation-buffer
+      (rich-compile-run-command-interactively
        "catkin run_tests --this --no-deps"
        "*Catkin Run Tests This No Deps*"))))
 
@@ -184,6 +273,23 @@
      command
      (format "*VS Code Task: %s*" task-name))))
 
+(defun rich-compile-run-vscode-task-interactive (task-name)
+  "Run a VS Code task using tasks-json-cli with interactive command editing."
+  (interactive)
+  (let* ((project-root (rich-compile--find-project-root))
+         (tasks-json-path (expand-file-name ".vscode/tasks.json" project-root))
+         (default-directory project-root)
+         (current-file (when (buffer-file-name) (buffer-file-name)))
+         (initial-command (format "tasks-json-cli run %s -c %s%s"
+                                 (shell-quote-argument task-name)
+                                 (shell-quote-argument tasks-json-path)
+                                 (if current-file
+                                     (format " --file %s" (shell-quote-argument current-file))
+                                   ""))))
+    (rich-compile-run-command-interactively
+     initial-command
+     (format "*VS Code Task: %s*" task-name))))
+
 (defun rich-compile-run-menu ()
   "Menu to select and run a command for the current file."
   (interactive)
@@ -194,22 +300,24 @@
          (vscode-tasks (when has-vscode-tasks (rich-compile--get-vscode-tasks project-root)))
          (mode-choices (cond
                         ((derived-mode-p 'python-mode)
-                         '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file)
-                           ("Run current file with Python" . rich-compile-run-python-on-current-file)))
+                         '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file-interactive)
+                           ("Run current file with Python" . rich-compile-run-python-on-current-file-interactive)))
                         ((derived-mode-p 'go-mode)
                          '(("Run current file with Go" . rich-compile-run-go-on-current-file)))
                         (t
                          '())))
          (ros-choices (when is-ros-project
-                        '(("Catkin build --this" . rich-compile-catkin-build-this)
+                        '(("Catkin build --this" . rich-compile-catkin-build-this-interactive)
                           ("Catkin build --this --no-deps" . rich-compile-catkin-build-this-no-deps)
                           ("Catkin run_tests --this --no-deps" . rich-compile-catkin-run-tests-this-no-deps))))
          (vscode-choices (when vscode-tasks
-                           (mapcar (lambda (task)
-                                     (cons (format "VS Code Task: %s" task)
-                                           `(lambda () (rich-compile-run-vscode-task ,task))))
-                                   vscode-tasks)))
-         (choices (append mode-choices ros-choices vscode-choices))
+                           (apply 'append
+                                  (mapcar (lambda (task)
+                                            (list (cons (format "VS Code Task: %s" task)
+                                                        `(lambda () (rich-compile-run-vscode-task-interactive ,task)))))
+                                          vscode-tasks))))
+         (generic-choices '(("Run custom command" . (lambda () (call-interactively 'rich-compile-run-command-interactively)))))
+         (choices (append mode-choices ros-choices vscode-choices generic-choices))
          (prompt (cond
                   ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks)
                    "Choose Python/ROS/VS Code run command: ")
