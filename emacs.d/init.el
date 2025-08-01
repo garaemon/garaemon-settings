@@ -1031,7 +1031,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
   ;; TODO: Install qwen2.5-coder:3b automatically
-  (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
+  ;; (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
+  (plist-put minuet-openai-fim-compatible-options :model "deepseek-coder-v2:lite")
 
   (defun my-not-eolp ()
     (not (eolp)))
