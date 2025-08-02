@@ -1009,6 +1009,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :bind
   (:map minuet-active-mode-map
    ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
+   ("<M-return>" . #'minuet-accept-suggestion) ;; accept whole completion
    ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
    ;; Accept the first line of completion, or N lines with a numeric-prefix:
    ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
