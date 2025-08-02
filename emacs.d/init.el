@@ -2233,13 +2233,22 @@ If the file is new, it will be populated with a default template."
               ("\C-c [" . 'vterm-copy-mode) ; like tmux
               ("\C-@" . 'my-vterm-toggle)
               ("<mouse-1>" . 'my-browse-url-at-point)
+              ("\C-k" . 'my-vterm-kill-line)
               )
-  :config
-  (setq vterm-max-scrollback  10000)
-  (setq vterm-buffer-name-string  "*vterm: %s*")
+  :custom
+  (vterm-max-scrollback  10000)
+  (vterm-buffer-name-string  "*vterm: %s*")
   ;; Remove C-h from the original vterm-keymap-exceptions
-  (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
-                                  "C-y" "M-y"))
+  (vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
+                                  "C-k"))
+  :config
+
+  ;; https://github.com/akermu/emacs-libvterm/issues/304#issuecomment-621617817
+  (defun my-vterm-kill-line ()
+    "Send `C-k' to libvterm and copy the line to the kill-ring."
+    (interactive)
+    (kill-ring-save (point) (vterm-end-of-line))
+    (vterm-send-key "k" nil nil t))
 
   (defun my-browse-url-at-point ()
     "Open url only if the thing-at-point is url.
