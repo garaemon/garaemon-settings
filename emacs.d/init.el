@@ -2232,7 +2232,7 @@ If the file is new, it will be populated with a default template."
               ;; key.
               ("\C-c [" . 'vterm-copy-mode) ; like tmux
               ("\C-@" . 'my-vterm-toggle)
-              ("<mouse-1>" . 'browse-url-at-point)
+              ("<mouse-1>" . 'my-browse-url-at-point)
               )
   :config
   (setq vterm-max-scrollback  10000)
@@ -2240,6 +2240,14 @@ If the file is new, it will be populated with a default template."
   ;; Remove C-h from the original vterm-keymap-exceptions
   (setq vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v"
                                   "C-y" "M-y"))
+
+  (defun my-browse-url-at-point ()
+    "Open url only if the thing-at-point is url.
+`browse-url-at-point' uses (thing-at-point 'file). To open urls only, we define a simple wrapper."
+    (interactive)
+    (let ((url (thing-at-point 'url)))
+      (if url (browse-url url))))
+
   :hook (vterm-mode . (lambda ()
                         (display-line-numbers-mode -1)
                         (setq buffer-face-mode-face '(:family "Monaco Nerd Font Mono"))
