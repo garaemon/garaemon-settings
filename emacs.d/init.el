@@ -642,7 +642,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (setq package-archives
       '(("gnu" . "http://elpa.gnu.org/packages/")
         ("melpa" . "http://melpa.org/packages/")
-        ("org" . "http://orgmode.org/elpa/")))
+        ("org" . "http://orgmode.org/elpa/")
+        ("nongnu" . "http://elpa.nongnu.org/nongnu/")))
 
 (unless (require 'use-package nil t)
   (package-initialize)
