@@ -1541,7 +1541,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
-  (org-directory (expand-file-name "~/gprog/org/"))
+  (org-directory
+   (let ((icloud-directory
+          (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/org/")))
+     (if (file-directory-p icloud-directory)
+         icloud-directory
+       (expand-file-name "~/gprog/org/"))))
   ;; The special characters for org-capture-templates are described below:
   ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
   (org-capture-templates
@@ -1644,10 +1649,11 @@ If the file is new, it will be populated with a default template."
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
                                                    (file-name-directory buffer-file-name)))
-                         (git-auto-commit-mode t)
-                         (setq gac-automatically-push-p t)
-                         (setq gac-automatically-add-new-files-p t)
-                         (setq gac-debounce-interval (* 60 5)) ; 5 minutes
+                         ;; Stop using GAC because iCloud should synchronize the org directory.
+                         ;; (git-auto-commit-mode t)
+                         ;; (setq gac-automatically-push-p t)
+                         ;; (setq gac-automatically-add-new-files-p t)
+                         ;; (setq gac-debounce-interval (* 60 5)) ; 5 minutes
                        )))
          (org-agenda-mode . (lambda ()
                               (display-line-numbers-mode -1)
