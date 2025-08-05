@@ -1560,6 +1560,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
       "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
       :unarrowed t
       :prepend t)
+     ("j" "Journelly" entry (file
+                             "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org")
+      "* %T @ -\n%?"
+      :prepend t
+      :jump-to-captured t
+      )
      ))
   ;; ! to record timestamp.
   (org-todo-keywords '((sequence "TODO" "INPROGRESS(!)" "|" "DONE(!)" "DELEGATED(!)")))
