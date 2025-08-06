@@ -1259,6 +1259,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
       full-matched-package-paths))
   )
 
+(use-package flyspell
+  :hook
+  ((prog-mode . flyspell-prog-mode)
+   (text-mode . flyspell-mode))
+  )
+
 (use-package emacs
   :custom
   ;; TAB cycle if there are only few candidates
