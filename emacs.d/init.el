@@ -1657,6 +1657,7 @@ If the file is new, it will be populated with a default template."
          ("C-c /" . 'consult-org-agenda)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
+                       (flyspell-mode t)
                        ;; To wrap texts
                        (visual-line-mode)
                        ;; Show images inline automatically
