@@ -922,6 +922,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
          (c-mode . #'lsp)
          (c++-mode . #'lsp)
          (go-mode . #'lsp)
+         (sh-mode . #'lsp)
          (swift-mode . #'lsp)
          (lsp-completion-mode . my-lsp-mode-setup-completion))
   :init
