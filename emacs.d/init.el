@@ -1537,6 +1537,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package org :ensure t
   :requires (cl-lib git-auto-commit-mode)
+  :init
+  (setq org-jouornelly-file
+   (expand-file-name
+    "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
@@ -1560,8 +1564,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
       "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
       :unarrowed t
       :prepend t)
-     ("j" "Journelly" entry (file
-                             "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org")
+     ("j" "Journelly" entry (file org-jouornelly-file)
       "* %T @ -\n%?"
       :prepend t
       :jump-to-captured t
@@ -1575,6 +1578,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-complete-tags-always-offer-all-agenda-tags t)
   :config
   (add-to-list 'org-agenda-files org-directory)
+  (add-to-list 'org-agenda-files org-jouornelly-file)
   ;; Write content to org-capture from MINI Buffer
   ;; http://ganmacs.hatenablog.com/entry/2016/04/01/164245
   (defun org/note-right-now (content)
