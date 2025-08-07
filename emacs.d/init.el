@@ -1572,7 +1572,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
       :unarrowed t
       :prepend t)
      ("j" "Journelly" entry (file org-jouornelly-file)
-      "* %T @ -\n%?"
+      "* %T @ %(system-name) by %(user-login-name)\n%?"
       :prepend t
       :jump-to-captured t
       )
