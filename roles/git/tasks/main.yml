@@ -88,23 +88,23 @@
 - name: Check if gitignore exists
   stat:
     path: ~/.gitignore
-  register: gitignore_stat
+  register: git_gitignore_stat
 
 - name: Check file differences for gitignore
   command: diff ~/.gitignore ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
-  register: gitignore_diff
+  register: git_gitignore_diff
   failed_when: false
   changed_when: false
-  when: gitignore_stat.stat.exists and not gitignore_stat.stat.islnk
+  when: git_gitignore_stat.stat.exists and not git_gitignore_stat.stat.islnk
 
 - name: Remove existing gitignore if identical to target
   file:
     path: ~/.gitignore
     state: absent
   when:
-    - gitignore_stat.stat.exists
-    - not gitignore_stat.stat.islnk
-    - gitignore_diff.rc == 0
+    - git_gitignore_stat.stat.exists
+    - not git_gitignore_stat.stat.islnk
+    - git_gitignore_diff.rc == 0
 
 - name: Create symlink for global gitignore
   file:

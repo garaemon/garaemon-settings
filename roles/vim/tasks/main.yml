@@ -1,23 +1,23 @@
 - name: Check if vimrc exists
   stat:
     path: ~/.vimrc
-  register: vimrc_stat
+  register: vim_vimrc_stat
 
 - name: Check file differences for vimrc
   command: diff ~/.vimrc ~/gprog/garaemon-settings/roles/vim/files/vimrc
-  register: vimrc_diff
+  register: vim_vimrc_diff
   failed_when: false
   changed_when: false
-  when: vimrc_stat.stat.exists and not vimrc_stat.stat.islnk
+  when: vim_vimrc_stat.stat.exists and not vim_vimrc_stat.stat.islnk
 
 - name: Remove existing vimrc if identical to target
   file:
     path: ~/.vimrc
     state: absent
   when:
-    - vimrc_stat.stat.exists
-    - not vimrc_stat.stat.islnk
-    - vimrc_diff.rc == 0
+    - vim_vimrc_stat.stat.exists
+    - not vim_vimrc_stat.stat.islnk
+    - vim_vimrc_diff.rc == 0
 
 - name: Create symlink for vimrc
   file:

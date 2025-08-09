@@ -14,11 +14,11 @@
 - name: Check if systemd is running
   stat:
     path: /run/systemd/system
-  register: systemd_check
+  register: dictd_systemd_check
 
 - name: Restart dictd service
   systemd:
     name: dictd
     state: restarted
   become: true
-  when: systemd_check.stat.exists
+  when: dictd_systemd_check.stat.exists

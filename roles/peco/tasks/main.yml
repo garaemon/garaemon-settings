@@ -13,12 +13,12 @@
 
 - name: Set OS Name (darwin)
   set_fact:
-    os_name: "darwin"
+    peco_os_name: "darwin"
   when: ansible_os_family == "Darwin"
 
 - name: Set OS Name (debian)
   set_fact:
-    os_name: "linux"
+    peco_os_name: "linux"
   when: ansible_os_family == "Debian"
 
 - name: Set architecture to amd64

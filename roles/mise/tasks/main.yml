@@ -17,21 +17,21 @@
       tempfile:
         state: file
         suffix: ".sh"
-      register: install_script_temp
+      register: mise_install_script_temp
 
     - name: Download mise install script
       get_url:
         url: https://mise.run
-        dest: "{{ install_script_temp.path }}"
+        dest: "{{ mise_install_script_temp.path }}"
         mode: '0755'
         force: true
 
     - name: Execute mise install script
-      command: "{{ install_script_temp.path }}"
+      command: "{{ mise_install_script_temp.path }}"
 
     - name: Clean up mise install script
       file:
-        path: "{{ install_script_temp.path }}"
+        path: "{{ mise_install_script_temp.path }}"
         state: absent
 
 - name: Install node {{ mise_node_versions }}
