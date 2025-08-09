@@ -2225,6 +2225,7 @@ If the file is new, it will be populated with a default template."
 
 (use-package emojify :ensure t
   :if (display-graphic-p)
+  :hook (org-mode . emojify-mode)
   )
 
 (use-package gcmh :ensure t
