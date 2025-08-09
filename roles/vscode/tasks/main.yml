@@ -4,31 +4,31 @@
   tempfile:
     state: file
     suffix: microsoft_asc
-  register: microsoft_asc_tempfile
+  register: vscode_microsoft_asc_tempfile
 
 - name: Download microsoft.asc
   get_url:
     url: https://packages.microsoft.com/keys/microsoft.asc
-    dest: "{{ microsoft_asc_tempfile.path }}"
-  register: microsoft_asc_download
+    dest: "{{ vscode_microsoft_asc_tempfile.path }}"
+  register: vscode_microsoft_asc_download
 
 - name: Create tempfile for microsoft.gpg
   tempfile:
     state: file
     suffix: microsoft_gpg
-  register: microsoft_gpg_tempfile
+  register: vscode_microsoft_gpg_tempfile
 
 - name: Convert microsoft.asc to gpg
-  command: "gpg --dearmor -o {{ microsoft_gpg_tempfile.path }} {{ microsoft_asc_tempfile.path }}"
+  command: "gpg --dearmor -o {{ vscode_microsoft_gpg_tempfile.path }} {{ vscode_microsoft_asc_tempfile.path }}"
   args:
-    creates: "{{ microsoft_gpg_tempfile.path }}"
-  when: microsoft_asc_download.changed
+    creates: "{{ vscode_microsoft_gpg_tempfile.path }}"
+  when: vscode_microsoft_asc_download.changed
 
 - name: Install microsoft.gpg
   command:
-    install -o root -g root -m 644 "{{ microsoft_gpg_tempfile.path }}" /etc/apt/trusted.gpg.d/
+    install -o root -g root -m 644 "{{ vscode_microsoft_gpg_tempfile.path }}" /etc/apt/trusted.gpg.d/
   become: true
-  when: microsoft_asc_download.changed # Only run if gpg file was (re)created
+  when: vscode_microsoft_asc_download.changed # Only run if gpg file was (re)created
 
 - name: Add microsoft apt repository
   lineinfile:

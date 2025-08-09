@@ -7,23 +7,23 @@
 - name: Check if pycodestyle config exists
   stat:
     path: ~/.config/pycodestyle
-  register: pycodestyle_stat
+  register: python_language_server_pycodestyle_stat
 
 - name: Check file differences for pycodestyle
   command: diff ~/.config/pycodestyle ~/gprog/garaemon-settings/roles/python_language_server/files/pycodestyle
-  register: pycodestyle_diff
+  register: python_language_server_pycodestyle_diff
   failed_when: false
   changed_when: false
-  when: pycodestyle_stat.stat.exists and not pycodestyle_stat.stat.islnk
+  when: python_language_server_pycodestyle_stat.stat.exists and not python_language_server_pycodestyle_stat.stat.islnk
 
 - name: Remove existing pycodestyle if identical to target
   file:
     path: ~/.config/pycodestyle
     state: absent
   when:
-    - pycodestyle_stat.stat.exists
-    - not pycodestyle_stat.stat.islnk
-    - pycodestyle_diff.rc == 0
+    - python_language_server_pycodestyle_stat.stat.exists
+    - not python_language_server_pycodestyle_stat.stat.islnk
+    - python_language_server_pycodestyle_diff.rc == 0
 
 - name: Create symlink for pycodestyle config
   file:

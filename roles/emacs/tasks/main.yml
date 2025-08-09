@@ -42,7 +42,7 @@
   block:
     - name: Set required Emacs version variable
       ansible.builtin.set_fact:
-        required_emacs_version: "30.1"
+        emacs_required_emacs_version: "30.1"
         emacs_install_path: "{{ ansible_user_dir }}/.local/bin/emacs"
 
     - name: Check if target Emacs exists
@@ -60,7 +60,7 @@
 
     - name: Parse installed Emacs version
       ansible.builtin.set_fact:
-        installed_emacs_version: "{{ emacs_version_output.stderr | trim }}"
+        emacs_installed_emacs_version: "{{ emacs_version_output.stderr | trim }}"
       when:
         - emacs_stat.stat.exists
         - emacs_version_output.rc == 0
@@ -71,8 +71,8 @@
       when:
         - not (
                 emacs_stat.stat.exists and
-                installed_emacs_version is defined and
-                installed_emacs_version is version(required_emacs_version, '>=') and
+                emacs_installed_emacs_version is defined and
+                emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=') and
                 ansible_distribution != 'Ubuntu'
               )
         - emacs_build_emacs

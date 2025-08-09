@@ -1,23 +1,23 @@
 - name: Check if tigrc exists
   stat:
     path: ~/.tigrc
-  register: tigrc_stat
+  register: tig_tigrc_stat
 
 - name: Check file differences for tigrc
   command: diff ~/.tigrc ~/gprog/garaemon-settings/roles/tig/files/tigrc
-  register: tigrc_diff
+  register: tig_tigrc_diff
   failed_when: false
   changed_when: false
-  when: tigrc_stat.stat.exists and not tigrc_stat.stat.islnk
+  when: tig_tigrc_stat.stat.exists and not tig_tigrc_stat.stat.islnk
 
 - name: Remove existing tigrc if identical to target
   file:
     path: ~/.tigrc
     state: absent
   when:
-    - tigrc_stat.stat.exists
-    - not tigrc_stat.stat.islnk
-    - tigrc_diff.rc == 0
+    - tig_tigrc_stat.stat.exists
+    - not tig_tigrc_stat.stat.islnk
+    - tig_tigrc_diff.rc == 0
 
 - name: Create symlink for tigrc
   file:

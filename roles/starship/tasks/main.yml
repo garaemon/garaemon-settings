@@ -1,16 +1,16 @@
 - name: Check if starship is installed or not
   command: which starship
   ignore_errors: true
-  register: which_starship
+  register: starship_which_starship
 
 - name: Get starship version
   shell:
     starship -V | sed 's/[^0-9.]*\([0-9.]*\).*/\1/'
-  when: which_starship.rc == 0
+  when: starship_which_starship.rc == 0
   register: starship_installed_version
 
 - name: Install starship if not installed or version is outdated
-  when: which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
+  when: starship_which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
   block:
     - name: Create tempfile for starship install script
       tempfile:
