@@ -1261,9 +1261,20 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package flyspell
+  :config
+  (defun my-flyspell-save-word ()
+    (interactive)
+    (let ((current-location (point))
+          (word (flyspell-get-word)))
+      (message "Adding a word: %s" (car word))
+      (when (consp word)
+        (flyspell-do-correct 'save nil (car word) current-location (cadr word)
+                             (caddr word) current-location))))
   :hook
   ((prog-mode . flyspell-prog-mode)
    (text-mode . flyspell-mode))
+  :bind ( :map flyspell-mode-map
+          ("\C-c$" . my-flyspell-save-word))
   )
 
 (use-package emacs
