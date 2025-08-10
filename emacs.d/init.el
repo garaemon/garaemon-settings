@@ -1299,6 +1299,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
 
+;; Change the color of inactive
+(use-package hiwin
+  :ensure t
+  :config
+  (hiwin-activate)
+  ;; A bit darker than the background color of the solarized theme.
+  (set-face-background 'hiwin-face "#001F26")
+  (set-face-extend 'hiwin-face t)
+  )
+
 (use-package hyde :ensure t
   :config
   (setq-default jekyll-root (expand-file-name "~/gprog/garaemon.github.io"))
