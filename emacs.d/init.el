@@ -133,6 +133,8 @@
 (eldoc-mode nil)
 ;; subword for camelcase
 (global-subword-mode)
+;; Visualize the end of file
+(setq-default indicate-empty-lines t)
 ;; do not ask y-or-n when saving all
 (defun save-all ()
   "Save all buffers without y-or-n asking."
