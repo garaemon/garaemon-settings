@@ -1585,7 +1585,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
      ("j" "Journelly" entry (file org-jouornelly-file)
       "* %T @ %(system-name) by %(user-login-name)\n%?"
       :prepend t
-      :jump-to-captured t
+      :jump-to-captured nil
       )
      ))
   ;; ! to record timestamp.
