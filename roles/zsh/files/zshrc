@@ -552,6 +552,34 @@ vterm_prompt_end() {
 
 # Use precmd hook for starship compatibility
 precmd_functions+=(vterm_prompt_end)
+
+# Function to set the terminal title
+set_terminal_title() {
+  if [[ -o monitor ]]; then
+    # Escape sequence to set the title
+    # Works on most terminal emulators
+    printf "\e]0;%s\a" "$1"
+  fi
+}
+
+# Set title to process name before command execution
+preexec() {
+  # The first argument is often the command name
+  set_terminal_title "$1"
+}
+
+# Restore title to original value (e.g., hostname or directory) before prompt display
+precmd() {
+  # Settings to return to the normal terminal title
+  # This depends on the user's prompt settings
+  # Example: Display hostname and current directory
+  set_terminal_title "${HOST}: %c"
+}
+
+# Set the default title once on startup
+# (This will be reflected when zsh restarts)
+set_terminal_title "${HOST}: %c"
+
 function ssh-remove-host() {
     local TARGET="$1"
     local KNOWN_HOSTS_FILE="${HOME}/.ssh/known_hosts"
