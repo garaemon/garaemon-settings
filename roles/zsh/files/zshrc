@@ -42,10 +42,11 @@ if [[ -e $HOME/.completions ]]; then
 fi
 
 autoload -Uz compinit
-for dump in ~/.zcompdump(N.mh+24); do
-  compinit
-done
-compinit -C
+if [ "$(date +'%j')" != "$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null)" ]; then
+    compinit
+else
+    compinit -C
+fi
 
 setopt correct
 setopt beep
