@@ -2496,6 +2496,19 @@ Implement down command to stop and delete containers
      ("g" "Generate" my-gptel-generate-git-commit)
      ])
 
+(defun my-gemma3-gptel-rewrite ()
+  "Interactively calls `gptel-rewrite' with specific model and backend settings.
+This function configures the `gptel-model' to 'gemma3:4b' and
+sets up an Ollama backend pointing to 'localhost:11434'."
+  (interactive)
+  (lexical-let* ((gptel-model 'gemma3:4b) ; Set the GPTel model to be used for the rewrite operation.
+         (gptel-backend (gptel-make-ollama "Ollama" ; Define the GPTel backend using the Ollama service.
+                          :host "localhost:11434" ; Specify the host and port for the Ollama server.
+                          :stream t ; Enable streaming responses from the Ollama backend.
+                          :models '(gemma3:4b)))) ; List the models available from this Ollama backend.
+    (call-interactively 'gptel-rewrite))) ; Call the `gptel-rewrite' command, passing the configured model and backend.
+
+
   ;; The original prompt is here https://ray.so/prompts/raycast.
   (defun my-gptel-improve-writing (beginning end)
     (interactive "r")
