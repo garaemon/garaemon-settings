@@ -2386,10 +2386,11 @@ You have to follow the following orders:
                  :key gemini-key
                  :stream t))
       ))
-  ;; (gptel-make-ollama "Ollama"             ;Any name of your choosing
-  ;;   :host "localhost:11434"               ;Where it's running
-  ;;   :stream t                             ;Stream responses
-  ;;   :models '(gemma3:4b))          ;List of models
+
+  (gptel-make-ollama "Ollama (gemmma3:4b)"             ;Any name of your choosing
+    :host "localhost:11434"               ;Where it's running
+    :stream t                             ;Stream responses
+    :models '(gemma3:4b))          ;List of models
 
   (defun my-gptel-get-buffer ()
     (car (cl-remove-if #'null
