@@ -11,13 +11,14 @@
             (setq project-root (project-root proj)))))
 
       ;; 2. Fallback if `project.el` is not used or no project found
-      ;; Search for .git, .venv, or package.xml in parent directories
+      ;; Search for .git, .venv, package.xml, or package.json in parent directories
       (unless project-root
         (let ((dir (file-name-directory file-path)))
           (while (and dir (not (string= dir "/")))
             (when (or (file-directory-p (expand-file-name ".git" dir))
                       (file-directory-p (expand-file-name ".venv" dir))
-                      (file-exists-p (expand-file-name "package.xml" dir)))
+                      (file-exists-p (expand-file-name "package.xml" dir))
+                      (file-exists-p (expand-file-name "package.json" dir)))
               (setq project-root dir)
               (cl-return)) ;; Exit loop
             (setq dir (file-name-directory (directory-file-name dir)))))))
@@ -198,6 +199,10 @@
   "Check if the project root contains .vscode/tasks.json (VS Code tasks)."
   (file-exists-p (expand-file-name ".vscode/tasks.json" project-root)))
 
+(defun rich-compile--has-package-json (project-root)
+  "Check if the project root contains package.json (npm/yarn package)."
+  (file-exists-p (expand-file-name "package.json" project-root)))
+
 (defun rich-compile-catkin-build-this ()
   "Run catkin build --this for the current ROS package."
   (interactive)
@@ -256,6 +261,39 @@
         (when (and output (not (string-empty-p (string-trim output))))
           (split-string (string-trim output) "\n" t))))))
 
+(defun rich-compile--get-npm-scripts (project-root)
+  "Get list of available npm scripts from package.json."
+  (let ((package-json-path (expand-file-name "package.json" project-root)))
+    (when (file-exists-p package-json-path)
+      (with-temp-buffer
+        (insert-file-contents package-json-path)
+        (goto-char (point-min))
+        (let ((json-data (ignore-errors (json-read))))
+          (when json-data
+            (let ((scripts (cdr (assoc 'scripts json-data))))
+              (when scripts
+                (mapcar (lambda (script) (symbol-name (car script))) scripts)))))))))
+
+(defun rich-compile-run-npm-script (script-name)
+  "Run an npm script from package.json."
+  (interactive)
+  (let* ((project-root (rich-compile--find-project-root))
+         (default-directory project-root)
+         (command (format "npm run %s" (shell-quote-argument script-name))))
+    (rich-compile--run-command-in-compilation-buffer
+     command
+     (format "*npm run %s*" script-name))))
+
+(defun rich-compile-run-npm-script-interactive (script-name)
+  "Run an npm script from package.json with interactive command editing."
+  (interactive)
+  (let* ((project-root (rich-compile--find-project-root))
+         (default-directory project-root)
+         (initial-command (format "npm run %s" (shell-quote-argument script-name))))
+    (rich-compile-run-command-interactively
+     initial-command
+     (format "*npm run %s*" script-name))))
+
 (defun rich-compile-run-vscode-task (task-name)
   "Run a VS Code task using tasks-json-cli."
   (interactive)
@@ -297,7 +335,9 @@
   (let* ((project-root (rich-compile--find-project-root))
          (is-ros-project (rich-compile--is-ros-project project-root))
          (has-vscode-tasks (rich-compile--has-vscode-tasks project-root))
+         (has-package-json (rich-compile--has-package-json project-root))
          (vscode-tasks (when has-vscode-tasks (rich-compile--get-vscode-tasks project-root)))
+         (npm-scripts (when has-package-json (rich-compile--get-npm-scripts project-root)))
          (mode-choices (cond
                         ((derived-mode-p 'python-mode)
                          '(("Run Pytest on current file" . rich-compile-run-pytest-on-current-file-interactive)
@@ -316,24 +356,48 @@
                                             (list (cons (format "VS Code Task: %s" task)
                                                         `(lambda () (rich-compile-run-vscode-task-interactive ,task)))))
                                           vscode-tasks))))
+         (npm-choices (when npm-scripts
+                        (apply 'append
+                               (mapcar (lambda (script)
+                                         (list (cons (format "npm run %s" script)
+                                                     `(lambda () (rich-compile-run-npm-script-interactive ,script)))))
+                                       npm-scripts))))
          (generic-choices '(("Run custom command" . (lambda () (call-interactively 'rich-compile-run-command-interactively)))))
-         (choices (append mode-choices ros-choices vscode-choices generic-choices))
-         (prompt (cond
-                  ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks)
-                   "Choose Python/ROS/VS Code run command: ")
-                  ((and (derived-mode-p 'go-mode) is-ros-project has-vscode-tasks)
-                   "Choose Go/ROS/VS Code run command: ")
-                  ((and (derived-mode-p 'python-mode) has-vscode-tasks)
-                   "Choose Python/VS Code run command: ")
-                  ((and (derived-mode-p 'go-mode) has-vscode-tasks)
-                   "Choose Go/VS Code run command: ")
-                  ((and is-ros-project has-vscode-tasks)
-                   "Choose ROS/VS Code run command: ")
-                  ((derived-mode-p 'python-mode) "Choose Python run command: ")
-                  ((derived-mode-p 'go-mode) "Choose Go run command: ")
-                  (is-ros-project "Choose ROS run command: ")
-                  (has-vscode-tasks "Choose VS Code run command: ")
-                  (t "No run commands available for this file type.")))
+         (choices (append mode-choices ros-choices vscode-choices npm-choices generic-choices))
+         (prompt (let ((has-npm (and has-package-json npm-scripts)))
+                   (cond
+                    ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks has-npm)
+                     "Choose Python/ROS/VS Code/npm run command: ")
+                    ((and (derived-mode-p 'go-mode) is-ros-project has-vscode-tasks has-npm)
+                     "Choose Go/ROS/VS Code/npm run command: ")
+                    ((and (derived-mode-p 'python-mode) has-vscode-tasks has-npm)
+                     "Choose Python/VS Code/npm run command: ")
+                    ((and (derived-mode-p 'go-mode) has-vscode-tasks has-npm)
+                     "Choose Go/VS Code/npm run command: ")
+                    ((and is-ros-project has-vscode-tasks has-npm)
+                     "Choose ROS/VS Code/npm run command: ")
+                    ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks)
+                     "Choose Python/ROS/VS Code run command: ")
+                    ((and (derived-mode-p 'go-mode) is-ros-project has-vscode-tasks)
+                     "Choose Go/ROS/VS Code run command: ")
+                    ((and (derived-mode-p 'python-mode) has-vscode-tasks)
+                     "Choose Python/VS Code run command: ")
+                    ((and (derived-mode-p 'go-mode) has-vscode-tasks)
+                     "Choose Go/VS Code run command: ")
+                    ((and is-ros-project has-vscode-tasks)
+                     "Choose ROS/VS Code run command: ")
+                    ((and (derived-mode-p 'python-mode) has-npm)
+                     "Choose Python/npm run command: ")
+                    ((and (derived-mode-p 'go-mode) has-npm)
+                     "Choose Go/npm run command: ")
+                    ((and is-ros-project has-npm)
+                     "Choose ROS/npm run command: ")
+                    ((derived-mode-p 'python-mode) "Choose Python run command: ")
+                    ((derived-mode-p 'go-mode) "Choose Go run command: ")
+                    (is-ros-project "Choose ROS run command: ")
+                    (has-vscode-tasks "Choose VS Code run command: ")
+                    (has-npm "Choose npm run command: ")
+                    (t "Choose run command: "))))
          (choice (when choices (completing-read prompt choices nil t))))
     (cond
      ((null choices)
