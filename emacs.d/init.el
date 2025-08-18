@@ -783,6 +783,11 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("\C-c <left>" . buf-move-left)
   )
 
+(use-package c++-mode
+  ;; Use c++-mode for Arduino files
+  :mode (("\\.ino\\'" . c++-mode))
+  )
+
 (use-package calfw :ensure t :defer t)
 
 (use-package coffee-mode :ensure t :defer t)
