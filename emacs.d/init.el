@@ -944,8 +944,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
           '(orderless)))
   :config
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff))
+  (add-to-list 'lsp-disabled-clients '(python-ts-mode . ruff))
   ;; Disable ruff in tramp environment too
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff-tramp))
+  (add-to-list 'lsp-disabled-clients '(python-ts-mode . ruff-tramp))
   (defun my-lsp-format (s e)
     (interactive "r")
     (if (region-active-p)
