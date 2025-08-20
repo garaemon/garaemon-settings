@@ -41,3 +41,11 @@ history
 ellama-sessions/
 *.db
 .aider*
+
+eln-cache/
+multisession/
+request/
+straight/
+quelpa/
+tree-sitter
+bookmarks
