@@ -447,47 +447,6 @@
 (global-set-key "\M-&" 'query-replace)
 ;;; }}}
 
-;;; useful functions to manage multiple windows. {{{
-(defun split-window-vertically-n (num-wins)
-  "Split window vertically into NUM-WINS windows."
-  (interactive "p")
-  (if (= num-wins 2)
-      (split-window-vertically)
-    (progn (split-window-vertically (- (window-height)
-                                       (/ (window-height) num-wins)))
-           (split-window-vertically-n (- num-wins 1)))))
-
-(defun split-window-horizontally-n (num-wins)
-  "Split window horizontally into NUM-WINS windows."
-  (interactive "p")
-  (if (= num-wins 2)
-      (split-window-horizontally)
-    (progn (split-window-horizontally (- (window-width)
-                                         (/ (window-width) num-wins)))
-           (split-window-horizontally-n (- num-wins 1)))))
-
-(defun other-window-or-split ()
-  "Split window if there is enough space and switch to next window."
-  (interactive)
-  (when (one-window-p)
-    ;; 4 is for linum characters.
-    (let ((column-width (+ 100 4)))
-      (if (>= (window-body-width) (* 3 column-width))
-          (let ((split-num (/ (window-body-width) column-width)))
-            (split-window-horizontally-n split-num))
-        (split-window-horizontally))))
-  (other-window 1))
-
-(global-set-key "\M-o" 'other-window-or-split)
-(global-set-key "\C-x@" '(lambda ()
-                           (interactive)
-                           (split-window-vertically-n 3)))
-(global-set-key "\C-x#" '(lambda ()
-                           (interactive)
-                           (split-window-horizontally-n 3)))
-;;; }}}
-
-
 ;; Increase the default width of a new window.
 (when (display-graphic-p)
   (setq initial-frame-alist
@@ -1378,7 +1337,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package jinja2-mode :ensure t
   :bind (:map jinja2-mode-map
               ;; Do not allow jinja2-mode to take over M-o.
-              ("M-o" . 'other-window-or-split))
+              ("M-o" . 'switch-window-or-split))
   )
 
 (use-package json-mode :ensure t :defer t)
@@ -2684,6 +2643,15 @@ Improved Text:")
 ;; switch-wnidow can show largger numbers than ace-window.
 (use-package switch-window :ensure t
   :config
+  (defun split-window-horizontally-n (num-wins)
+    "Split window horizontally into NUM-WINS windows."
+    (interactive "p")
+    (if (= num-wins 2)
+        (split-window-horizontally)
+      (progn (split-window-horizontally (- (window-width)
+                                           (/ (window-width) num-wins)))
+             (split-window-horizontally-n (- num-wins 1)))))
+
   (defun switch-window-or-split ()
     "Split window if there is enough space and switch to next window."
     (interactive)
