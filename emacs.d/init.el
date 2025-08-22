@@ -917,6 +917,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (lsp-pylsp-plugins-black-enabled nil)
   (lsp-pylsp-plugins-autopep8-enabled nil)
   (lsp-completion-provider :none) ;; we use Corfu!
+  (lsp-signature-auto-activate nil) ; Prevent from minibuffer suddenly being large.
   ;; (lsp-python-server-settings
   ;;    '((pylsp . ((plugins . ((yapf . ((enabled . t)))
   ;;                            (black . ((enabled . nil)))
