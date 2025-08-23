@@ -130,7 +130,6 @@
 (setq compilation-scroll-output t)
 ;; sort with ignoring case.
 (setq sort-fold-case t)
-(eldoc-mode nil)
 ;; subword for camelcase
 (global-subword-mode)
 ;; Visualize the end of file
