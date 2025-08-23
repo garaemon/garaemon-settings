@@ -2598,13 +2598,36 @@ Improved Text:")
   (treesit-auto-install 'prompt)
   :config
   (treesit-auto-add-to-auto-mode-alist 'all)
-  (global-treesit-auto-mode))
-
-;; (use-package flymake-jsts
-;;   :defer t
-;;   :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts"
-;;                            :branch "main")
-;;   )
+  ;; Modify some version of the treesit recipes in treesit-auto-recipe-list.
+  (let ((bash-recipe (make-treesit-auto-recipe
+                        :lang 'bash
+                        :ts-mode 'bash-ts-mode
+                        :remap 'bash-mode
+                        :url "https://github.com/tree-sitter/tree-sitter-bash"
+                        :revision "v0.23.3"
+                        :ext "\\.sh\\'"))
+        (c-recipe (make-treesit-auto-recipe
+                        :lang 'c
+                        :ts-mode 'c-ts-mode
+                        :remap 'c-mode
+                        :url "https://github.com/tree-sitter/tree-sitter-c"
+                        :revision "v0.23.6"
+                        :ext "\\.c\\'")))
+    (let* ((new-recipe-list (list bash-recipe c-recipe))
+           (new-recipe-alist (mapcar #'(lambda (recipe)
+                                         (cons (treesit-auto-recipe-lang recipe)
+                                               recipe))
+                                     new-recipe-list)))
+      (setq treesit-auto-recipe-list
+            (mapcar #'(lambda (recipe)
+                        (let ((lang (treesit-auto-recipe-lang recipe)))
+                          (if (assoc lang new-recipe-alist)
+                              (cdr (assoc lang new-recipe-alist))
+                            recipe)))
+                    treesit-auto-recipe-list))
+      ))
+  (global-treesit-auto-mode)
+  )
 
 (use-package tsx-mode
   :ensure t
