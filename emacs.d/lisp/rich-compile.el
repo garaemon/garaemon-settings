@@ -1,3 +1,36 @@
+(defvar rich-compile-plugins '()
+  "List of registered rich-compile plugins.
+Each plugin is a plist with keys:
+  :name - plugin name string
+  :description - plugin description string
+  :available-p - function to check if plugin is available for current context
+  :commands - list of command plists with keys:
+    :name - command name string
+    :description - command description string
+    :action - function to execute the command
+    :interactive - whether the command supports interactive editing")
+
+(defun rich-compile-register-plugin (name description available-p commands)
+  "Register a new plugin for rich-compile.
+NAME: plugin name string
+DESCRIPTION: plugin description string
+AVAILABLE-P: function that returns t if plugin is available for current context
+COMMANDS: list of command plists with keys :name, :description, :action, :interactive"
+  (let ((plugin (list :name name
+                      :description description
+                      :available-p available-p
+                      :commands commands)))
+    (setq rich-compile-plugins
+          (cons plugin
+                (cl-remove name rich-compile-plugins :key (lambda (p) (plist-get p :name)) :test #'string-equal)))))
+
+(defun rich-compile--get-available-plugins ()
+  "Get list of available plugins for current context."
+  (cl-remove-if-not (lambda (plugin)
+                      (let ((available-p (plist-get plugin :available-p)))
+                        (and available-p (funcall available-p))))
+                    rich-compile-plugins))
+
 (defun rich-compile--find-project-root ()
   "Locate the project root for the current buffer.
    Prioritizes `project.el`, then searches for .git or .venv."
@@ -362,8 +395,16 @@
                                          (list (cons (format "npm run %s" script)
                                                      `(lambda () (rich-compile-run-npm-script-interactive ,script)))))
                                        npm-scripts))))
+         (plugin-choices (let ((available-plugins (rich-compile--get-available-plugins)))
+                           (apply 'append
+                                  (mapcar (lambda (plugin)
+                                            (mapcar (lambda (command)
+                                                      (cons (format "%s: %s" (plist-get plugin :name) (plist-get command :name))
+                                                            (plist-get command :action)))
+                                                    (plist-get plugin :commands)))
+                                          available-plugins))))
          (generic-choices '(("Run custom command" . (lambda () (call-interactively 'rich-compile-run-command-interactively)))))
-         (choices (append mode-choices ros-choices vscode-choices npm-choices generic-choices))
+         (choices (append mode-choices ros-choices vscode-choices npm-choices plugin-choices generic-choices))
          (prompt (let ((has-npm (and has-package-json npm-scripts)))
                    (cond
                     ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks has-npm)
@@ -397,6 +438,7 @@
                     (is-ros-project "Choose ROS run command: ")
                     (has-vscode-tasks "Choose VS Code run command: ")
                     (has-npm "Choose npm run command: ")
+                    ((rich-compile--get-available-plugins) "Choose command: ")
                     (t "Choose run command: "))))
          (choice (when choices (completing-read prompt choices nil t))))
     (cond
@@ -404,5 +446,52 @@
       (message "No run commands available for this file type."))
      (choice
       (funcall (cdr (assoc choice choices)))))))
+
+;; Default plugins
+
+;; Python plugin
+(rich-compile-register-plugin
+ "Python"
+ "Python development commands"
+ (lambda () (derived-mode-p 'python-mode))
+ (list
+  (list :name "Run current file"
+        :description "Run current Python file with interpreter"
+        :action (lambda () (call-interactively #'rich-compile-run-python-on-current-file-interactive))
+        :interactive t)
+  (list :name "Run pytest on current file"
+        :description "Run pytest on current test file"
+        :action (lambda () (call-interactively #'rich-compile-run-pytest-on-current-file-interactive))
+        :interactive t)))
+
+;; Go plugin
+(rich-compile-register-plugin
+ "Go"
+ "Go development commands"
+ (lambda () (derived-mode-p 'go-mode))
+ (list
+  (list :name "Run current file"
+        :description "Run current Go file"
+        :action (lambda () (call-interactively #'rich-compile-run-go-on-current-file))
+        :interactive nil)))
+
+;; ROS plugin
+(rich-compile-register-plugin
+ "ROS"
+ "ROS development commands"
+ (lambda () (rich-compile--is-ros-project (rich-compile--find-project-root)))
+ (list
+  (list :name "Catkin build --this"
+        :description "Build current ROS package"
+        :action (lambda () (call-interactively #'rich-compile-catkin-build-this-interactive))
+        :interactive t)
+  (list :name "Catkin build --this --no-deps"
+        :description "Build current ROS package without dependencies"
+        :action (lambda () (call-interactively #'rich-compile-catkin-build-this-no-deps))
+        :interactive t)
+  (list :name "Catkin run_tests --this --no-deps"
+        :description "Run tests for current ROS package"
+        :action (lambda () (call-interactively #'rich-compile-catkin-run-tests-this-no-deps))
+        :interactive t)))
 
 (provide 'rich-compile)
