@@ -1347,6 +1347,13 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (if (file-exists-p "/opt/homebrew/bin/git")
       (setq magit-git-executable "/opt/homebrew/bin/git"))
 
+  ;; don't show the diff by default in the commit buffer. Use `C-c C-d' to display it
+  (setq magit-commit-show-diff nil)
+  ;; don't show git variables in magit branch
+  (setq magit-branch-direct-configure nil)
+  ;; don't automatically refresh the status buffer after running a git command
+  (setq magit-refresh-status-buffer nil)
+
   ;; The following configuration is recommended to improve the performance of magit.
   ;; (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p)
   (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
