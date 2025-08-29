@@ -1912,10 +1912,12 @@ If the file is new, it will be populated with a default template."
 ;; https://coredumped.dev/2025/06/18/making-tramp-go-brrrr./
 (use-package tramp
   :custom
-  (tramp-copy-size-limit (* 1024 1024)) ;; 1MB
+  ;; (tramp-copy-size-limit (* 1024 1024)) ;; 1MB
+  (tramp-copy-size-limit (* 1024 10))
   (remote-file-name-inhibit-locks t)
   (tramp-use-scp-direct-remote-copying t)
   (remote-file-name-inhibit-auto-save-visited t)
+
   ;; for debug
   ;; (tramp-debug-buffer t)
   ;; (tramp-verbose 6)
@@ -2742,6 +2744,8 @@ Improved Text:")
  '(package-selected-packages nil)
  '(tramp-ssh-controlmaster-options
    (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-           "-o ControlMaster=auto -o ControlPersist=yes") t))
+           "-o ControlMaster=auto -o ControlPersist=yes "
+           "-o ServerAliveInterval=30 -o ServerAliveCountMax=3")
+   t))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
