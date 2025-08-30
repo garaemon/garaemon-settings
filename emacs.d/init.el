@@ -2293,7 +2293,8 @@ If the file is new, it will be populated with a default template."
 
   :hook (vterm-mode . (lambda ()
                         (display-line-numbers-mode -1)
-                        (setq buffer-face-mode-face '(:family "Monaco Nerd Font Mono"))
+                        (if (x-list-fonts "Monaco Nerd Font Mono")
+                            (setq-local buffer-face-mode-face '(:family "Monaco Nerd Font Mono")))
                         (buffer-face-mode)
                         (display-fill-column-indicator-mode -1)
                         ;; Disable hl-line-mode for vterm-mode. (hl-line-mode -1) does not work.
