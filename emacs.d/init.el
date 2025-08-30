@@ -2266,7 +2266,7 @@ If the file is new, it will be populated with a default template."
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
               ;; key.
               ("\C-c [" . 'vterm-copy-mode) ; like tmux
-              ("\C-@" . 'my-vterm-toggle)
+              ("\C-c t" . 'my-vterm-toggle)
               ("<mouse-1>" . 'my-browse-url-at-point)
               ("\C-k" . 'my-vterm-kill-line)
               )
@@ -2336,7 +2336,7 @@ Optional argument ARGS ."
              (not vterm-toggle-fullscreen-p)))
         (vterm-toggle-show)))))
   :bind
-  ("\C-@" . 'my-vterm-toggle)
+  ("\C-c t" . 'my-vterm-toggle)
   ;; ("\C-c t" . 'vterm-toggle)
   ;; ("\C-c T" . 'vterm-toggle-cd)
   )
