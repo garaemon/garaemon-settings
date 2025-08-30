@@ -1886,14 +1886,6 @@ If the file is new, it will be populated with a default template."
 (use-package string-inflection :ensure t
   :config (global-set-key (kbd "C-c i") 'string-inflection-cycle))
 
-(use-package symon :ensure t
-  :if (eq system-type 'gnu/linux)
-  :config
-  (setq symon-sparkline-type 'symon-sparkline-type-gridded)
-  (setq symon-delay 100)
-  (symon-mode)
-  )
-
 (use-package swift-mode :ensure t)
 
 (use-package thingopt :ensure t)
