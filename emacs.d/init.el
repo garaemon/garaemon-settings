@@ -1759,7 +1759,7 @@ If the file is new, it will be populated with a default template."
      :jump-to-captured t)))
   :config
   (if (not (file-exists-p org-roam-directory))
-      (make-directory org-roam-directory))
+      (make-directory org-roam-directory t))
   (org-roam-db-autosync-mode)
   (add-to-list 'org-agenda-files org-roam-directory)
   ;; Why do we need this? Without this require, (use-package org-roam-dailies) does not load the
