@@ -1,0 +1,4 @@
+font_monaspace_version: "1.300" # Define Monaspace version here
+font_monaspace_zip_file: "monaspace-nerdfonts-v{{ font_monaspace_version }}.zip"
+font_monaspace_download_url: "https://github.com/githubnext/monaspace/releases/download/v{{ font_monaspace_version }}/{{ font_monaspace_zip_file }}"
+font_install_dir: "{{ ansible_user_dir }}/.local/share/fonts/MonaspaceNerd" # Destination directory for fonts
