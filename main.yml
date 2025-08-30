@@ -20,7 +20,8 @@
     - gh
     - emacs
     - peco
-    - font
+    - role: font
+      when: ansible_os_family == "Debian"
     - ispell
     - tig
     - dircolors_solarized

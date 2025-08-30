@@ -1,3 +1,9 @@
+- name: Create user's font directory
+  ansible.builtin.file:
+    path: "{{ font_install_dir }}"
+    state: directory
+    mode: '0755'
+
 - name: Clone RictyDiminished
   git:
     repo: https://github.com/edihbrandon/RictyDiminished.git
@@ -9,10 +15,52 @@
 - name: Copy RictyDiminished .ttf files to ~/.fonts
   copy:
     src: "{{ item }}"
-    dest: ~/.fonts/
+    dest: "{{ font_install_dir }}"
   with_fileglob:
     - ~/gprog/RictyDiminished/*.ttf
 
-- name: Update fc-cache
-  command: fc-cache -vf
-  become: true
+- name: Check if Monaspace Nerd Fonts are already installed
+  ansible.builtin.stat:
+    path: "{{ font_install_dir }}/Monaspace Neon/MonaspaceNeonNF-Regular.otf"
+  register: font_monaspace_check_status
+  # If the path does not exist, stat will fail, but we just need the 'exists' property
+  ignore_errors: true
+
+- name: Install monaspace font
+  when: not font_monaspace_check_status.stat.exists
+  block:
+
+    - name: Create a unique temporary staging directory for download and extraction
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: monaspace_staging
+      register: font_temp_staging_result
+
+    - name: Download Monaspace Nerd Fonts zip file to staging directory
+      ansible.builtin.get_url:
+        url: "{{ font_monaspace_download_url }}"
+        dest: "{{ font_temp_staging_result.path }}/{{ font_monaspace_zip_file }}" # Download inside the temporary directory
+        mode: '0644'
+
+    - name: Extract Monaspace Nerd Fonts from staging directory
+      ansible.builtin.unarchive:
+        src: "{{ font_temp_staging_result.path }}/{{ font_monaspace_zip_file }}" # Source from within the temporary directory
+        dest: "{{ font_temp_staging_result.path }}" # Extract to the same temporary directory
+        remote_src: true
+
+    - name: Move font subdirectories from staging to final install directory
+      ansible.builtin.shell: "mv {{ font_temp_staging_result.path }}/NerdFonts/* {{ font_install_dir }}/"
+      args:
+        # This path being removed indicates that the task made a change
+        removes: "{{ font_temp_staging_result.path }}/NerdFonts"
+
+    - name: Clean up temporary staging directory (contains downloaded zip and extracted files)
+      ansible.builtin.file:
+        path: "{{ font_temp_staging_result.path }}"
+        state: absent
+
+- name: Update user's font cache
+  ansible.builtin.command: fc-cache -fv
+  environment: # Ensure fc-cache runs in the user's environment
+    HOME: "{{ ansible_user_dir }}"
+  changed_when: true # fc-cache always reports a change
