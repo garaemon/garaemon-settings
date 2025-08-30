@@ -2054,6 +2054,7 @@ If the file is new, it will be populated with a default template."
 
 (use-package cmake-mode
   :ensure t
+  :mode (("\\.cmake.em\\'" . cmake-mode))
   :init
   (setq auto-mode-alist (cons '("CMakeLists.txt" . cmake-mode) auto-mode-alist))
   (setq auto-mode-alist (cons '("\\.cmake$" . cmake-mode) auto-mode-alist))
