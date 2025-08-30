@@ -233,10 +233,11 @@
 ;;; }}}
 
 ;;; theme {{{
-(add-to-list 'custom-theme-load-path (concat (file-name-directory load-file-name) "themes"))
-(setq custom-theme-directory (concat (file-name-directory load-file-name) "themes"))
-(if (not (display-graphic-p))
-  (load-theme 'garaemon-solarized-dark t))
+(when (display-graphic-p)
+  (add-to-list 'custom-theme-load-path (concat (file-name-directory load-file-name) "themes"))
+  (setq custom-theme-directory (concat (file-name-directory load-file-name) "themes"))
+  (if (not (display-graphic-p))
+      (load-theme 'garaemon-solarized-dark t)))
 ;;; }}}
 
 ;;; smerge {{{
