@@ -1279,6 +1279,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 ;; Change the color of inactive
 (use-package hiwin
   :ensure t
+  :if (display-graphic-p)
   :config
   (hiwin-activate)
   ;; A bit darker than the background color of the solarized theme.
