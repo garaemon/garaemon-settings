@@ -1910,11 +1910,29 @@ If the file is new, it will be populated with a default template."
   (remote-file-name-inhibit-locks t)
   (tramp-use-scp-direct-remote-copying t)
   (remote-file-name-inhibit-auto-save-visited t)
-
-  ;; for debug
-  ;; (tramp-debug-buffer t)
-  ;; (tramp-verbose 6)
+  ;;Cache the file properties. If the target file is not updated frequently, nil is the best.
+  (remote-file-name-inhibit-cache nil)
+  ;; Suppress cache flash
+  (process-file-side-effects nil)
+  ;; Disable debug for performance.
+  (tramp-debug-buffer nil)
+  (tramp-verbose 0)
   :config
+  ;; (add-hook 'find-file-hook
+  ;;           (lambda ()
+  ;;             (when (file-remote-p default-directory)
+  ;;               (setq-local vc-handled-backends nil))))
+
+  (connection-local-set-profile-variables
+   'remote-direct-async-process
+   '((tramp-direct-async-process . t)))
+
+  (connection-local-set-profiles
+   '(:application tramp :protocol "ssh")
+   'remote-direct-async-process)
+
+  ;; (setq magit-tramp-pipe-stty-settings 'pty)
+
   (setq tramp-default-method "ssh")
   (setq tramp-pipe-stty-settings "")
   (defun tramp-cleanup-all ()
@@ -2738,8 +2756,9 @@ Improved Text:")
  '(package-selected-packages nil)
  '(tramp-ssh-controlmaster-options
    (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
-           "-o ControlMaster=auto -o ControlPersist=yes "
-           "-o ServerAliveInterval=30 -o ServerAliveCountMax=3")
+           "-o ControlMaster=auto "
+           "-o ServerAliveInterval=30 -o ServerAliveCountMax=3 "
+           "-o ControlPersist=4h")
    t))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
