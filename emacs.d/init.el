@@ -2618,6 +2618,8 @@ Improved Text:")
   (treesit-auto-install 'prompt)
   :config
   (treesit-auto-add-to-auto-mode-alist 'all)
+  ;; cmake ts sometimes does not work well.
+  (delete 'cmake treesit-auto-langs)
   ;; Modify some version of the treesit recipes in treesit-auto-recipe-list.
   (let ((bash-recipe (make-treesit-auto-recipe
                         :lang 'bash
