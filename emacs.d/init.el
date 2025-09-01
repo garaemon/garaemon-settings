@@ -897,12 +897,19 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; Disable ruff in tramp environment too
   (add-to-list 'lsp-disabled-clients '(python-mode . ruff-tramp))
   (add-to-list 'lsp-disabled-clients '(python-ts-mode . ruff-tramp))
+  (add-to-list 'lsp-disabled-clients 'semgrep-ls)
+  (add-to-list 'lsp-disabled-clients 'semgrep-ls-tramp)
+  ;; Disable yamlls and sh because these language servers written in node.js do not work well with
+  ;; direct-async process.
+  (add-to-list 'lsp-disabled-clients 'yamlls-tramp)
+  (add-to-list 'lsp-disabled-clients 'sh-tramp)
   (defun my-lsp-format (s e)
     (interactive "r")
     (if (region-active-p)
         (lsp-format-region s e)
       (lsp-format-buffer)))
   :custom
+  ;; (lsp-log-io t)
   (lsp-pylsp-plugins-yapf-enabled t)
   (lsp-pylsp-plugins-black-enabled nil)
   (lsp-pylsp-plugins-autopep8-enabled nil)
