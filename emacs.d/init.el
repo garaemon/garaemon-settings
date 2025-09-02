@@ -564,47 +564,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 (require 'elisp-format nil t)
 ;;; }}}
 
-;;; ros {{{
-(setq auto-mode-alist (cons (cons "\\.urdf$" 'xml-mode) auto-mode-alist))
-(setq auto-mode-alist (cons (cons "\\.xacro$" 'xml-mode) auto-mode-alist))
-(setq auto-mode-alist (cons (cons "\\.launch$" 'xml-mode) auto-mode-alist))
-
-;; Based on https://www.seas.upenn.edu/~chaoliu/2018/03/12/ros-programming-in-emacs/#org8817889
-
-(defun ros-catkin-make-impl (dir option)
-  (if (get-buffer "*catkin_make*")
-      (kill-buffer "*catkin_make*"))
-  (let* ((default-directory dir)
-         (compilation-buffer-name-function (lambda (major-mode-name) "*catkin_make*")))
-    (compile (concat "catkin bt --no-status " option)))
-  (switch-to-buffer-other-window (get-buffer-create "*catkin_make*"))
-  )
-
-(defun ros-catkin-make (dir)
-  "Run catkin build --this command in DIR."
-  (interactive (list default-directory))
-  (ros-catkin-make-impl dir nil)
-  )
-
-(defun ros-catkin-make-no-deps (dir)
-  "Run catkin build --thid --no-deps command in DIR."
-  (interactive (list default-directory))
-  (ros-catkin-make-impl dir "--no-deps")
-  )
-
-(defun ros-catkin-make-json (dir)
-  "Run catkin_make command in DIR."
-  (interactive (list (file-name-directory (current-buffer))))
-  (let* ((default-directory dir)
-         (compilation-buffer-name-function (lambda (major-mode-name) "*catkin_make*")))
-    (compile "catkin_make -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ."))
-  )
-
-(global-set-key (kbd "C-x C-m") 'ros-catkin-make-no-deps)
-(global-set-key (kbd "C-x m") 'ros-catkin-make) ; Hijack key for compose-mail
-(global-set-key [f5] 'ros-catkin-make)
-;;; }}}
-
 (require 'package)
 (setq package-archives
       '(("gnu" . "http://elpa.gnu.org/packages/")
@@ -2717,6 +2676,13 @@ Improved Text:")
 
 (use-package rich-compile
   :bind (("C-c C-r" . rich-compile-run-menu))
+  )
+
+(use-package xml
+  :mode
+  ("\\.urdf$" . xml-mode)
+  ("\\.xacro$" . xml-mode)
+  ("\\.launch$" . xml-mode)
   )
 
 ;; (use-package format-all
