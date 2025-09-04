@@ -373,16 +373,11 @@
 (global-set-key "\C-c}" 'hs-show-all)
 ;;; }}}
 
-;;; html {{{
-(setq auto-mode-alist (cons (cons "\\.html$" 'html-mode) auto-mode-alist))
-(setq auto-mode-alist (cons '("\\.\\(xml\\|xsl\\|rng\\|xhtml\\|kml\\|gpx\\)\\'" . html-mode)
-                            auto-mode-alist))
-(add-to-list 'auto-mode-alist '("\\.ejs$" . html-mode))
-(add-to-list 'auto-mode-alist '("\\.xml$" . html-mode))
-(add-to-list 'auto-mode-alist '("\\.launch$" . html-mode))
-(add-to-list 'auto-mode-alist '("\\.test$" . html-mode))
-
-;;; }}}
+(use-package html
+  :mode
+  ("\\.html$" . html-mode)
+  ("\\.ejs$" . html-mode)
+  )
 
 ;;; nxml {{{
 (defvar nxml-child-indent 2)
@@ -2683,6 +2678,7 @@ Improved Text:")
   ("\\.urdf$" . xml-mode)
   ("\\.xacro$" . xml-mode)
   ("\\.launch$" . xml-mode)
+  ("\\.test$" . xml-mode)
   )
 
 ;; (use-package format-all
