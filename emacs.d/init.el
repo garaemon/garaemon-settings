@@ -615,7 +615,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :hook (aidermacs-comint-mode . (lambda ()
                                    (display-line-numbers-mode -1)
                                    (display-fill-column-indicator-mode -1)
-                                   (setq-local global-hl-line-mode nil)))
+                                   ))
   )
 
 (use-package anzu :ensure t
@@ -1911,16 +1911,10 @@ If the file is new, it will be populated with a default template."
   :after (all-the-icons)
   :config
   ;; (treemacs-start-on-boot)
-  ;; (add-hook 'treemacs-mode-hook (lambda ()
-  ;;                     (display-line-numbers-mode -1)
-  ;;                     (display-fill-column-indicator-mode -1)
-  ;;                     (setq-local global-hl-line-mode nil)
-  ;;                     ))
   :hook
   ((treemacs-mode . (lambda ()
                       (display-line-numbers-mode -1)
                       (display-fill-column-indicator-mode -1)
-                      (setq-local global-hl-line-mode nil)
                       ))
    )
   )
@@ -2046,8 +2040,14 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package hl-line
-  :config
-  (global-hl-line-mode t)
+  ;; It is difficult to disable hl-line mode for specific modes if we use (global-hl-line-mode).
+  ;; For example, (setq-local global-hl-line-mode nil) does not work for vterm mode if we launch
+  ;; emacs in terminals.
+  ;; Instead, we enable hl-line-mode for all the text modes and prog modes.
+  ;; https://emacsredux.com/blog/2020/11/21/disable-global-hl-line-mode-for-specific-modes/
+  :hook
+  (prog-mode-hook . hl-line-mode)
+  (text-mode-hook . hl-line-mode)
   )
 
 (use-package cmuscheme
@@ -2259,8 +2259,6 @@ If the file is new, it will be populated with a default template."
                             (setq-local buffer-face-mode-face '(:family "Monaco Nerd Font Mono")))
                         (buffer-face-mode)
                         (display-fill-column-indicator-mode -1)
-                        ;; Disable hl-line-mode for vterm-mode. (hl-line-mode -1) does not work.
-                        (setq-local global-hl-line-mode nil)
                         ))
   )
 
