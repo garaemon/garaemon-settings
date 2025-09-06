@@ -379,10 +379,6 @@ COMMANDS: list of command plists with keys :name, :description, :action, :intera
                          '(("Run current file with Go" . rich-compile-run-go-on-current-file)))
                         (t
                          '())))
-         (ros-choices (when is-ros-project
-                        '(("Catkin build --this" . rich-compile-catkin-build-this-interactive)
-                          ("Catkin build --this --no-deps" . rich-compile-catkin-build-this-no-deps)
-                          ("Catkin run_tests --this --no-deps" . rich-compile-catkin-run-tests-this-no-deps))))
          (vscode-choices (when vscode-tasks
                            (apply 'append
                                   (mapcar (lambda (task)
@@ -404,7 +400,7 @@ COMMANDS: list of command plists with keys :name, :description, :action, :intera
                                                     (plist-get plugin :commands)))
                                           available-plugins))))
          (generic-choices '(("Run custom command" . (lambda () (call-interactively 'rich-compile-run-command-interactively)))))
-         (choices (append mode-choices ros-choices vscode-choices npm-choices plugin-choices generic-choices))
+         (choices (append mode-choices vscode-choices npm-choices plugin-choices generic-choices))
          (prompt (let ((has-npm (and has-package-json npm-scripts)))
                    (cond
                     ((and (derived-mode-p 'python-mode) is-ros-project has-vscode-tasks has-npm)
