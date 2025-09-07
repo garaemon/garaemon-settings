@@ -1310,21 +1310,42 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (if (file-exists-p "/opt/homebrew/bin/git")
       (setq magit-git-executable "/opt/homebrew/bin/git"))
 
-  ;; don't show the diff by default in the commit buffer. Use `C-c C-d' to display it
-  (setq magit-commit-show-diff nil)
-  ;; don't show git variables in magit branch
-  (setq magit-branch-direct-configure nil)
-  ;; don't automatically refresh the status buffer after running a git command
-  (setq magit-refresh-status-buffer nil)
+  ;; Function to check if we're in a TRAMP environment
+  (defun my-is-tramp-directory-p ()
+    "Return t if the current directory is accessed via TRAMP."
+    (and (fboundp 'file-remote-p)
+         (file-remote-p default-directory)))
+
+  ;; Function to disable magit features for TRAMP environments
+  (defun my-disable-magit-features-for-tramp ()
+    "Disable expensive magit features when in TRAMP environment."
+    (when (my-is-tramp-directory-p)
+      (message "Disable some magit features for TRAMP environment")
+      ;; don't show the diff by default in the commit buffer. Use `C-c C-d' to display it
+      (setq-local magit-commit-show-diff nil)
+      ;; don't show git variables in magit branch
+      (setq-local magit-branch-direct-configure nil)
+      ;; don't automatically refresh the status buffer after running a git command
+      (setq-local magit-refresh-status-buffer nil)))
+
+  ;; Hook to apply TRAMP-specific settings
+  (add-hook 'magit-mode-hook 'my-disable-magit-features-for-tramp)
 
   ;; The following configuration is recommended to improve the performance of magit.
-  ;; (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
-  ;;(remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
+  ;; Only remove hooks when in TRAMP environment
+  (defun my-remove-magit-hooks-for-tramp ()
+    "Remove expensive magit hooks when in TRAMP environment."
+    (when (my-is-tramp-directory-p)
+      (message "Disable some magit features for TRAMP environment")
+      (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
+      ;;(remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
+      (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
+      (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
+      (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
+      (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)))
+
+  ;; Apply hook removal when magit status is opened
+  (add-hook 'magit-status-mode-hook 'my-remove-magit-hooks-for-tramp)
   (add-hook 'git-commit-setup-hook 'git-commit-turn-on-flyspell)
   ;; Rewrite magit-branch-read-args to automatically insert YYYY.MM.DD- as prefix
   ;; of new branch names.
