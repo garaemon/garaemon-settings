@@ -1304,6 +1304,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (("\C-cl" . 'magit-status)
          ("\C-cL" . 'magit-status)
          ("\C-cm" . 'magit-dispatch))
+  :custom
+  ;; When we visit a file from magit diff view, open the files on the disk rather than the read-only
+  ;; buffers.
+  (magit-diff-visit-prefer-worktree t)
   :config
   ;; homebrew's git is faster than apple's git.
   ;; https://gregnewman.io/blog/speed-up-magit-on-macos/
