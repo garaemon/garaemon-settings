@@ -94,11 +94,11 @@
 (global-unset-key "\C-\\")
 (prefer-coding-system 'utf-8)
 (setq column-number-mode t) ; show column number
+(menu-bar-mode -1)
+;; no menu bar
 (when (display-graphic-p)
   ;; no scroll bar
   (scroll-bar-mode -1)
-  ;; no menu bar
-  (menu-bar-mode -1)
   ;; no tool bar
   (tool-bar-mode -1))
 ;; The default of find-name-arg is "-name".
