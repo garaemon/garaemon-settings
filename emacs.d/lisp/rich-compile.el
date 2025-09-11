@@ -395,13 +395,13 @@ PROMPT-CONTRIBUTOR: optional function that returns a string to include in the pr
                                           available-plugins))))
          (generic-choices '(("Run custom command" . (lambda () (call-interactively 'rich-compile-run-command-interactively)))))
          (choices (append plugin-choices generic-choices))
-         (prompt (rich-compile--generate-prompt)))
+         (prompt (rich-compile--generate-prompt))
          (choice (when choices (completing-read prompt choices nil t))))
-    (cond
-     ((null choices)
-      (message "No run commands available for this file type."))
-     (choice
-      (funcall (cdr (assoc choice choices)))))))
+  (cond
+   ((null choices)
+    (message "No run commands available for this file type."))
+   (choice
+    (funcall (cdr (assoc choice choices)))))))
 
 ;; Default plugins
 
