@@ -1397,12 +1397,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :after magit
   :ensure t
   ;; How to setup forge:
-  ;;   Create ~/.authinfo file and write an entry like:
-  ;;     machine api.github.com login garaemon^forge password {token}
-  ;;   The scope of token to be enabled are
-  ;;     1. repo
-  ;;     2. user
-  ;;     3. read:org
+  ;;   1. configure github.user by following command:
+  ;;     git config --global github.user garaemon
+  ;;   2. Create ~/.authinfo file and write an entry like:
+  ;;      machine api.github.com login garaemon^forge password {token}
+  ;;     The scope of token to be enabled are
+  ;;       1. repo
+  ;;       2. user
+  ;;       3. read:org
   :custom
   (forge-owned-accounts '(("garaemon")))
   :config
