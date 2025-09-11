@@ -207,7 +207,8 @@
   (defvar default-face-height 120)
   (set-face-attribute 'default nil
                       :height default-face-height)    ;font size
-  ;;(set-frame-font "Ricty Diminished-12")
+  (if (find-font (font-spec :name "Monaspace Neon NF"))
+      (set-frame-font "Monaspace Neon NF" 12))
   ;; special key as meta
   ;; (setq x-super-keysym 'meta)
   )
