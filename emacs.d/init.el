@@ -925,28 +925,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   (flycheck-add-next-checker 'python-flake8 'python-pylint)
   )
 
-(use-package flycheck-aspell :ensure t
-  :requires (flycheck)
-  :custom
-  (ispell-silently-savep t)
-  :config
-  (setq ispell-personal-dictionary-filename "~/.emacs.d/aspell/aspell-personal.pws")
-  (make-directory (file-name-directory ispell-personal-dictionary-filename) t)
-  (flycheck-aspell-define-checker "org"
-    "Org" ("--add-filter" "url")
-    (org-mode))
-  (dolist (checker '(org-aspell-dynamic
-                     tex-aspell-dynamic
-                     markdown-aspell-dynamic
-                     html-aspell-dynamic
-                     xml-aspell-dynamic
-                     nroff-aspell-dynamic
-                     texinfo-aspell-dynamic
-                     c-aspell-dynamic
-                     mail-aspell-dynamic))
-    (add-to-list 'flycheck-checkers checker))
-  )
-
 (use-package minuet
   :ensure t
   :bind
@@ -1202,21 +1180,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
       full-matched-package-paths))
   )
 
-(use-package flyspell
+(use-package jinx
+  :ensure t
   :config
-  (defun my-flyspell-save-word ()
-    (interactive)
-    (let ((current-location (point))
-          (word (flyspell-get-word)))
-      (message "Adding a word: %s" (car word))
-      (when (consp word)
-        (flyspell-do-correct 'save nil (car word) current-location (cadr word)
-                             (caddr word) current-location))))
-  :hook
-  ((prog-mode . flyspell-prog-mode)
-   (text-mode . flyspell-mode))
-  :bind ( :map flyspell-mode-map
-          ("\C-c$" . my-flyspell-save-word))
+  ;; Ignore non-English words.
+  (add-to-list 'jinx-exclude-regexps '(t ".*[^[:ascii:]].*"))
+  :bind
+  ("\C-cd" . jinx-correct)
+  ;; just executing (global-jinx-mode) does not turn on jinx.
+  ;; We have to add a hook to emacs-start-hook
+  :hook ('emacs-startup-hook . 'global-jinx-mode)
   )
 
 (use-package emacs
@@ -1365,7 +1338,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
   ;; Apply hook removal when magit status is opened
   (add-hook 'magit-status-mode-hook 'my-remove-magit-hooks-for-tramp)
-  (add-hook 'git-commit-setup-hook 'git-commit-turn-on-flyspell)
   ;; Rewrite magit-branch-read-args to automatically insert YYYY.MM.DD- as prefix
   ;; of new branch names.
   (defun magit-branch-read-args (prompt &optional default-start)
@@ -1656,7 +1628,6 @@ If the file is new, it will be populated with a default template."
          ("C-c /" . 'consult-org-agenda)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
-                       (flyspell-mode t)
                        ;; To wrap texts
                        (visual-line-mode)
                        ;; Show images inline automatically
