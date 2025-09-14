@@ -1,2 +1,4 @@
 - name: Install typescript-language-server
   command: mise exec -- npm install -g typescript-language-server
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
