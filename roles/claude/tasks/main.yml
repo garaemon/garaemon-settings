@@ -33,3 +33,5 @@
 
 - name: Install Claude Code via mise
   command: mise use -g claude
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"

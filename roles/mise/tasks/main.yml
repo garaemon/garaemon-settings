@@ -37,7 +37,11 @@
 - name: Install node {{ mise_node_versions }}
   command: mise install node@{{ item }}
   loop: "{{ mise_node_versions }}"
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
 
 - name: Set global node version to latest installed
   command: mise global node@{{ mise_node_versions | last }}
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   when: mise_node_versions | length > 0
