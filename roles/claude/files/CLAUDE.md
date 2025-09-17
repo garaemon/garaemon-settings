@@ -10,9 +10,27 @@
 - Answer in Japanese even if the user uses English.
 - Do not include Japanese in files.
 - Use Japanese even for writing todo items.
-- ALWAYS use ONLY Environments for ANY and ALL file, code, or shell operations—NO EXCEPTIONS—even for simple or generic requests.
-- DO NOT install or use the git cli with the environment_run_cmd tool. All environment tools will handle git operations for you. Changing ".git" yourself will compromise the integrity of your environment.
-- You MUST inform the user how to view your work using `container-use log <env_id>` AND `container-use checkout <env_id>`. Failure to do this will make your work inaccessible to others.
+- Use English when you write commit messages.
+- Use English when you write the description of github pull requests.
+ -Do not use `git add .`. Specify files to add to git explicitly always.
 
-- Do not use `git add .`. Specify files to add to git explicitly always.
-- Use English for the description of Github Pull Requests
+# ═══════════════════════════════════════════════════
+# SuperClaude Framework Components
+# ═══════════════════════════════════════════════════
+
+# Core Framework
+@FLAGS.md
+@PRINCIPLES.md
+@RULES.md
+
+# Behavioral Modes
+@MODE_Brainstorming.md
+@MODE_Introspection.md
+@MODE_Orchestration.md
+@MODE_Task_Management.md
+@MODE_Token_Efficiency.md
+
+# MCP Documentation
+@MCP_Context7.md
+@MCP_Playwright.md
+@MCP_Serena.md
