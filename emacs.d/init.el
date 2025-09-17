@@ -1180,11 +1180,14 @@ if ENV-SH indicates a remote path. Relies on the helper function
       full-matched-package-paths))
   )
 
+;; Need enchant
 (use-package jinx
   :ensure t
   :config
   ;; Ignore non-English words.
   (add-to-list 'jinx-exclude-regexps '(t ".*[^[:ascii:]].*"))
+  :custom
+  (jinx-languages "en_US")
   :bind
   ("\C-cd" . jinx-correct)
   ;; just executing (global-jinx-mode) does not turn on jinx.
