@@ -1180,9 +1180,20 @@ if ENV-SH indicates a remote path. Relies on the helper function
       full-matched-package-paths))
   )
 
+(defun my-find-file-under-directories (file dirs)
+  (if (null dirs)
+      nil
+    (let ((target-dir (car dirs))
+          (rest-dirs (cdr dirs)))
+      (or (and (file-exists-p target-dir)
+               (directory-files-recursively target-dir (regexp-quote file)))
+          (my-find-file-under-directories file rest-dirs)))))
+
 ;; Need enchant
 (use-package jinx
   :ensure t
+  :if (my-find-file-under-directories "enchant.h"
+                                      '("/usr/include" "/usr/local/include" "/opt/homebrew"))
   :config
   ;; Ignore non-English words.
   (add-to-list 'jinx-exclude-regexps '(t ".*[^[:ascii:]].*"))
