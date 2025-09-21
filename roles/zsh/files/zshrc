@@ -199,6 +199,14 @@ function git-branch-remove-all-remote-exec() {
   fi
 }
 
+function git-worktree-add-with-branch() {
+  local directory=$1
+  local branch_suffix=$(basename ${directory})
+  local date_prefix=$(date +%Y.%m.%d)
+  git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
+  cd ${directory}
+}
+
 
 if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
   git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
