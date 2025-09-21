@@ -1197,6 +1197,26 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :config
   ;; Ignore non-English words.
   (add-to-list 'jinx-exclude-regexps '(t ".*[^[:ascii:]].*"))
+  ;; Overwrite jinx--check-pending not to raise args-out-of-range errors.
+  (defun jinx--check-pending (start end)
+    "Check pending visible region between START and END."
+    (let ((retry (and (eq (window-buffer) (current-buffer))
+                      (symbolp real-last-command)
+                      (string-match-p "self-insert-command\\'"
+                                      (symbol-name real-last-command))
+                      (window-point))))
+      (while (< start end)
+        (let* ((vfrom (jinx--find-visible start end t))
+               (vto (jinx--find-visible vfrom end nil)))
+          (while (< vfrom vto)
+            ;; Add min with (point-max) for text-property-any not to raise args-out-of-range errors.
+            (let* ((pfrom (or (text-property-any (min vfrom (point-max)) (min vto (point-max)) 'jinx--pending t) vto))
+                   (pto (or (text-property-not-all (min pfrom (point-max)) (min vto (point-max)) 'jinx--pending t) vto)))
+              (when (< pfrom pto)
+                (jinx--check-region pfrom pto retry))
+              (setq vfrom pto)))
+          (setq start vto)))))
+
   :custom
   (jinx-languages "en_US")
   :bind
