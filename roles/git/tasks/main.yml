@@ -14,11 +14,42 @@
     - ansible_os_family == "Debian"
     - git_check.changed
 
-- name: Git config core.pager
+# Install delta via mise
+- name: Install delta via mise
+  command: mise use -g delta
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+
+# configurations for delta
+- name: Use delta as git pager
   community.general.git_config:
     name: core.pager
     scope: global
-    value: "diff-so-fancy | less --tabs=4 -RFX"
+    value: delta
+
+- name: Use color for diff
+  community.general.git_config:
+    name: interactive.diffFilter
+    scope: global
+    value: delta --color-only
+
+- name: Use n and N to move between diff section
+  community.general.git_config:
+    name: delta.navigate
+    scope: global
+    value: true
+
+- name: Set conflict style
+  community.general.git_config:
+    name: merge.conflictStyle
+    scope: global
+    value: zdiff3
+- name: Enable side-by-side diff
+  community.general.git_config:
+    name: "delta.side-by-side"
+    scope: global
+    value: true
+
 - name: Git config alias.see
   community.general.git_config:
     name: alias.see
