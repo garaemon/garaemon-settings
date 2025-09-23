@@ -1488,8 +1488,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (dnd-capture-source t)
   )
 
-(use-package minimap :ensure t)
-
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
 
