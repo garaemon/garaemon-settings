@@ -23,6 +23,7 @@
     - role: font
       when: ansible_os_family == "Debian"
     - ispell
+    - enchant
     - tig
     - dircolors_solarized
     - role: base16_gnome_terminal
