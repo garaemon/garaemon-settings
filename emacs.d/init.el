@@ -110,10 +110,10 @@
 ;; Disable bell
 (setq visible-bell nil)
 (setq ring-bell-function 'ignore)
-;; TODO: Use use-package paren.
-;; Highlight parens
+;; TODO: Use use-package parenthesis.
+;; Highlight parentheses
 (show-paren-mode t)
-;; Highlight the content isnide parenthesis even if the entire content is visible in the buffer.
+;; Highlight the content inside parenthesis even if the entire content is visible in the buffer.
 (setq show-paren-style 'expression)
 ;; Highlight the content ignoring the spaces before and after the parenthesis.
 (setq show-paren-when-point-in-periphery t)
@@ -247,7 +247,7 @@
 (setq smerge-refined-removed '(t (:inherit smerge-refined-change :background "dark red")))
 ;;; }}}
 
-;;; Visualize abnormal white spaces such as hard tab and japanese space. {{{
+;;; Visualize abnormal white spaces such as hard tab and Japanese space. {{{
 ;; mark zenkaku-whitespaces and tabs
 (setq whitespace-style '(tabs tab-mark spaces space-mark))
 (setq whitespace-space-regexp "\\(\x3000+\\)")
@@ -452,7 +452,7 @@
           ;; The screen size should use the right half.
           (width . 0.5)
           ;; We use a value slightly smaller than 1.0. This is because even if `top`
-          ;; is set to 0.0 in macOS, the window is displayed slightly lower, and as a result,
+          ;; is set to 0.0 in MacOS, the window is displayed slightly lower, and as a result,
           ;; if `height` is set to 1.0, the bottom of the window becomes invisible.
           (height . 0.9)
           ))
@@ -495,7 +495,7 @@ then generates a report. Prompts the user for the duration in seconds."
 
 ;;; Re-open current file with \M-r {{{
 (defun revert-buffer-no-confirm (&optional force-reverting)
-  "Force to reload buffer if the file is modiied or FORCE-REVREZTING is t.
+  "Force to reload buffer if the file is modified or FORCE-REVREZTING is t.
 
 Ignoring the auto-save file and not requesting for confirmation.
 When the current buffer is modified, the command refuses to revert it,
@@ -2292,8 +2292,8 @@ If the file is new, it will be populated with a default template."
     (vterm-send-key "k" nil nil t))
 
   (defun my-browse-url-at-point ()
-    "Open url only if the thing-at-point is url.
-`browse-url-at-point' uses (thing-at-point 'file). To open urls only, we define a simple wrapper."
+    "Open URL only if the thing-at-point is URL.
+`browse-url-at-point' uses (thing-at-point 'file). To open URLs only, we define a simple wrapper."
     (interactive)
     (let ((url (thing-at-point 'url)))
       (if url (browse-url url))))
@@ -2358,7 +2358,7 @@ Optional argument ARGS ."
       . "You are a large language model living in Emacs and a helpful assistant.
 You have to follow the following orders:
 - Respond concisely.
-- Respont in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
+- Respond in Japanese. User is a Japanese. Even if the user uses English to ask questions, you have to answer in Japanese.
 - Use English in program examples.
 - Answer conclusions first.")
      (programming
@@ -2528,7 +2528,7 @@ Stricly follow these rules:
 - NEVER surround the improved text with quotes or any additional formatting
 - If the text is already well-written and requires no improvement, don't change the given text
 - Keep comment delimiters. The original text may include or start with comment characters such as
-//, /* and ;. This is because the user wants to imrove comments in source codes.
+//, /* and ;. This is because the user wants to improve comments in source codes.
 - Use terms consistently.
 - Avoid ambiguous pronouns.
 - Prefer active voice to passive voice.
