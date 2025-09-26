@@ -2050,8 +2050,6 @@ If the file is new, it will be populated with a default template."
   )
 
 
-(use-package esup :ensure t)
-
 (use-package whitespace
   :config
   (global-whitespace-mode 1)
