@@ -35,3 +35,7 @@
   command: mise use -g claude
   environment:
     PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  retries: 3
+  delay: 5
+  register: claude_claude_install_result
+  until: claude_claude_install_result.rc == 0

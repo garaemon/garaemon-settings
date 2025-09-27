@@ -19,6 +19,10 @@
   command: mise use -g delta
   environment:
     PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  retries: 3
+  delay: 5
+  register: git_delta_install_result
+  until: git_delta_install_result.rc == 0
 
 # configurations for delta
 - name: Use delta as git pager
