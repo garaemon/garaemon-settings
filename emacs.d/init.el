@@ -2371,6 +2371,13 @@ You have to follow the following orders:
      (chat
       . "You are a large language model and a conversation partner. Respond concisely.")))
   :config
+  (if (not (display-graphic-p))
+      ;; header-line for LSP mode is hard to see in emacs -nw environment.
+      ;; https://emacs.stackexchange.com/questions/77279/how-can-i-find-the-face-of-the-items-in-the-headeline-in-lsp-mode
+      (custom-set-faces
+       '(header-line ((t (:inverse-video nil :underline t)))))
+    )
+
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
         (setq gptel-model 'gemini-2.5-flash
