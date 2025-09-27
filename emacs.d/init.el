@@ -871,6 +871,12 @@ unless you specify the optional argument: FORCE-REVERTING to true."
     (if (region-active-p)
         (lsp-format-region s e)
       (lsp-format-buffer)))
+  (if (not (display-graphic-p))
+      ;; header-line for LSP mode is hard to see in emacs -nw environment.
+      ;; https://emacs.stackexchange.com/questions/77279/how-can-i-find-the-face-of-the-items-in-the-headeline-in-lsp-mode
+      (custom-set-faces
+       '(header-line ((t (:inverse-video nil :underline t)))))
+    )
   :custom
   ;; (lsp-log-io t)
   (lsp-pylsp-plugins-yapf-enabled t)
@@ -889,12 +895,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; :init
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
-  (if (not (display-graphic-p))
-      ;; header-line for LSP mode is hard to see in emacs -nw environment.
-      ;; https://emacs.stackexchange.com/questions/77279/how-can-i-find-the-face-of-the-items-in-the-headeline-in-lsp-mode
-      (custom-set-faces
-       '(header-line ((t (:inverse-video nil :underline t)))))
-    )
   :bind (
          ("C-c f" . 'my-lsp-format)
          ("M-." . 'lsp-find-definition)
