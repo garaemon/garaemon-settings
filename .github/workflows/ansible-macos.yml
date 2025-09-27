@@ -39,6 +39,7 @@ jobs:
           ansible-playbook main.yml -i localhost, --connection=local
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False" # Often useful in CI/CD for local connections
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test-minimal-macos:
     runs-on: macos-latest
@@ -68,3 +69,4 @@ jobs:
           ansible-playbook minimal.yml -i localhost, --connection=local
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False" # Often useful in CI/CD for local connections
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

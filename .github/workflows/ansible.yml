@@ -33,6 +33,8 @@ jobs:
 
       - name: Execute minimal.yml
         run: ansible-playbook -i localhost, -c local minimal.yml -v
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   main:
     runs-on: ${{ matrix.os }}
@@ -61,3 +63,5 @@ jobs:
 
       - name: Execute main.yml
         run: ansible-playbook -i localhost, -c local main.yml -v
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
