@@ -1097,6 +1097,11 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (use-package embark-consult :ensure t)
 
+;; If emacs does not have built-in SQLite support, we have to install sqlite3.
+(use-package sqlite3
+  :if (not (sqlite-available-p))
+  :ensure t)
+
 (use-package consult
   :ensure t
   :bind
