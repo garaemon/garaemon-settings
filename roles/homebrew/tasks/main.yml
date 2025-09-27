@@ -1,9 +1,6 @@
 - name: Install homebrew packages
   homebrew:
-    name: "{{ packages }}"
-    state: present
-  vars:
-    packages:
+    name:
       - ag
       - alt-tab
       - aspell
@@ -14,7 +11,6 @@
       - cmigemo
       - coreutils
       - cowsay
-      - emacs
       - findutils
       - fontconfig
       - git
@@ -38,6 +34,9 @@
       - w3m
       - wget
       - zlib
+      - xquartz
+    state: present
+
 # - name: Install ffmpeg with special options
 #  homebrew:
 #    name: ffmpeg
