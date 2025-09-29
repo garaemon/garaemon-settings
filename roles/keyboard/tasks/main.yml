@@ -1,0 +1,15 @@
+---
+- name: Configure keyboard to use caps lock as additional control key
+  lineinfile:
+    path: /etc/default/keyboard
+    regexp: '^XKBOPTIONS='
+    line: 'XKBOPTIONS="ctrl:nocaps"'
+    backup: true
+  become: true
+  when: ansible_os_family == "Debian"
+  notify: Reconfigure keyboard
+
+- name: Apply keyboard configuration
+  command: dpkg-reconfigure -f noninteractive keyboard-configuration
+  become: true
+  when: ansible_os_family == "Debian"
