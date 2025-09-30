@@ -1,4 +1,17 @@
 ---
+- name: "Install enchant on Debian/Ubuntu"
+  apt:
+    name: enchant-2
+    state: present
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: "Install enchant on macOS"
+  homebrew:
+    name: enchant
+    state: present
+  when: ansible_os_family == "Darwin"
+
 - name: "Create .config/enchant directory"
   file:
     path: "{{ ansible_env.HOME }}/.config/enchant"
