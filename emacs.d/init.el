@@ -481,14 +481,7 @@ then generates a report. Prompts the user for the duration in seconds."
   (message "Profiler is running. It will stop and report automatically in %s seconds." duration-seconds))
 
 
-;;; code-format-view {{{
-(when (require 'code-format nil t)
-  ;; (global-set-key "\M-[" 'code-format-view)
-  (global-unset-key "\M-[")
-  (setq code-format-yapf-options '("--style" "google")))
-;;; }}}
-
-;;; Show eidiff with horizontal split view. {{{
+;;; Show ediff with horizontal split view. {{{
 (setq ediff-split-window-function 'split-window-horizontally)
 ;;; }}}
 
