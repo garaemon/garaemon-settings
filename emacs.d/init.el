@@ -2634,8 +2634,15 @@ Improved Text:")
                         :remap 'c-mode
                         :url "https://github.com/tree-sitter/tree-sitter-c"
                         :revision "v0.23.6"
-                        :ext "\\.c\\'")))
-    (let* ((new-recipe-list (list bash-recipe c-recipe))
+                        :ext "\\.c\\'"))
+        (css-recipe (make-treesit-auto-recipe
+                        :lang 'css
+                        :ts-mode 'css-ts-mode
+                        :remap 'css-mode
+                        :url "https://github.com/tree-sitter/tree-sitter-css"
+                        :revision "v0.23.2"
+                        :ext "\\.css\\'")))
+    (let* ((new-recipe-list (list bash-recipe c-recipe css-recipe))
            (new-recipe-alist (mapcar #'(lambda (recipe)
                                          (cons (treesit-auto-recipe-lang recipe)
                                                recipe))
