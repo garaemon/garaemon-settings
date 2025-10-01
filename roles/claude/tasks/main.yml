@@ -9,8 +9,10 @@
     path: ~/.claude/CLAUDE.md
   register: claude_md_stat
 
+
+# TODO: it does not work if we run this role for a different host
 - name: Check file differences for CLAUDE.md
-  command: diff ~/.claude/CLAUDE.md ~/gprog/garaemon-settings/roles/claude/files/CLAUDE.md
+  command: diff ~/.claude/CLAUDE.md "{{ role_path }}/files/CLAUDE.md"
   register: claude_md_diff
   failed_when: false
   changed_when: false
@@ -27,7 +29,7 @@
 
 - name: Create symlink for CLAUDE.md
   file:
-    src: ~/gprog/garaemon-settings/roles/claude/files/CLAUDE.md
+    src: "{{ role_path }}/files/CLAUDE.md"
     dest: ~/.claude/CLAUDE.md
     state: link
 
@@ -43,7 +45,7 @@
   register: claude_create_pr_stat
 
 - name: Check file differences for create-pr.md
-  command: diff ~/.claude/commands/create-pr.md ~/gprog/garaemon-settings/roles/claude/files/create-pr.md
+  command: diff ~/.claude/commands/create-pr.md "{{ role_path }}/files/create-pr.md"
   register: claude_create_pr_diff
   failed_when: false
   changed_when: false
@@ -60,7 +62,7 @@
 
 - name: Create symlink for create-pr.md
   file:
-    src: ~/gprog/garaemon-settings/roles/claude/files/create-pr.md
+    src: "{{ role_path }}/files/create-pr.md"
     dest: ~/.claude/commands/create-pr.md
     state: link
 
