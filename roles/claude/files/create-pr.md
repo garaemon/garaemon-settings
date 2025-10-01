@@ -11,5 +11,5 @@ If you are on a branch, you don't need to make a branch.
 3. Update origin repository
 4. Check the diff between the current branch and the default branch in origin repository.
 5. Check the commits with the actual diff and commit message
-6. Make a PR by
+6. Make a PR by `gh pr create`.
 7. Open a browser by `gh pr view --web`
