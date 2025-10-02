@@ -870,6 +870,16 @@ unless you specify the optional argument: FORCE-REVERTING to true."
       (custom-set-faces
        '(header-line ((t (:inverse-video nil :underline t)))))
     )
+
+  ;; Breadcrumb of lsp-mode does not work well in my linux configuration. Use an ascii character
+  ;; for the separator.
+  (when (eq system-type 'gnu/linux)
+    ;; Disable icons to remove tofus
+    (setq lsp-headerline-breadcrumb-icons-enable nil)
+    ;; Use an ASCII character as the separator
+    (setq lsp-headerline-breadcrumb-separator " > ")
+    )
+
   :custom
   ;; (lsp-log-io t)
   (lsp-pylsp-plugins-yapf-enabled t)
