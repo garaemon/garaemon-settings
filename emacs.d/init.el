@@ -204,7 +204,7 @@
    ))
 
 (when (eq system-type 'gnu/linux)
-  (defvar default-face-height 120)
+  (defvar default-face-height 100)
   (set-face-attribute 'default nil
                       :height default-face-height)    ;font size
   (if (find-font (font-spec :name "Monaspace Neon NF"))
