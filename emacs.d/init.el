@@ -1562,6 +1562,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
+  (org-link-file-path-type 'relative)
   (org-directory
    (let ((icloud-directory
           (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/org/")))
