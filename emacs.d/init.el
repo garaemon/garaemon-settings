@@ -2250,7 +2250,6 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package gcmh :ensure t
-  :if nil
   :config (gcmh-mode 1)
   )
 
