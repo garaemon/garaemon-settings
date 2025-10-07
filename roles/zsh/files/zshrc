@@ -477,8 +477,6 @@ if [ ! -e $HOME/.zshrc.copilot ]; then
   if which gh >/dev/null 2>&1; then
     if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
       gh copilot alias -- zsh > ~/.zshrc.copilot
-    else
-      echo Please install gh copilot by "gh extension install github/gh-copilot" >&2
     fi
   fi
 fi
