@@ -632,3 +632,16 @@ function ssh-remove-host() {
 
     echo "Process completed."
 }
+
+# pnpm
+if [ -e "/Users/garaemon/Library/pnpm" ]; then
+  export PNPM_HOME="/Users/garaemon/Library/pnpm"
+fi
+
+if [ -z "${PNPM_HOME}" ]; then
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+fi
+# pnpm end
