@@ -2654,40 +2654,46 @@ Improved Text:")
   ;; cmake ts sometimes does not work well.
   (delete 'cmake treesit-auto-langs)
   ;; Modify some version of the treesit recipes in treesit-auto-recipe-list.
-  (let ((bash-recipe (make-treesit-auto-recipe
-                        :lang 'bash
-                        :ts-mode 'bash-ts-mode
-                        :remap 'bash-mode
-                        :url "https://github.com/tree-sitter/tree-sitter-bash"
-                        :revision "v0.23.3"
-                        :ext "\\.sh\\'"))
-        (c-recipe (make-treesit-auto-recipe
-                        :lang 'c
-                        :ts-mode 'c-ts-mode
-                        :remap 'c-mode
-                        :url "https://github.com/tree-sitter/tree-sitter-c"
-                        :revision "v0.23.6"
-                        :ext "\\.c\\'"))
-        (css-recipe (make-treesit-auto-recipe
-                        :lang 'css
-                        :ts-mode 'css-ts-mode
-                        :remap 'css-mode
-                        :url "https://github.com/tree-sitter/tree-sitter-css"
-                        :revision "v0.23.2"
-                        :ext "\\.css\\'")))
-    (let* ((new-recipe-list (list bash-recipe c-recipe css-recipe))
-           (new-recipe-alist (mapcar #'(lambda (recipe)
-                                         (cons (treesit-auto-recipe-lang recipe)
-                                               recipe))
-                                     new-recipe-list)))
-      (setq treesit-auto-recipe-list
-            (mapcar #'(lambda (recipe)
-                        (let ((lang (treesit-auto-recipe-lang recipe)))
-                          (if (assoc lang new-recipe-alist)
-                              (cdr (assoc lang new-recipe-alist))
-                            recipe)))
-                    treesit-auto-recipe-list))
-      ))
+  (let* ((new-recipe-list (list (make-treesit-auto-recipe
+                                 :lang 'bash
+                                 :ts-mode 'bash-ts-mode
+                                 :remap 'bash-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-bash"
+                                 :revision "v0.23.3"
+                                 :ext "\\.sh\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'c
+                                 :ts-mode 'c-ts-mode
+                                 :remap 'c-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-c"
+                                 :revision "v0.23.6"
+                                 :ext "\\.c\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'css
+                                 :ts-mode 'css-ts-mode
+                                 :remap 'css-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-css"
+                                 :revision "v0.23.2"
+                                 :ext "\\.css\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'go
+                                 :ts-mode 'go-ts-mode
+                                 :remap 'go-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-go"
+                                 :revision "v0.23.4"
+                                 :ext "\\.css\\'")))
+         (new-recipe-alist (mapcar #'(lambda (recipe)
+                                       (cons (treesit-auto-recipe-lang recipe)
+                                             recipe))
+                                   new-recipe-list)))
+    (setq treesit-auto-recipe-list
+          (mapcar #'(lambda (recipe)
+                      (let ((lang (treesit-auto-recipe-lang recipe)))
+                        (if (assoc lang new-recipe-alist)
+                            (cdr (assoc lang new-recipe-alist))
+                          recipe)))
+                  treesit-auto-recipe-list))
+    )
   (global-treesit-auto-mode)
   )
 
