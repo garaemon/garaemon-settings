@@ -2,6 +2,8 @@
   homebrew:
     name:
       - ag
+      - agg
+      - asciinema
       - alt-tab
       - aspell
       - ccache
