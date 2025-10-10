@@ -991,11 +991,15 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 
 (use-package go-mode :ensure t :defer t
-  :hook ((go-mode . (lambda ()
-                      (make-local-variable 'whitespace-style)
-                      (setq whitespace-style (delete 'tabs whitespace-style))
-                      (setq whitespace-style (delete 'tab-mark whitespace-style))
-                      )))
+  :config
+  (defun my-go-mode-hook ()
+    (make-local-variable 'whitespace-style)
+    (setq whitespace-style (delete 'tabs whitespace-style))
+    (setq whitespace-style (delete 'tab-mark whitespace-style))
+    )
+
+  :hook ((go-mode . my-go-mode-hook)
+         (go-ts-mode . my-go-mode-hook))
   )
 
 (use-package google-c-style :ensure t
