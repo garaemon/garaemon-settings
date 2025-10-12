@@ -1,3 +1,18 @@
+- name: Check if git is installed
+  command: which git
+  register: base_git_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install git
+  apt:
+    name:
+      - git
+  become: true
+  when:
+    - ansible_os_family == "Debian"
+    - base_git_check.rc != 0
+
 - name: Create ~/gprog directory
   file:
     path: ~/gprog
