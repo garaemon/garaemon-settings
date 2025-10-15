@@ -92,6 +92,7 @@
               - libx11-dev
               - libtool # for libvterm
               - libtool-bin # for libvterm
+              - libtree-sitter-dev
           become: true
           when: ansible_distribution_version == '22.04'
         - name: Install packages to build emacs (Ubuntu 24.04)
@@ -109,6 +110,7 @@
               - libx11-dev
               - libtool # for libvterm
               - libtool-bin # for libvterm
+              - libtree-sitter-dev
           become: true
           when: ansible_distribution_version == '24.04'
         - name: Clone the latest emacs
@@ -122,7 +124,7 @@
           args:
             chdir: ~/gprog/emacs
         - name: Configure the latest emacs
-          command: ./configure --prefix=$HOME/.local
+          command: ./configure --prefix=$HOME/.local --with-tree-sitter
           args:
             chdir: ~/gprog/emacs
         - name: Decide parallel job numbers
