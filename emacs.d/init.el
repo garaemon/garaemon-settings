@@ -1592,8 +1592,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
       :jump-to-captured nil
       )
      ))
-  ;; ! to record timestamp.
-  (org-todo-keywords '((sequence "TODO" "INPROGRESS(!)" "|" "DONE(!)" "DELEGATED(!)")))
+  (org-todo-keywords '((sequence "TODO" "INPROGRESS" "|" "DONE" "DELEGATED")))
   ;; Use C-c C-q to insert tag.
   ;; To update the tag list from the agenda files, I set
   ;; `org-complete-tags-always-offer-all-agenda-tags' t.
