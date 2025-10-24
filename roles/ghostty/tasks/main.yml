@@ -1,3 +1,71 @@
+- name: Install Ghostty on Debian/Ubuntu
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Check if ghostty is already installed
+      command: which ghostty
+      register: ghostty_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install ghostty from deb file
+      when: ghostty_installed.rc != 0
+      block:
+        - name: Create temporary directory for ghostty download
+          tempfile:
+            state: directory
+            suffix: ghostty
+          register: ghostty_temp_dir
+
+        - name: Download ghostty deb file
+          get_url:
+            url: https://github.com/ghostty-org/ghostty/releases/latest/download/ghostty_linux_amd64.deb
+            dest: "{{ ghostty_temp_dir.path }}/ghostty.deb"
+            mode: "0644"
+
+        - name: Install ghostty deb package
+          apt:
+            deb: "{{ ghostty_temp_dir.path }}/ghostty.deb"
+            state: present
+          become: true
+
+        - name: Clean up temporary directory
+          file:
+            path: "{{ ghostty_temp_dir.path }}"
+            state: absent
+
+    - name: Make directory for ghostty config
+      file:
+        path: "{{ ansible_env.HOME }}/.config/ghostty"
+        state: directory
+        mode: "0755"
+
+    - name: Check if ghostty config exists
+      stat:
+        path: "{{ ansible_env.HOME }}/.config/ghostty/config"
+      register: ghostty_config_stat_debian
+
+    - name: Check file differences for ghostty config
+      command: diff "{{ ansible_env.HOME }}/.config/ghostty/config" ~/gprog/garaemon-settings/roles/ghostty/files/config
+      register: ghostty_config_diff_debian
+      failed_when: false
+      changed_when: false
+      when: ghostty_config_stat_debian.stat.exists and not ghostty_config_stat_debian.stat.islnk
+
+    - name: Remove existing ghostty config if identical to target
+      file:
+        path: "{{ ansible_env.HOME }}/.config/ghostty/config"
+        state: absent
+      when:
+        - ghostty_config_stat_debian.stat.exists
+        - not ghostty_config_stat_debian.stat.islnk
+        - ghostty_config_diff_debian.rc == 0
+
+    - name: Create symlink for ghostty config
+      file:
+        src: ~/gprog/garaemon-settings/roles/ghostty/files/config
+        dest: "{{ ansible_env.HOME }}/.config/ghostty/config"
+        state: link
+
 - name: Configure Ghostty on Darwin
   when: ansible_os_family == 'Darwin'
   block:
