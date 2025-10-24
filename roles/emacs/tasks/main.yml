@@ -89,6 +89,7 @@
               - libxaw7-dev
               - libgif-dev
               - libgtk-4-dev
+              - libsqlite3-dev
               - libx11-dev
               - libtool # for libvterm
               - libtool-bin # for libvterm
@@ -108,6 +109,7 @@
               - libgif-dev
               - libgtk-4-dev
               - libx11-dev
+              - libsqlite3-dev
               - libtool # for libvterm
               - libtool-bin # for libvterm
               - libtree-sitter-dev
@@ -124,7 +126,7 @@
           args:
             chdir: ~/gprog/emacs
         - name: Configure the latest emacs
-          command: ./configure --prefix=$HOME/.local --with-tree-sitter
+          command: ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
           args:
             chdir: ~/gprog/emacs
         - name: Decide parallel job numbers
