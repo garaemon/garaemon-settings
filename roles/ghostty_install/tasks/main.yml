@@ -1,0 +1,69 @@
+- name: Install Ghostty on Debian/Ubuntu
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Check if ghostty is already installed
+      command: which ghostty
+      register: ghostty_install_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Check if distribution version is supported
+      set_fact:
+        ghostty_install_supported_versions: ['24.04', '25.04', '25.10', 'trixie']
+        ghostty_install_is_supported: >-
+          {{ ansible_distribution_version in ['24.04', '25.04', '25.10'] or
+             (ansible_distribution == 'Debian' and ansible_distribution_release == 'trixie') }}
+
+    - name: Install ghostty from deb file
+      when:
+        - ghostty_install_installed.rc != 0
+        - ghostty_install_is_supported
+      block:
+        - name: Create temporary directory for ghostty download
+          tempfile:
+            state: directory
+            suffix: ghostty
+          register: ghostty_install_temp_dir
+
+        - name: Get latest ghostty-ubuntu release tag
+          uri:
+            url: https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/latest
+            return_content: true
+          register: ghostty_install_release
+          changed_when: false
+
+        - name: Set ghostty version and architecture variables
+          set_fact:
+            ghostty_install_tag: "{{ ghostty_install_release.json.tag_name }}"
+            ghostty_install_version: >-
+              {{ ghostty_install_release.json.tag_name |
+                 regex_replace('^([0-9.]+)-([0-9]+)-ppa([0-9]+)$', '\\1-\\2.ppa\\3') }}
+            ghostty_install_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+            ghostty_install_distro_version: "{{ ansible_distribution_version }}"
+
+        - name: Set ghostty download URL
+          set_fact:
+            ghostty_install_deb_filename: >-
+              ghostty_{{ ghostty_install_version }}_{{
+              ghostty_install_arch }}_{{ ghostty_install_distro_version }}.deb
+            ghostty_install_download_url: >-
+              https://github.com/mkasberg/ghostty-ubuntu/releases/download/{{
+              ghostty_install_tag }}/ghostty_{{ ghostty_install_version }}_{{
+              ghostty_install_arch }}_{{ ghostty_install_distro_version }}.deb
+
+        - name: Download ghostty deb file
+          get_url:
+            url: "{{ ghostty_install_download_url }}"
+            dest: "{{ ghostty_install_temp_dir.path }}/ghostty.deb"
+            mode: "0644"
+
+        - name: Install ghostty deb package
+          apt:
+            deb: "{{ ghostty_install_temp_dir.path }}/ghostty.deb"
+            state: present
+          become: true
+
+        - name: Clean up temporary directory
+          file:
+            path: "{{ ghostty_install_temp_dir.path }}"
+            state: absent
