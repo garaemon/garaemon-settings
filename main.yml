@@ -41,4 +41,4 @@
     - ghostty
     - karabiner
   vars:
-    emacs_build_emacs: true
+    emacs_build_emacs: "{{ lookup('env', 'SKIP_EMACS_BUILD') != 'true' }}"
