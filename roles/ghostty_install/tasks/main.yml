@@ -37,7 +37,7 @@
             ghostty_install_tag: "{{ ghostty_install_release.json.tag_name }}"
             ghostty_install_version: >-
               {{ ghostty_install_release.json.tag_name |
-                 regex_replace('^([0-9.]+)-([0-9]+)-ppa([0-9]+)$', '\\1-\\2.ppa\\3') }}
+                 regex_replace('^([0-9.]+)-([0-9]+)-ppa([0-9]+)$', '\g<1>-\g<2>.ppa\g<3>') }}
             ghostty_install_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
             ghostty_install_distro_version: "{{ ansible_distribution_version }}"
 
