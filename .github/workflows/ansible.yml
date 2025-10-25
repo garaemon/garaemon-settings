@@ -63,7 +63,5 @@ jobs:
 
       - name: Execute main.yml
         run: ansible-playbook -i localhost, -c local main.yml -v
-        timeout-minutes: 30
         env:
           MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SKIP_EMACS_BUILD: "true"
