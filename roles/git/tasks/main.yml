@@ -114,6 +114,11 @@
     name: rebase.autostash
     scope: global
     value: "true"
+- name: Git config init.defaultBranch
+  community.general.git_config:
+    name: init.defaultBranch
+    scope: global
+    value: "main"
 - name: Git config core.excludesFile (global gitignore)
   community.general.git_config:
     name: core.excludesFile
