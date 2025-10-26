@@ -27,6 +27,29 @@
         (message "deleting %s" tramp-old-file)
         (delete-file tramp-old-file))))
 
+;; Set up straight.el
+;; For the first setup, you may have to run M-x straight-pull-recipe-repositories
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
+;; (straight-pull-recipe-repositories)
+
+
 ;; minimum settings
 (setq-default tab-width 4)
 ;; disable hard-tab
@@ -375,6 +398,7 @@
 ;;; }}}
 
 (use-package html
+  :straight (:type built-in)
   :mode
   ("\\.html$" . html-mode)
   ("\\.ejs$" . html-mode)
@@ -567,24 +591,6 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ;; Install use-package
   (package-install 'use-package))
 
-;; Set up straight.el
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el"
-        (or (bound-and-true-p straight-base-dir)
-            user-emacs-directory)))
-      (bootstrap-version 7))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-
-
 ;; (when (executable-find "pdftex")
 ;;   (use-package auctex :ensure t)) ;; it depends on tex
 ;; Need to run (all-the-icons-install-fonts)
@@ -690,7 +696,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   ("\C-c <left>" . buf-move-left)
   )
 
+
 (use-package c++-mode
+  :straight (:type built-in)
   ;; Use c++-mode for Arduino files
   :mode (("\\.ino\\'" . c++-mode))
   )
@@ -1445,6 +1453,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 ;; Use markdown-mode for commit messages.
 (use-package git-commit
+  :straight (:type built-in)
   :init
   (setq git-commit-major-mode 'markdown-mode)
   (add-hook 'git-commit-setup-hook
@@ -1493,6 +1502,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
 (use-package markdown-dnd-images
+  :straight (:type built-in)
   :custom
   (dnd-save-directory "images")
   (dnd-view-inline t)
@@ -1750,6 +1760,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package org-tempo :after org
+  :straight (:type built-in)
   :custom
   (org-structure-template-alist
    '(("A" . "ai")
@@ -1819,6 +1830,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package org-roam-dailies
+  :straight (:type built-in)
   :after org-roam
   :custom
   (org-roam-dailies-capture-templates
@@ -2035,7 +2047,9 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package uniquify
-  :config (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
+  :straight (:type built-in)
+  :config (setq uniquify-buffer-name-style 'post-forward-angle-brackets)
+  )
 
 (use-package volatile-highlights :ensure t
   :config (volatile-highlights-mode))
@@ -2100,7 +2114,9 @@ If the file is new, it will be populated with a default template."
   (set-face-background 'whitespace-tab "DarkSlateGray")
   )
 
-(use-package ucs-normalize)
+(use-package ucs-normalize
+  :straight (:type built-in)
+  )
 
 (use-package cmake-mode
   :ensure t
@@ -2111,6 +2127,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package dired
+  :straight (:type built-in)
   :bind (:map dired-mode-map
               ("M-s" . 'consult-grep)
               ("F" . 'magit-pull)
@@ -2239,6 +2256,7 @@ If the file is new, it will be populated with a default template."
      "https://raw.githubusercontent.com/nilsdeppe/emacs-clang-rename/master/emacs-clang-rename.el"
      "~/.emacs.d/plugins/emacs-clang-rename.el"))
 (use-package emacs-clang-rename
+  :straight (:type built-in)
   :if (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el")
   :bind (:map c-mode-base-map
               ("C-c c p" . emacs-clang-rename-at-point)
@@ -2273,6 +2291,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package emoji
+  :straight (:type built-in)
   :bind (("C-:" . 'emoji-search))
   )
 
@@ -2650,6 +2669,7 @@ Improved Text:")
   )
 
 (use-package treesit
+  :straight (:type built-in)
   :custom
   (treesit-font-lock-level 4)
   )
@@ -2771,6 +2791,7 @@ Improved Text:")
   )
 
 (use-package rich-compile
+  :straight (:type built-in)
   :bind (("C-c C-r" . rich-compile-run-menu))
   )
 
