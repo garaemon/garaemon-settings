@@ -98,10 +98,6 @@
 
 (global-set-key "\C-h" 'backward-delete-char)
 (global-set-key "\M-h" 'help-for-help)
-;; C-x p to switch buffer with inverse manner.
-(global-set-key "\C-xp" (lambda ()
-                          (interactive)
-                          (other-window -1)))
 ;; Show line number
 (line-number-mode 1)
 ;; Show time
@@ -414,6 +410,20 @@
 (global-set-key "\C-cw" 'sdic-describe-word)
 (autoload 'sdic-describe-word-at-point "sdic" "カーソルの位置の英単語の意味を調べる" t nil)
 (global-set-key "\C-cW" 'sdic-describe-word-at-point)
+;;; }}}
+
+;;; project {{{
+(use-package project
+  :straight (:type built-in)
+  :config
+  (global-unset-key (kbd "C-x p"))
+  ;; C-x p to switch buffer with inverse manner.
+  ;; I have to define the keybind after removing the keybind of "C-x p" of project mode.
+  (global-set-key "\C-xp" (lambda ()
+                          (interactive)
+                          (other-window -1)))
+
+  )
 ;;; }}}
 
 ;;; ruby {{{
