@@ -1682,6 +1682,41 @@ If the file is new, it will be populated with a default template."
         (insert (format "#+TITLE: %s\n" title))
         (insert "#+FILETAGS:\n"))))
 
+  :bind (("C-c c" . 'org-capture)
+         ("C-M-c" . 'org/note-right-now)
+         ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link)
+         :map org-mode-map
+         ("M-e" . 'my-org-mode-wrap-inline-code)
+         ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link))
+  :hook ((org-mode . (lambda ()
+                       ;; To wrap texts
+                       (visual-line-mode)
+                       ;; Show images inline automatically
+                       (setq org-startup-with-inline-images t)
+                       ;; Enable only under org-directory
+                       (when (and buffer-file-name
+                                  (string-prefix-p org-directory
+                                                   (file-name-directory buffer-file-name)))
+                         ;; Stop using GAC because iCloud should synchronize the org directory.
+                         ;; (git-auto-commit-mode t)
+                         ;; (setq gac-automatically-push-p t)
+                         ;; (setq gac-automatically-add-new-files-p t)
+                         ;; (setq gac-debounce-interval (* 60 5)) ; 5 minutes
+                       )))
+         (org-agenda-mode . (lambda ()
+                              (display-line-numbers-mode -1)
+                              (display-fill-column-indicator-mode -1)))
+         )
+  )
+
+(use-package org-agenda
+  :straight (:type built-in)
+  ;; org includes org-agenda
+  :after (org)
+  :config
+
   (defmacro define-org-quick-command (new-func org-func)
     `(defun ,new-func ()
       ,(format "Call %s with large GC threshold and some modes disabled. It speeds up %s." org-func org-func)
@@ -1710,36 +1745,10 @@ If the file is new, it will be populated with a default template."
   (define-org-quick-command org-agenda-quick org-agenda)
   (define-org-quick-command org-set-tags-command-quick org-set-tags-command)
 
-  :bind (("C-c c" . 'org-capture)
-         ("C-c a" . 'org-agenda-quick)
-         ("C-M-c" . 'org/note-right-now)
-         ("C-c C-q" . 'org-set-tags-command-quick)
-         ("C-c /" . 'consult-org-agenda)
-         ("C-c s" . 'org-store-link)
-         :map org-mode-map
-         ("M-e" . 'my-org-mode-wrap-inline-code)
-         ("C-c /" . 'consult-org-agenda)
-         ("C-c s" . 'org-store-link))
-  :hook ((org-mode . (lambda ()
-                       ;; To wrap texts
-                       (visual-line-mode)
-                       ;; Show images inline automatically
-                       (setq org-startup-with-inline-images t)
-                       ;; Enable only under org-directory
-                       (when (and buffer-file-name
-                                  (string-prefix-p org-directory
-                                                   (file-name-directory buffer-file-name)))
-                         ;; Stop using GAC because iCloud should synchronize the org directory.
-                         ;; (git-auto-commit-mode t)
-                         ;; (setq gac-automatically-push-p t)
-                         ;; (setq gac-automatically-add-new-files-p t)
-                         ;; (setq gac-debounce-interval (* 60 5)) ; 5 minutes
-                       )))
-         (org-agenda-mode . (lambda ()
-                              (display-line-numbers-mode -1)
-                              (display-fill-column-indicator-mode -1)))
-         )
+  :bind (("C-c a" . 'org-agenda-quick)
+         ("C-c C-q" . 'org-set-tags-command-quick))
   )
+
 
 (use-package org-ai :ensure t :after org
   ;; C-c C-c (=org-ai-complete-block) to get AI response.
