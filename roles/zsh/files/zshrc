@@ -645,3 +645,10 @@ case ":$PATH:" in
 esac
 fi
 # pnpm end
+
+if command -v ghq > /dev/null 2>&1; then
+  GHQ_UTILS_PATH="$(ghq root)/github.com/garaemon/ghq-utils/ghq-utils.sh"
+  if [ -e "$GHQ_UTILS_PATH" ]; then
+    source "$GHQ_UTILS_PATH"
+  fi
+fi
