@@ -2349,6 +2349,7 @@ If the file is new, it will be populated with a default template."
   ;; Remove C-h from the original vterm-keymap-exceptions
   (vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
                                   "C-k"))
+  (vterm-always-compile-module t)
   :config
 
   ;; https://github.com/akermu/emacs-libvterm/issues/304#issuecomment-621617817
