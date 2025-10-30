@@ -2358,6 +2358,7 @@ If the file is new, it will be populated with a default template."
   ;; Remove C-h from the original vterm-keymap-exceptions
   (vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
                                   "C-k"))
+  (vterm-always-compile-module t)
   :config
 
   ;; https://github.com/akermu/emacs-libvterm/issues/304#issuecomment-621617817
@@ -2384,6 +2385,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package multi-vterm :ensure t
+  :after (vterm)
   :config
   ;; Make a new vterm terminal from local computer
   (defun vterm-local ()
@@ -2394,6 +2396,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package vterm-toggle :ensure t
+  :after (vterm)
   :config
   ;; Overwrite vterm-toggle. If the vterm buffer is not focused, focus to the buffer.
   (defun my-vterm-toggle (&optional args)
