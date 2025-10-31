@@ -1576,7 +1576,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (advice-add 'gac-commit :before #'gac-pull-hook)
   )
 
-(use-package org :ensure t
+(use-package org
+  ;; If we build org through straight.el and `:ensure t`, org-mode can be slower than the
+  ;; the built-in version.
+  ;; To prevent straight.el from installing and building from the source code, specify it as
+  ;; built-in.
+  :straight (:type built-in)
   :requires (cl-lib git-auto-commit-mode)
   :init
   (setq org-jouornelly-file
