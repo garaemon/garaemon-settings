@@ -1068,10 +1068,9 @@ unless you specify the optional argument: FORCE-REVERTING to true."
   :after corfu
   :ensure t
   :config
-  ;; (add-hook 'completion-at-point-functions #'cape-dabbrev)
-  ;; (remove-hook 'completion-at-point-functions #'cape-dabbrev)
-  ;; (add-hook 'completion-at-point-functions #'cape-file)
-  ;; (add-hook 'completion-at-point-functions #'cape-elisp-block)
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-emoji)
+  (add-hook 'completion-at-point-functions #'cape-file)
   )
 
 (use-package corfu
