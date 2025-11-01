@@ -1,2 +1,6 @@
 - name: Clone dircolors-solarized using ghq
-  command: ghq get https://github.com/seebi/dircolors-solarized.git
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/seebi/dircolors-solarized.git
+  args:
+    executable: /bin/bash

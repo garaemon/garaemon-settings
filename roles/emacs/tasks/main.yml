@@ -1,5 +1,9 @@
 - name: Get ghq root directory
-  command: ghq root
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq root
+  args:
+    executable: /bin/bash
   register: emacs_ghq_root
   changed_when: false
   failed_when: false
@@ -14,7 +18,11 @@
   register: emacs_d_exists
 
 - name: Clone emacs.d using ghq
-  command: ghq get https://github.com/garaemon/emacs.d
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/garaemon/emacs.d
+  args:
+    executable: /bin/bash
   when: not emacs_d_exists.stat.exists
 
 - name: Check if .emacs.d exists

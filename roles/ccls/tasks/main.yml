@@ -1,5 +1,9 @@
 - name: Get ghq root directory
-  command: ghq root
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq root
+  args:
+    executable: /bin/bash
   register: ccls_ghq_root
   changed_when: false
   failed_when: false
@@ -9,7 +13,11 @@
     ccls_ghq_root_path: "{{ ccls_ghq_root.stdout if ccls_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
 
 - name: Clone ccls using ghq
-  command: ghq get https://github.com/MaskRay/ccls.git
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/MaskRay/ccls.git
+  args:
+    executable: /bin/bash
 
 - name: Create build directory
   file:
