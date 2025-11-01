@@ -23,13 +23,28 @@
       set_fact:
         agg_binary_name: "agg-{{ agg_arch }}-unknown-linux-gnu"
 
+    - name: Create tempfile for agg download
+      tempfile:
+        state: file
+        suffix: agg_binary
+      register: agg_tempfile
+
+    - name: Download latest agg binary
+      get_url:
+        url: "https://github.com/asciinema/agg/releases/latest/download/{{ agg_binary_name }}"
+        dest: "{{ agg_tempfile.path }}"
+        mode: "0755"
+      register: agg_download
+
     - name: Create .local/bin directory
       file:
         path: ~/.local/bin
         state: directory
 
-    - name: Download agg binary to .local/bin
-      get_url:
-        url: "https://github.com/asciinema/agg/releases/latest/download/{{ agg_binary_name }}"
+    - name: Copy agg binary to .local/bin
+      copy:
+        src: "{{ agg_tempfile.path }}"
         dest: ~/.local/bin/agg
         mode: "0755"
+        remote_src: true
+      when: agg_download.changed
