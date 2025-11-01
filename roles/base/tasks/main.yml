@@ -14,7 +14,9 @@
     - base_git_check.rc != 0
 
 - name: Get ghq root directory
-  command: ghq root
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq root
   register: base_ghq_root
   changed_when: false
   failed_when: false
@@ -97,13 +99,17 @@
     base_ssh_auth_working: "{{ 'successfully authenticated' in base_ssh_test.stderr }}"
 
 - name: Clone garaemon-settings using ghq (SSH)
-  command: ghq get git@github.com:garaemon/garaemon-settings.git
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get git@github.com:garaemon/garaemon-settings.git
   when:
     - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - base_ssh_auth_working | bool
 
 - name: Clone garaemon-settings using ghq (HTTPS)
-  command: ghq get https://github.com/garaemon/garaemon-settings.git
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/garaemon/garaemon-settings.git
   when:
     - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - not (base_ssh_auth_working | bool)
