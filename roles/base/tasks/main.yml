@@ -47,6 +47,12 @@
   command: ssh-keygen -R github.com
   ignore_errors: true
 
+- name: Create ~/.ssh directory
+  file:
+    path: ~/.ssh
+    state: directory
+    mode: 700
+
 - name: Add github.com to known_hosts
   shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
 
