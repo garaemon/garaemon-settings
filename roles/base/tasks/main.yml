@@ -43,18 +43,25 @@
   changed_when: false
   when: base_gh_exists.rc == 0
 
-- name: Remove github.com from known_hosts
-  command: ssh-keygen -R github.com
-  ignore_errors: true
-
 - name: Create ~/.ssh directory
   file:
     path: ~/.ssh
     state: directory
-    mode: 700
+    mode: '0700'
+
+- name: Get github.com SSH key
+  command: ssh-keyscan -H github.com
+  register: base_github_key
+  changed_when: false
 
 - name: Add github.com to known_hosts
-  shell: ssh-keyscan -H github.com >> {{ ansible_env.HOME }}/.ssh/known_hosts
+  lineinfile:
+    path: ~/.ssh/known_hosts
+    line: "{{ item }}"
+    create: true
+    mode: '0644'
+  loop: "{{ base_github_key.stdout_lines }}"
+  when: item | length > 0
 
 - name: Check if garaemon-settings repository exists
   stat:
