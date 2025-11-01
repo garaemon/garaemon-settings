@@ -1,4 +1,14 @@
 ---
+- name: Get ghq root directory
+  command: ghq root
+  register: enchant_ghq_root
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path
+  set_fact:
+    enchant_ghq_root_path: "{{ enchant_ghq_root.stdout if enchant_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
 - name: "Install enchant on Debian/Ubuntu"
   apt:
     name: enchant-2
@@ -20,6 +30,6 @@
 
 - name: "Create symlink for en_US.dic"
   file:
-    src: ~/gprog/garaemon-settings/roles/enchant/files/en_US.dic
+    src: "{{ enchant_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/enchant/files/en_US.dic"
     dest: "{{ ansible_env.HOME }}/.config/enchant/en_US.dic"
     state: link

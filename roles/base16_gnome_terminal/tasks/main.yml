@@ -4,11 +4,20 @@
       - uuid-runtime
   become: true
 
-- name: Clone base16-gnome-terminal
-  git:
-    repo: https://github.com/aarowill/base16-gnome-terminal.git
-    dest: ~/gprog/base16-gnome-terminal
+- name: Get ghq root directory
+  command: ghq root
+  register: base16_gnome_terminal_ghq_root
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path
+  set_fact:
+    base16_gnome_terminal_ghq_root_path: "{{ base16_gnome_terminal_ghq_root.stdout if base16_gnome_terminal_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
+- name: Clone base16-gnome-terminal using ghq
+  command: ghq get https://github.com/aarowill/base16-gnome-terminal.git
+
 - name: Execute theme setting script
   command: ./base16-solarized-dark.sh
   args:
-    chdir: ~/gprog/base16-gnome-terminal/color-scripts
+    chdir: "{{ base16_gnome_terminal_ghq_root_path }}/github.com/aarowill/base16-gnome-terminal/color-scripts"

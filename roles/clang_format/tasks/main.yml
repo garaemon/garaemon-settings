@@ -1,3 +1,13 @@
+- name: Get ghq root directory
+  command: ghq root
+  register: clang_format_ghq_root
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path
+  set_fact:
+    clang_format_ghq_root_path: "{{ clang_format_ghq_root.stdout if clang_format_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
 - name: Install clang-format
   apt:
     name:
@@ -11,7 +21,7 @@
   register: clang_format_stat
 
 - name: Check file differences for clang-format
-  command: diff ~/.clang-format ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
+  command: diff ~/.clang-format "{{ clang_format_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/clang_format/files/clang-format"
   register: clang_format_diff
   failed_when: false
   changed_when: false
@@ -28,6 +38,6 @@
 
 - name: Create symlink for clang-format
   file:
-    src: ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
+    src: "{{ clang_format_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/clang_format/files/clang-format"
     dest: ~/.clang-format
     state: link

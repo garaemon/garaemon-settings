@@ -1,3 +1,13 @@
+- name: Get ghq root directory
+  command: ghq root
+  register: ghostty_ghq_root
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path
+  set_fact:
+    ghostty_ghq_root_path: "{{ ghostty_ghq_root.stdout if ghostty_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
 - name: Configure Ghostty on Debian/Ubuntu
   when: ansible_os_family == 'Debian'
   block:
@@ -13,7 +23,9 @@
       register: ghostty_config_stat_debian
 
     - name: Check file differences for ghostty config
-      command: diff "{{ ansible_env.HOME }}/.config/ghostty/config" ~/gprog/garaemon-settings/roles/ghostty/files/config
+      command: >
+        diff "{{ ansible_env.HOME }}/.config/ghostty/config"
+        "{{ ghostty_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
       register: ghostty_config_diff_debian
       failed_when: false
       changed_when: false
@@ -30,7 +42,7 @@
 
     - name: Create symlink for ghostty config
       file:
-        src: ~/gprog/garaemon-settings/roles/ghostty/files/config
+        src: "{{ ghostty_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
         dest: "{{ ansible_env.HOME }}/.config/ghostty/config"
         state: link
 
@@ -50,7 +62,9 @@
       register: ghostty_config_stat
 
     - name: Check file differences for ghostty config
-      command: diff "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config" ~/gprog/garaemon-settings/roles/ghostty/files/config
+      command: >
+        diff "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        "{{ ghostty_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
       register: ghostty_config_diff
       failed_when: false
       changed_when: false
@@ -67,6 +81,6 @@
 
     - name: Create symlink for ghostty config
       file:
-        src: ~/gprog/garaemon-settings/roles/ghostty/files/config
+        src: "{{ ghostty_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
         dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         state: link

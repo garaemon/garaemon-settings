@@ -1,3 +1,13 @@
+- name: Get ghq root directory
+  command: ghq root
+  register: git_ghq_root
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path
+  set_fact:
+    git_ghq_root_path: "{{ git_ghq_root.stdout if git_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
 - name: Check if git is installed
   apt:
     name: git
@@ -131,7 +141,7 @@
   register: git_gitignore_stat
 
 - name: Check file differences for gitignore
-  command: diff ~/.gitignore ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
+  command: diff ~/.gitignore "{{ git_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/git/tasks/files/gitignore"
   register: git_gitignore_diff
   failed_when: false
   changed_when: false
@@ -148,6 +158,6 @@
 
 - name: Create symlink for global gitignore
   file:
-    src: ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
+    src: "{{ git_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/git/tasks/files/gitignore"
     dest: ~/.gitignore
     state: link

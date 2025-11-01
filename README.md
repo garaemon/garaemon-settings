@@ -5,15 +5,15 @@ some script to setup garaemon's environment
 ## INSTALL
 
 ```sh
-git clone git@github.com:garaemon/garaemon-settings.git
-cd garaemon-settings
+ghq get git@github.com:garaemon/garaemon-settings.git
+cd $(ghq root)/github.com/garaemon/garaemon-settings
 ansible-playbook -i localhost, -c local main.yml --ask-become-pass
 ```
 
 ## Minimal Setup
 
 ```sh
-git clone git@github.com:garaemon/garaemon-settings.git
-cd garaemon-settings
+ghq get git@github.com:garaemon/garaemon-settings.git
+cd $(ghq root)/github.com/garaemon/garaemon-settings
 ansible-playbook -i localhost, -c local minimal.yml --ask-become-pass
 ```
