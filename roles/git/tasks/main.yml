@@ -131,7 +131,7 @@
   register: git_gitignore_stat
 
 - name: Check file differences for gitignore
-  command: diff ~/.gitignore ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
+  command: diff ~/.gitignore "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/git/tasks/files/gitignore"
   register: git_gitignore_diff
   failed_when: false
   changed_when: false
@@ -148,6 +148,6 @@
 
 - name: Create symlink for global gitignore
   file:
-    src: ~/gprog/garaemon-settings/roles/git/tasks/files/gitignore
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/git/tasks/files/gitignore"
     dest: ~/.gitignore
     state: link

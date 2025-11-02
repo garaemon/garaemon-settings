@@ -151,21 +151,28 @@ if which starship >/dev/null 2>&1; then
 fi
 
 if [[ ! -e ${HOME}/.zsh ]]; then
-  git clone https://github.com/rupa/z.git $HOME/.zsh
+  ghq get https://github.com/rupa/z.git
+  ln -s $(ghq root)/github.com/rupa/z ${HOME}/.zsh
 fi
 source $HOME/.zsh/z.sh
 compctl -U -K _z_zsh_tab_completion z
 
+if command -v ghq > /dev/null 2>&1; then
+  GHQ_ROOT=$(ghq root)
+else
+  GHQ_ROOT=$HOME/ghq
+fi
+
 if [ $(uname) != Darwin ]; then
-  eval $(dircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light)
+  eval $(dircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
   alias ls="ls -AF --color=auto"
 else
-  eval $(gdircolors $HOME/gprog/dircolors-solarized/dircolors.ansi-light)
+  eval $(gdircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
   alias ls="gls -AF --color=auto"
 fi
 
-if [ -f $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
-  source $HOME/gprog/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+if [ -f ${GHQ_ROOT}/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+  source ${GHQ_ROOT}/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 git_delete_all_branched() {
@@ -208,10 +215,18 @@ function git-worktree-add-with-branch() {
 }
 
 
-if [[ ! -e $HOME/.local/share/diff-so-fancy ]]; then
-  git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/.local/share/diff-so-fancy
+if command -v ghq > /dev/null 2>&1; then
+  if [[ ! -e $(ghq root)/github.com/so-fancy/diff-so-fancy ]]; then
+    ghq get https://github.com/so-fancy/diff-so-fancy.git
+  fi
+  export PATH=$PATH:$(ghq root)/github.com/so-fancy/diff-so-fancy
+else
+  if [[ ! -e $HOME/ghq/github.com/so-fancy/diff-so-fancy ]]; then
+    mkdir -p $HOME/ghq/github.com/so-fancy
+    git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/ghq/github.com/so-fancy/diff-so-fancy
+  fi
+  export PATH=$PATH:$HOME/ghq/github.com/so-fancy/diff-so-fancy
 fi
-export PATH=$PATH:$HOME/.local/share/diff-so-fancy
 
 # for emacs
 if [ -e $HOME/.emacs.d ]; then

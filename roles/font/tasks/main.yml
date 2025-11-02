@@ -4,20 +4,24 @@
     state: directory
     mode: '0755'
 
-- name: Clone RictyDiminished
-  git:
-    repo: https://github.com/edihbrandon/RictyDiminished.git
-    dest: ~/gprog/RictyDiminished
+- name: Clone RictyDiminished using ghq
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/edihbrandon/RictyDiminished.git
+  args:
+    executable: /bin/bash
+
 - name: Create ~/.fonts
   file:
     path: ~/.fonts
     state: directory
+
 - name: Copy RictyDiminished .ttf files to ~/.fonts
   copy:
     src: "{{ item }}"
     dest: "{{ font_install_dir }}"
   with_fileglob:
-    - ~/gprog/RictyDiminished/*.ttf
+    - "{{ ghq_root_path }}/github.com/edihbrandon/RictyDiminished/*.ttf"
 
 - name: Check if Monaspace Nerd Fonts are already installed
   ansible.builtin.stat:

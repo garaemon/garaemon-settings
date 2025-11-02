@@ -1,10 +1,13 @@
-- name: Clone ccls
-  git:
-    repo: https://github.com/MaskRay/ccls.git
-    dest: ~/gprog/ccls
+- name: Clone ccls using ghq
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/MaskRay/ccls.git
+  args:
+    executable: /bin/bash
+
 - name: Create build directory
   file:
-    path: ~/gprog/ccls/build
+    path: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
     state: directory
 - name: Install clang
   apt:
@@ -25,8 +28,8 @@
         -DLLVM_BUILD_INCLUDE_DIR=/usr/include/llvm-10/
         -DCMAKE_INSTALL_PREFIX=$HOME/.local
   args:
-    chdir: ~/gprog/ccls/build
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
 - name: Build and install ccls
   command: cmake --build Release --target install
   args:
-    chdir: ~/gprog/ccls/build
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
