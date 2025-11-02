@@ -4,20 +4,6 @@
     state: directory
     mode: '0755'
 
-- name: Get ghq root directory
-  shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
-    ghq root
-  args:
-    executable: /bin/bash
-  register: font_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    font_ghq_root_path: "{{ font_ghq_root.stdout if font_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Clone RictyDiminished using ghq
   shell: |
     eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
@@ -35,7 +21,7 @@
     src: "{{ item }}"
     dest: "{{ font_install_dir }}"
   with_fileglob:
-    - "{{ font_ghq_root_path }}/github.com/edihbrandon/RictyDiminished/*.ttf"
+    - "{{ ghq_root_path }}/github.com/edihbrandon/RictyDiminished/*.ttf"
 
 - name: Check if Monaspace Nerd Fonts are already installed
   ansible.builtin.stat:

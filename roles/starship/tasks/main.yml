@@ -1,13 +1,3 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: starship_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    starship_ghq_root_path: "{{ starship_ghq_root.stdout if starship_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Check if starship is installed or not
   command: which starship
   ignore_errors: true
@@ -54,7 +44,7 @@
 - name: Check file differences for starship.toml
   command: >
     diff '{{ ansible_env.HOME }}/.config/starship.toml'
-    "{{ starship_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
+    "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
   register: starship_toml_diff
   failed_when: false
   changed_when: false
@@ -73,6 +63,6 @@
 
 - name: Create symlink for starship.toml
   file:
-    src: "{{ starship_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
     state: link

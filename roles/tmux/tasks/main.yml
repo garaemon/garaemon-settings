@@ -1,20 +1,10 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: tmux_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    tmux_ghq_root_path: "{{ tmux_ghq_root.stdout if tmux_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Check if tmux.conf exists
   stat:
     path: ~/.tmux.conf
   register: tmux_conf_stat
 
 - name: Check file differences for tmux.conf
-  command: diff ~/.tmux.conf "{{ tmux_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
+  command: diff ~/.tmux.conf "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
   register: tmux_conf_diff
   failed_when: false
   changed_when: false
@@ -31,6 +21,6 @@
 
 - name: Create symlink for tmux.conf
   file:
-    src: "{{ tmux_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
     dest: ~/.tmux.conf
     state: link

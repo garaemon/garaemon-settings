@@ -1,20 +1,10 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: tig_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    tig_ghq_root_path: "{{ tig_ghq_root.stdout if tig_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Check if tigrc exists
   stat:
     path: ~/.tigrc
   register: tig_tigrc_stat
 
 - name: Check file differences for tigrc
-  command: diff ~/.tigrc "{{ tig_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
+  command: diff ~/.tigrc "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
   register: tig_tigrc_diff
   failed_when: false
   changed_when: false
@@ -31,6 +21,6 @@
 
 - name: Create symlink for tigrc
   file:
-    src: "{{ tig_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
     dest: ~/.tigrc
     state: link

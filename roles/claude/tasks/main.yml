@@ -1,13 +1,3 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: claude_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    claude_ghq_root_path: "{{ claude_ghq_root.stdout if claude_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Ensure .claude directory exists
   file:
     path: ~/.claude
@@ -22,7 +12,7 @@
 
 # TODO: it does not work if we run this role for a different host
 - name: Check file differences for CLAUDE.md
-  command: diff ~/.claude/CLAUDE.md "{{ claude_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/CLAUDE.md"
+  command: diff ~/.claude/CLAUDE.md "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/CLAUDE.md"
   register: claude_md_diff
   failed_when: false
   changed_when: false
@@ -39,7 +29,7 @@
 
 - name: Create symlink for CLAUDE.md
   file:
-    src: "{{ claude_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/CLAUDE.md"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/CLAUDE.md"
     dest: ~/.claude/CLAUDE.md
     state: link
 
@@ -55,7 +45,7 @@
   register: claude_create_pr_stat
 
 - name: Check file differences for create-pr.md
-  command: diff ~/.claude/commands/create-pr.md "{{ claude_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/create-pr.md"
+  command: diff ~/.claude/commands/create-pr.md "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/create-pr.md"
   register: claude_create_pr_diff
   failed_when: false
   changed_when: false
@@ -72,7 +62,7 @@
 
 - name: Create symlink for create-pr.md
   file:
-    src: "{{ claude_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/create-pr.md"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/claude/files/create-pr.md"
     dest: ~/.claude/commands/create-pr.md
     state: link
 

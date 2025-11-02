@@ -1,20 +1,10 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: vim_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    vim_ghq_root_path: "{{ vim_ghq_root.stdout if vim_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Check if vimrc exists
   stat:
     path: ~/.vimrc
   register: vim_vimrc_stat
 
 - name: Check file differences for vimrc
-  command: diff ~/.vimrc "{{ vim_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
+  command: diff ~/.vimrc "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
   register: vim_vimrc_diff
   failed_when: false
   changed_when: false
@@ -31,6 +21,6 @@
 
 - name: Create symlink for vimrc
   file:
-    src: "{{ vim_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
     dest: ~/.vimrc
     state: link

@@ -4,19 +4,6 @@
 #     . ~/.pyenv/.pyenvrc &&
 #     pyenv shell 3.7.2
 #     pip install 'python-language-server[all]'
-- name: Get ghq root directory
-  command: ghq root
-  register: python_language_server_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    python_language_server_ghq_root_path: >-
-      {{ python_language_server_ghq_root.stdout
-      if python_language_server_ghq_root.rc == 0
-      else ansible_env.HOME + '/ghq' }}
-
 - name: Check if pycodestyle config exists
   stat:
     path: ~/.config/pycodestyle
@@ -25,7 +12,7 @@
 - name: Check file differences for pycodestyle
   command: >
     diff ~/.config/pycodestyle
-    "{{ python_language_server_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
+    "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
   register: python_language_server_pycodestyle_diff
   failed_when: false
   changed_when: false
@@ -42,6 +29,6 @@
 
 - name: Create symlink for pycodestyle config
   file:
-    src: "{{ python_language_server_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
     dest: ~/.config/pycodestyle
     state: link

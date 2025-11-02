@@ -1,13 +1,3 @@
-- name: Get ghq root directory
-  command: ghq root
-  register: karabiner_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    karabiner_ghq_root_path: "{{ karabiner_ghq_root.stdout if karabiner_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Create karabiner config directory
   file:
     path: ~/.config/karabiner
@@ -21,7 +11,7 @@
   when: ansible_os_family == "Darwin"
 
 - name: Check file differences for karabiner config
-  command: diff ~/.config/karabiner/karabiner.json "{{ karabiner_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
+  command: diff ~/.config/karabiner/karabiner.json "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
   register: karabiner_diff
   failed_when: false
   changed_when: false
@@ -41,7 +31,7 @@
 
 - name: Create symlink for karabiner configuration
   file:
-    src: "{{ karabiner_ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
     dest: ~/.config/karabiner/karabiner.json
     state: link
   when: ansible_os_family == "Darwin"

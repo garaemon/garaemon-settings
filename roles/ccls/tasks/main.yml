@@ -1,17 +1,3 @@
-- name: Get ghq root directory
-  shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
-    ghq root
-  args:
-    executable: /bin/bash
-  register: ccls_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    ccls_ghq_root_path: "{{ ccls_ghq_root.stdout if ccls_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Clone ccls using ghq
   shell: |
     eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
@@ -21,7 +7,7 @@
 
 - name: Create build directory
   file:
-    path: "{{ ccls_ghq_root_path }}/github.com/MaskRay/ccls/build"
+    path: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
     state: directory
 - name: Install clang
   apt:
@@ -42,8 +28,8 @@
         -DLLVM_BUILD_INCLUDE_DIR=/usr/include/llvm-10/
         -DCMAKE_INSTALL_PREFIX=$HOME/.local
   args:
-    chdir: "{{ ccls_ghq_root_path }}/github.com/MaskRay/ccls/build"
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
 - name: Build and install ccls
   command: cmake --build Release --target install
   args:
-    chdir: "{{ ccls_ghq_root_path }}/github.com/MaskRay/ccls/build"
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"

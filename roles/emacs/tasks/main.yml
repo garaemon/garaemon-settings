@@ -1,20 +1,6 @@
-- name: Get ghq root directory
-  shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
-    ghq root
-  args:
-    executable: /bin/bash
-  register: emacs_ghq_root
-  changed_when: false
-  failed_when: false
-
-- name: Set ghq root path
-  set_fact:
-    emacs_ghq_root_path: "{{ emacs_ghq_root.stdout if emacs_ghq_root.rc == 0 else ansible_env.HOME + '/ghq' }}"
-
 - name: Check if emacs.d already exists
   stat:
-    path: "{{ emacs_ghq_root_path }}/github.com/garaemon/emacs.d"
+    path: "{{ ghq_root_path }}/github.com/garaemon/emacs.d"
   register: emacs_d_exists
 
 - name: Clone emacs.d using ghq
@@ -31,7 +17,7 @@
   register: emacs_d_link_stat
 
 - name: Check if .emacs.d directories are identical
-  command: diff -r ~/.emacs.d {{ emacs_ghq_root_path }}/github.com/garaemon/emacs.d
+  command: diff -r ~/.emacs.d {{ ghq_root_path }}/github.com/garaemon/emacs.d
   register: emacs_d_diff
   failed_when: false
   changed_when: false
@@ -48,7 +34,7 @@
 
 - name: Symlink for emacs.d
   file:
-    src: "{{ emacs_ghq_root_path }}/github.com/garaemon/emacs.d"
+    src: "{{ ghq_root_path }}/github.com/garaemon/emacs.d"
     dest: ~/.emacs.d
     state: link
 
@@ -134,16 +120,16 @@
         - name: Clone and checkout specific version of emacs
           ansible.builtin.git:
             repo: https://github.com/emacs-mirror/emacs
-            dest: "{{ emacs_ghq_root_path }}/github.com/emacs-mirror/emacs"
+            dest: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
             version: "{{ emacs_version }}"
         - name: Prepare configure for the latest emacs
           command: ./autogen.sh
           args:
-            chdir: "{{ emacs_ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
         - name: Configure the latest emacs
           command: ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
           args:
-            chdir: "{{ emacs_ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
         - name: Decide parallel job numbers
           set_fact:
             emacs_build_parallel_jobs:
@@ -154,8 +140,8 @@
         - name: Build the latest emacs
           command: make CC="ccache gcc" CXX="ccache g++" -j {{ emacs_build_parallel_jobs }}
           args:
-            chdir: "{{ emacs_ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
         - name: Install the latest emacs
           command: make install
           args:
-            chdir: "{{ emacs_ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
