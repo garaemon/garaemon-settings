@@ -220,23 +220,6 @@ if [ -e $HOME/.emacs.d ]; then
        PATH >~/.emacs.d/shellenv.el
 fi
 
-# zplug
-# if [ -e $HOME/.zshrc.zplug ]; then
-#   echo-ttyrec-safe loading customizing setup file for zplug...
-#   source $HOME/.zshrc.zplug
-# fi
-
-function restart-dns() {
-  # Restart DNS Cache. It is only available on mac os.
-  if [ "$(uname)" = "Darwin" ]; then
-    echo Restarting dns ...
-    sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
-    sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist
-  else
-    echo "It's not mac os, skip"
-  fi
-}
-
 # Google Cloud SDK
 if [ -e $HOME/google-cloud-sdk/completion.zsh.inc ]; then
   source $HOME/google-cloud-sdk/completion.zsh.inc
@@ -307,10 +290,6 @@ if (( $+commands[peco] )); then
   bindkey '^R' peco_history_search
 fi
 
-# TODO: add completion
-function roslaunch-args() {
-  roslaunch $@ --args $(roslaunch $@ --nodes | peco)
-}
 export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message}'
 
 if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
@@ -464,12 +443,6 @@ alias git >/dev/null
 if [ $? = 0 ]; then
   unalias git
 fi
-
-# Alias to use `gh` command for github enterprise environment.
-function ghe()
-{
-  GH_HOST=github.gitai.tech gh $@
-}
 
 # Run eval $(gh copilot alias -- zsh). However, `gh copilot alias`` is slow.
 # So, we cache the result to $HOME/.zshrc.copilot.
