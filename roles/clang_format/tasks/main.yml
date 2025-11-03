@@ -11,7 +11,7 @@
   register: clang_format_stat
 
 - name: Check file differences for clang-format
-  command: diff ~/.clang-format ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
+  command: diff ~/.clang-format "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/clang_format/files/clang-format"
   register: clang_format_diff
   failed_when: false
   changed_when: false
@@ -28,6 +28,6 @@
 
 - name: Create symlink for clang-format
   file:
-    src: ~/gprog/garaemon-settings/roles/clang_format/files/clang-format
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/clang_format/files/clang-format"
     dest: ~/.clang-format
     state: link

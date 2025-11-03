@@ -13,9 +13,9 @@
     - ansible_os_family == "Debian"
     - base_git_check.rc != 0
 
-- name: Create ~/gprog directory
+- name: Ensure ghq root directory exists
   file:
-    path: ~/gprog
+    path: "{{ ghq_root_path }}"
     state: directory
 
 - name: Get hostname
@@ -65,15 +65,12 @@
 
 - name: Check if garaemon-settings repository exists
   stat:
-    path: ~/gprog/garaemon-settings/.git
+    path: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/.git"
   register: base_repo_exists
 
-- name: Get current branch of garaemon-settings
-  git:
-    repo: git@github.com:garaemon/garaemon-settings.git
-    dest: ~/gprog/garaemon-settings
-    update: false
-  register: base_git_status
+- name: Get current branch of garaemon-settings  # noqa: command-instead-of-module
+  command: git -C "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings" rev-parse --abbrev-ref HEAD
+  register: base_current_branch
   ignore_errors: true
   changed_when: false
   when: base_repo_exists.stat.exists
@@ -88,18 +85,31 @@
   set_fact:
     base_ssh_auth_working: "{{ 'successfully authenticated' in base_ssh_test.stderr }}"
 
-- name: Update garaemon-settings only if on master branch (SSH)
-  git:
-    repo: git@github.com:garaemon/garaemon-settings.git
-    dest: ~/gprog/garaemon-settings
+- name: Clone garaemon-settings using ghq (SSH)
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get git@github.com:garaemon/garaemon-settings.git
+  args:
+    executable: /bin/bash
   when:
-    - not base_repo_exists.stat.exists or (base_git_status is defined and base_git_status.after == "master")
+    - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - base_ssh_auth_working | bool
 
-- name: Update garaemon-settings only if on master branch (HTTPS)
-  git:
-    repo: https://github.com/garaemon/garaemon-settings.git
-    dest: ~/gprog/garaemon-settings
+- name: Clone garaemon-settings using ghq (HTTPS)
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq get https://github.com/garaemon/garaemon-settings.git
+  args:
+    executable: /bin/bash
   when:
-    - not base_repo_exists.stat.exists or (base_git_status is defined and base_git_status.after == "master")
+    - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - not (base_ssh_auth_working | bool)
+
+- name: Update garaemon-settings repository
+  ansible.builtin.git:
+    repo: "{{ 'git@github.com:garaemon/garaemon-settings.git' if base_ssh_auth_working | bool else 'https://github.com/garaemon/garaemon-settings.git' }}"
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: true
+  when:
+    - base_repo_exists.stat.exists
+    - base_current_branch is defined and base_current_branch.stdout == "master"

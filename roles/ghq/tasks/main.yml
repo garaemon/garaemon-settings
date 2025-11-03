@@ -1,0 +1,31 @@
+- name: Check if ghq is already installed
+  command: which ghq
+  register: ghq_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install ghq via mise
+  command: mise install ghq@{{ ghq_version }}
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  when: ghq_check.rc != 0
+
+- name: Set ghq as global version in mise
+  command: mise global ghq@{{ ghq_version }}
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  when: ghq_check.rc != 0
+
+- name: Get ghq root directory
+  shell: |
+    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    ghq root
+  args:
+    executable: /bin/bash
+  register: ghq_root_result
+  changed_when: false
+  failed_when: false
+
+- name: Set ghq root path as global variable
+  set_fact:
+    ghq_root_path: "{{ ghq_root_result.stdout if ghq_root_result.rc == 0 else ansible_env.HOME + '/ghq' }}"
