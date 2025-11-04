@@ -83,6 +83,7 @@
           apt:
             name:
               - build-essential
+              - texinfo
               - libgccjit-12-dev
               - ccache
               - libgnutls28-dev
@@ -102,6 +103,7 @@
           apt:
             name:
               - build-essential
+              - texinfo
               - libgccjit-14-dev
               - ccache
               - libgnutls28-dev
