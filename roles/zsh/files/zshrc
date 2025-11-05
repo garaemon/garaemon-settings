@@ -435,6 +435,61 @@ git-branch-for-pr() {
   git checkout "${CURRENT_BRANCH_NAME}"
 }
 
+# Convert GitHub HTTP URL to SSH URL
+# Usage:
+#   github-http-to-ssh https://github.com/user/repo.git
+#   github-http-to-ssh origin  # Convert the specified remote URL
+#   github-http-to-ssh         # Convert origin remote URL
+function github-http-to-ssh() {
+  local input="${1:-origin}"
+  local url=""
+
+  # Check if input is a URL or a remote name
+  if [[ "$input" =~ ^https?:// ]]; then
+    # Input is a URL
+    url="$input"
+  else
+    # Input is a remote name, get its URL
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+      echo "Error: Not a git repository"
+      return 1
+    fi
+
+    url=$(git remote get-url "$input" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+      echo "Error: Remote '$input' not found"
+      return 1
+    fi
+  fi
+
+  # Convert HTTP/HTTPS URL to SSH format
+  if [[ "$url" =~ ^https?://github\.com/ ]]; then
+    # Extract user and repo from URL
+    # Handles both https://github.com/user/repo.git and https://github.com/user/repo
+    local ssh_url=$(echo "$url" | sed -E 's|^https?://github\.com/|git@github.com:|')
+
+    # If input was a remote name, update it
+    if [[ ! "$input" =~ ^https?:// ]]; then
+      echo "Converting remote '$input' from:"
+      echo "  $url"
+      echo "to:"
+      echo "  $ssh_url"
+      git remote set-url "$input" "$ssh_url"
+      echo "Remote '$input' updated successfully"
+    else
+      # Just output the converted URL
+      echo "$ssh_url"
+    fi
+  else
+    if [[ "$url" =~ ^git@github\.com: ]]; then
+      echo "URL is already in SSH format: $url"
+    else
+      echo "Error: Not a GitHub HTTP/HTTPS URL: $url"
+      return 1
+    fi
+  fi
+}
+
 function roscode() {
   (roscd $1 && code .)
 }
