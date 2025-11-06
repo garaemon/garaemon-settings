@@ -195,8 +195,6 @@
               - libtdb1
               - libthai0
               - libtiff-dev
-              - libtiff5
-              - libtiff5-dev
               - libtree-sitter-dev
               - libvorbis0a
               - libvorbisenc2
@@ -362,8 +360,6 @@
               - libtdb1
               - libthai0
               - libtiff-dev
-              - libtiff6
-              - libtiff6-dev
               - libtree-sitter-dev
               - libvorbis0a
               - libvorbisenc2
