@@ -101,7 +101,6 @@
               - ibus-gtk3
               - imagemagick
               - libacl1-dev
-              - libasound2
               - libasound2-dev
               - libaspell15
               - libasyncns0
@@ -266,7 +265,6 @@
               - ibus-gtk3
               - imagemagick
               - libacl1-dev
-              - libasound2
               - libasound2-dev
               - libaspell15
               - libasyncns0
