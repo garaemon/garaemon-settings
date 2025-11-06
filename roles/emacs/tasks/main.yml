@@ -290,7 +290,7 @@
               - libdrm2
               - libegl1
               - libepoxy0
-              - libflac8
+              - libflac12
               - libfontconfig1
               - libfreetype6
               - libgbm1
