@@ -244,7 +244,8 @@
               - libgccjit-12-dev
               - ccache
               - libtool # for libvterm
-              - libtool-bin # for libvterm          become: true
+              - libtool-bin # for libvterm
+          become: true
           when: ansible_distribution_version == '22.04'
         - name: Install packages to build emacs (Ubuntu 24.04)
           apt:
