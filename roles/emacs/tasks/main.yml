@@ -79,44 +79,338 @@
               )
         - emacs_build_emacs
       block:
+      # Refer to https://github.com/KarimAziev/build-emacs/blob/main/build-emacs.sh
         - name: Install packages to build emacs (Ubuntu 22.04)
           apt:
             name:
+              - autoconf
+              - automake
+              - bsd-mailx
               - build-essential
+              - clang
+              - dbus-x11
+              - debhelper
+              - dpkg-dev
+              - g++-10
+              - gawk
+              - gcc
+              - gcc-10
+              - gnutls-bin
+              - gvfs
+              - heif-gdk-pixbuf
+              - ibus-gtk3
+              - imagemagick
+              - libacl1-dev
+              - libasound2
+              - libasound2-dev
+              - libaspell15
+              - libasyncns0
+              - libatk-bridge2.0-0
+              - libatk1.0-0
+              - libatspi2.0-0
+              - libbrotli1
+              - libc6
+              - libc6-dev
+              - libcairo-gobject2
+              - libcairo2
+              - libcanberra-gtk3-0
+              - libcanberra-gtk3-module
+              - libcanberra0
+              - libclang-dev
+              - libconfig-dev
+              - libdatrie1
+              - libdb5.3
+              - libdbus-1-dev
+              - libdrm2
+              - libegl1
+              - libepoxy0
+              - libflac8
+              - libfontconfig1
+              - libfreetype6
+              - libgbm1
+              - libgcc-s1
+              - libgccjit0
+              - libgdk-pixbuf2.0-0
+              - libgif-dev
+              - libgif7
+              - libgl1
+              - libglvnd0
+              - libglx0
+              - libgnutls28-dev
+              - libgpm-dev
+              - libgpm2
+              - libgraphite2-3
+              - libgstreamer-gl1.0-0
+              - libgstreamer-plugins-base1.0-0
+              - libgstreamer1.0-0
+              - libgtk-3-0
+              - libgtk-3-dev
+              - libgudev-1.0-0
+              - libharfbuzz-dev
+              - libharfbuzz-icu0
+              - libharfbuzz0b
+              - libhyphen0
+              - libibus-1.0-5
+              - libice6
+              - libjbig0
+              - libjpeg-dev
+              - libjpeg-turbo8
+              - liblcms2-2
+              - liblcms2-dev
+              - liblockfile-dev
+              - liblockfile1
+              - libltdl7
+              - libm17n-0
+              - libm17n-dev
+              - libmagickwand-dev
+              - libmpc3
+              - libmpfr6
+              - libncurses-dev
+              - libncurses5-dev
+              - libnotify4
+              - libnss-mdns
+              - libnss-myhostname
+              - libnss-systemd
+              - libogg0
+              - liborc-0.4-0
+              - liboss4-salsa2
+              - libotf-dev
+              - libpango-1.0-0
+              - libpangocairo-1.0-0
+              - libpangoft2-1.0-0
+              - libpixman-1-0
+              - libpng-dev
+              - libpng16-16
+              - libpulse0
+              - librsvg2-2
+              - librsvg2-dev
+              - libsasl2-2
+              - libsecret-1-0
+              - libselinux1-dev
+              - libsm6
+              - libsndfile1
+              - libsoup2.4-1
+              - libstdc++6
+              - libsystemd-dev
+              - libtdb1
+              - libthai0
+              - libtiff-dev
+              - libtiff5
+              - libtiff5-dev
+              - libtree-sitter-dev
+              - libvorbis0a
+              - libvorbisenc2
+              - libvorbisfile3
+              - libwayland-client0
+              - libwayland-cursor0
+              - libwayland-egl1
+              - libwayland-server0
+              - libwebpdemux2
+              - libwoff1
+              - libx11-6
+              - libx11-dev
+              - libx11-xcb1
+              - libxau6
+              - libxcb-render0
+              - libxcb-shm0
+              - libxcb1
+              - libxcomposite1
+              - libxcursor1
+              - libxdamage1
+              - libxdmcp6
+              - libxext6
+              - libxfixes3
+              - libxft-dev
+              - libxi6
+              - libxinerama1
+              - libxkbcommon0
+              - libxml2
+              - libxml2-dev
+              - libxpm-dev
+              - libxpm4
+              - libxrandr2
+              - libxrender1
+              - libxslt1.1
+              - libxt-dev
+              - libyajl2
+              - make
+              - procps
+              - quilt
+              - sharutils
+              - sqlite3
               - texinfo
+              - xaw3dg-dev
+              - zlib1g-dev
               - libgccjit-12-dev
               - ccache
-              - libgnutls28-dev
-              - libtiff-dev
-              - libxpm-dev
-              - libxaw7-dev
-              - libgif-dev
-              - libgtk-4-dev
-              - libsqlite3-dev
-              - libx11-dev
               - libtool # for libvterm
-              - libtool-bin # for libvterm
-              - libtree-sitter-dev
-          become: true
+              - libtool-bin # for libvterm          become: true
           when: ansible_distribution_version == '22.04'
         - name: Install packages to build emacs (Ubuntu 24.04)
           apt:
             name:
+              - autoconf
+              - automake
+              - bsd-mailx
               - build-essential
+              - clang
+              - dbus-x11
+              - debhelper
+              - dpkg-dev
+              - g++-10
+              - gawk
+              - gcc
+              - gcc-10
+              - gnutls-bin
+              - gvfs
+              - heif-gdk-pixbuf
+              - ibus-gtk3
+              - imagemagick
+              - libacl1-dev
+              - libasound2
+              - libasound2-dev
+              - libaspell15
+              - libasyncns0
+              - libatk-bridge2.0-0
+              - libatk1.0-0
+              - libatspi2.0-0
+              - libbrotli1
+              - libc6
+              - libc6-dev
+              - libcairo-gobject2
+              - libcairo2
+              - libcanberra-gtk3-0
+              - libcanberra-gtk3-module
+              - libcanberra0
+              - libclang-dev
+              - libconfig-dev
+              - libdatrie1
+              - libdb5.3
+              - libdbus-1-dev
+              - libdrm2
+              - libegl1
+              - libepoxy0
+              - libflac8
+              - libfontconfig1
+              - libfreetype6
+              - libgbm1
+              - libgcc-s1
+              - libgccjit0
+              - libgdk-pixbuf2.0-0
+              - libgif-dev
+              - libgif7
+              - libgl1
+              - libglvnd0
+              - libglx0
+              - libgnutls28-dev
+              - libgpm-dev
+              - libgpm2
+              - libgraphite2-3
+              - libgstreamer-gl1.0-0
+              - libgstreamer-plugins-base1.0-0
+              - libgstreamer1.0-0
+              - libgtk-3-0
+              - libgtk-3-dev
+              - libgudev-1.0-0
+              - libharfbuzz-dev
+              - libharfbuzz-icu0
+              - libharfbuzz0b
+              - libhyphen0
+              - libibus-1.0-5
+              - libice6
+              - libjbig0
+              - libjpeg-dev
+              - libjpeg-turbo8
+              - liblcms2-2
+              - liblcms2-dev
+              - liblockfile-dev
+              - liblockfile1
+              - libltdl7
+              - libm17n-0
+              - libm17n-dev
+              - libmagickwand-dev
+              - libmpc3
+              - libmpfr6
+              - libncurses-dev
+              - libncurses5-dev
+              - libnotify4
+              - libnss-mdns
+              - libnss-myhostname
+              - libnss-systemd
+              - libogg0
+              - liborc-0.4-0
+              - liboss4-salsa2
+              - libotf-dev
+              - libpango-1.0-0
+              - libpangocairo-1.0-0
+              - libpangoft2-1.0-0
+              - libpixman-1-0
+              - libpng-dev
+              - libpng16-16
+              - libpulse0
+              - librsvg2-2
+              - librsvg2-dev
+              - libsasl2-2
+              - libsecret-1-0
+              - libselinux1-dev
+              - libsm6
+              - libsndfile1
+              - libsoup2.4-1
+              - libstdc++6
+              - libsystemd-dev
+              - libtdb1
+              - libthai0
+              - libtiff-dev
+              - libtiff5
+              - libtiff5-dev
+              - libtree-sitter-dev
+              - libvorbis0a
+              - libvorbisenc2
+              - libvorbisfile3
+              - libwayland-client0
+              - libwayland-cursor0
+              - libwayland-egl1
+              - libwayland-server0
+              - libwebpdemux2
+              - libwoff1
+              - libx11-6
+              - libx11-dev
+              - libx11-xcb1
+              - libxau6
+              - libxcb-render0
+              - libxcb-shm0
+              - libxcb1
+              - libxcomposite1
+              - libxcursor1
+              - libxdamage1
+              - libxdmcp6
+              - libxext6
+              - libxfixes3
+              - libxft-dev
+              - libxi6
+              - libxinerama1
+              - libxkbcommon0
+              - libxml2
+              - libxml2-dev
+              - libxpm-dev
+              - libxpm4
+              - libxrandr2
+              - libxrender1
+              - libxslt1.1
+              - libxt-dev
+              - libyajl2
+              - make
+              - procps
+              - quilt
+              - sharutils
+              - sqlite3
               - texinfo
+              - xaw3dg-dev
+              - zlib1g-dev
               - libgccjit-14-dev
               - ccache
-              - libgnutls28-dev
-              - libtiff-dev
-              - libxpm-dev
-              - libxaw7-dev
-              - libgif-dev
-              - libgtk-4-dev
-              - libx11-dev
-              - libsqlite3-dev
               - libtool # for libvterm
               - libtool-bin # for libvterm
-              - libtree-sitter-dev
           become: true
           when: ansible_distribution_version == '24.04'
         - name: Clone and checkout specific version of emacs
@@ -129,7 +423,10 @@
           args:
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
         - name: Configure the latest emacs
-          command: ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
+          command: >
+              ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
+              --with-pgtk --with-native-compilation=aot --without-compress-install
+              --with-tree-sitter --with-mailutilsroot
           args:
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
         - name: Decide parallel job numbers
