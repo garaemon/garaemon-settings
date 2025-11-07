@@ -413,21 +413,6 @@
             repo: https://github.com/emacs-mirror/emacs
             dest: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
             version: "{{ emacs_version }}"
-        - name: Prepare configure for the latest emacs
-          command: ./autogen.sh
-          args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
-        - name: Configure the latest emacs
-          command: >
-              ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
-              --with-pgtk --with-native-compilation=aot --without-compress-install
-              --with-tree-sitter --with-mailutilsroot
-          args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
-        - name: Decide parallel job numbers
-          set_fact:
-            emacs_build_parallel_jobs:
-              "{{ [ansible_processor_threads_per_core * ansible_processor_cores, 4] | min }}"
         - name: Get GCC version
           command: gcc -dumpversion
           register: emacs_gcc_version_output
@@ -441,6 +426,23 @@
         - name: Set GCC library path
           set_fact:
             emacs_gccjit_lib_path: "/usr/lib/gcc/{{ emacs_gcc_arch }}-linux-gnu/{{ emacs_gcc_version }}"
+        - name: Prepare configure for the latest emacs
+          command: ./autogen.sh
+          args:
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+        - name: Configure the latest emacs
+          command: >
+              ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
+              --with-pgtk --with-native-compilation=aot --without-compress-install
+              --with-tree-sitter --with-mailutilsroot
+          args:
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+          environment:
+            LD_LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
+        - name: Decide parallel job numbers
+          set_fact:
+            emacs_build_parallel_jobs:
+              "{{ [ansible_processor_threads_per_core * ansible_processor_cores, 4] | min }}"
         - name: Display Emacs build parallel jobs
           debug:
             msg: "make builds emacs with -j {{ emacs_build_parallel_jobs }}"
