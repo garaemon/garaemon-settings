@@ -248,7 +248,18 @@ if alias e >/dev/null; then
   unalias e
 fi
 
+# e is an alias to emacsclient.
 function e() {
+  # If the argument contains :
+  emacsclient -n $(echo $1 | cut -f1 -d:)
+  if [ "$?" != "0" ]; then
+    echo No emacsclient is available
+    return 1
+  fi
+}
+
+# enw is an alias to emacsclient. It also switches the tmux pane to emacs.
+function enw() {
   # If the argument contains :
   emacsclient -n $(echo $1 | cut -f1 -d:)
   if [ "$?" != "0" ]; then
