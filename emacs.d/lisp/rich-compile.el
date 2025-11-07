@@ -48,27 +48,30 @@ PROMPT-CONTRIBUTOR: optional function that returns a string to include in the pr
 
 (defun rich-compile--find-project-root ()
   "Locate the project root for the current buffer.
-   Prioritizes `project.el`, then searches for .git or .venv."
+   Searches upward from current directory, prioritizing package.xml (ROS),
+   then package.json (npm), .venv (Python), and finally .git (git repo)."
   (let ((file-path (buffer-file-name))
         (project-root nil))
     (when file-path
-      ;; 1. Prioritize `project.el` (built-in Emacs 27+)
-      (when (fboundp 'project-current)
-        (let ((proj (project-current)))
-          (when proj
-            (setq project-root (project-root proj)))))
-
-      ;; 2. Fallback if `project.el` is not used or no project found
-      ;; Search for .git, .venv, package.xml, or package.json in parent directories
-      (unless project-root
-        (let ((dir (file-name-directory file-path)))
-          (while (and dir (not (string= dir "/")))
-            (when (or (file-directory-p (expand-file-name ".git" dir))
-                      (file-directory-p (expand-file-name ".venv" dir))
-                      (file-exists-p (expand-file-name "package.xml" dir))
-                      (file-exists-p (expand-file-name "package.json" dir)))
-              (setq project-root dir)
-              (cl-return)) ;; Exit loop
+      ;; Search for project markers in parent directories
+      ;; Priority order: package.xml > package.json > .venv > .git
+      (let ((dir (file-name-directory file-path)))
+        (while (and dir (not (string= dir "/")) (not project-root))
+          (cond
+           ;; 1. Check for package.xml (ROS package) - highest priority
+           ((file-exists-p (expand-file-name "package.xml" dir))
+            (setq project-root dir))
+           ;; 2. Check for package.json (npm package)
+           ((file-exists-p (expand-file-name "package.json" dir))
+            (setq project-root dir))
+           ;; 3. Check for .venv (Python virtual environment)
+           ((file-directory-p (expand-file-name ".venv" dir))
+            (setq project-root dir))
+           ;; 4. Check for .git (git repository) - lowest priority
+           ((file-directory-p (expand-file-name ".git" dir))
+            (setq project-root dir)))
+          ;; Move to parent directory
+          (unless project-root
             (setq dir (file-name-directory (directory-file-name dir)))))))
 
     ;; If no project root found, assume current directory
