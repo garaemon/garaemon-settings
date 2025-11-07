@@ -439,8 +439,6 @@
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LD_LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
         - name: Decide parallel job numbers
           set_fact:
             emacs_build_parallel_jobs:
@@ -454,13 +452,9 @@
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LD_LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
         - name: Install the latest emacs
           command: make install
           args:
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LD_LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
