@@ -219,8 +219,9 @@
   (defvar default-face-height 100)
   (set-face-attribute 'default nil
                       :height default-face-height)    ;font size
-  (if (find-font (font-spec :name "Monaspace Neon NF"))
-      (set-frame-font "Monaspace Neon NF" 12))
+  (let ((font "Monaco Nerd Font Mono"))
+    (if (find-font (font-spec :name font))
+        (set-frame-font font 12)))
   ;; special key as meta
   ;; (setq x-super-keysym 'meta)
   )
@@ -249,8 +250,7 @@
 (when (display-graphic-p)
   (add-to-list 'custom-theme-load-path (concat (file-name-directory load-file-name) "themes"))
   (setq custom-theme-directory (concat (file-name-directory load-file-name) "themes"))
-  (if (not (display-graphic-p))
-      (load-theme 'garaemon-solarized-dark t)))
+  )
 ;;; }}}
 
 ;;; smerge {{{
