@@ -22,8 +22,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Ansible
-        run: pip install --break-system-packages ansible
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible
+
+      - name: Install Ansible (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible
 
       - name: Install ansible galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
@@ -53,8 +64,19 @@ jobs:
         with:
           key: ${{ github.job }}-${{ runner.os }}
 
-      - name: Install Ansible
-        run: pip install --break-system-packages ansible
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible
+
+      - name: Install Ansible (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible
 
       - name: Install ansible galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
