@@ -19,8 +19,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Ansible Lint
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible Lint (GitHub Actions)
+        if: ${{ !env.ACT }}
         run: pip install ansible-lint
+
+      - name: Install Ansible Lint (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible-lint
 
       - name: Lint Ansible Playbooks
         run: ansible-lint
