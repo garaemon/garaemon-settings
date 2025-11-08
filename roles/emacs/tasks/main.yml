@@ -238,7 +238,7 @@
               - texinfo
               - xaw3dg-dev
               - zlib1g-dev
-              - libgccjit-12-dev
+              - libgccjit-11-dev
               - ccache
               - libtool # for libvterm
               - libtool-bin # for libvterm
@@ -402,7 +402,7 @@
               - texinfo
               - xaw3dg-dev
               - zlib1g-dev
-              - libgccjit-14-dev
+              - libgccjit-13-dev
               - ccache
               - libtool # for libvterm
               - libtool-bin # for libvterm
