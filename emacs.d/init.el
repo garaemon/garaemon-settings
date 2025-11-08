@@ -27,27 +27,20 @@
         (message "deleting %s" tramp-old-file)
         (delete-file tramp-old-file))))
 
-;; Set up straight.el
-;; For the first setup, you may have to run M-x straight-pull-recipe-repositories
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el"
-        (or (bound-and-true-p straight-base-dir)
-            user-emacs-directory)))
-      (bootstrap-version 7))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+;; Set up package.el
+(require 'package)
+(setq package-archives
+      '(("gnu" . "https://elpa.gnu.org/packages/")
+        ("melpa" . "https://melpa.org/packages/")))
+(package-initialize)
 
-(straight-use-package 'use-package)
-(setq straight-use-package-by-default t)
-;; (straight-pull-recipe-repositories)
+;; Install use-package if not already installed
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t)
 
 
 ;; minimum settings
@@ -394,7 +387,7 @@
 ;;; }}}
 
 (use-package html
-  :straight (:type built-in)
+  :ensure nil
   :mode
   ("\\.html$" . html-mode)
   ("\\.ejs$" . html-mode)
@@ -414,7 +407,7 @@
 
 ;;; project {{{
 (use-package project
-  :straight (:type built-in)
+  :ensure nil
   :config
   (global-unset-key (kbd "C-x p"))
   ;; C-x p to switch buffer with inverse manner.
@@ -708,7 +701,7 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 
 (use-package c++-mode
-  :straight (:type built-in)
+  :ensure nil
   ;; Use c++-mode for Arduino files
   :mode (("\\.ino\\'" . c++-mode))
   )
@@ -1462,7 +1455,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 ;; Use markdown-mode for commit messages.
 (use-package git-commit
-  :straight (:type built-in)
+  :ensure nil
   :init
   (setq git-commit-major-mode 'markdown-mode)
   (add-hook 'git-commit-setup-hook
@@ -1511,7 +1504,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
 (use-package markdown-dnd-images
-  :straight (:type built-in)
+  :ensure nil
   :custom
   (dnd-save-directory "images")
   (dnd-view-inline t)
@@ -1576,11 +1569,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
   )
 
 (use-package org
-  ;; If we build org through straight.el and `:ensure t`, org-mode can be slower than the
+  :ensure nil
+  ;; If we build org through package.el and `:ensure t`, org-mode can be slower than the
   ;; the built-in version.
-  ;; To prevent straight.el from installing and building from the source code, specify it as
+  ;; To prevent package.el from installing and building from the source code, specify it as
   ;; built-in.
-  :straight (:type built-in)
   :requires (cl-lib git-auto-commit-mode)
   :init
   (setq org-jouornelly-file
@@ -1716,7 +1709,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package org-agenda
-  :straight (:type built-in)
+  :ensure nil
   ;; org includes org-agenda
   :after (org)
   :config
@@ -1783,7 +1776,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package org-tempo :after org
-  :straight (:type built-in)
+  :ensure nil
   :custom
   (org-structure-template-alist
    '(("A" . "ai")
@@ -1853,7 +1846,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package org-roam-dailies
-  :straight (:type built-in)
+  :ensure nil
   :after org-roam
   :custom
   (org-roam-dailies-capture-templates
@@ -2070,7 +2063,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package uniquify
-  :straight (:type built-in)
+  :ensure nil
   :config (setq uniquify-buffer-name-style 'post-forward-angle-brackets)
   )
 
@@ -2138,7 +2131,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package ucs-normalize
-  :straight (:type built-in)
+  :ensure nil
   )
 
 (use-package cmake-mode
@@ -2150,7 +2143,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package dired
-  :straight (:type built-in)
+  :ensure nil
   :bind (:map dired-mode-map
               ("M-s" . 'consult-grep)
               ("F" . 'magit-pull)
@@ -2251,10 +2244,6 @@ If the file is new, it will be populated with a default template."
   ;; (global-set-key "\C-cE" 'lisp-other-window)
   )
 
-(use-package goby
-  :defer t
-  :init (autoload 'goby "goby" nil t))
-
 (use-package ansi-color
   :init
   (defun endless/colorize-compilation ()
@@ -2279,7 +2268,7 @@ If the file is new, it will be populated with a default template."
      "https://raw.githubusercontent.com/nilsdeppe/emacs-clang-rename/master/emacs-clang-rename.el"
      "~/.emacs.d/plugins/emacs-clang-rename.el"))
 (use-package emacs-clang-rename
-  :straight (:type built-in)
+  :ensure nil
   :if (file-exists-p "~/.emacs.d/plugins/emacs-clang-rename.el")
   :bind (:map c-mode-base-map
               ("C-c c p" . emacs-clang-rename-at-point)
@@ -2314,7 +2303,7 @@ If the file is new, it will be populated with a default template."
   )
 
 (use-package emoji
-  :straight (:type built-in)
+  :ensure nil
   :bind (("C-:" . 'emoji-search))
   )
 
@@ -2695,7 +2684,7 @@ Improved Text:")
   )
 
 (use-package treesit
-  :straight (:type built-in)
+  :ensure nil
   :custom
   (treesit-font-lock-level 4)
   )
@@ -2752,18 +2741,19 @@ Improved Text:")
   (global-treesit-auto-mode)
   )
 
+;; Install tsx-mode from custom repository
+;; The latest emacs30 branch depends on flymaks-jsts.
+;; `(use-package flymake-jsts)' does not work well.
+;; We revert the latest change.
+;; To do so, I forked tsx-mode.el and removed the latest commit.
+(when (fboundp 'package-vc-install)
+  (unless (package-installed-p 'tsx-mode)
+    (package-vc-install
+     '(tsx-mode :url "https://github.com/garaemon/tsx-mode.el"
+                :branch "emacs30"))))
+
 (use-package tsx-mode
-  :ensure t
   :after (treesit)
-  :straight '(tsx-mode :type git
-                       :host github
-                       ;; The latest emacs30 branch depends on flymaks-jsts.
-                       ;; `(use-package flymake-jsts)' does not work well.
-                       ;; We revert the latest change.
-                       ;; To do so, I forked tsx-mode.el and removed the latest commit.
-                       :repo "garaemon/tsx-mode.el"
-                       :branch "emacs30"
-                       )
   ;; :defer t
   :mode (("\\.tsx\\'" . tsx-ts-mode)
          ("\\.jsx\\'" . tsx-ts-mode))
@@ -2817,11 +2807,12 @@ Improved Text:")
   )
 
 (use-package rich-compile
-  :straight (:type built-in)
+  :ensure nil
   :bind (("C-c C-r" . rich-compile-run-menu))
   )
 
 (use-package xml
+  :ensure nil
   :mode
   ("\\.urdf$" . xml-mode)
   ("\\.xacro$" . xml-mode)
@@ -2860,7 +2851,6 @@ Improved Text:")
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ahs-plugin-default-face ((t (:background "systemYellowColor" :foreground "Black"))))
- ;; the color of fill-column-indicator is the same to the comment color of solarized theme.
  '(fill-column-indicator ((((class color) (min-colors 89)) (:foreground "#586e75" :weight semilight))))
  '(mode-line-active ((t (:inherit mode-line :background "DodgerBlue4"))))
  '(rainbow-delimiters-depth-1-face ((t (:foreground "#7f8c8d"))))
@@ -2875,11 +2865,13 @@ Improved Text:")
    '("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
      default))
  '(package-selected-packages nil)
+ '(package-vc-selected-packages
+   '((tsx-mode :url "https://github.com/garaemon/tsx-mode.el" :branch
+               "emacs30")))
  '(tramp-ssh-controlmaster-options
    (concat "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
            "-o ControlMaster=auto "
            "-o ServerAliveInterval=30 -o ServerAliveCountMax=3 "
-           "-o ControlPersist=4h")
-   t))
+           "-o ControlPersist=4h") t))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
