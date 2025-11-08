@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Ansible Lint
-        run: pip install ansible-lint
+        run: pip install --break-system-packages --ignore-installed ansible-lint
 
       - name: Lint Ansible Playbooks
         run: ansible-lint
