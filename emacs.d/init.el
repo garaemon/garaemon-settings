@@ -101,7 +101,7 @@
 ;; Indent when insert newline
 (global-set-key "\C-m" 'newline-and-indent)
 (global-set-key "\C-j" 'newline)
-;; Do not concer about upper/lower case in completion.
+;; Do not concern about upper/lower case in completion.
 (setq completion-ignore-case t)
 (global-unset-key "\C-\\")
 (prefer-coding-system 'utf-8)
