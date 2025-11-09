@@ -2725,7 +2725,15 @@ Improved Text:")
                                  :remap 'go-mode
                                  :url "https://github.com/tree-sitter/tree-sitter-go"
                                  :revision "v0.23.4"
-                                 :ext "\\.css\\'")))
+                                 :ext "\\.css\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'python
+                                 :ts-mode 'python-ts-mode
+                                 :remap 'python-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-python"
+                                 :revision "v0.23.6"
+                                 :ext "\\.py\\'")
+                                ))
          (new-recipe-alist (mapcar #'(lambda (recipe)
                                        (cons (treesit-auto-recipe-lang recipe)
                                              recipe))
