@@ -1586,7 +1586,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-link-file-path-type 'relative)
   (org-directory
    (let ((google-drive-directory
-          (expand-file-name "~/Library/CloudStorage/GoogleDrive-garaemon@gmail.com/My Drive/Documents/org/")))
+          (expand-file-name "~/Library/CloudStorage/GoogleDrive-garaemon@gmail.com/My Drive/org/")))
      (if (file-directory-p google-drive-directory)
          google-drive-directory
        (expand-file-name "~/ghq/github.com/garaemon/org/"))))
