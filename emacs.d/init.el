@@ -1743,7 +1743,10 @@ If the file is new, it will be populated with a default template."
   (define-org-quick-command org-set-tags-command-quick org-set-tags-command)
 
   :bind (("C-c a" . 'org-agenda-quick)
-         ("C-c C-q" . 'org-set-tags-command-quick))
+         ("C-c C-q" . 'org-set-tags-command-quick)
+         :map org-mode-map
+         ("C-c C-q" . 'org-set-tags-command-quick)
+         )
   )
 
 
