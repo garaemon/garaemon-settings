@@ -1,0 +1,53 @@
+---
+- name: Install and configure keyd
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Install software-properties-common for PPA support
+      apt:
+        name: software-properties-common
+        state: present
+      become: true
+
+    - name: Add keyd PPA
+      apt_repository:
+        repo: ppa:keyd-team/ppa
+        state: present
+      become: true
+      register: keyd_repository
+      retries: 3
+      delay: 5
+      until: keyd_repository is success
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      become: true
+      when: keyd_repository.changed
+
+    - name: Install keyd
+      apt:
+        name: keyd
+        state: present
+      become: true
+
+    - name: Ensure /etc/keyd directory exists
+      file:
+        path: /etc/keyd
+        state: directory
+        mode: '0755'
+      become: true
+
+    - name: Copy keyd configuration
+      copy:
+        src: default.conf
+        dest: /etc/keyd/default.conf
+        mode: '0644'
+      become: true
+      notify: Restart keyd service
+
+    - name: Enable and start keyd service
+      systemd:
+        name: keyd
+        enabled: true
+        state: started
+      become: true

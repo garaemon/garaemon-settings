@@ -34,6 +34,8 @@
       when: ansible_os_family == "Debian"
     - role: keyboard
       when: ansible_os_family == "Debian"
+    - role: keyd
+      when: ansible_os_family == "Debian"
     - role: chrome
       when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
     - python_language_server
