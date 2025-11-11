@@ -1585,11 +1585,11 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-startup-with-latex-preview nil)
   (org-link-file-path-type 'relative)
   (org-directory
-   (let ((icloud-directory
-          (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/org/")))
-     (if (file-directory-p icloud-directory)
-         icloud-directory
-       (expand-file-name "~/gprog/org/"))))
+   (let ((google-drive-directory
+          (expand-file-name "~/Library/CloudStorage/GoogleDrive-garaemon@gmail.com/My Drive/org/")))
+     (if (file-directory-p google-drive-directory)
+         google-drive-directory
+       (expand-file-name "~/ghq/github.com/garaemon/org/"))))
   ;; The special characters for org-capture-templates are described below:
   ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
   (org-capture-templates
