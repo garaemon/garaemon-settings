@@ -1651,6 +1651,32 @@ if ENV-SH indicates a remote path. Relies on the helper function
                                  (js . t)
                                  (org . t)
                                  (ruby . t)))
+  ;; The default font color is too dark. Use brighter color.
+  (plist-put org-format-latex-options :foreground "whitesmoke")
+  ;; The default font is too small. Increase the size.
+  (plist-put org-format-latex-options :scale 2.0)
+;; Customize `textwidth` in LaTeX headers from -3cm to -6cm.
+;; This adjustment moves equation numbers further left, compensating for increased font size
+;; and ensuring proper alignment, as `org-format-latex-header` updates.
+  (setq org-format-latex-header
+        "\\documentclass{article}
+\\usepackage[usenames]{color}
+[DEFAULT-PACKAGES]
+[PACKAGES]
+\\pagestyle{empty}             % do not remove
+% The settings below are copied from fullpage.sty
+\\setlength{\\textwidth}{\\paperwidth}
+\\addtolength{\\textwidth}{-6cm}
+\\setlength{\\oddsidemargin}{1.5cm}
+\\addtolength{\\oddsidemargin}{-2.54cm}
+\\setlength{\\evensidemargin}{\\oddsidemargin}
+\\setlength{\\textheight}{\\paperheight}
+\\addtolength{\\textheight}{-\\headheight}
+\\addtolength{\\textheight}{-\\headsep}
+\\addtolength{\\textheight}{-\\footskip}
+\\addtolength{\\textheight}{-3cm}
+\\setlength{\\topmargin}{1.5cm}
+\\addtolength{\\topmargin}{-2.54cm}")
 
   (defun my-create-org-blog-file (title)
     "Create a new org file with the current date and a user-provided title.
