@@ -1549,32 +1549,13 @@ if ENV-SH indicates a remote path. Relies on the helper function
               (linum-color-on-after-init frame)))
   )
 
-;; Enable it in ~/gprog/org
-(use-package git-auto-commit-mode
-  :ensure t
-  :config
-  (defun gac-pull-hook (buffer)
-    "Run `git pull` before committing codes."
-    (message "buffer is %s and file-name is %s" buffer (buffer-file-name buffer))
-    (unwind-protect
-        (with-current-buffer buffer
-          (let* ((pull-output-buffer (generate-new-buffer "*Git Pull Output*"))
-                 (exit-code
-                  (call-process "git" nil pull-output-buffer nil "pull"))
-                 (output-string (with-current-buffer pull-output-buffer (buffer-string))))
-            (if (not (eq exit-code 0))
-                (message "Failed to run git pull: %s" output-string)
-              (message "Successfully automatically pulled the repo"))))))
-  (advice-add 'gac-commit :before #'gac-pull-hook)
-  )
-
 (use-package org
   :ensure nil
   ;; If we build org through package.el and `:ensure t`, org-mode can be slower than the
   ;; the built-in version.
   ;; To prevent package.el from installing and building from the source code, specify it as
   ;; built-in.
-  :requires (cl-lib git-auto-commit-mode)
+  :requires (cl-lib)
   :init
   (setq org-jouornelly-file
    (expand-file-name
@@ -1584,12 +1565,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
   (org-link-file-path-type 'relative)
-  (org-directory
-   (let ((google-drive-directory
-          (expand-file-name "~/Library/CloudStorage/GoogleDrive-garaemon@gmail.com/My Drive/org/")))
-     (if (file-directory-p google-drive-directory)
-         google-drive-directory
-       (expand-file-name "~/ghq/github.com/garaemon/org/"))))
+  (org-directory (expand-file-name "~/ghq/github.com/garaemon/org/"))
   ;; The special characters for org-capture-templates are described below:
   ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
   (org-capture-templates
@@ -1705,6 +1681,48 @@ If the file is new, it will be populated with a default template."
         (insert (format "#+TITLE: %s\n" title))
         (insert "#+FILETAGS:\n"))))
 
+  ;; Set up for auto commit and pull
+  (defvar my-org-git-pull-done-sessions nil
+    "A list of repository roots where git pull has already been executed in this Emacs session.")
+
+  (defun my-org-get-git-root ()
+    "Returns the root directory of the Git repository for the current buffer's file.
+     Returns nil if not found or if it's not a file buffer."
+    (when (buffer-file-name)
+      ;; Prefer vc-git-root (available in Emacs 29+)
+      (if (fboundp 'vc-git-root)
+          (vc-git-root (buffer-file-name))
+        ;; Use locate-dominating-file as a fallback
+        (locate-dominating-file (buffer-file-name) ".git"))))
+
+  (defun my-org-git-pull-interactive (repo-root)
+    "Asks the user whether to run git pull in the specified repository."
+    ;; Confirm with user (yes-or-no-p)
+    (when (yes-or-no-p (format "Run git pull in Org repository (%s)? " repo-root))
+      (message "Org-Git-Sync: Executing git pull in %s..." repo-root)
+      (let ((default-directory repo-root))
+        (condition-case e
+            (shell-command "git pull")
+          (error (message "Org-Git-Sync: git pull failed: %s" e)))
+        (message "Org-Git-Sync: git pull complete."))
+
+      ;; Set the pull-done flag (don't ask again this session)
+      (add-to-list 'my-org-git-pull-done-sessions repo-root)))
+
+  (defun my-org-check-for-initial-pull ()
+    "Attempts git pull when opening a Git-managed Org file for the first time."
+    ;; Is this an org-mode buffer?
+    (message "calling my-org-check-for-initial-pull")
+    (when (eq major-mode 'org-mode)
+      ;; Get the Git repository root
+      (let ((git-root (my-org-get-git-root)))
+        (when git-root
+          ;; Check if pull has already been run for this repo in this session
+          (unless (member git-root my-org-git-pull-done-sessions)
+            (my-org-git-pull-interactive git-root))))))
+
+  (add-hook 'find-file-hook 'my-org-check-for-initial-pull nil nil)
+
   :bind (("C-c c" . 'org-capture)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
@@ -1722,11 +1740,6 @@ If the file is new, it will be populated with a default template."
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
                                                    (file-name-directory buffer-file-name)))
-                         ;; Stop using GAC because iCloud should synchronize the org directory.
-                         ;; (git-auto-commit-mode t)
-                         ;; (setq gac-automatically-push-p t)
-                         ;; (setq gac-automatically-add-new-files-p t)
-                         ;; (setq gac-debounce-interval (* 60 5)) ; 5 minutes
                        )))
          (org-agenda-mode . (lambda ()
                               (display-line-numbers-mode -1)
