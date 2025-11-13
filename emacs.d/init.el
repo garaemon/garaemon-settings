@@ -1728,6 +1728,58 @@ If the file is new, it will be populated with a default template."
 
   (add-hook 'find-file-hook 'my-org-check-for-initial-pull nil nil)
 
+  ;; Auto commit and push for org files
+  (defvar my-org-auto-commit-timer nil
+    "Timer for auto commit and push of org files.")
+
+  (defvar my-org-auto-commit-idle-delay 300
+    "Idle time in seconds before auto committing org changes.")
+
+  (defun my-org-git-commit-and-push ()
+    "Commit and push changes in the org directory."
+    (when (and (boundp 'org-directory) org-directory)
+      (let ((default-directory (expand-file-name org-directory)))
+        (when (file-exists-p (concat default-directory ".git"))
+          (message "Org-Git-Sync: Auto-committing changes...")
+          ;; Check if there are any changes
+          (let ((status-output (shell-command-to-string "git status --porcelain")))
+            (if (string-empty-p (string-trim status-output))
+                (message "Org-Git-Sync: No changes to commit.")
+              ;; Add all org files
+              (let ((add-result (shell-command "git add . 2>&1")))
+                (unless (eq add-result 0)
+                  (message "Org-Git-Sync: git add failed"))
+                ;; Commit with timestamp
+                (let* ((commit-msg (format-time-string "Auto-commit org changes at %Y-%m-%d %H:%M:%S"))
+                       (commit-result (shell-command (format "git commit -m \"%s\" 2>&1" commit-msg))))
+                  (if (eq commit-result 0)
+                      (progn
+                        ;; Push
+                        (let ((push-result (shell-command "git push 2>&1")))
+                          (if (eq push-result 0)
+                              (message "Org-Git-Sync: Auto-commit and push complete.")
+                            (message "Org-Git-Sync: git push failed"))))
+                    (message "Org-Git-Sync: git commit failed"))))))))))
+
+  (defun my-org-schedule-auto-commit ()
+    "Schedule an auto-commit after idle delay."
+    (when (and (eq major-mode 'org-mode)
+               buffer-file-name
+               (boundp 'org-directory)
+               org-directory
+               (string-prefix-p (expand-file-name org-directory)
+                                (expand-file-name buffer-file-name)))
+      ;; Cancel existing timer if any
+      (when my-org-auto-commit-timer
+        (cancel-timer my-org-auto-commit-timer))
+      ;; Schedule new timer
+      (setq my-org-auto-commit-timer
+            (run-with-idle-timer my-org-auto-commit-idle-delay
+                                 nil
+                                 'my-org-git-commit-and-push))))
+
+  (add-hook 'after-save-hook 'my-org-schedule-auto-commit)
+
   :bind (("C-c c" . 'org-capture)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
