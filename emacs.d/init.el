@@ -1713,7 +1713,12 @@ If the file is new, it will be populated with a default template."
     "Attempts git pull when opening a Git-managed Org file for the first time."
     ;; Is this an org-mode buffer?
     (message "calling my-org-check-for-initial-pull")
-    (when (eq major-mode 'org-mode)
+    (when (and (eq major-mode 'org-mode)
+               buffer-file-name
+               (boundp 'org-directory)
+               org-directory
+               (string-prefix-p (expand-file-name org-directory)
+                                (expand-file-name buffer-file-name)))
       ;; Get the Git repository root
       (let ((git-root (my-org-get-git-root)))
         (when git-root
