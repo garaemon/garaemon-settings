@@ -2326,23 +2326,6 @@ If the file is new, it will be populated with a default template."
     (cons "\\(define-\\(function\\*\\|class\\*\\|method\\*\\)\\)\\>" 1)))
   )
 
-(use-package euslisp-mode
-  :init (setq auto-mode-alist (cons (cons "\\.l$" 'euslisp-mode) auto-mode-alist))
-  :config
-  (defvar inferior-euslisp-program)
-  (defun lisp-other-window ()
-    "Run Lisp on other window."
-    (interactive)
-    (if (not (string= (buffer-name) "*inferior-lisp*"))
-        (switch-to-buffer-other-window (get-buffer-create "*inferior-lisp*")))
-    (run-lisp inferior-euslisp-program))
-
-  (set-variable 'inferior-euslisp-program "~/.emacs.d/roseus.sh")
-
-  ;; Do not set C-cE for lisp-other-window
-  ;; (global-set-key "\C-cE" 'lisp-other-window)
-  )
-
 (use-package ansi-color
   :init
   (defun endless/colorize-compilation ()
