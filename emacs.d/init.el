@@ -1683,7 +1683,8 @@ If the file is new, it will be populated with a default template."
 
   ;; Set up for auto commit and pull
   (defvar my-org-git-pull-done-sessions nil
-    "A list of repository roots where git pull has already been executed in this Emacs session.")
+    "An alist of (repo-root . date) pairs tracking when git pull was last executed.
+Date format is YYYY-MM-DD.")
 
   (defun my-org-get-git-root ()
     "Returns the root directory of the Git repository for the current buffer's file.
@@ -1706,11 +1707,15 @@ If the file is new, it will be populated with a default template."
           (error (message "Org-Git-Sync: git pull failed: %s" e)))
         (message "Org-Git-Sync: git pull complete."))
 
-      ;; Set the pull-done flag (don't ask again this session)
-      (add-to-list 'my-org-git-pull-done-sessions repo-root)))
+      ;; Record today's date for this repository
+      (let ((today (format-time-string "%Y-%m-%d"))
+            (existing (assoc repo-root my-org-git-pull-done-sessions)))
+        (if existing
+            (setcdr existing today)
+          (add-to-list 'my-org-git-pull-done-sessions (cons repo-root today))))))
 
   (defun my-org-check-for-initial-pull ()
-    "Attempts git pull when opening a Git-managed Org file for the first time."
+    "Attempts git pull when opening a Git-managed Org file if not done today."
     ;; Is this an org-mode buffer?
     (message "calling my-org-check-for-initial-pull")
     (when (and (eq major-mode 'org-mode)
@@ -1722,9 +1727,11 @@ If the file is new, it will be populated with a default template."
       ;; Get the Git repository root
       (let ((git-root (my-org-get-git-root)))
         (when git-root
-          ;; Check if pull has already been run for this repo in this session
-          (unless (member git-root my-org-git-pull-done-sessions)
-            (my-org-git-pull-interactive git-root))))))
+          ;; Check if pull has already been run for this repo today
+          (let ((last-pull-date (cdr (assoc git-root my-org-git-pull-done-sessions)))
+                (today (format-time-string "%Y-%m-%d")))
+            (unless (string= last-pull-date today)
+              (my-org-git-pull-interactive git-root)))))))
 
   (add-hook 'find-file-hook 'my-org-check-for-initial-pull nil nil)
 
