@@ -6,8 +6,10 @@
 ;;; Code:
 
 ;; Add load paths
-(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-(add-to-list 'load-path (expand-file-name "plugins" user-emacs-directory))
+;; Use load-file-name to ensure correct path in batch mode
+(let ((init-dir (file-name-directory (or load-file-name (buffer-file-name)))))
+  (add-to-list 'load-path (expand-file-name "lisp" init-dir))
+  (add-to-list 'load-path (expand-file-name "plugins" init-dir)))
 
 ;; Remove tramp file first to clean up old tramp connection
 (let ((tramp-old-file (expand-file-name "~/.emacs.d/tramp")))
