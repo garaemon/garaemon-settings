@@ -243,6 +243,18 @@ Date format is YYYY-MM-DD.")
 
   (add-hook 'after-save-hook 'my-org-schedule-auto-commit)
 
+  ;; Use proportional font for the headings in org-mode.
+  (let ((default-font (face-attribute 'default :family)))
+    (custom-set-faces `(org-level-1 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-2 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-3 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-4 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-5 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-6 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-7 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-8 ((t (:family ,default-font :inherit default)))))
+    )
+
   :bind (("C-c c" . 'org-capture)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
