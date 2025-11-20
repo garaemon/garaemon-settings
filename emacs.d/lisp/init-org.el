@@ -173,7 +173,6 @@ Date format is YYYY-MM-DD.")
   (defun my-org-check-for-initial-pull ()
     "Attempts git pull when opening a Git-managed Org file if not done today."
     ;; Is this an org-mode buffer?
-    (message "calling my-org-check-for-initial-pull")
     (when (and (eq major-mode 'org-mode)
                buffer-file-name
                (boundp 'org-directory)
