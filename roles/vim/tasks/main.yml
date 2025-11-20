@@ -4,7 +4,7 @@
   register: vim_vimrc_stat
 
 - name: Check file differences for vimrc
-  command: diff ~/.vimrc "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
+  command: diff ~/.vimrc "{{ ghq_settings_root }}/roles/vim/files/vimrc"
   register: vim_vimrc_diff
   failed_when: false
   changed_when: false
@@ -21,6 +21,6 @@
 
 - name: Create symlink for vimrc
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/vim/files/vimrc"
+    src: "{{ ghq_settings_root }}/roles/vim/files/vimrc"
     dest: ~/.vimrc
     state: link

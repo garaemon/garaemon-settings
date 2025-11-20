@@ -15,7 +15,7 @@
     - name: Check file differences for ghostty config
       command: >
         diff "{{ ansible_env.HOME }}/.config/ghostty/config"
-        "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
+        "{{ ghq_settings_root }}/roles/ghostty/files/config"
       register: ghostty_config_diff_debian
       failed_when: false
       changed_when: false
@@ -32,7 +32,7 @@
 
     - name: Create symlink for ghostty config
       file:
-        src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
+        src: "{{ ghq_settings_root }}/roles/ghostty/files/config"
         dest: "{{ ansible_env.HOME }}/.config/ghostty/config"
         state: link
 
@@ -54,7 +54,7 @@
     - name: Check file differences for ghostty config
       command: >
         diff "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
-        "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
+        "{{ ghq_settings_root }}/roles/ghostty/files/config"
       register: ghostty_config_diff
       failed_when: false
       changed_when: false
@@ -71,6 +71,6 @@
 
     - name: Create symlink for ghostty config
       file:
-        src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/ghostty/files/config"
+        src: "{{ ghq_settings_root }}/roles/ghostty/files/config"
         dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         state: link

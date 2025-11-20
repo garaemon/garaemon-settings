@@ -4,7 +4,7 @@
   register: tig_tigrc_stat
 
 - name: Check file differences for tigrc
-  command: diff ~/.tigrc "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
+  command: diff ~/.tigrc "{{ ghq_settings_root }}/roles/tig/files/tigrc"
   register: tig_tigrc_diff
   failed_when: false
   changed_when: false
@@ -21,6 +21,6 @@
 
 - name: Create symlink for tigrc
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tig/files/tigrc"
+    src: "{{ ghq_settings_root }}/roles/tig/files/tigrc"
     dest: ~/.tigrc
     state: link

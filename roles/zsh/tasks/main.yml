@@ -4,7 +4,7 @@
   register: zsh_zshrc_stat
 
 - name: Check file differences for zshrc
-  command: diff ~/.zshrc "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshrc"
+  command: diff ~/.zshrc "{{ ghq_settings_root }}/roles/zsh/files/zshrc"
   register: zsh_zshrc_diff
   failed_when: false
   changed_when: false
@@ -25,7 +25,7 @@
   register: zsh_zlogin_stat
 
 - name: Check file differences for zlogin
-  command: diff ~/.zlogin "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zlogin"
+  command: diff ~/.zlogin "{{ ghq_settings_root }}/roles/zsh/files/zlogin"
   register: zsh_zlogin_diff
   failed_when: false
   changed_when: false
@@ -46,7 +46,7 @@
   register: zsh_zlogout_stat
 
 - name: Check file differences for zlogout
-  command: diff ~/.zlogout "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zlogout"
+  command: diff ~/.zlogout "{{ ghq_settings_root }}/roles/zsh/files/zlogout"
   register: zsh_zlogout_diff
   failed_when: false
   changed_when: false
@@ -67,7 +67,7 @@
   register: zsh_zprofile_stat
 
 - name: Check file differences for zprofile
-  command: diff ~/.zprofile "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zprofile"
+  command: diff ~/.zprofile "{{ ghq_settings_root }}/roles/zsh/files/zprofile"
   register: zsh_zprofile_diff
   failed_when: false
   changed_when: false
@@ -88,7 +88,7 @@
   register: zsh_zshenv_stat
 
 - name: Check file differences for zshenv
-  command: diff ~/.zshenv "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshenv"
+  command: diff ~/.zshenv "{{ ghq_settings_root }}/roles/zsh/files/zshenv"
   register: zsh_zshenv_diff
   failed_when: false
   changed_when: false
@@ -109,7 +109,7 @@
   register: zsh_zshrc_zplug_stat
 
 - name: Check file differences for zshrc.zplug
-  command: diff ~/.zshrc.zplug "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshrc.zplug"
+  command: diff ~/.zshrc.zplug "{{ ghq_settings_root }}/roles/zsh/files/zshrc.zplug"
   register: zsh_zshrc_zplug_diff
   failed_when: false
   changed_when: false
@@ -126,36 +126,62 @@
 
 - name: Create symlink for zshrc
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshrc"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zshrc"
     dest: ~/.zshrc
     state: link
 
 - name: Create symlink for zlogin
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zlogin"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zlogin"
     dest: ~/.zlogin
     state: link
 
 - name: Create symlink for zlogout
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zlogout"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zlogout"
     dest: ~/.zlogout
     state: link
 
 - name: Create symlink for zprofile
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zprofile"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zprofile"
     dest: ~/.zprofile
     state: link
 
 - name: Create symlink for zshenv
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshenv"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zshenv"
     dest: ~/.zshenv
     state: link
 
 - name: Create symlink for zshrc.zplug
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshrc.zplug"
+    src: "{{ ghq_settings_root }}/roles/zsh/files/zshrc.zplug"
     dest: ~/.zshrc.zplug
+    state: link
+
+- name: Check if .zsh directory exists
+  stat:
+    path: ~/.zsh
+  register: zsh_dir_stat
+
+- name: Check if .zsh is a symlink
+  stat:
+    path: ~/.zsh
+  register: zsh_dir_link_stat
+  when: zsh_dir_stat.stat.exists
+
+- name: Remove existing .zsh if it's not a symlink
+  file:
+    path: ~/.zsh
+    state: absent
+  when:
+    - zsh_dir_stat.stat.exists
+    - not zsh_dir_link_stat.stat.islnk
+  failed_when: false
+
+- name: Create symlink for .zsh directory
+  file:
+    src: "{{ ghq_settings_root }}/roles/zsh/files/.zsh"
+    dest: ~/.zsh
     state: link

@@ -4,7 +4,7 @@
   register: tmux_conf_stat
 
 - name: Check file differences for tmux.conf
-  command: diff ~/.tmux.conf "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
+  command: diff ~/.tmux.conf "{{ ghq_settings_root }}/roles/tmux/files/tmux.conf"
   register: tmux_conf_diff
   failed_when: false
   changed_when: false
@@ -21,6 +21,6 @@
 
 - name: Create symlink for tmux.conf
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/tmux/files/tmux.conf"
+    src: "{{ ghq_settings_root }}/roles/tmux/files/tmux.conf"
     dest: ~/.tmux.conf
     state: link
