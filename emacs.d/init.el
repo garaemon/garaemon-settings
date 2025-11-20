@@ -49,8 +49,8 @@
       gc-cons-percentage 0.1)
 
 ;; Load custom file if it exists
-(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
-(when (file-exists-p custom-file)
-  (load custom-file))
+(let ((custom-file (expand-file-name "custom.el" user-emacs-directory)))
+  (when (file-exists-p custom-file)
+    (load custom-file)))
 
 ;;; init.el ends here
