@@ -159,3 +159,30 @@
     src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/zshrc.zplug"
     dest: ~/.zshrc.zplug
     state: link
+
+- name: Check if .zsh directory exists
+  stat:
+    path: ~/.zsh
+  register: zsh_dir_stat
+
+- name: Check if .zsh is a symlink
+  stat:
+    path: ~/.zsh
+  register: zsh_dir_link_stat
+  when: zsh_dir_stat.stat.exists
+
+- name: Remove existing .zsh if it's not a symlink
+  file:
+    path: ~/.zsh
+    state: absent
+    force: yes
+  when:
+    - zsh_dir_stat.stat.exists
+    - not zsh_dir_link_stat.stat.islnk
+  failed_when: false
+
+- name: Create symlink for .zsh directory
+  file:
+    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/zsh/files/.zsh"
+    dest: ~/.zsh
+    state: link
