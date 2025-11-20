@@ -44,7 +44,7 @@
 - name: Check file differences for starship.toml
   command: >
     diff '{{ ansible_env.HOME }}/.config/starship.toml'
-    "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
+    "{{ ghq_settings_root }}/roles/starship/files/starship.toml"
   register: starship_toml_diff
   failed_when: false
   changed_when: false
@@ -63,6 +63,6 @@
 
 - name: Create symlink for starship.toml
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/starship/files/starship.toml"
+    src: "{{ ghq_settings_root }}/roles/starship/files/starship.toml"
     dest: '{{ ansible_env.HOME }}/.config/starship.toml'
     state: link

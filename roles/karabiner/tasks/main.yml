@@ -11,7 +11,7 @@
   when: ansible_os_family == "Darwin"
 
 - name: Check file differences for karabiner config
-  command: diff ~/.config/karabiner/karabiner.json "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
+  command: diff ~/.config/karabiner/karabiner.json "{{ ghq_settings_root }}/roles/karabiner/files/karabiner.json"
   register: karabiner_diff
   failed_when: false
   changed_when: false
@@ -31,7 +31,7 @@
 
 - name: Create symlink for karabiner configuration
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/karabiner/files/karabiner.json"
+    src: "{{ ghq_settings_root }}/roles/karabiner/files/karabiner.json"
     dest: ~/.config/karabiner/karabiner.json
     state: link
   when: ansible_os_family == "Darwin"

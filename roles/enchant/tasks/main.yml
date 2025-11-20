@@ -30,6 +30,6 @@
 
 - name: "Create symlink for en_US.dic"
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/enchant/files/en_US.dic"
+    src: "{{ ghq_settings_root }}/roles/enchant/files/en_US.dic"
     dest: "{{ ansible_env.HOME }}/.config/enchant/en_US.dic"
     state: link

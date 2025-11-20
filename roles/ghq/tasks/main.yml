@@ -29,3 +29,11 @@
 - name: Set ghq root path as global variable
   set_fact:
     ghq_root_path: "{{ ghq_root_result.stdout if ghq_root_result.rc == 0 else ansible_env.HOME + '/ghq' }}"
+
+- name: Detect CI environment
+  set_fact:
+    ghq_is_ci: "{{ lookup('env', 'CI') != '' or lookup('env', 'GITHUB_ACTIONS') != '' }}"
+
+- name: Set settings root path
+  set_fact:
+    ghq_settings_root: "{{ playbook_dir if ghq_is_ci else ghq_root_path + '/github.com/garaemon/garaemon-settings' }}"

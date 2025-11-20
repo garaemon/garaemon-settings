@@ -12,7 +12,7 @@
 - name: Check file differences for pycodestyle
   command: >
     diff ~/.config/pycodestyle
-    "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
+    "{{ ghq_settings_root }}/roles/python_language_server/files/pycodestyle"
   register: python_language_server_pycodestyle_diff
   failed_when: false
   changed_when: false
@@ -29,6 +29,6 @@
 
 - name: Create symlink for pycodestyle config
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/roles/python_language_server/files/pycodestyle"
+    src: "{{ ghq_settings_root }}/roles/python_language_server/files/pycodestyle"
     dest: ~/.config/pycodestyle
     state: link
