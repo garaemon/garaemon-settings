@@ -110,6 +110,7 @@
     repo: "{{ 'git@github.com:garaemon/garaemon-settings.git' if base_ssh_auth_working | bool else 'https://github.com/garaemon/garaemon-settings.git' }}"
     dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
     update: true
+  ignore_errors: true
   when:
     - base_repo_exists.stat.exists
     - base_current_branch is defined and base_current_branch.stdout == "master"
