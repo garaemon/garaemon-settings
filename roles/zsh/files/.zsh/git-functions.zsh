@@ -110,6 +110,12 @@ function github-http-to-ssh() {
 }
 
 function git-commit-llm() {
+  # Check if llm command exists
+  if ! command -v llm &> /dev/null; then
+    echo "Error: 'llm' command not found. Please install llm (e.g., pip install llm)." >&2
+    return 1
+  fi
+
   # Default model and API arguments
   local MODEL_NAME_TO_USE="gemma3:4b"
   local LLM_API_ARGS=(--api ollama) # Default to using Ollama API
