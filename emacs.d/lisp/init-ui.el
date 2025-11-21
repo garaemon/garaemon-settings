@@ -128,5 +128,17 @@
               ;; Do not allow ahs to steal M--
               ("M--" . 'text-scale-)))
 
+(defun my-toggle-window-persistence ()
+  "Toggle persistence for the current window, preventing or allowing
+it from being deleted by `delete-other-windows` (C-x 1)."
+  (interactive)
+  (let* ((window (selected-window))
+         (param 'no-delete-other-windows)
+         (current-status (window-parameter window param)))
+    (set-window-parameter window param (not current-status))
+    (message "Window persistence %s." (if current-status "OFF" "ON"))))
+
+(global-set-key (kbd "C-c , d") 'my-toggle-window-persistence)
+
 (provide 'init-ui)
 ;;; init-ui.el ends here
