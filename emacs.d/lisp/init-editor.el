@@ -419,5 +419,32 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package imenus :ensure t)
 
+(use-package smartrep :ensure t
+  :config
+  (declare-function smartrep-define-key "smartrep")
+  (global-unset-key "\C-q")
+  (defun define-smartrep-keys ()
+    "Setup smartrep keys."
+    (smartrep-define-key global-map "C-q"
+      '(("C-t"      . 'mc/mark-next-like-this)
+        ("n"        . 'mc/mark-next-like-this)
+        ("p"        . 'mc/mark-previous-like-this)
+        ("m"        . 'mc/mark-more-like-this-extended)
+        ("u"        . 'mc/unmark-next-like-this)
+        ("U"        . 'mc/unmark-previous-like-this)
+        ("s"        . 'mc/skip-to-next-like-this)
+        ("S"        . 'mc/skip-to-previous-like-this)
+        ("*"        . 'mc/mark-all-like-this)
+        ("d"        . 'mc/mark-all-like-this-dwim)
+        ("i"        . 'mc/insert-numbers)
+        ("o"        . 'mc/sort-regions)
+        ("O"        . 'mc/reverse-regions)
+        ("^" . 'enlarge-window)
+        ("-" . 'shrink-window)
+        ))
+    )
+  (define-smartrep-keys)
+  )
+
 (provide 'init-editor)
 ;;; init-editor.el ends here
