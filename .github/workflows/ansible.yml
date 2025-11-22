@@ -84,7 +84,13 @@ jobs:
       - name: Install ansible galaxy roles
         run: ansible-galaxy role install -r requirements.yml
 
+      - name: Check for changes in emacs role
+        id: changed-files-emacs
+        uses: tj-actions/changed-files@v44
+        with:
+          files: roles/emacs/**
+
       - name: Execute main.yml
-        run: ansible-playbook -i localhost, -c local main.yml -v
+        run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"
         env:
           MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
