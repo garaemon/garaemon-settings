@@ -86,7 +86,7 @@ jobs:
 
       - name: Check for changes in emacs role
         id: changed-files-emacs
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         with:
           files: roles/emacs/**
 
