@@ -77,7 +77,7 @@
                 emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=') and
                 ansible_distribution != 'Ubuntu'
               )
-        - emacs_build_emacs
+        - emacs_build_emacs | bool
       block:
       # Refer to https://github.com/KarimAziev/build-emacs/blob/main/build-emacs.sh
         - name: Install packages to build emacs (Ubuntu 22.04)
