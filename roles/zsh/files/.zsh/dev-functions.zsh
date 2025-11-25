@@ -98,3 +98,11 @@ pdf2ja-gemma3(){
 
   pdf2zh -lo ja -li en -s ollama:"$OLLAMA_MODEL" "$1"
 }
+
+function llm-gemini() {
+  echo $@ | llm -m "gemini-2.5-flash" -s "Answer in Japanese briefly"
+}
+
+function llm-local() {
+  echo $@ | llm -m "gemma3:4b" -s "Answer in Japanese briefly"
+}
