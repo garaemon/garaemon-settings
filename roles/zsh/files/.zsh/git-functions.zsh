@@ -110,6 +110,29 @@ function github-http-to-ssh() {
 }
 
 function git-commit-llm() {
+  # Show help message
+  local show_help() {
+    cat << EOF
+Usage: git-commit-llm [OPTIONS] [MODEL]
+
+Generate a commit message using LLM based on staged changes.
+
+Options:
+  -m MODEL    Specify the model to use (default: gemma3:4b)
+  -h          Show this help message
+
+Arguments:
+  MODEL       Model to use (alternative to -m option)
+
+Examples:
+  git-commit-llm                          # Use default model (gemma3:4b)
+  git-commit-llm -m gpt-4o                # Use gpt-4o model
+  git-commit-llm gpt-4o                   # Use gpt-4o model (positional argument)
+  git-commit-llm -h                       # Show help
+
+EOF
+  }
+
   # Check if llm command exists
   if ! command -v llm &> /dev/null; then
     echo "Error: 'llm' command not found. Please install llm (e.g., pip install llm)." >&2
@@ -120,7 +143,26 @@ function git-commit-llm() {
   local MODEL_NAME_TO_USE="gemma3:4b"
   local LLM_API_ARGS=(--api ollama) # Default to using Ollama API
 
-  # Check if a model was provided as an argument
+  # Parse options
+  local OPTIND opt
+  while getopts "hm:" opt; do
+    case "${opt}" in
+      h)
+        show_help
+        return 0
+        ;;
+      m)
+        MODEL_NAME_TO_USE="${OPTARG}"
+        ;;
+      *)
+        show_help
+        return 1
+        ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  # Check if a model was provided as a positional argument (for backward compatibility)
   if [[ -n "$1" ]]; then
     MODEL_NAME_TO_USE="$1"
   fi
