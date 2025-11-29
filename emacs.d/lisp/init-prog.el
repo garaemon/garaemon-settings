@@ -1128,6 +1128,9 @@ You have to follow the following orders:
   (global-treesit-auto-mode)
   )
 
+(use-package annotate
+  :ensure t)
+
 (use-package rich-compile
   :ensure nil
   :bind (("C-c C-r" . rich-compile-run-menu))
