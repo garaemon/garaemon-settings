@@ -716,6 +716,29 @@
           (list branch (magit-read-starting-point prompt branch default-start))))))
   )
 
+(use-package gptel-magit
+  :ensure t
+  :custom
+  (gptel-magit-model 'gemma3:4b)
+  (gptel-magit-backend (gptel-make-ollama "Ollama (gemmma3:4b)"
+    :host "localhost:11434"
+    :stream t
+    :models '(gemma3:4b)))
+  (gptel-magit-commit-prompt
+   "You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
+You reply the commit message only.
+
+The first line should be a brief summary (recommended < 50 characters), followed by an empty line, and then a more detailed description from the third line onwards.
+Use bullet points in the detailed description of the commit message.
+
+The detailed description should include:
+- What changes were made
+- Why the changes were made (purpose, background)
+- Any impact of the changes (if applicable)
+- Use imperative form
+")
+  :hook (magit-mode . gptel-magit-install))
+
 (use-package forge
   :after magit
   :ensure t
