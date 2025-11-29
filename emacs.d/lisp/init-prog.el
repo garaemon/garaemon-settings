@@ -716,6 +716,16 @@
           (list branch (magit-read-starting-point prompt branch default-start))))))
   )
 
+(use-package gptel-magit
+  :ensure t
+  :custom
+  (gptel-magit-model 'gemma3:4b)
+  (gptel-magit-backend (gptel-make-ollama "Ollama (gemmma3:4b)"
+    :host "localhost:11434"
+    :stream t
+    :models '(gemma3:4b)))
+  :hook (magit-mode . gptel-magit-install))
+
 (use-package forge
   :after magit
   :ensure t
