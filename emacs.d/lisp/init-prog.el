@@ -1126,6 +1126,18 @@ You have to follow the following orders:
                   treesit-auto-recipe-list))
     )
   (global-treesit-auto-mode)
+
+  ;; Install some mandatory languages
+  (let ((auto-install-languages '(c cpp python tsx typescript yaml go css bash make json))
+        ;; `treesit-install-language-grammar' requires `treesit-language-source-alist' to be set up.
+        ;; `treesit-auto--build-treesit-source-alist' builds a list for `treesit-language-source-alist' from
+        ;; `treesit-auto-recipe-list'.
+        (treesit-language-source-alist (treesit-auto--build-treesit-source-alist)))
+    (dolist (lang auto-install-languages)
+      (when (not (treesit-ready-p lang))
+        (message "treesit grammar for %s has not yet been installed. Install the grammar automatically" lang)
+        (treesit-install-language-grammar lang)))
+    )
   )
 
 (use-package annotate
