@@ -1141,7 +1141,9 @@ You have to follow the following orders:
   )
 
 (use-package annotate
-  :ensure t)
+  :ensure t
+  :hook (prog-mode . annotate-mode)
+  )
 
 (use-package rich-compile
   :ensure nil
