@@ -125,7 +125,22 @@
            :category 'file
            :items ,#'my-get-git-files
            :state ,#'consult--file-state))
-  (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source)))
+
+  (defun my-get-ghq-repositories ()
+    "Get list of ghq repositories."
+    (when (executable-find "ghq")
+      (with-temp-buffer
+        (call-process "ghq" nil (current-buffer) nil "list" "-p")
+        (split-string (buffer-string) "\n" t))))
+
+  (setq my-ghq-repositories-source
+        `( :name "Ghq Repositories"
+           :narrow ?q
+           :category 'file
+           :items ,#'my-get-ghq-repositories
+           :state ,#'consult--file-state))
+
+  (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source my-ghq-repositories-source)))
 
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.
