@@ -431,12 +431,11 @@ preexec() {
   set_terminal_title "$1"
 }
 
-# Restore title to original value (e.g., hostname or directory) before prompt display
 precmd() {
-  # Settings to return to the normal terminal title
-  # This depends on the user's prompt settings
-  # Example: Display hostname and current directory
-  set_terminal_title "${HOST}: %c"
+  # Sets the terminal title to display the hostname and the current directory, abbreviating the home
+  # path to '~'.
+  local title_directory=${PWD/#$HOME/\~}
+  set_terminal_title "${HOST}: ${title_directory}"
 }
 
 # Set the default title once on startup
