@@ -1,6 +1,3 @@
-[submodule "avy-migemo"]
-	path = avy-migemo
-	url = https://github.com/tam17aki/avy-migemo
 [submodule "markdown-dnd-images"]
 	path = markdown-dnd-images
 	url = https://github.com/mooreryan/markdown-dnd-images
