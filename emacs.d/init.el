@@ -53,4 +53,8 @@
   (when (file-exists-p custom-file)
     (load custom-file)))
 
+;; Start server
+(unless (server-running-p)
+  (server-start))
+
 ;;; init.el ends here
