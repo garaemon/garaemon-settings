@@ -106,3 +106,11 @@ function llm-gemini() {
 function llm-local() {
   echo $@ | llm -m "gemma3:4b" -s "Answer in Japanese briefly"
 }
+
+# A function to convert a movie file to a mp3 file.
+# We use 48kbps for the bit rate.
+function ffmpeg-mp3-convert() {
+  local target_file="$1"
+  local output_file="${target_file%.*}.mp3"
+  ffmpeg -i "${target_file}" -b:a 48k "${output_file}"
+}
