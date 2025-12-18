@@ -396,6 +396,17 @@
   (setq js-indent-level 2)
   )
 
+
+; Install tsx-mode from custom repository
+;; The latest emacs30 branch depends on flymaks-jsts.
+;; `(use-package flymake-jsts)' does not work well.
+;; We revert the latest change.
+;; To do so, I forked tsx-mode.el and removed the latest commit.
+(when (fboundp 'package-vc-install)
+  (unless (package-installed-p 'tsx-mode)
+    (package-vc-install
+     '(tsx-mode :url "https://github.com/orzechowskid/tsx-mode.el"
+                :branch "emacs30"))))
 (use-package tsx-mode
   :after (treesit)
   ;; :defer t
