@@ -12,4 +12,4 @@
 - Use Japanese even for writing todo items.
 - Use English when you write commit messages.
 - Use English when you write the description of github pull requests.
- -Do not use `git add .`. Specify files to add to git explicitly always.
+- Do not use `git add .`. Specify files to add to git explicitly always.
