@@ -15,7 +15,7 @@
     - tmux
     - zsh
     - starship
-    - claude
+    - coding_agent
     - agg
     - uv
     - clang_format

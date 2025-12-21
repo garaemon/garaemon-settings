@@ -10,8 +10,9 @@
     - tmux
     - zsh
     - starship
-    - claude
+    - coding_agent
     - uv
+    - ghostty_install
     - peco
     - ispell
     - enchant
