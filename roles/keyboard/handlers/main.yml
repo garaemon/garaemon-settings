@@ -2,3 +2,6 @@
 - name: Reconfigure keyboard
   command: dpkg-reconfigure -f noninteractive keyboard-configuration
   become: true
+  when:
+    - lookup('env', 'ACT') == ""
+    - lookup('env', 'GITHUB_ACTIONS') == ""
