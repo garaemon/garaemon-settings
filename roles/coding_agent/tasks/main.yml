@@ -88,11 +88,6 @@
   set_fact:
     coding_agent_create_pr_md_content: "{{ lookup('template', 'create-pr.md.j2') }}"
 
-- name: Extract description and prompt for Gemini
-  set_fact:
-    coding_agent_create_pr_description: "{{ coding_agent_create_pr_md_content | regex_search('description: \"(.*)\"', '\\1') | first }}"
-    coding_agent_create_pr_prompt: "{{ coding_agent_create_pr_md_content | regex_replace('(?s)^---.*?---(.*)', '\\1') | trim }}"
-
 - name: Generate create-pr.toml for Gemini
   template:
     src: create-pr.toml.j2
