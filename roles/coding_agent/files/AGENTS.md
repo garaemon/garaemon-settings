@@ -1,5 +1,5 @@
 - Before you make a PR, always run tests including linters.
-- You don't need to include test programs in linter.
+- Ignore test programs in linter.
 - Keep the function shorter. One function is recommended to be shorter than 90 lines.
 - Don't implement many things at once. Always compile programs or run test codes after you modify the code.
 - Always start functions and methods with verbs.
@@ -13,3 +13,5 @@
 - Use English when you write commit messages.
 - Use English when you write the description of github pull requests.
 - Do not use `git add .`. Specify files to add to git explicitly always.
+- Write comments focusing on "why"s.
+- Make a branch first before you modify the code if you are on the default branch.
