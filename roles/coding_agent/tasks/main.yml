@@ -102,8 +102,40 @@
 - name: Install Claude Code via mise
   command: mise use -g claude
   environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   retries: 3
   delay: 5
   register: coding_agent_claude_install_result
   until: coding_agent_claude_install_result.rc == 0
+
+# Explicitly set PATH because the Ansible non-interactive shell might not
+# include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
+- name: Check if playwright MCP is registered in Claude
+  shell: |
+    export PATH="{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    claude mcp list | grep playwright
+  register: coding_agent_claude_mcp_list
+  failed_when: false
+  changed_when: false
+
+- name: Register playwright MCP to Claude
+  command: claude mcp add playwright npx @playwright/mcp@latest -s user
+  environment:
+    # Use explicit PATH to ensure 'claude' and 'npx' are found in the Ansible environment.
+    PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  when: coding_agent_claude_mcp_list.rc != 0
+
+- name: Check if playwright MCP is registered in Gemini
+  shell: |
+    export PATH="{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    gemini mcp list | grep playwright
+  register: coding_agent_gemini_mcp_list
+  failed_when: false
+  changed_when: false
+
+- name: Register playwright MCP to Gemini
+  command: gemini mcp add playwright npx @playwright/mcp@latest -s user
+  environment:
+    # Use explicit PATH to ensure 'gemini' and 'npx' are found in the Ansible environment.
+    PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  when: coding_agent_gemini_mcp_list.rc != 0
