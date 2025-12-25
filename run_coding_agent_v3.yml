@@ -1,0 +1,5 @@
+- name: Apply coding_agent settings
+  hosts: localhost
+  connection: local
+  roles:
+    - coding_agent

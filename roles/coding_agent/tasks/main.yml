@@ -72,32 +72,37 @@
     state: directory
     mode: '0755'
 
-- name: Check if create-pr.md exists
-  stat:
-    path: ~/.claude/commands/create-pr.md
-  register: coding_agent_create_pr_stat
-
-- name: Check file differences for create-pr.md
-  command: diff ~/.claude/commands/create-pr.md "{{ role_path }}/files/create-pr.md"
-  register: coding_agent_create_pr_diff
-  failed_when: false
-  changed_when: false
-  when: coding_agent_create_pr_stat.stat.exists and not coding_agent_create_pr_stat.stat.islnk
-
-- name: Remove existing create-pr.md if identical to target
-  file:
-    path: ~/.claude/commands/create-pr.md
-    state: absent
-  when:
-    - coding_agent_create_pr_stat.stat.exists
-    - not coding_agent_create_pr_stat.stat.islnk
-    - coding_agent_create_pr_diff.rc == 0
-
-- name: Create symlink for create-pr.md
-  file:
-    src: "{{ role_path }}/files/create-pr.md"
+- name: Generate create-pr.md for Claude
+  template:
+    src: create-pr.md.j2
     dest: ~/.claude/commands/create-pr.md
-    state: link
+    mode: '0644'
+
+- name: Ensure .gemini/commands directory exists
+  file:
+    path: ~/.gemini/commands
+    state: directory
+    mode: '0755'
+
+- name: Read create-pr.md content
+  set_fact:
+    coding_agent_create_pr_md_content: "{{ lookup('template', 'create-pr.md.j2') }}"
+
+- name: Extract description and prompt for Gemini
+  set_fact:
+    coding_agent_create_pr_description: "{{ coding_agent_create_pr_md_content | regex_search('description: \"(.*)\"', '\\1') | first }}"
+    coding_agent_create_pr_prompt: "{{ coding_agent_create_pr_md_content | regex_replace('(?s)^---.*?---(.*)', '\\1') | trim }}"
+
+- name: Generate create-pr.toml for Gemini
+  template:
+    src: create-pr.toml.j2
+    dest: ~/.gemini/commands/create-pr.toml
+    mode: '0644'
+
+- name: Remove incorrect create-pr.md for Gemini
+  file:
+    path: ~/.gemini/commands/create-pr.md
+    state: absent
 
 - name: Install Claude Code via mise
   command: mise use -g claude
