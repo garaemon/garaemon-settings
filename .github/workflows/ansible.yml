@@ -34,17 +34,7 @@ jobs:
 
       - name: Install Ansible (act)
         if: ${{ env.ACT }}
-        run: |
-          SUDO=""
-          if command -v sudo &> /dev/null; then SUDO="sudo"; fi
-          $SUDO apt-get update
-          $SUDO apt-get install -y python3-pip enchant-2 || $SUDO apt-get install -y python3-pip enchant
-          $SUDO apt-get install -y libadwaita-1-0 || true
-          if [ ! -f /etc/default/keyboard ]; then
-            $SUDO mkdir -p /etc/default
-            echo 'XKBOPTIONS=""' | $SUDO tee /etc/default/keyboard
-          fi
-          pip install --break-system-packages --ignore-installed ansible
+        run: pip install --break-system-packages --ignore-installed ansible
 
       - name: Install ansible galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
@@ -86,17 +76,7 @@ jobs:
 
       - name: Install Ansible (act)
         if: ${{ env.ACT }}
-        run: |
-          SUDO=""
-          if command -v sudo &> /dev/null; then SUDO="sudo"; fi
-          $SUDO apt-get update
-          $SUDO apt-get install -y python3-pip enchant-2 || $SUDO apt-get install -y python3-pip enchant
-          $SUDO apt-get install -y libadwaita-1-0 || true
-          if [ ! -f /etc/default/keyboard ]; then
-            $SUDO mkdir -p /etc/default
-            echo 'XKBOPTIONS=""' | $SUDO tee /etc/default/keyboard
-          fi
-          pip install --break-system-packages --ignore-installed ansible
+        run: pip install --break-system-packages --ignore-installed ansible
 
       - name: Install ansible galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
