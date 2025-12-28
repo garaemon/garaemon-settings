@@ -99,6 +99,10 @@
     path: ~/.gemini/commands/create-pr.md
     state: absent
 
+# Explicitly set PATH because the Ansible non-interactive shell might not
+# include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
+# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
+# confusion with the Playwright testing tool.
 - name: Install Claude Code via mise
   command: mise use -g claude
   environment:
@@ -117,10 +121,6 @@
   register: coding_agent_gemini_install_result
   until: coding_agent_gemini_install_result.rc == 0
 
-# Explicitly set PATH because the Ansible non-interactive shell might not
-# include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
-# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
-# confusion with the Playwright testing tool.
 - name: Check if playwright MCP is registered in Claude
   shell: claude mcp list | grep playwright-mcp
   environment:
@@ -132,7 +132,6 @@
 - name: Register playwright MCP to Claude
   command: claude mcp add playwright-mcp npx @playwright/mcp@latest -s user
   environment:
-    # Use explicit PATH to ensure 'claude' and 'npx' are found in the Ansible environment.
     PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   when: coding_agent_claude_mcp_list.rc != 0
 
@@ -147,6 +146,5 @@
 - name: Register playwright MCP to Gemini
   command: gemini mcp add playwright-mcp npx @playwright/mcp@latest -s user
   environment:
-    # Use explicit PATH to ensure 'gemini' and 'npx' are found in the Ansible environment.
     PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   when: coding_agent_gemini_mcp_list.rc != 0
