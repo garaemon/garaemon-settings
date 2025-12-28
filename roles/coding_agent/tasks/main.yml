@@ -105,8 +105,6 @@
   set_fact:
     coding_agent_env_path: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
 
-# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
-# confusion with the Playwright testing tool.
 - name: Install Claude Code via mise
   command: mise use -g claude
   environment:
@@ -125,6 +123,8 @@
   register: coding_agent_gemini_install_result
   until: coding_agent_gemini_install_result.rc == 0
 
+# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
+# confusion with the Playwright testing tool.
 - name: Check if playwright MCP is registered in Claude
   shell: claude mcp list | grep playwright-mcp
   environment:
