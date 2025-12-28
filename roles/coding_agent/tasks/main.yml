@@ -120,9 +120,9 @@
 # Explicitly set PATH because the Ansible non-interactive shell might not
 # include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
 - name: Check if playwright MCP is registered in Claude
-  shell: |
-    export PATH="{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
-    claude mcp list | grep playwright
+  shell: claude mcp list | grep playwright
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   register: coding_agent_claude_mcp_list
   failed_when: false
   changed_when: false
@@ -135,9 +135,9 @@
   when: coding_agent_claude_mcp_list.rc != 0
 
 - name: Check if playwright MCP is registered in Gemini
-  shell: |
-    export PATH="{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
-    gemini mcp list | grep playwright
+  shell: gemini mcp list | grep playwright
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   register: coding_agent_gemini_mcp_list
   failed_when: false
   changed_when: false
