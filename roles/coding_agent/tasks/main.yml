@@ -99,11 +99,56 @@
     path: ~/.gemini/commands/create-pr.md
     state: absent
 
+# Explicitly set PATH because the Ansible non-interactive shell might not
+# include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
+- name: Set environment path including mise shims
+  set_fact:
+    coding_agent_env_path: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+
 - name: Install Claude Code via mise
   command: mise use -g claude
   environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ coding_agent_env_path }}"
   retries: 3
   delay: 5
   register: coding_agent_claude_install_result
   until: coding_agent_claude_install_result.rc == 0
+
+- name: Install Gemini CLI via mise
+  command: mise use -g gemini
+  environment:
+    PATH: "{{ coding_agent_env_path }}"
+  retries: 3
+  delay: 5
+  register: coding_agent_gemini_install_result
+  until: coding_agent_gemini_install_result.rc == 0
+
+# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
+# confusion with the Playwright testing tool.
+- name: Check if playwright MCP is registered in Claude
+  shell: claude mcp list | grep playwright-mcp
+  environment:
+    PATH: "{{ coding_agent_env_path }}"
+  register: coding_agent_claude_mcp_list
+  failed_when: false
+  changed_when: false
+
+- name: Register playwright MCP to Claude
+  command: claude mcp add playwright-mcp npx @playwright/mcp@latest -s user
+  environment:
+    PATH: "{{ coding_agent_env_path }}"
+  when: coding_agent_claude_mcp_list.rc != 0
+
+- name: Check if playwright MCP is registered in Gemini
+  shell: gemini mcp list | grep playwright-mcp
+  environment:
+    PATH: "{{ coding_agent_env_path }}"
+  register: coding_agent_gemini_mcp_list
+  failed_when: false
+  changed_when: false
+
+- name: Register playwright MCP to Gemini
+  command: gemini mcp add playwright-mcp npx @playwright/mcp@latest -s user
+  environment:
+    PATH: "{{ coding_agent_env_path }}"
+  when: coding_agent_gemini_mcp_list.rc != 0
