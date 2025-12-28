@@ -51,6 +51,3 @@
         enabled: true
         state: started
       become: true
-      when:
-        - lookup('env', 'ACT') == ""
-        - lookup('env', 'GITHUB_ACTIONS') == ""

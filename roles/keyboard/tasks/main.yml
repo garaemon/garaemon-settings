@@ -12,7 +12,4 @@
 - name: Apply keyboard configuration
   command: dpkg-reconfigure -f noninteractive keyboard-configuration
   become: true
-  when:
-    - ansible_os_family == "Debian"
-    - lookup('env', 'ACT') == ""
-    - lookup('env', 'GITHUB_ACTIONS') == ""
+  when: ansible_os_family == "Debian"

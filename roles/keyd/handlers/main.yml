@@ -4,4 +4,3 @@
     name: keyd
     state: restarted
   become: true
-  when: lookup('env', 'ACT') == ""
