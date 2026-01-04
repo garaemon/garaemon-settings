@@ -23,6 +23,18 @@
 (setq auto-mode-alist (cons (cons "\\.cu?$" 'c-mode) auto-mode-alist))
 (setq auto-mode-alist (cons (cons "\\.cg?$" 'c-mode) auto-mode-alist))
 
+;; A utility function to share a region as an image via m2i.garaemon.com.
+(defun markup-to-image-share-region (start end)
+  "Render the selected region using the markup service."
+  (interactive "r")
+  (let ((url-base "https://m2i.garaemon.com") ;; Change this to your deployed URL
+        (content (url-hexify-string (buffer-substring-no-properties start end)))
+        (lang (cond ((derived-mode-p 'markdown-mode) "markdown")
+                    ((derived-mode-p 'latex-mode) "latex")
+                    (t "code")))
+        (code-lang (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
+    (browse-url (format "%s/?l=%s&cl=%s&txt=%s" url-base lang code-lang content))))
+
 ;;; shell script
 (setq sh-basic-offset 2)
 (setq sh-indentation 2)
