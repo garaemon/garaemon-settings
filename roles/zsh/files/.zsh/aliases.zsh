@@ -13,3 +13,4 @@ alias s="source ~/.zshrc"
 alias git-graph="git log --graph --decorate --oneline"
 alias git-twodiff="git difftool -y -x \"colordiff -y -W $COLUMNS\" | less -R"
 alias c=code
+alias gemini-flash="gemini -m gemini-3-flash-preview"
