@@ -40,7 +40,7 @@ function git-worktree-add-with-branch() {
   git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
   cd ${directory}
 
-  function git-cleanup-current-worktree() {
+  function git-worktree-cleanup-current() {
     local dir=$(pwd)
     # Check if .git is a file (characteristic of a linked worktree root)
     if [ ! -f "${dir}/.git" ]; then
