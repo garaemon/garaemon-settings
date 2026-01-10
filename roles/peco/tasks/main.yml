@@ -14,46 +14,46 @@
 - name: Set OS Name (darwin)
   set_fact:
     peco_os_name: "darwin"
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Set OS Name (debian)
   set_fact:
     peco_os_name: "linux"
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: Set architecture to amd64
   set_fact:
     peco_arch: amd64
-  when: ansible_architecture == 'amd64' or ansible_architecture == 'x86_64'
+  when: ansible_facts.architecture == 'amd64' or ansible_facts.architecture == 'x86_64'
 
 - name: Set architecture to arm64
   set_fact:
     peco_arch: arm64
-  when: ansible_architecture == 'aarch64' or ansible_architecture == 'arm64'
+  when: ansible_facts.architecture == 'aarch64' or ansible_facts.architecture == 'arm64'
 
 - name: Create tempfile for peco download (darwin)
   tempfile:
     state: file
     suffix: peco_darwin_zip
   register: peco_tempfile_darwin
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Download latest peco (darwin)
   get_url:
     url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_darwin_{{ peco_arch }}.zip
     dest: "{{ peco_tempfile_darwin.path }}"
   register: peco_download_darwin
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Create temp directory for peco extraction (darwin)
   tempfile:
     state: directory
     suffix: peco_extract_darwin
   register: peco_extract_dir_darwin
-  when: peco_download_darwin.changed and ansible_os_family == "Darwin"
+  when: peco_download_darwin.changed and ansible_facts.os_family == "Darwin"
 
 - name: Extract peco (darwin)
-  when: peco_download_darwin.changed and ansible_os_family == "Darwin"
+  when: peco_download_darwin.changed and ansible_facts.os_family == "Darwin"
   unarchive:
     src: "{{ peco_tempfile_darwin.path }}"
     dest: "{{ peco_extract_dir_darwin.path }}"
@@ -64,24 +64,24 @@
     state: file
     suffix: peco_debian_tar_gz
   register: peco_tempfile_debian
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: Download latest peco (debian)
   get_url:
     url: https://github.com/peco/peco/releases/download/{{ peco_latest_version.stdout }}/peco_linux_{{ peco_arch }}.tar.gz
     dest: "{{ peco_tempfile_debian.path }}"
   register: peco_download_debian
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: Create temp directory for peco extraction (debian)
   tempfile:
     state: directory
     suffix: peco_extract_debian
   register: peco_extract_dir_debian
-  when: peco_download_debian.changed and ansible_os_family == "Debian"
+  when: peco_download_debian.changed and ansible_facts.os_family == "Debian"
 
 - name: Extract peco (debian)
-  when: peco_download_debian.changed and ansible_os_family == "Debian"
+  when: peco_download_debian.changed and ansible_facts.os_family == "Debian"
   unarchive:
     src: "{{ peco_tempfile_debian.path }}"
     dest: "{{ peco_extract_dir_debian.path }}"
@@ -98,7 +98,7 @@
     dest: ~/.local/bin/peco
     mode: "0755"
     remote_src: true
-  when: ansible_os_family == "Darwin" and peco_download_darwin.changed
+  when: ansible_facts.os_family == "Darwin" and peco_download_darwin.changed
 
 - name: Copy to .local/bin/ (debian)
   copy:
@@ -106,4 +106,4 @@
     dest: ~/.local/bin/peco
     mode: "0755"
     remote_src: true
-  when: ansible_os_family == "Debian" and peco_download_debian.changed
+  when: ansible_facts.os_family == "Debian" and peco_download_debian.changed

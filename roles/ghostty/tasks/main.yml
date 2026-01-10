@@ -1,20 +1,20 @@
 - name: Configure Ghostty on Debian/Ubuntu
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts.os_family == 'Debian'
   block:
     - name: Make directory for ghostty config
       file:
-        path: "{{ ansible_env.HOME }}/.config/ghostty"
+        path: "{{ ansible_facts.env.HOME }}/.config/ghostty"
         state: directory
         mode: "0755"
 
     - name: Check if ghostty config exists
       stat:
-        path: "{{ ansible_env.HOME }}/.config/ghostty/config"
+        path: "{{ ansible_facts.env.HOME }}/.config/ghostty/config"
       register: ghostty_config_stat_debian
 
     - name: Check file differences for ghostty config
       command: >
-        diff "{{ ansible_env.HOME }}/.config/ghostty/config"
+        diff "{{ ansible_facts.env.HOME }}/.config/ghostty/config"
         "{{ ghq_settings_root }}/roles/ghostty/files/config"
       register: ghostty_config_diff_debian
       failed_when: false
@@ -23,7 +23,7 @@
 
     - name: Remove existing ghostty config if identical to target
       file:
-        path: "{{ ansible_env.HOME }}/.config/ghostty/config"
+        path: "{{ ansible_facts.env.HOME }}/.config/ghostty/config"
         state: absent
       when:
         - ghostty_config_stat_debian.stat.exists
@@ -33,27 +33,27 @@
     - name: Create symlink for ghostty config
       file:
         src: "{{ ghq_settings_root }}/roles/ghostty/files/config"
-        dest: "{{ ansible_env.HOME }}/.config/ghostty/config"
+        dest: "{{ ansible_facts.env.HOME }}/.config/ghostty/config"
         state: link
 
 - name: Configure Ghostty on Darwin
-  when: ansible_os_family == 'Darwin'
+  when: ansible_facts.os_family == 'Darwin'
   block:
 
     - name: Make directory for config
       file:
-        path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty"
+        path: "{{ ansible_facts.env.HOME }}/Library/Application Support/com.mitchellh.ghostty"
         state: directory
         mode: "0755"
 
     - name: Check if ghostty config exists
       stat:
-        path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        path: "{{ ansible_facts.env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
       register: ghostty_config_stat
 
     - name: Check file differences for ghostty config
       command: >
-        diff "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        diff "{{ ansible_facts.env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         "{{ ghq_settings_root }}/roles/ghostty/files/config"
       register: ghostty_config_diff
       failed_when: false
@@ -62,7 +62,7 @@
 
     - name: Remove existing ghostty config if identical to target
       file:
-        path: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        path: "{{ ansible_facts.env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         state: absent
       when:
         - ghostty_config_stat.stat.exists
@@ -72,5 +72,5 @@
     - name: Create symlink for ghostty config
       file:
         src: "{{ ghq_settings_root }}/roles/ghostty/files/config"
-        dest: "{{ ansible_env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
+        dest: "{{ ansible_facts.env.HOME }}/Library/Application Support/com.mitchellh.ghostty/config"
         state: link

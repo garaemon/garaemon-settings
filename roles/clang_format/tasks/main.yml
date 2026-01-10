@@ -3,7 +3,7 @@
     name:
       - clang-format
   become: true
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: Check if clang-format exists
   stat:

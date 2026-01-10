@@ -1,5 +1,5 @@
 - name: Install Google Chrome
-  when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
+  when: ansible_facts.os_family == "Debian" and ansible_facts.architecture == "x86_64"
   block:
     - name: Install dependencies for Chrome
       apt:

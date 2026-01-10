@@ -5,7 +5,7 @@
     state: present
   check_mode: true
   register: enchant_check
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: "Install enchant on Debian/Ubuntu"
   apt:
@@ -13,23 +13,23 @@
     state: present
   become: true
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts.os_family == "Debian"
     - enchant_check.changed
 
 - name: "Install enchant on macOS"
   homebrew:
     name: enchant
     state: present
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: "Create .config/enchant directory"
   file:
-    path: "{{ ansible_env.HOME }}/.config/enchant"
+    path: "{{ ansible_facts.env.HOME }}/.config/enchant"
     state: directory
     mode: '0755'
 
 - name: "Create symlink for en_US.dic"
   file:
     src: "{{ ghq_settings_root }}/roles/enchant/files/en_US.dic"
-    dest: "{{ ansible_env.HOME }}/.config/enchant/en_US.dic"
+    dest: "{{ ansible_facts.env.HOME }}/.config/enchant/en_US.dic"
     state: link

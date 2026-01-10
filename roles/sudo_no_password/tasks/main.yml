@@ -2,8 +2,8 @@
   lineinfile:
     dest: /etc/sudoers
     state: present
-    regexp: '^{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart avahi-daemon'
-    line: '{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart avahi-daemon'
+    regexp: '^{{ ansible_facts.env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart avahi-daemon'
+    line: '{{ ansible_facts.env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart avahi-daemon'
     validate: 'visudo -cf %s'
   become: true
 
@@ -11,7 +11,7 @@
   lineinfile:
     dest: /etc/sudoers
     state: present
-    regexp: '^{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart NetworkManager'
-    line: '{{ ansible_env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart NetworkManager'
+    regexp: '^{{ ansible_facts.env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart NetworkManager'
+    line: '{{ ansible_facts.env.USER }} ALL=NOPASSWD: /usr/bin/systemctl restart NetworkManager'
     validate: 'visudo -cf %s'
   become: true

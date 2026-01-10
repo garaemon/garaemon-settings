@@ -2,13 +2,13 @@
   file:
     path: ~/.config/karabiner
     state: directory
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Check if karabiner config exists
   stat:
     path: ~/.config/karabiner/karabiner.json
   register: karabiner_stat
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Check file differences for karabiner config
   command: diff ~/.config/karabiner/karabiner.json "{{ ghq_settings_root }}/roles/karabiner/files/karabiner.json"
@@ -16,7 +16,7 @@
   failed_when: false
   changed_when: false
   when:
-    - ansible_os_family == "Darwin"
+    - ansible_facts.os_family == "Darwin"
     - karabiner_stat.stat.exists and not karabiner_stat.stat.islnk
 
 - name: Remove existing karabiner config if identical to target
@@ -24,7 +24,7 @@
     path: ~/.config/karabiner/karabiner.json
     state: absent
   when:
-    - ansible_os_family == "Darwin"
+    - ansible_facts.os_family == "Darwin"
     - karabiner_stat.stat.exists
     - not karabiner_stat.stat.islnk
     - karabiner_diff.rc == 0
@@ -34,4 +34,4 @@
     src: "{{ ghq_settings_root }}/roles/karabiner/files/karabiner.json"
     dest: ~/.config/karabiner/karabiner.json
     state: link
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"

@@ -6,7 +6,7 @@
 
 - name: Clone RictyDiminished using ghq
   shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
     ghq get https://github.com/edihbrandon/RictyDiminished.git
   args:
     executable: /bin/bash
@@ -66,5 +66,5 @@
 - name: Update user's font cache
   ansible.builtin.command: fc-cache -fv
   environment: # Ensure fc-cache runs in the user's environment
-    HOME: "{{ ansible_user_dir }}"
+    HOME: "{{ ansible_facts.user_dir }}"
   changed_when: true # fc-cache always reports a change

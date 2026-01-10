@@ -5,7 +5,7 @@
 
 - name: Clone emacs.d using ghq
   shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
     ghq get https://github.com/garaemon/emacs.d
   args:
     executable: /bin/bash
@@ -40,12 +40,12 @@
 
 # Only for ubuntu
 - name: Build emacs for Debian
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
   block:
     - name: Set required Emacs version variable
       ansible.builtin.set_fact:
         emacs_required_emacs_version: "30.1"
-        emacs_install_path: "{{ ansible_user_dir }}/.local/bin/emacs"
+        emacs_install_path: "{{ ansible_facts.user_dir }}/.local/bin/emacs"
 
     - name: Check if target Emacs exists
       ansible.builtin.stat:
@@ -75,7 +75,7 @@
                 emacs_stat.stat.exists and
                 emacs_installed_emacs_version is defined and
                 emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=') and
-                ansible_distribution != 'Ubuntu'
+                ansible_facts.distribution != 'Ubuntu'
               )
         - emacs_build_emacs | bool
       block:
@@ -243,7 +243,7 @@
               - libtool # for libvterm
               - libtool-bin # for libvterm
           become: true
-          when: ansible_distribution_version == '22.04'
+          when: ansible_facts.distribution_version == '22.04'
         - name: Install packages to build emacs (Ubuntu 24.04)
           apt:
             name:
@@ -407,7 +407,7 @@
               - libtool # for libvterm
               - libtool-bin # for libvterm
           become: true
-          when: ansible_distribution_version == '24.04'
+          when: ansible_facts.distribution_version == '24.04'
         - name: Clone and checkout specific version of emacs
           ansible.builtin.git:
             repo: https://github.com/emacs-mirror/emacs
@@ -422,7 +422,7 @@
             emacs_gcc_version: "{{ emacs_gcc_version_output.stdout }}"
         - name: Set GCC architecture
           set_fact:
-            emacs_gcc_arch: "{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
+            emacs_gcc_arch: "{{ 'aarch64' if ansible_facts.architecture == 'aarch64' else 'x86_64' }}"
         - name: Set GCC library path
           set_fact:
             emacs_gccjit_lib_path: "/usr/lib/gcc/{{ emacs_gcc_arch }}-linux-gnu/{{ emacs_gcc_version }}"
@@ -443,7 +443,7 @@
         - name: Decide parallel job numbers
           set_fact:
             emacs_build_parallel_jobs:
-              "{{ [ansible_processor_threads_per_core * ansible_processor_cores, 4] | min }}"
+              "{{ [ansible_facts.processor_threads_per_core * ansible_facts.processor_cores, 4] | min }}"
         - name: Display Emacs build parallel jobs
           debug:
             msg: "make builds emacs with -j {{ emacs_build_parallel_jobs }}"

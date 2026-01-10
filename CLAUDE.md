@@ -57,9 +57,9 @@ The repository includes roles for:
 ## Platform Support
 
 Roles use Ansible conditionals for cross-platform compatibility:
-- `ansible_os_family == "Darwin"` for macOS-specific tasks
-- `ansible_os_family == "Debian"` for Linux-specific tasks
-- `ansible_architecture != 'aarch64'` for architecture-specific exclusions
+- `ansible_facts.os_family == "Darwin"` for macOS-specific tasks
+- `ansible_facts.os_family == "Debian"` for Linux-specific tasks
+- `ansible_facts.architecture != 'aarch64'` for architecture-specific exclusions
 
 ## Sudo Policy
 
