@@ -39,6 +39,40 @@ function git-worktree-add-with-branch() {
   local date_prefix=$(date +%Y.%m.%d)
   git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
   cd ${directory}
+
+  function git-cleanup-current-worktree() {
+    local dir=$(pwd)
+    # Check if .git is a file (characteristic of a linked worktree root)
+    if [ ! -f "${dir}/.git" ]; then
+      echo "Error: Current directory is not a linked worktree root (missing .git file)."
+      return 1
+    fi
+
+    # Find the main repository root
+    local common_dir=$(git rev-parse --git-common-dir 2>/dev/null)
+    if [ -z "$common_dir" ]; then
+      echo "Error: Could not find git common directory."
+      return 1
+    fi
+
+    # If common_dir is relative, it's relative to the current worktree root.
+    # If it's ".git", we are already in the main repo (but the -f .git check above should have caught that).
+    local main_repo_root=$(cd "$common_dir/.." && pwd)
+
+    # Go to the main repository root to allow removal of the worktree directory
+    cd "${main_repo_root}"
+
+    # Remove the worktree (and directory)
+    if git worktree remove "${dir}"; then
+      echo "Worktree removed successfully. Exiting shell..."
+      exit 0
+    else
+      echo "Failed to remove worktree."
+      # Attempt to go back
+      cd "${dir}"
+      return 1
+    fi
+  }
 }
 
 function git-branch-for-pr() {
@@ -214,37 +248,4 @@ The detailed description should include:
   fi
 }
 
-function git-cleanup-current-worktree() {
-  local dir=$(pwd)
-  # Check if .git is a file (characteristic of a linked worktree root)
-  if [ ! -f "${dir}/.git" ]; then
-    echo "Error: Current directory is not a linked worktree root (missing .git file)."
-    return 1
-  fi
-
-  # Find the main repository root
-  local common_dir=$(git rev-parse --git-common-dir 2>/dev/null)
-  if [ -z "$common_dir" ]; then
-    echo "Error: Could not find git common directory."
-    return 1
-  fi
-
-  # If common_dir is relative, it's relative to the current worktree root.
-  # If it's ".git", we are already in the main repo (but the -f .git check above should have caught that).
-  local main_repo_root=$(cd "$common_dir/.." && pwd)
-
-  # Go to the main repository root to allow removal of the worktree directory
-  cd "${main_repo_root}"
-
-  # Remove the worktree (and directory)
-  if git worktree remove "${dir}"; then
-    echo "Worktree removed successfully. Exiting shell..."
-    exit 0
-  else
-    echo "Failed to remove worktree."
-    # Attempt to go back
-    cd "${dir}"
-    return 1
-  fi
-}
 
