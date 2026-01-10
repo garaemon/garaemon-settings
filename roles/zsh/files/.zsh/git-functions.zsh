@@ -40,6 +40,7 @@ function git-worktree-add-with-branch() {
   git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
   cd ${directory}
 
+  # Clean up the current worktree: remove the directory, the worktree entry, and exit the shell.
   function git-worktree-cleanup-current() {
     local dir=$(pwd)
     # Check if .git is a file (characteristic of a linked worktree root)
@@ -247,5 +248,3 @@ The detailed description should include:
     echo "Error: No staged changes found. Please stage your changes with 'git add .' or similar."
   fi
 }
-
-
