@@ -1050,6 +1050,45 @@ You have to follow the following orders:
           (switch-to-buffer gptel-buffer)
         (call-interactively 'gptel)
       )))
+
+  (defun my-gptel-archive-and-reset ()
+    "Archives the current gptel buffer to ~/.gptel/sessions/ and clears/resets its content."
+    (interactive)
+    ;; Ensure the function is executed only in a gptel-mode buffer
+    (unless gptel-mode
+      (user-error "Not in a gptel buffer"))
+
+    (let* ((base-dir (expand-file-name "~/.gptel/sessions/"))
+           (date-str (format-time-string "%Y-%m-%d-%H%M%S-"))
+
+           ;; Sanitize buffer name (replace non-alphanumeric/hyphen characters with hyphens)
+           (clean-name (replace-regexp-in-string "[^[:alnum:]-]" "-"
+                                                 ;; Remove leading and trailing '*' from buffer names like *Gemini*
+                                                 (string-trim (buffer-name) "*" "*")))
+           ;; Collapse multiple consecutive hyphens into a single one
+           (clean-name (replace-regexp-in-string "-+" "-" clean-name))
+           ;; Remove leading and trailing hyphens
+           (clean-name (string-trim clean-name "-"))
+           ;; Determine the extension based on the buffer mode
+           (ext (if (derived-mode-p 'org-mode) ".org" ".md"))
+           (file-path (concat base-dir date-str clean-name ext)))
+
+      ;; Create the archive directory if it doesn't exist
+      (unless (file-directory-p base-dir)
+        (make-directory base-dir t))
+
+      ;; Save the buffer state (model settings, etc.)
+      ;; This allows settings to be restored when reopening the saved file
+      (gptel--save-state)
+
+      ;; Save the buffer content to the file
+      (write-region (point-min) (point-max) file-path)
+      (message "Saved session to: %s" file-path)
+
+      ;; Reset the buffer
+      (erase-buffer)
+      ;; Insert the initial prompt prefix (e.g., ###)
+      (insert (gptel-prompt-prefix-string))))
   )
 
 (use-package string-inflection :ensure t
