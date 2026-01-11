@@ -33,17 +33,17 @@
 
 - name: Create config directory
   file:
-    path: '{{ ansible_env.HOME }}/.config'
+    path: '{{ ansible_facts.env.HOME }}/.config'
     state: directory
 
 - name: Check if starship.toml exists
   stat:
-    path: '{{ ansible_env.HOME }}/.config/starship.toml'
+    path: '{{ ansible_facts.env.HOME }}/.config/starship.toml'
   register: starship_toml_stat
 
 - name: Check file differences for starship.toml
   command: >
-    diff '{{ ansible_env.HOME }}/.config/starship.toml'
+    diff '{{ ansible_facts.env.HOME }}/.config/starship.toml'
     "{{ ghq_settings_root }}/roles/starship/files/starship.toml"
   register: starship_toml_diff
   failed_when: false
@@ -54,7 +54,7 @@
 
 - name: Remove existing starship.toml if identical to target
   file:
-    path: '{{ ansible_env.HOME }}/.config/starship.toml'
+    path: '{{ ansible_facts.env.HOME }}/.config/starship.toml'
     state: absent
   when:
     - starship_toml_stat.stat.exists
@@ -64,5 +64,5 @@
 - name: Create symlink for starship.toml
   file:
     src: "{{ ghq_settings_root }}/roles/starship/files/starship.toml"
-    dest: '{{ ansible_env.HOME }}/.config/starship.toml'
+    dest: '{{ ansible_facts.env.HOME }}/.config/starship.toml'
     state: link

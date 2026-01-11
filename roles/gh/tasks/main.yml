@@ -1,7 +1,7 @@
 - name: Install gh on mac
   homebrew:
     name: gh
-  when: ansible_os_family == "Darwin"
+  when: ansible_facts.os_family == "Darwin"
 
 - name: Check if gh is already installed
   command: which gh
@@ -11,7 +11,7 @@
 
 - name: Install gh on Debian/Ubuntu
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts.os_family == "Debian"
     - gh_installed.rc != 0
   block:
     - name: Create /etc/apt/keyrings directory

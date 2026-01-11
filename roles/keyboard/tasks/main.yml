@@ -6,10 +6,10 @@
     line: 'XKBOPTIONS="ctrl:nocaps"'
     backup: true
   become: true
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
   notify: Reconfigure keyboard
 
 - name: Apply keyboard configuration
   command: dpkg-reconfigure -f noninteractive keyboard-configuration
   become: true
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"

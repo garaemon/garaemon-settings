@@ -49,4 +49,4 @@
   vars:
     packages:
       - libgnutls-dev
-  when: ansible_lsb.codename == "xenial"
+  when: ansible_facts.lsb.codename == "xenial"
