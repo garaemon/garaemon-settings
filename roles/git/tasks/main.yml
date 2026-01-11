@@ -4,21 +4,21 @@
     state: present
   check_mode: true
   register: git_check
-  when: ansible_os_family == "Debian"
+  when: ansible_facts.os_family == "Debian"
 
 - name: Install git
   apt:
     name: git
   become: true
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts.os_family == "Debian"
     - git_check.changed
 
 # Install delta via mise
 - name: Install delta via mise
   command: mise use -g delta
   environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.PATH }}"
   retries: 3
   delay: 5
   register: git_delta_install_result

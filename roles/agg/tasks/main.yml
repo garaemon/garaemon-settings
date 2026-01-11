@@ -6,18 +6,18 @@
 
 - name: Install agg on Debian/Ubuntu
   when:
-    - ansible_os_family == "Debian"
+    - ansible_facts.os_family == "Debian"
     - agg_which_result.rc != 0
   block:
     - name: Set architecture to x86_64
       set_fact:
         agg_arch: x86_64
-      when: ansible_architecture == 'x86_64'
+      when: ansible_facts.architecture == 'x86_64'
 
     - name: Set architecture to aarch64
       set_fact:
         agg_arch: aarch64
-      when: ansible_architecture == 'aarch64'
+      when: ansible_facts.architecture == 'aarch64'
 
     - name: Set agg binary name
       set_fact:

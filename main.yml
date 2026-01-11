@@ -2,9 +2,9 @@
   hosts: all
   roles:
     - role: apt
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - role: homebrew
-      when: ansible_os_family == "Darwin"
+      when: ansible_facts.os_family == "Darwin"
     - mise
     - ghq
     - base
@@ -23,21 +23,21 @@
     - emacs
     - peco
     - role: font
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - ispell
     - enchant
     - tig
     - dircolors_solarized
     - role: base16_gnome_terminal
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - role: dictd
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - role: keyboard
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - role: keyd
-      when: ansible_os_family == "Debian"
+      when: ansible_facts.os_family == "Debian"
     - role: chrome
-      when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
+      when: ansible_facts.os_family == "Debian" and ansible_facts.architecture == "x86_64"
     - python_language_server
     - typescript_language_server
     - ghostty_install

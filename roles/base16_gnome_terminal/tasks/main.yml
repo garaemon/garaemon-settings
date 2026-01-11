@@ -6,7 +6,7 @@
 
 - name: Clone base16-gnome-terminal using ghq
   shell: |
-    eval "$({{ ansible_env.HOME }}/.local/bin/mise activate bash)"
+    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
     ghq get https://github.com/aarowill/base16-gnome-terminal.git
   args:
     executable: /bin/bash

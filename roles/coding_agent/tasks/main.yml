@@ -103,7 +103,7 @@
 # include paths for tools installed via mise (e.g., ~/.local/share/mise/shims).
 - name: Set environment path including mise shims
   set_fact:
-    coding_agent_env_path: "{{ ansible_env.HOME }}/.local/share/mise/shims:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    coding_agent_env_path: "{{ ansible_facts.env.HOME }}/.local/share/mise/shims:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.PATH }}"
 
 - name: Install Claude Code via mise
   command: mise use -g claude
