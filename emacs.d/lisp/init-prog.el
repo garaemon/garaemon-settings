@@ -759,7 +759,34 @@ The detailed description should include:
 - What changes were made
 - Why the changes were made (purpose, background)
 - Any impact of the changes (if applicable)
-- Use imperative form
+- Use imperative mood in the subject line
+- Wrap the body at 72 characters
+- Use hanging indent in the bullet points
+
+<example>
+Fix typo: landry -> laundry
+</example>
+<example>
+Fix symlink paths to work in CI environment
+
+Use playbook_dir in CI environments instead of ghq_root_path to ensure
+symlinks work correctly during PR tests where the repository is checked
+out to a different location.
+
+- Add CI environment detection in ghq role
+- Introduce ghq_settings_root variable that uses playbook_dir in CI
+- Replace all ghq_root_path-based symlink paths with ghq_settings_root
+- Ensure compatibility with local, remote, and CI execution environments
+</example>
+<example>
+Add keyd role for keyboard remapping
+
+- Add keyd role to manage keyboard remapping daemon
+- Install keyd package via apt
+- Deploy default configuration for key mappings
+- Add systemd service management with restart handler
+- Enable keyd role for Debian-based systems
+</example>
 ")
   :hook (magit-mode . gptel-magit-install))
 
