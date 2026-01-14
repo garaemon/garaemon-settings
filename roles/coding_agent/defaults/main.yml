@@ -9,4 +9,3 @@ coding_agent_create_pr_prompt_body: |
   4. Check the diff between the current branch and the default branch in origin repository.
   5. Check the commits with the actual diff and commit message
   6. Make a PR by `gh pr create`.
-  7. Open a browser by `gh pr view --web`
