@@ -128,33 +128,3 @@
   delay: 5
   register: coding_agent_gemini_install_result
   until: coding_agent_gemini_install_result.rc == 0
-
-# Use 'playwright-mcp' instead of 'playwright' as the tool name to avoid
-# confusion with the Playwright testing tool.
-- name: Check if playwright MCP is registered in Claude
-  shell: claude mcp list | grep playwright-mcp
-  environment:
-    PATH: "{{ coding_agent_env_path }}"
-  register: coding_agent_claude_mcp_list
-  failed_when: false
-  changed_when: false
-
-- name: Register playwright MCP to Claude
-  command: claude mcp add playwright-mcp npx @playwright/mcp@latest -s user
-  environment:
-    PATH: "{{ coding_agent_env_path }}"
-  when: coding_agent_claude_mcp_list.rc != 0
-
-- name: Check if playwright MCP is registered in Gemini
-  shell: gemini mcp list | grep playwright-mcp
-  environment:
-    PATH: "{{ coding_agent_env_path }}"
-  register: coding_agent_gemini_mcp_list
-  failed_when: false
-  changed_when: false
-
-- name: Register playwright MCP to Gemini
-  command: gemini mcp add playwright-mcp npx @playwright/mcp@latest -s user
-  environment:
-    PATH: "{{ coding_agent_env_path }}"
-  when: coding_agent_gemini_mcp_list.rc != 0
