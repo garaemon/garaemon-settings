@@ -15,3 +15,6 @@
 - Do not use `git add .`. Specify files to add to git explicitly always.
 - Write comments focusing on "why"s.
 - Make a branch first before you modify the code if you are on the default branch.
+
+## Gemini Added Memories
+- set CI=true in playwright testing
