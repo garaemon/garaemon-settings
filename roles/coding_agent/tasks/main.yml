@@ -94,6 +94,12 @@
     dest: ~/.gemini/commands/create-pr.toml
     mode: '0644'
 
+- name: Generate fix-todo-comments.toml for Gemini
+  template:
+    src: fix-todo-comments.toml.j2
+    dest: ~/.gemini/commands/fix-todo-comments.toml
+    mode: '0644'
+
 - name: Remove incorrect create-pr.md for Gemini
   file:
     path: ~/.gemini/commands/create-pr.md
