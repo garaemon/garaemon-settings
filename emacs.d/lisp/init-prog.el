@@ -813,6 +813,7 @@ Add keyd role for keyboard remapping
     ;; and the description of the new pull request.
     (magit-git-insert "log" "-1" "--pretty=%B")
     )
+  (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
   )
 
 (use-package git-commit
