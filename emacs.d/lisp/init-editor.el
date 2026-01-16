@@ -418,6 +418,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package volatile-highlights :ensure t
   :config (volatile-highlights-mode))
 
+;; Show candidate of keybinds after prefix keys such as C-c.
 (use-package which-key :ensure t
   :config
   (which-key-mode)
