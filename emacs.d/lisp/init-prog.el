@@ -950,6 +950,7 @@ Add keyd role for keyboard remapping
                             (setq-local buffer-face-mode-face '(:family "Monaco Nerd Font Mono")))
                         (buffer-face-mode)
                         (display-fill-column-indicator-mode -1)
+                        (setq-local show-trailing-whitespace nil)
                         ))
   )
 
