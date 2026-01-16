@@ -130,5 +130,7 @@
 ;;; Highlight indentation mode hook
 (add-hook 'highlight-indentation-mode (lambda () (highlight-indentation-mode -1)))
 
+(setopt show-trailing-whitespace t)
+
 (provide 'init-basic)
 ;;; init-basic.el ends here
