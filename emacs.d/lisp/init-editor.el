@@ -17,6 +17,12 @@
 ;;; Show ediff with horizontal split view
 (setq ediff-split-window-function 'split-window-horizontally)
 
+;; Insert closing parenthesis and quotes automatically
+(use-package elec-pair
+  :ensure nil
+  :config
+  (electric-pair-mode))
+
 ;;; Completion frameworks
 
 (use-package vertico
