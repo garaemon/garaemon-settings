@@ -140,5 +140,10 @@ it from being deleted by `delete-other-windows` (C-x 1)."
 
 (global-set-key (kbd "C-c , d") 'my-toggle-window-persistence)
 
+;; Highlight changes
+(use-package pulsar
+  :config
+  (pulsar-global-mode))
+
 (provide 'init-ui)
 ;;; init-ui.el ends here

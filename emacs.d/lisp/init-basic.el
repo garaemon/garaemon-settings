@@ -135,5 +135,7 @@
   :ensure nil
   :init (global-auto-revert-mode))
 
+(setopt show-trailing-whitespace t)
+
 (provide 'init-basic)
 ;;; init-basic.el ends here
