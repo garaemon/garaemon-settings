@@ -130,6 +130,11 @@
 ;;; Highlight indentation mode hook
 (add-hook 'highlight-indentation-mode (lambda () (highlight-indentation-mode -1)))
 
+;; Read buffer automatically if an external process modifies it
+(use-package autorevert
+  :ensure nil
+  :init (global-auto-revert-mode))
+
 (setopt show-trailing-whitespace t)
 
 (provide 'init-basic)
