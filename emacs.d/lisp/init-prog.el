@@ -1026,7 +1026,7 @@ You have to follow the following orders:
 
   (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
     (if gemini-key
-        (setq gptel-model 'gemini-flash-latest
+        (setq gptel-model 'gemini-3-flash-preview
               gptel-backend (gptel-make-gemini "Gemini"
                  :key gemini-key
                  :stream t))
