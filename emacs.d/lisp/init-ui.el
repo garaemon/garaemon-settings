@@ -140,6 +140,12 @@ it from being deleted by `delete-other-windows` (C-x 1)."
 
 (global-set-key (kbd "C-c , d") 'my-toggle-window-persistence)
 
+;; Display an indicator at the 100th column
+(setq-default fill-column 100)
+(global-display-fill-column-indicator-mode)
+;; Use a light gray as the default color is a bit dark
+(set-face-foreground 'fill-column-indicator "#555555")
+
 ;; Highlight changes
 (use-package pulsar
   :config
