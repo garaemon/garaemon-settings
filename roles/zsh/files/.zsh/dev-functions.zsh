@@ -124,6 +124,7 @@ function gemini-docker() {
     -v "/etc/passwd:/etc/passwd:ro"
     -v "/etc/group:/etc/group:ro"
     -e "GEMINI_API_KEY=${GEMINI_API_KEY}"
+    -e "HOME=/home/gemini"
   )
 
   # Mount gcloud config
