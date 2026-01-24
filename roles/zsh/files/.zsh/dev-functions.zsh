@@ -147,6 +147,6 @@ function gemini-docker() {
   fi
 
   docker run "${docker_args[@]}" \
-    us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:latest \
+    us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.1 \
     "$@"
 }
