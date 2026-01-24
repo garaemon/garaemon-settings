@@ -116,9 +116,21 @@ function ffmpeg-mp3-convert() {
 }
 
 function gemini-docker() {
-  docker run -it --rm \
-    -v "${PWD}:${PWD}" \
-    -w "${PWD}" \
+  local docker_args=(
+    -it --rm
+    -v "${PWD}:${PWD}"
+    -w "${PWD}"
+    -u "$(id -u):$(id -g)"
+    -v "/etc/passwd:/etc/passwd:ro"
+    -v "/etc/group:/etc/group:ro"
+    -e "GEMINI_API_KEY=${GEMINI_API_KEY}"
+  )
+
+  if [ -d "$HOME/.config/gcloud" ]; then
+    docker_args+=(-v "$HOME/.config/gcloud:$HOME/.config/gcloud")
+  fi
+
+  docker run "${docker_args[@]}" \
     ghcr.io/garaemon/grmini:latest \
     "$@"
 }
