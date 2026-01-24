@@ -128,22 +128,22 @@ function gemini-docker() {
 
   # Mount gcloud config
   if [ -d "$HOME/.config/gcloud" ]; then
-    docker_args+=(-v "$HOME/.config/gcloud:$HOME/.config/gcloud")
+    docker_args+=(-v "$HOME/.config/gcloud:/home/$(whoami)/.config/gcloud")
   fi
 
   # Mount gemini config
   if [ -d "$HOME/.config/gemini" ]; then
-    docker_args+=(-v "$HOME/.config/gemini:$HOME/.config/gemini")
+    docker_args+=(-v "$HOME/.config/gemini:/home/$(whoami)/.config/gemini")
   fi
 
   # Mount .gemini directory
   if [ -d "$HOME/.gemini" ]; then
-    docker_args+=(-v "$HOME/.gemini:$HOME/.gemini")
+    docker_args+=(-v "$HOME/.gemini:/home/$(whoami)/.gemini")
   fi
 
   # Mount Application Default Credentials
   if [ -d "$HOME/.config/google-cloud-sdk" ]; then
-    docker_args+=(-v "$HOME/.config/google-cloud-sdk:$HOME/.config/google-cloud-sdk")
+    docker_args+=(-v "$HOME/.config/google-cloud-sdk:/home/$(whoami)/.config/google-cloud-sdk")
   fi
 
   docker run "${docker_args[@]}" \
