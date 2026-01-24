@@ -130,7 +130,11 @@ function gemini-docker() {
     docker_args+=(-v "$HOME/.config/gcloud:$HOME/.config/gcloud")
   fi
 
+  if [ -d "$HOME/.config/gemini" ]; then
+    docker_args+=(-v "$HOME/.config/gemini:$HOME/.config/gemini")
+  fi
+
   docker run "${docker_args[@]}" \
-    ghcr.io/garaemon/grmini:latest \
+    us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:latest \
     "$@"
 }
