@@ -163,13 +163,13 @@ if [ ! -e $HOME/.roszsh ]; then
   fi
 fi
 
-if which starship >/dev/null 2>&1; then
-  eval "$(starship init zsh)"
-fi
-
 # Load mise before using ghq command.
 if which mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
+fi
+
+if which starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
 fi
 
 if [[ ! -e $(ghq root)/github.com/rupa/z ]]; then
