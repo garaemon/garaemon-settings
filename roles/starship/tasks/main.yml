@@ -1,3 +1,8 @@
+- name: Remove old starship binary
+  file:
+    path: "{{ ansible_facts.env.HOME }}/.local/bin/starship"
+    state: absent
+
 - name: Install starship via mise
   command: mise use -g starship@{{ starship_version }}
   environment:
