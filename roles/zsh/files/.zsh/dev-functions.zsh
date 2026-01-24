@@ -126,12 +126,19 @@ function gemini-docker() {
     -e "GEMINI_API_KEY=${GEMINI_API_KEY}"
   )
 
+  # Mount gcloud config
   if [ -d "$HOME/.config/gcloud" ]; then
     docker_args+=(-v "$HOME/.config/gcloud:$HOME/.config/gcloud")
   fi
 
+  # Mount gemini config
   if [ -d "$HOME/.config/gemini" ]; then
     docker_args+=(-v "$HOME/.config/gemini:$HOME/.config/gemini")
+  fi
+
+  # Mount Application Default Credentials
+  if [ -d "$HOME/.config/google-cloud-sdk" ]; then
+    docker_args+=(-v "$HOME/.config/google-cloud-sdk:$HOME/.config/google-cloud-sdk")
   fi
 
   docker run "${docker_args[@]}" \
