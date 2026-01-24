@@ -114,3 +114,40 @@ function ffmpeg-mp3-convert() {
   local output_file="${target_file%.*}.mp3"
   ffmpeg -i "${target_file}" -b:a 48k "${output_file}"
 }
+
+function gemini-docker() {
+  local docker_args=(
+    -it --rm
+    -v "${PWD}:${PWD}"
+    -w "${PWD}"
+    -u "$(id -u):$(id -g)"
+    -v "/etc/passwd:/etc/passwd:ro"
+    -v "/etc/group:/etc/group:ro"
+    -e "GEMINI_API_KEY=${GEMINI_API_KEY}"
+    -e "HOME=/home/gemini"
+  )
+
+  # Mount gcloud config
+  if [ -d "$HOME/.config/gcloud" ]; then
+    docker_args+=(-v "$HOME/.config/gcloud:/home/gemini/.config/gcloud")
+  fi
+
+  # Mount gemini config
+  if [ -d "$HOME/.config/gemini" ]; then
+    docker_args+=(-v "$HOME/.config/gemini:/home/gemini/.config/gemini")
+  fi
+
+  # Mount .gemini directory
+  if [ -d "$HOME/.gemini" ]; then
+    docker_args+=(-v "$HOME/.gemini:/home/gemini/.gemini")
+  fi
+
+  # Mount Application Default Credentials
+  if [ -d "$HOME/.config/google-cloud-sdk" ]; then
+    docker_args+=(-v "$HOME/.config/google-cloud-sdk:/home/gemini/.config/google-cloud-sdk")
+  fi
+
+  docker run "${docker_args[@]}" \
+    "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:$(gemini --version)" \
+    "$@"
+}
