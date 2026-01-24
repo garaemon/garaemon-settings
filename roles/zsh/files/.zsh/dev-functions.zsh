@@ -114,3 +114,11 @@ function ffmpeg-mp3-convert() {
   local output_file="${target_file%.*}.mp3"
   ffmpeg -i "${target_file}" -b:a 48k "${output_file}"
 }
+
+function grmini() {
+  docker run -it --rm \
+    -v "${PWD}:${PWD}" \
+    -w "${PWD}" \
+    ghcr.io/garaemon/grmini:latest \
+    "$@"
+}
