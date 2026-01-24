@@ -115,7 +115,7 @@ function ffmpeg-mp3-convert() {
   ffmpeg -i "${target_file}" -b:a 48k "${output_file}"
 }
 
-function grmini() {
+function gemini-docker() {
   docker run -it --rm \
     -v "${PWD}:${PWD}" \
     -w "${PWD}" \
