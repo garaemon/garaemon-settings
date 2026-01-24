@@ -144,27 +144,28 @@ it from being deleted by `delete-other-windows` (C-x 1)."
 (defun my-frame-move-left ()
   "Move the current frame to the left half of the screen."
   (interactive)
-  (modify-frame-parameters nil '((left . 0.0) (top . 0.0) (width . 0.5) (height . 0.9))))
+  (modify-frame-parameters nil '((left . 0.0) (top . 0.0) (width . 0.5) (height . 1.0))))
 
 (defun my-frame-move-right ()
   "Move the current frame to the right half of the screen."
   (interactive)
-  (modify-frame-parameters nil '((left . 1.0) (top . 0.0) (width . 0.5) (height . 0.9))))
+  (modify-frame-parameters nil '((left . 1.0) (top . 0.0) (width . 0.5) (height . 1.0))))
 
 (defun my-frame-move-top ()
   "Move the current frame to the top half of the screen."
   (interactive)
-  (modify-frame-parameters nil '((left . 0.0) (top . 0.0) (width . 1.0) (height . 0.45))))
+  (modify-frame-parameters nil '((left . 0.0) (top . 0.0) (width . 1.0) (height . 0.5))))
 
 (defun my-frame-move-bottom ()
   "Move the current frame to the bottom half of the screen."
   (interactive)
-  (modify-frame-parameters nil '((left . 0.0) (top . 1.0) (width . 1.0) (height . 0.45))))
+  (modify-frame-parameters nil '((left . 0.0) (top . 1.0) (width . 1.0) (height . 0.5))))
 
 (global-set-key (kbd "C-M-<left>") 'my-frame-move-left)
 (global-set-key (kbd "C-M-<right>") 'my-frame-move-right)
-(global-set-key (kbd "C-M-<up>") 'my-frame-move-top)
-(global-set-key (kbd "C-M-<down>") 'my-frame-move-bottom)
+;; Do not enable these keybinds because of the conflicts with multiple-cursors
+;; (global-set-key (kbd "C-M-<up>") 'my-frame-move-top)
+;; (global-set-key (kbd "C-M-<down>") 'my-frame-move-bottom)
 
 ;; Display an indicator at the 100th column
 (setq-default fill-column 100)
