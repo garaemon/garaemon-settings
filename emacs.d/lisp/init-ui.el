@@ -175,8 +175,25 @@ it from being deleted by `delete-other-windows` (C-x 1)."
 
 ;; Highlight changes
 (use-package pulsar
-  :config
-  (pulsar-global-mode))
+  :init
+  (pulsar-global-mode)
+  :custom
+  ;; Highlight edited regions when emacs modifies buffers by regions
+  (pulsar-pulse-region-functions
+    '(yank
+      yank-pop
+      append-next-kill
+      undo
+      undo-redo
+      backward-kill-word
+      kill-word
+      ;; vundo
+      vundo-backward
+      vundo-forward
+      vundo-step-back
+      vundo-step-forward
+      ))
+  )
 
 (provide 'init-ui)
 ;;; init-ui.el ends here
