@@ -1,35 +1,12 @@
-- name: Check if starship is installed or not
-  command: which starship
-  ignore_errors: true
-  register: starship_which_starship
+- name: Remove old starship binary
+  file:
+    path: "{{ ansible_facts.env.HOME }}/.local/bin/starship"
+    state: absent
 
-- name: Get starship version
-  shell:
-    starship -V | sed 's/[^0-9.]*\([0-9.]*\).*/\1/'
-  when: starship_which_starship.rc == 0
-  register: starship_installed_version
-
-- name: Install starship if not installed or version is outdated
-  when: starship_which_starship.rc != 0 or starship_installed_version.stdout is version_compare(starship_version, '<')
-  block:
-    - name: Create tempfile for starship install script
-      tempfile:
-        state: file
-        suffix: install_starship_sh
-      register: starship_tempfile
-
-    - name: Download starship install script
-      get_url:
-        url: https://starship.rs/install.sh
-        dest: "{{ starship_tempfile.path }}"
-        mode: "0755"
-        # force: true is needed because ansible skips download install.sh because of 304 status.
-        force: true
-      register: starship_download
-
-- name: Install starship
-  shell: "{{ starship_tempfile.path }} -y --bin-dir $HOME/.local/bin"
-  when: starship_download.changed
+- name: Install starship via mise
+  command: mise use -g starship@{{ starship_version }}
+  environment:
+    PATH: "{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.PATH }}"
 
 - name: Create config directory
   file:

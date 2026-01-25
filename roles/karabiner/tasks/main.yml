@@ -29,9 +29,18 @@
     - not karabiner_stat.stat.islnk
     - karabiner_diff.rc == 0
 
+- name: Backup existing karabiner config if different
+  command: mv ~/.config/karabiner/karabiner.json ~/.config/karabiner/karabiner.json.bak
+  when:
+    - ansible_facts.os_family == "Darwin"
+    - karabiner_stat.stat.exists
+    - not karabiner_stat.stat.islnk
+    - karabiner_diff.rc != 0
+
 - name: Create symlink for karabiner configuration
   file:
     src: "{{ ghq_settings_root }}/roles/karabiner/files/karabiner.json"
     dest: ~/.config/karabiner/karabiner.json
     state: link
+    force: true
   when: ansible_facts.os_family == "Darwin"
