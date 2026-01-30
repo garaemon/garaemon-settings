@@ -93,6 +93,10 @@
 ;; Do not highlight the content if the cursor is on the closing parenthesis
 (setq show-paren-when-point-inside-paren nil)
 
+;; Since we use C-M-f and C-M-b to position window, we need different keybinds.
+(global-set-key (kbd "M-}") 'forward-list)
+(global-set-key (kbd "M-{") 'backward-list)
+
 ;;; User interface preferences
 ;; Force to use y-or-n-p
 (fset 'yes-or-no-p 'y-or-n-p)
