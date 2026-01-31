@@ -66,7 +66,7 @@ pdf2ja-gemini(){
     return 1
   fi
 
-  pdf2zh -lo ja -li en -s gemini:gemini-2.5-flash "$1"
+  pdf2zh -lo ja -li en -s gemini:gemini-3-flash-preview "$1"
 }
 
 pdf2ja-gemma3(){
@@ -100,7 +100,7 @@ pdf2ja-gemma3(){
 }
 
 function llm-gemini() {
-  echo $@ | llm -m "gemini-2.5-flash" -s "Answer in Japanese briefly"
+  echo $@ | llm -m "gemini-3-flash-preview" -s "Answer in Japanese briefly"
 }
 
 function llm-local() {
