@@ -61,6 +61,7 @@
           apt:
             deb: "{{ ghostty_install_temp_dir.path }}/ghostty.deb"
             state: present
+            update_cache: true
           become: true
 
         - name: Clean up temporary directory
