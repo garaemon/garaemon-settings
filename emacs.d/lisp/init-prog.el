@@ -1091,6 +1091,60 @@ You have to follow the following orders:
       (erase-buffer)
       ;; Insert the initial prompt prefix (e.g., ###)
       (insert (gptel-prompt-prefix-string))))
+
+  (defun my-gptel-ask-and-annotate-line (question)
+    "Ask GPTel about the current line and annotate it with the response.
+The entire buffer content is sent as context."
+    (interactive "sQuestion about this line: ")
+    (require 'annotate)
+    (let* ((buf (current-buffer))
+           (start (line-beginning-position))
+           (end (line-end-position))
+           (line-content (buffer-substring-no-properties start end))
+           (buffer-content (buffer-substring-no-properties (point-min) (point-max)))
+           (prompt (format "Context (File Content):\n```\n%s\n```\n\nTarget Line:\n```\n%s\n```\n\nQuestion: %s\n\nPlease answer in Japanese. Keep the answer concise enough to fit in a margin annotation."
+                           buffer-content line-content question)))
+      (message "Asking GPTel...")
+      (gptel-request
+       prompt
+       :system "You are an intelligent coding assistant. Answer in Japanese. Be concise."
+       :callback (lambda (response info)
+                   (if (and response (stringp response))
+                       (with-current-buffer buf
+                         ;; Ensure annotate-mode is active
+                         (unless (bound-and-true-p annotate-mode)
+                           (annotate-mode 1))
+                         ;; annotate-create-annotation arguments: start end annotation-text annotated-text
+                         (annotate-create-annotation start end response line-content)
+                         (message "Annotation added."))
+                     (message "GPTel request failed: %s" (plist-get info :status)))))))
+
+  (defun my-gptel-ask-and-annotate-line (question)
+    "Ask GPTel about the current line and annotate it with the response.
+The entire buffer content is sent as context."
+    (interactive "sQuestion about this line: ")
+    (let* ((buf (current-buffer))
+           (start (line-beginning-position))
+           (end (line-end-position))
+           (line-content (buffer-substring-no-properties start end))
+           (buffer-content (buffer-substring-no-properties (point-min) (point-max)))
+           (prompt (format "Context (File Content):\n```\n%s\n```\n\nTarget Line:\n```\n%s\n```\n\nQuestion: %s\n\nPlease answer in Japanese. Keep the answer concise enough to fit in a margin annotation."
+                           buffer-content line-content question)))
+      (message "Asking GPTel...")
+      (gptel-request
+          prompt
+        :system "You are an intelligent coding assistant. Answer in Japanese. Be concise."
+        :callback (lambda (response info)
+                    (if (and response (stringp response))
+                        (with-current-buffer buf
+                          ;; Ensure annotate-mode is active
+                          (unless (bound-and-true-p annotate-mode)
+                            (annotate-mode 1))
+                          ;; annotate-create-annotation arguments: start end annotation-text annotated-text
+                          (annotate-create-annotation start end (format "AI: %s" response) line-content)
+                          (message "Annotation added."))
+                      (message "GPTel request failed: %s" (plist-get info :status)))))))
+
   )
 
 (use-package string-inflection :ensure t
