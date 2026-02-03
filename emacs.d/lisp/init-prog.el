@@ -797,7 +797,9 @@ Add keyd role for keyboard remapping
   ;;   1. configure github.user by following command:
   ;;     git config --global github.user garaemon
   ;;   2. Create ~/.authinfo file and write an entry like:
-  ;;      machine api.github.com login garaemon^forge password {token}
+  ;;     machine api.github.com login garaemon^forge password {token}
+  ;;     Alternatively, create a 1Password item with hostname=api.github.com and a field named
+  ;;     garaemon-forge containing the key.
   ;;     The scope of token to be enabled are
   ;;       1. repo
   ;;       2. user
@@ -1002,7 +1004,7 @@ Optional argument ARGS ."
          :map gptel-mode-map
          ("C-c C-c" . gptel-send))
   :custom
-  '(gptel-directives
+  (gptel-directives
    '((default
       . "You are a large language model living in Emacs and a helpful assistant.
 You have to follow the following orders:
@@ -1024,13 +1026,10 @@ You have to follow the following orders:
        '(header-line ((t (:inverse-video nil :underline t)))))
     )
 
-  (let ((gemini-key (getenv "EMACS_GEMINI_KEY")))
-    (if gemini-key
-        (setq gptel-model 'gemini-3-flash-preview
-              gptel-backend (gptel-make-gemini "Gemini"
-                 :key gemini-key
-                 :stream t))
-      ))
+  (setq gptel-model 'gemini-3-flash-preview
+        gptel-backend (gptel-make-gemini "Gemini"
+                        :key gptel-api-key
+                        :stream t))
 
   (gptel-make-ollama "Ollama (gemmma3:4b)"
     :host "localhost:11434"
@@ -1294,6 +1293,25 @@ The entire buffer content is sent as context."
 (use-package rich-compile
   :ensure nil
   :bind (("C-c C-r" . rich-compile-run-menu))
+  )
+
+(use-package auth-source-1password
+  :ensure t
+  :custom (auth-source-1password-vault "Private")
+  :config
+  (defun my-auth-source-1password-construct-path (_backend _type host user _port)
+    "Create a path by converting usernames containing '^' for Forge into a format usable by
+1Password."
+    (let* ((vault auth-source-1password-vault)
+           ;; Replace 'username^forge' with 'username-forge' or other characters allowed by 1Password.
+           (safe-user (if (stringp user)
+                          (replace-regexp-in-string "\\^" "-" user)
+                        user)))
+      (mapconcat #'identity (list vault host safe-user) "/")))
+
+  ;; Assign the custom function to the package configuration.
+  (setq auth-source-1password-construct-secret-reference #'my-auth-source-1password-construct-path)
+  (auth-source-1password-enable)
   )
 
 (provide 'init-prog)
