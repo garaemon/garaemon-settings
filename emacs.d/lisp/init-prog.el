@@ -1301,18 +1301,20 @@ The entire buffer content is sent as context."
   :config
   (defun my-auth-source-1password-construct-path (_backend _type host user _port)
     "Create a path by converting usernames containing '^' for Forge into a format usable by
-1Password."
+1Password, and stripping API suffixes from the host."
     (let* ((vault auth-source-1password-vault)
+           (clean-host (if (stringp host)
+                           (replace-regexp-in-string "/api/v3\\'" "" host)
+                         host))
            ;; Replace 'username^forge' with 'username-forge' or other characters allowed by 1Password.
            (safe-user (if (stringp user)
                           (replace-regexp-in-string "\\^" "-" user)
                         user)))
-      (mapconcat #'identity (list vault host safe-user) "/")))
+      (mapconcat #'identity (list vault clean-host safe-user) "/")))
 
   ;; Assign the custom function to the package configuration.
   (setq auth-source-1password-construct-secret-reference #'my-auth-source-1password-construct-path)
-  (auth-source-1password-enable)
-  )
+  (auth-source-1password-enable))
 
 (provide 'init-prog)
 ;;; init-prog.el ends here
