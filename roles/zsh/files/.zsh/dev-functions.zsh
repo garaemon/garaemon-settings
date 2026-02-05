@@ -61,12 +61,13 @@ pdf2ja-gemini(){
     return 1
   fi
 
-  if [ -z "$GEMINI_API_KEY" ]; then
-    echo "Error: GEMINI_API_KEY is not set. Please set it, e.g., export GEMINI_API_KEY='your_api_key'"
-    return 1
+  local vault="Private"
+  if op vault get "Employee" &>/dev/null; then
+    vault="Employee"
   fi
 
-  pdf2zh -lo ja -li en -s gemini:gemini-3-flash-preview "$1"
+  GEMINI_API_KEY="$(op read "op://${vault}/generativelanguage.googleapis.com/apikey")" \
+                pdf2zh -lo ja -li en -s gemini:gemini-3-flash-preview "$1"
 }
 
 pdf2ja-gemma3(){
@@ -100,7 +101,13 @@ pdf2ja-gemma3(){
 }
 
 function llm-gemini() {
-  echo $@ | llm -m "gemini-3-flash-preview" -s "Answer in Japanese briefly"
+  local vault="Private"
+  if op vault get "Employee" &>/dev/null; then
+    vault="Employee"
+  fi
+
+  echo $@ | GEMINI_API_KEY="$(op read "op://${vault}/generativelanguage.googleapis.com/apikey")" \
+                llm -m "gemini-3-flash-preview" -s "Answer in Japanese briefly"
 }
 
 function llm-local() {
