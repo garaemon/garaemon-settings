@@ -451,32 +451,9 @@
 (use-package exec-path-from-shell :ensure t
   :config
   (add-to-list 'exec-path-from-shell-variables "CMAKE_PREFIX_PATH")
-  (add-to-list 'exec-path-from-shell-variables "EMACS_GEMINI_KEY")
   (add-to-list 'exec-path-from-shell-variables "PYTHONPATH")
   (add-to-list 'exec-path-from-shell-variables "PYTHONHOME")
   (exec-path-from-shell-initialize)
-  )
-
-(use-package aidermacs
-  :defer t
-  :ensure t
-  ;; :bind (("C-c a" . aidermacs-transient-menu))
-  :config
-  ;; Use gemini as default LLM
-  (if (getenv "EMACS_GEMINI_KEY")
-      (setenv "GEMINI_API_KEY" (getenv "EMACS_GEMINI_KEY")))
-
-  (let* ((uv-tool-dir (string-trim (shell-command-to-string "uv tool dir")))
-         (aider-exec (format "%s/aider-chat/bin/aider" uv-tool-dir)))
-    (setq aidermacs-program aider-exec))
-  :custom
-  ; See the Configuration section below
-  (aidermacs-use-architect-mode t)
-  (aidermacs-default-model "gemini/gemini-2.5-flash")
-  :hook (aidermacs-comint-mode . (lambda ()
-                                   (display-line-numbers-mode -1)
-                                   (display-fill-column-indicator-mode -1)
-                                   ))
   )
 
 (use-package docker
