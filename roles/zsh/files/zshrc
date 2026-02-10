@@ -456,3 +456,8 @@ if command -v ghq > /dev/null 2>&1; then
     source "$GHQ_UTILS_PATH"
   fi
 fi
+
+# Set up Nix
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+  . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+fi
