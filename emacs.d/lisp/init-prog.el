@@ -1293,5 +1293,9 @@ The entire buffer content is sent as context."
   (setq auth-source-1password-construct-secret-reference #'my-auth-source-1password-construct-path)
   (auth-source-1password-enable))
 
+(use-package nix-mode
+  :ensure t
+  :mode "\\.nix\\'")
+
 (provide 'init-prog)
 ;;; init-prog.el ends here
