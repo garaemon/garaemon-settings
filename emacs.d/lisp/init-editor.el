@@ -21,7 +21,9 @@
 (use-package elec-pair
   :ensure nil
   :config
-  (electric-pair-mode))
+  (electric-pair-mode 1)
+  ;; Do not enable it for org-mode since it has special expansion keybinds for "<" like "<s[TAB]".
+  (add-hook 'org-mode-hook (lambda () (electric-pair-local-mode -1))))
 
 ;;; Completion frameworks
 
