@@ -25,3 +25,5 @@ fi
 
 
 export TRAMP_ZSHENV_LOADED="yes"
+
+if [ -e /home/garaemon/.nix-profile/etc/profile.d/nix.sh ]; then . /home/garaemon/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer

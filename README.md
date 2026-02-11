@@ -16,9 +16,10 @@ ghq get git@github.com:garaemon/garaemon-settings.git
 cd $(ghq root)/github.com/garaemon/garaemon-settings
 
 # First time
-nix run home-manager/release-25.05 -- switch --flake .#garaemon@mac       # macOS
-nix run home-manager/release-25.05 -- switch --flake .#garaemon@linux-x86 # Ubuntu x86
-nix run home-manager/release-25.05 -- switch --flake .#garaemon@linux-arm # Linux ARM
+export NIX_CONFIG="experimental-features = nix-command flakes"
+nix run github:nix-community/home-manager/release-25.05 -- switch --flake .#garaemon@mac -b backup       # macOS
+nix run github:nix-community/home-manager/release-25.05 -- switch --flake .#garaemon@linux-x86 -b backup # Ubuntu x86
+nix run github:nix-community/home-manager/release-25.05 -- switch --flake .#garaemon@linux-arm -b backup # Linux ARM
 
 # Apply changes
 home-manager switch --flake .#garaemon@mac
