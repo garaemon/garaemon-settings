@@ -20,11 +20,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: lix-pm/setup-lix@v1.0.0
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Apply Home Manager configuration
         run: |
-          nix run home-manager/release-25.05 -- switch --flake .#garaemon@mac
+          nix run home-manager/release-25.05 -- switch --flake .#$USER@mac
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -57,11 +57,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: lix-pm/setup-lix@v1.0.0
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Apply Home Manager configuration
         run: |
-          nix run home-manager/release-25.05 -- switch --flake .#garaemon@mac
+          nix run home-manager/release-25.05 -- switch --flake .#$USER@mac
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -51,6 +51,25 @@
           homeDirectory = "/home/garaemon";
           system = "aarch64-linux";
         };
+        # CI configurations for GitHub Actions runners
+        "runner@mac" = mkHomeConfig {
+          username = "runner";
+          email = "runner@ci.local";
+          homeDirectory = "/Users/runner";
+          system = "aarch64-darwin";
+        };
+        "runner@linux-x86" = mkHomeConfig {
+          username = "runner";
+          email = "runner@ci.local";
+          homeDirectory = "/home/runner";
+          system = "x86_64-linux";
+        };
+        "runner@linux-arm" = mkHomeConfig {
+          username = "runner";
+          email = "runner@ci.local";
+          homeDirectory = "/home/runner";
+          system = "aarch64-linux";
+        };
       };
     };
 }

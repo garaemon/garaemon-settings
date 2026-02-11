@@ -30,9 +30,9 @@ jobs:
         run: |
           arch=$(uname -m)
           if [ "$arch" = "x86_64" ]; then
-            echo "config=garaemon@linux-x86" >> "$GITHUB_OUTPUT"
+            echo "config=$USER@linux-x86" >> "$GITHUB_OUTPUT"
           elif [ "$arch" = "aarch64" ]; then
-            echo "config=garaemon@linux-arm" >> "$GITHUB_OUTPUT"
+            echo "config=$USER@linux-arm" >> "$GITHUB_OUTPUT"
           else
             echo "Unsupported architecture: $arch" >&2
             exit 1
@@ -86,9 +86,9 @@ jobs:
         run: |
           arch=$(uname -m)
           if [ "$arch" = "x86_64" ]; then
-            echo "config=garaemon@linux-x86" >> "$GITHUB_OUTPUT"
+            echo "config=$USER@linux-x86" >> "$GITHUB_OUTPUT"
           elif [ "$arch" = "aarch64" ]; then
-            echo "config=garaemon@linux-arm" >> "$GITHUB_OUTPUT"
+            echo "config=$USER@linux-arm" >> "$GITHUB_OUTPUT"
           else
             echo "Unsupported architecture: $arch" >&2
             exit 1
