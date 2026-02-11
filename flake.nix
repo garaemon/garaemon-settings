@@ -13,19 +13,44 @@
   outputs =
     { nixpkgs, home-manager, ... }:
     let
-      system = "aarch64-darwin";
-      pkgs = nixpkgs.legacyPackages.${system};
+      # Helper to create home-manager configurations for multiple platforms.
+      mkHomeConfig = { username, email, homeDirectory, system, privateConfigPath ? ./private.nix }:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+
+          modules = [
+            ./home.nix
+            (if builtins.pathExists privateConfigPath then privateConfigPath else {})
+          ];
+
+          extraSpecialArgs = {
+            inherit username email homeDirectory;
+          };
+        };
     in
     {
-      homeConfigurations.garaemon = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-
-        # Specify your home configuration modules here, for example,
-        # the path to your home.nix.
-        modules = [ ./home.nix ];
-
-        # Optionally use extraSpecialArgs
-        # to pass through arguments to home.nix
+      homeConfigurations = {
+        "garaemon@mac" = mkHomeConfig {
+          username = "garaemon";
+          email = "garaemon@gmail.com";
+          homeDirectory = "/Users/garaemon";
+          system = "aarch64-darwin";
+        };
+        "garaemon@linux-x86" = mkHomeConfig {
+          username = "garaemon";
+          email = "garaemon@gmail.com";
+          homeDirectory = "/home/garaemon";
+          system = "x86_64-linux";
+        };
+        "garaemon@linux-arm" = mkHomeConfig {
+          username = "garaemon";
+          email = "garaemon@gmail.com";
+          homeDirectory = "/home/garaemon";
+          system = "aarch64-linux";
+        };
       };
     };
 }

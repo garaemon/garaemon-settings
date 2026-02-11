@@ -4,7 +4,6 @@
     - mise
     - ghq
     - base
-    - git
     - git_find_big
     - vim
     - tmux

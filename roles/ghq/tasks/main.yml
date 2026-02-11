@@ -1,3 +1,5 @@
+# TODO: Remove this role once ghq_settings_root dependency from other roles is resolved.
+# ghq package itself is already managed by home.nix.
 - name: Check if ghq is already installed
   command: which ghq
   register: ghq_check

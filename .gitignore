@@ -6,3 +6,4 @@ chef/Berksfile.lock
 inventory/
 *.log
 .aider*
+private/

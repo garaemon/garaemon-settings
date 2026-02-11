@@ -9,7 +9,6 @@
     - ghq
     - base
     - sudo_no_password
-    - git
     - git_find_big
     - vim
     - tmux
@@ -19,7 +18,6 @@
     - agg
     - uv
     - clang_format
-    - gh
     - emacs
     - peco
     - role: font
