@@ -5,8 +5,14 @@ some script to setup garaemon's environment
 
 ### 1. Install Nix
 
+On macOS:
 ```sh
 curl -sSf -L https://install.lix.systems/lix | sh -s -- install
+```
+
+On Ubuntu:
+```sh
+sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --no-daemon
 ```
 
 ### 2. Apply Nix Home Manager (git, gh, ghq, delta, etc.)
