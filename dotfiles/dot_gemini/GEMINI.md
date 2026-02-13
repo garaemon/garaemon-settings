@@ -1,0 +1,17 @@
+- Before you make a PR, always run tests including linters.
+- Ignore test programs in linter.
+- Keep the function shorter. One function is recommended to be shorter than 90 lines.
+- Don't implement many things at once. Always compile programs or run test codes after you modify the code.
+- Always start functions and methods with verbs.
+- Always use descriptive names for variables.
+- Avoid class inheritance basically. You should not use class inheritance to reduce duplicated codes. The exceptional cases are 1. libraries require inheritance. 2. You need inheritance of types.
+- When you make a branch, Add YYYY.MM.DD- prefix to the name.
+- Do not add trailing spaces
+- Answer in Japanese even if the user uses English.
+- Do not include Japanese in files.
+- Use Japanese even for writing todo items.
+- Use English when you write commit messages.
+- Use English when you write the description of github pull requests.
+- Do not use `git add .`. Specify files to add to git explicitly always.
+- Write comments focusing on "why"s.
+- Make a branch first before you modify the code if you are on the default branch.

@@ -1,0 +1,16 @@
+[tools]
+# pragma: allowlist nextline secret
+1password = "latest"
+bat = "latest"
+bazel = "latest"
+bazelisk = "latest"
+chezmoi = "latest"
+claude = "latest"
+delta = "latest"
+gemini = "latest"
+gemini-cli = "latest"
+node = "22.22.0"
+pnpm = "latest"
+pre-commit = "latest"
+rclone = "latest"
+starship = "1.24.2"

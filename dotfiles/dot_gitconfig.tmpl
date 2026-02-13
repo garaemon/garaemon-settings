@@ -1,0 +1,40 @@
+[core]
+	pager = delta
+	excludesFile = ~/.gitignore
+[alias]
+	see = browse
+	p = pull-request
+	br = branch
+	co = checkout
+	st = status
+	unstage = reset -q HEAD --
+	uncommit = reset --mixed HEAD~
+	graph = log --graph -10 --branches --remotes --tags --format=format:'%Cgreen%h %Creset• %<(75,trunc)%s (%cN, %cr) %Cred%d' --date-order
+	precommit = diff --cached --diff-algorithm=minimal -w
+	unmerged = diff --name-only --diff-filter=U
+	remotes = remote -v
+[rebase]
+	autostash = true
+[github]
+	user = garaemon
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[user]
+	name = Ryohei Ueda
+    {{ if eq .chezmoi.username "rueda" }}
+	email = rueda@gitai.tech
+    {{ else }}
+    email = garaemon@gmail.com
+    {{ end }}
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = True
+	side-by-side = True
+[merge]
+	conflictStyle = zdiff3
+[init]
+	defaultBranch = main
