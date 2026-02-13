@@ -1,0 +1,68 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+      - name: Run ShellCheck on zsh files
+        run: |
+          shellcheck \
+            dot_zshrc \
+            dot_zshenv \
+            dot_zlogin \
+            dot_zlogout \
+            dot_zshrc.zplug \
+            dot_zsh/*.zsh
+
+  trailing-whitespace:
+    name: Trailing Whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for trailing whitespace
+        run: |
+          targets="dot_zshrc dot_zshenv dot_zlogin dot_zlogout"
+          targets="$targets dot_zshrc.zplug dot_zsh/"
+          targets="$targets dot_gitconfig.tmpl dot_tmux.conf"
+          targets="$targets dot_vimrc dot_tigrc"
+          targets="$targets .github/ .pre-commit-config.yaml"
+          targets="$targets README.md"
+          if grep -rn ' $' $targets 2>/dev/null; then
+            echo "::error::Trailing whitespace found"
+            exit 1
+          fi
+          echo "No trailing whitespace found"
+
+  yamllint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yamllint
+        run: pip install yamllint
+      - name: Run yamllint
+        run: >-
+          yamllint -d relaxed
+          .pre-commit-config.yaml
+          .github/workflows/lint.yml
+          .markdownlint.yaml
+
+  markdownlint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "**/*.md"

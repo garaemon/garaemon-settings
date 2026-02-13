@@ -1,0 +1,5 @@
+# markdownlint configuration
+# MD013: Line length - disabled because long URLs and descriptions are common
+MD013: false
+# MD041: First line should be a heading - disabled for config files
+MD041: false
