@@ -2,6 +2,16 @@
 
 My dotfiles managed by chezmoi
 
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply garaemon
+```
+
+To install chezmoi, you can use mise.
+
+```bash
+mise use -g chezmoi
+```
+
 ## Setup
 
 ### Pre-commit hooks
