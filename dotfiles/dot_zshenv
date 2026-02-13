@@ -1,0 +1,27 @@
+#
+# Defines environment variables.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+#
+
+# Ensure that a non-login, non-interactive shell has a defined environment.
+if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; then
+  source "${ZDOTDIR:-$HOME}/.zprofile"
+fi
+
+export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
+# PATH under the home directory
+if command -v ghq > /dev/null 2>&1; then
+  export PATH=$PATH:$HOME/.bin:$HOME/bin/:$HOME/.local/bin:$(ghq root)/github.com/garaemon/garaemon-settings/scripts/utils
+else
+  export PATH=$PATH:$HOME/.bin:$HOME/bin/:$HOME/.local/bin:$HOME/ghq/github.com/garaemon/garaemon-settings/scripts/utils
+fi
+
+# On mac os x, emacsclient is availale under Emacs.app.
+if [ -e /Applications/Emacs.app/Contents/MacOS/bin ]; then
+  export PATH=/Applications/Emacs.app/Contents/MacOS/bin:$PATH
+fi
+
+
+export TRAMP_ZSHENV_LOADED="yes"

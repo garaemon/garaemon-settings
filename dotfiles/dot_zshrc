@@ -1,0 +1,458 @@
+# -*- mode: shell-script -*-
+# -*- coding: utf-8 -*-
+
+ZSHRC_PROFILE=false
+
+if [ "$ZSHRC_PROFILE" = "true" ]; then
+  zmodload zsh/zprof
+fi
+
+
+umask 022
+EDITOR=vim
+VISUAL=vim
+
+export LC_CTYPE=en_US.UTF-8
+
+# for emacs tramp
+case "$TERM" in
+  dumb | emacs)
+    unsetopt zle
+    unsetopt prompt_cr
+    unsetopt prompt_subst
+    PS1='$ '
+    PROMPT='$ '
+    return
+    ;;
+  "xterm-ghostty")
+    export TERM="xterm-256color"
+    ;;
+esac
+
+#zsh
+autoload -U colors
+colors
+
+# Setup completion before `autoload`.
+if [[ ! -e $HOME/.completions ]]; then
+  mkdir -p $HOME/.completions
+fi
+if [[ -e $HOME/.completions ]]; then
+  fpath=($HOME/.completions $fpath)
+fi
+
+autoload -Uz compinit
+if [ "$(date +'%j')" != "$(stat -f '%Sm' -t '%j' ~/.zcompdump 2>/dev/null)" ]; then
+    compinit
+else
+    compinit -C
+fi
+
+setopt correct
+setopt beep
+autoload -Uz add-zsh-hook
+
+setopt list_types
+setopt auto_list
+setopt auto_menu
+setopt magic_equal_subst
+setopt auto_cd
+setopt auto_param_keys
+setopt pushd_ignore_dups
+setopt auto_pushd
+setopt interactive_comments # ignore hash in command line
+setopt magic_equal_subst    # complete after = like --prefix=/usr/locl
+zstyle ':completion:*' menu select interactive
+#setopt menu_complete
+
+compdef -d scp
+compdef -d rsync
+
+watch="all"
+#log
+
+local GREEN=$'\e[1;32m'
+local YELLOW=$'\e[1;33m'
+local BLUE=$'\e[1;34m'
+local LIGHT_BLUE=$'\e[1;36m'
+local DEFAULT=$'\e[1;0m'
+
+# Zsh history setup
+HISTFILE=~/.zsh_history
+HISTSIZE=10000000
+SAVEHIST=10000000
+HIST_STAMPS="yyyy-mm-dd"     # not working well?
+setopt EXTENDED_HISTORY      # Write the history file in the ':start:elapsed;command' format.
+setopt INC_APPEND_HISTORY    # Write to the history file immediately, not when the shell exits.
+setopt SHARE_HISTORY         # Share history between all sessions.
+setopt HIST_IGNORE_DUPS      # Do not record an event that was just recorded again.
+setopt HIST_IGNORE_ALL_DUPS  # Delete an old recorded event if a new event is a duplicate.
+setopt HIST_IGNORE_SPACE     # Do not record an event starting with a space.
+setopt HIST_SAVE_NO_DUPS     # Do not write a duplicate event to the history file.
+setopt HIST_VERIFY           # Do not execute immediately upon history expansion.
+setopt APPEND_HISTORY        # append to history file (Default)
+setopt HIST_NO_STORE         # Don't store history commands
+setopt HIST_REDUCE_BLANKS    # Remove superfluous blanks from each command line being added to the history.
+
+bindkey -e
+
+# for ttyrec environment.
+# This zshrc expects using ttyrec with IS_TTYREC=true like
+# `IS_TTYREC=true ttyrec terminal.log`.
+function echo-ttyrec-safe() {
+  if [ "${IS_TTYREC}" = "true" ]; then
+    :
+  else
+    echo $@
+  fi
+}
+
+OS=$(uname)
+case "$OS" in
+  CYGWIN_NT-*)
+    if [ -e $HOME/.zshrc.cygwin ]; then
+      echo-ttyrec-safe loading cygwin setup file ...
+      source $HOME/.zshrc.cygwin
+    fi
+    if [ -e $HOME/.zshrc.cygwin.jsk ]; then
+      echo-ttyrec-safe loading jsk setup file ...
+      source $HOME/.zshrc.cygwin.jsk
+    fi
+    ;;
+  Linux)
+    if [ -e $HOME/.zshrc.linux ]; then
+      echo-ttyrec-safe loading linux setup file ...
+      source $HOME/.zshrc.linux
+    fi
+    ;;
+  Darwin)
+    if [ -e $HOME/.zshrc.darwin ]; then
+      echo-ttyrec-safe loading darwin setup file ...
+      source $HOME/.zshrc.darwin
+    fi
+    ;;
+esac
+
+if [ -e $HOME/.zshrc.mine ]; then
+  echo-ttyrec-safe loading customizing setup file ...
+  source $HOME/.zshrc.mine
+fi
+
+# Load split configuration files
+if [ -e $HOME/.zsh/git-functions.zsh ]; then
+  source $HOME/.zsh/git-functions.zsh
+fi
+
+if [ -e $HOME/.zsh/dev-functions.zsh ]; then
+  source $HOME/.zsh/dev-functions.zsh
+fi
+
+if [ -e $HOME/.zsh/ssh-functions.zsh ]; then
+  source $HOME/.zsh/ssh-functions.zsh
+fi
+
+if [ -e $HOME/.zsh/aliases.zsh ]; then
+  source $HOME/.zsh/aliases.zsh
+fi
+
+# update roszsh
+if [ ! -e $HOME/.roszsh ]; then
+  wget --timestamping https://raw.githubusercontent.com/ros/ros/indigo-devel/tools/rosbash/roszsh -O $HOME/.roszsh -q >/dev/null
+  if [ -e $HOME/.roszsh ]; then
+    source $HOME/.roszsh
+  fi
+fi
+
+# Load mise before using ghq command.
+if which mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
+
+if which starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+fi
+
+if [[ ! -e $(ghq root)/github.com/rupa/z ]]; then
+  ghq get https://github.com/rupa/z.git
+fi
+source $(ghq root)/github.com/rupa/z/z.sh
+compctl -U -K _z_zsh_tab_completion z
+
+if command -v ghq > /dev/null 2>&1; then
+  GHQ_ROOT=$(ghq root)
+else
+  GHQ_ROOT=$HOME/ghq
+fi
+
+if [ $(uname) != Darwin ]; then
+  eval $(dircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
+  alias ls="ls -AF --color=auto"
+else
+  eval $(gdircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
+  alias ls="gls -AF --color=auto"
+fi
+
+if [ -f ${GHQ_ROOT}/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+  source ${GHQ_ROOT}/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+if command -v ghq > /dev/null 2>&1; then
+  if [[ ! -e $(ghq root)/github.com/so-fancy/diff-so-fancy ]]; then
+    ghq get https://github.com/so-fancy/diff-so-fancy.git
+  fi
+  export PATH=$PATH:$(ghq root)/github.com/so-fancy/diff-so-fancy
+else
+  if [[ ! -e $HOME/ghq/github.com/so-fancy/diff-so-fancy ]]; then
+    mkdir -p $HOME/ghq/github.com/so-fancy
+    git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/ghq/github.com/so-fancy/diff-so-fancy
+  fi
+  export PATH=$PATH:$HOME/ghq/github.com/so-fancy/diff-so-fancy
+fi
+
+# for emacs
+if [ -e $HOME/.emacs.d ]; then
+  perl -wle \
+       'do { print qq/(setenv "$_" "$ENV{$_}")/ if exists $ENV{$_} } for @ARGV' \
+       PATH >~/.emacs.d/shellenv.el
+fi
+
+# Google Cloud SDK
+if [ -e $HOME/google-cloud-sdk/completion.zsh.inc ]; then
+  source $HOME/google-cloud-sdk/completion.zsh.inc
+fi
+
+if [ -e $HOME/google-cloud-sdk/path.zsh.inc ]; then
+  source $HOME/google-cloud-sdk/path.zsh.inc
+fi
+
+if alias e >/dev/null; then
+  unalias e
+fi
+
+# e is an alias to emacsclient.
+function e() {
+  # If the argument contains :
+  emacsclient -n $(echo $1 | cut -f1 -d:)
+  if [ "$?" != "0" ]; then
+    echo No emacsclient is available
+    return 1
+  fi
+}
+
+# enw is an alias to emacsclient. It also switches the tmux pane to emacs.
+function enw() {
+  # If the argument contains :
+  emacsclient -nw $(echo $1 | cut -f1 -d:)
+  if [ "$?" != "0" ]; then
+    echo No emacsclient is available
+    return 1
+  fi
+}
+
+# Search history by peco
+# Based on:
+#  1. https://github.com/mooz/percol#zsh-history-search
+#  2. https://github.com/joshskidmore/zsh-fzf-history-search/tree/master
+
+if (( $+commands[peco] )); then
+
+  peco_history_search() {
+    setopt extendedglob
+
+    FC_ARGS="-l -i"
+    CANDIDATE_LEADING_FIELDS=4
+
+    history_cmd="fc ${=FC_ARGS} -1 0"
+
+      if (( $+commands[awk] )); then
+        history_cmd="$history_cmd | awk '!seen[\$0]++'"
+      else
+        # In case awk is not installed fallback to uniq.
+        # `uniq` will only remove commands that are repeated consecutively.
+        history_cmd="$history_cmd | uniq"
+      fi
+
+    candidates=(${(f)"$(eval $history_cmd | peco)"})
+    local ret=$?
+    if [ -n "$candidates" ]; then
+      if (( $CANDIDATE_LEADING_FIELDS != 1 )); then
+        BUFFER="${candidates[@]/(#m)[0-9\* \-\:]##/${${(As: :)MATCH}[${CANDIDATE_LEADING_FIELDS},-1]}}"
+      else
+        BUFFER="${candidates[@]}"
+      fi
+      BUFFER=$(printf "${BUFFER[@]//\\\\n/\\\\\\n}")
+      zle vi-fetch-history -n $BUFFER
+      zle end-of-line
+    fi
+    zle reset-prompt
+    return $ret
+  }
+
+  zle -N peco_history_search
+  bindkey '^R' peco_history_search
+fi
+
+export ROSCONSOLE_FORMAT='[${severity}] [${time}] [${node}:${logger}]: ${message}'
+
+if [ -e $HOME/gitai/catkin_ws/devel/setup.zsh ]; then
+  source ~/gitai/catkin_ws/devel/setup.zsh
+fi
+
+# golang
+export GOPATH=$HOME/.go
+export PATH=$PATH:$GOPATH/bin
+
+if which gh > /dev/null; then
+  if [ ! -e ~/.completions/_gh ]; then
+    echo Installing gh completion
+    gh completion -s zsh > ~/.completions/_gh
+  fi
+fi
+
+# Change terminal title to current hostname
+precmd() {
+  echo -ne "\033]0;$(hostname)\007"
+}
+
+timezsh() {
+  shell=${1-$SHELL}
+  for i in $(seq 1 10); do /usr/bin/time $shell -i -c exit; done
+}
+
+add-fork() {
+  gh repo fork --remote --remote-name garaemon
+}
+
+
+
+if [ -e $HOME/.dotnet ]; then
+  export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
+fi
+
+if [ -e /usr/libexec/java_home ]; then
+  # If no Java SDK is available, java_home commands show a warning message. To ignore it,
+  # we redirect the standard error to /dev/null.
+  export JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null)
+fi
+
+# Unalias git if aliased. GITAI's setup.sh alias git to hub command.
+alias git >/dev/null
+if [ $? = 0 ]; then
+  unalias git
+fi
+
+# Run eval $(gh copilot alias -- zsh). However, `gh copilot alias`` is slow.
+# So, we cache the result to $HOME/.zshrc.copilot.
+if [ ! -e $HOME/.zshrc.copilot ]; then
+  if which gh >/dev/null 2>&1; then
+    if gh extension list | grep "gh copilot" >/dev/null 2>&1; then
+      gh copilot alias -- zsh > ~/.zshrc.copilot
+    fi
+  fi
+fi
+
+if [ -e $HOME/.zshrc.copilot ]; then
+  source $HOME/.zshrc.copilot
+fi
+
+# print tmux env
+if [ -z "$TMUX" ]; then
+  # If not in tmux environment
+  if tmux has-session 2>/dev/null; then
+      echo "${YELLOW}[tmux] There is a tmux session${DEFAULT}"
+    else
+      echo "${RED}[tmux] No tmux session${DEFAULT}"
+  fi
+fi
+
+# ssh agent
+# eval "$(ssh-agent -s)"
+# for linux
+if [ -z "$SSH_AUTH_SOCK" ]; then
+   # Check for a currently running instance of the agent
+   RUNNING_AGENT="`ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]'`"
+   if [ "$RUNNING_AGENT" = "0" ]; then
+        # Launch a new instance of the agent
+        ssh-agent -s &> $HOME/.ssh/ssh-agent
+   fi
+   eval `cat $HOME/.ssh/ssh-agent` > /dev/null
+fi
+
+# Mac starts ssh-agent automatically. To support both Linux and Mac,
+# check if ssh-agent has a key or not.
+if ! ssh-add -l >/dev/null; then
+    ssh-add $HOME/.ssh/id_rsa 2>/dev/null
+fi
+
+
+if [ "$ZSHRC_PROFILE" = true ]; then
+  zprof
+fi
+
+# uv
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"
+
+# hook for vterm
+vterm_printf(){
+  if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
+    printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+  elif [ "${TERM%%-*}" = "screen" ]; then
+    printf "\eP\e]%s\007\e\\" "$1"
+  else
+    printf "\e]%s\e\\" "$1"
+  fi
+}
+
+vterm_prompt_end() {
+  vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
+}
+
+# Use precmd hook for starship compatibility
+precmd_functions+=(vterm_prompt_end)
+
+# Function to set the terminal title
+set_terminal_title() {
+  if [[ -o monitor ]]; then
+    # Escape sequence to set the title
+    # Works on most terminal emulators
+    printf "\e]0;%s\a" "$1"
+  fi
+}
+
+# Set title to process name before command execution
+preexec() {
+  # The first argument is often the command name
+  set_terminal_title "$1"
+}
+
+precmd() {
+  # Sets the terminal title to display the hostname and the current directory, abbreviating the home
+  # path to '~'.
+  local title_directory=${PWD/#$HOME/\~}
+  set_terminal_title "${HOST}: ${title_directory}"
+}
+
+# Set the default title once on startup
+# (This will be reflected when zsh restarts)
+set_terminal_title "${HOST}: %c"
+
+# pnpm
+if [ -e "/Users/garaemon/Library/pnpm" ]; then
+  export PNPM_HOME="/Users/garaemon/Library/pnpm"
+fi
+
+if [ -z "${PNPM_HOME}" ]; then
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+fi
+# pnpm end
+
+if command -v ghq > /dev/null 2>&1; then
+  GHQ_UTILS_PATH="$(ghq root)/github.com/garaemon/ghq-utils/ghq-utils.sh"
+  if [ -e "$GHQ_UTILS_PATH" ]; then
+    source "$GHQ_UTILS_PATH"
+  fi
+fi
