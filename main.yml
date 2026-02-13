@@ -11,9 +11,6 @@
     - sudo_no_password
     - git
     - git_find_big
-    - vim
-    - tmux
-    - zsh
     - starship
     - coding_agent
     - agg
@@ -26,7 +23,6 @@
       when: ansible_facts.os_family == "Debian"
     - ispell
     - enchant
-    - tig
     - dircolors_solarized
     - role: base16_gnome_terminal
       when: ansible_facts.os_family == "Debian"

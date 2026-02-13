@@ -6,9 +6,6 @@
     - base
     - git
     - git_find_big
-    - vim
-    - tmux
-    - zsh
     - starship
     - coding_agent
     - uv
@@ -16,7 +13,6 @@
     - peco
     - ispell
     - enchant
-    - tig
     - dircolors_solarized
     - ghostty
     - karabiner
