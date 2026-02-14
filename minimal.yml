@@ -6,16 +6,12 @@
     - base
     - git
     - git_find_big
-    - starship
     - coding_agent
     - uv
-    - ghostty_install
     - peco
     - ispell
     - enchant
     - dircolors_solarized
-    - ghostty
-    - karabiner
     - role: font
       when: ansible_facts.os_family == "Debian"
     # - role: base16_gnome_terminal

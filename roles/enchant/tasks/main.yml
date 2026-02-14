@@ -21,15 +21,3 @@
     name: enchant
     state: present
   when: ansible_facts.os_family == "Darwin"
-
-- name: "Create .config/enchant directory"
-  file:
-    path: "{{ ansible_facts.env.HOME }}/.config/enchant"
-    state: directory
-    mode: '0755'
-
-- name: "Create symlink for en_US.dic"
-  file:
-    src: "{{ ghq_settings_root }}/roles/enchant/files/en_US.dic"
-    dest: "{{ ansible_facts.env.HOME }}/.config/enchant/en_US.dic"
-    state: link

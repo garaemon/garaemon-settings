@@ -11,7 +11,6 @@
     - sudo_no_password
     - git
     - git_find_big
-    - starship
     - coding_agent
     - agg
     - uv
@@ -34,10 +33,7 @@
       when: ansible_facts.os_family == "Debian"
     - role: chrome
       when: ansible_facts.os_family == "Debian" and ansible_facts.architecture == "x86_64"
-    - python_language_server
     - typescript_language_server
     - ghostty_install
-    - ghostty
-    - karabiner
   vars:
     emacs_build_emacs: true
