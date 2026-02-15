@@ -19,18 +19,14 @@
 # SC2046: Quote to prevent word splitting (too noisy for zsh)
 # SC2068: Double quote array expansions (zsh handles $@ differently)
 # SC2086: Double quote to prevent globbing (too noisy for zsh)
-# SC2116: Useless echo
 # SC2124: Assigning array to string (valid in zsh)
 # SC2128: Expanding array without index (valid in zsh)
 # SC2145: Argument mixes string and array (valid in zsh)
 # SC2154: Variable referenced but not assigned (zsh special variables)
 # SC2155: Declare and assign separately (stylistic, too noisy)
-# SC2164: Use cd ... || exit (zsh has different cd behavior)
 # SC2181: Check exit code directly (stylistic)
-# SC2126: Consider using grep -c (stylistic, not critical)
 # SC2139: Expands when defined not used (intentional in zsh aliases)
 # SC2206: Quote to prevent word splitting in array assignments
-# SC2235: Use { } instead of ( ) (stylistic)
 # SC2296: Parameter expansion with zsh flags like ${(f)...}
 # SC2298: ${${x}} nested expansion (valid in zsh)
 # SC2299: Parameter expansion in ${${...}} (zsh nested expansion)
@@ -51,6 +47,6 @@
 # SC2168: 'local' only valid in functions (zsh allows top-level local)
 # SC2317: Command unreachable (zsh hooks like precmd are invoked indirectly)
 
-disable=SC1009,SC1035,SC1036,SC1056,SC1071,SC1072,SC1073,SC1090,SC1091,SC2004,SC2006,SC2009,SC2016,SC2034,SC2038,SC2046,SC2059,SC2068,SC2086,SC2116,SC2124,SC2126,SC2128,SC2139,SC2145,SC2154,SC2155,SC2164,SC2168,SC2181,SC2206,SC2235,SC2296,SC2298,SC2299,SC2317,SC2329,SC3010,SC3030,SC3037,SC3039,SC3040,SC3043,SC3044,SC3045,SC3054,SC3057
+disable=SC1009,SC1035,SC1036,SC1056,SC1071,SC1072,SC1073,SC1090,SC1091,SC2016,SC2034,SC2038,SC2046,SC2059,SC2068,SC2086,SC2124,SC2128,SC2139,SC2145,SC2154,SC2155,SC2168,SC2181,SC2206,SC2296,SC2298,SC2299,SC2317,SC2329,SC3010,SC3030,SC3037,SC3039,SC3040,SC3043,SC3044,SC3045,SC3054,SC3057
 
 shell=bash

@@ -275,7 +275,7 @@ if (( $+commands[peco] )); then
     candidates=(${(f)"$(eval $history_cmd | peco)"})
     local ret=$?
     if [ -n "$candidates" ]; then
-      if (( $CANDIDATE_LEADING_FIELDS != 1 )); then
+      if (( CANDIDATE_LEADING_FIELDS != 1 )); then
         BUFFER="${candidates[@]/(#m)[0-9\* \-\:]##/${${(As: :)MATCH}[${CANDIDATE_LEADING_FIELDS},-1]}}"
       else
         BUFFER="${candidates[@]}"
@@ -370,12 +370,12 @@ fi
 # for linux
 if [ -z "$SSH_AUTH_SOCK" ]; then
    # Check for a currently running instance of the agent
-   RUNNING_AGENT="`ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]'`"
+   RUNNING_AGENT="$(pgrep -f 'ssh-agent -s' | wc -l | tr -d '[:space:]')"
    if [ "$RUNNING_AGENT" = "0" ]; then
         # Launch a new instance of the agent
         ssh-agent -s &> $HOME/.ssh/ssh-agent
    fi
-   eval `cat $HOME/.ssh/ssh-agent` > /dev/null
+   eval "$(cat $HOME/.ssh/ssh-agent)" > /dev/null
 fi
 
 # Mac starts ssh-agent automatically. To support both Linux and Mac,
@@ -395,7 +395,7 @@ eval "$(uvx --generate-shell-completion zsh)"
 
 # hook for vterm
 vterm_printf(){
-  if [ -n "$TMUX" ] && ([ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ] ); then
+  if [ -n "$TMUX" ] && { [ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ]; }; then
     printf "\ePtmux;\e\e]%s\007\e\\" "$1"
   elif [ "${TERM%%-*}" = "screen" ]; then
     printf "\eP\e]%s\007\e\\" "$1"

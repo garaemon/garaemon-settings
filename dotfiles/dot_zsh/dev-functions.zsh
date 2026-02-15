@@ -21,10 +21,10 @@ function catkin-compile-commands-json() {
   # Find compile_commands.json in build directory and create symlink to the top of the package
   # directories.
   local package_directories=$(find "${catkin_ws}/src" -name package.xml | xargs -n 1 dirname)
-  for package_dir in $(echo $package_directories); do
+  for package_dir in $package_directories; do
     local package=$(echo $package_dir | xargs -n 1 basename)
     (
-      cd "${catkin_ws}"
+      cd "${catkin_ws}" || return
       if [ -e ${catkin_ws}/build/$package/compile_commands.json ]; then
         ln -sf ${catkin_ws}/build/$package/compile_commands.json \
            $(rospack find $package)/compile_commands.json
