@@ -16,16 +16,13 @@
       - ffmpeg
       - gawk
       - git-core
-      - golang
       - htop
       - imagemagick
-      - jq
       - man
       - mercurial
-      - python3-pip
-      - r-base
-      - ripgrep
       - rlwrap
+      - rlwrap
+      # ag requires autotools so we keep it here
       - silversearcher-ag
       - sqlite3
       - ssh

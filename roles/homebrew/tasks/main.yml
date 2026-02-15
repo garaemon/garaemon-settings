@@ -1,6 +1,7 @@
 - name: Install homebrew packages
   homebrew:
     name:
+      # ag requires autotools so we keep it here
       - ag
       - agg
       - asciinema
@@ -28,7 +29,6 @@
       - mosh
       - raycast
       - reattach-to-user-namespace
-      - ripgrep
       - tmux
       - vlc
       - w3m
