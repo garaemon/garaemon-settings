@@ -15,9 +15,8 @@
     - agg
     - uv
     - clang_format
-    - gh
     - emacs
-    - peco
+
     - role: font
       when: ansible_facts.os_family == "Debian"
     - ispell
