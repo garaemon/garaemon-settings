@@ -33,6 +33,3 @@
       file:
         path: "{{ mise_install_script_temp.path }}"
         state: absent
-
-
-
