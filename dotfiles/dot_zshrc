@@ -172,11 +172,13 @@ if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
-if [[ ! -e $(ghq root)/github.com/rupa/z ]]; then
-  ghq get https://github.com/rupa/z.git
+if command -v ghq > /dev/null 2>&1; then
+  if [[ ! -e $(ghq root)/github.com/rupa/z ]]; then
+    ghq get https://github.com/rupa/z.git
+  fi
+  source $(ghq root)/github.com/rupa/z/z.sh
+  compctl -U -K _z_zsh_tab_completion z
 fi
-source $(ghq root)/github.com/rupa/z/z.sh
-compctl -U -K _z_zsh_tab_completion z
 
 if command -v ghq > /dev/null 2>&1; then
   GHQ_ROOT=$(ghq root)
