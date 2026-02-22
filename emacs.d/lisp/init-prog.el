@@ -979,7 +979,8 @@ Optional argument ARGS ."
   ;; TODO: Should I use \?
   :bind (("C-¥" . my-gptel-toggle)
          :map gptel-mode-map
-         ("C-c C-c" . gptel-send))
+         ("C-c C-c" . gptel-send)
+         ("C-c C-k" . my-gptel-archive-and-reset))
   :custom
   (gptel-directives
    '((default
