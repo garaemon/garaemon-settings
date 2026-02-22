@@ -97,8 +97,17 @@
   )
 
 (use-package diff-hl :ensure t
-  :custom (diff-hl-disable-on-remote nil)
-  :config (global-diff-hl-mode))
+  :custom
+  (diff-hl-disable-on-remote nil)
+  (diff-hl-update-async t)
+  :config
+  (global-diff-hl-mode)
+  (diff-hl-flydiff-mode)
+  ;; Workaround: diff-hl sometimes misses the initial update on file open
+  (add-hook 'diff-hl-mode-hook
+            (lambda ()
+              (when diff-hl-mode
+                (run-with-idle-timer 0.3 nil #'diff-hl-update)))))
 
 (use-package hl-line
   ;; It is difficult to disable hl-line mode for specific modes if we use (global-hl-line-mode).
