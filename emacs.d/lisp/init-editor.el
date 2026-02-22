@@ -280,7 +280,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :custom
   (jinx-languages "en_US")
   :bind
-  ("\C-cd" . jinx-correct)
+  ("C-c d" . jinx-correct)
   ;; just executing (global-jinx-mode) does not turn on jinx.
   ;; We have to add a hook to emacs-start-hook
   :hook ('emacs-startup-hook . 'global-jinx-mode)
