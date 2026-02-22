@@ -715,6 +715,24 @@
              (format "Branch `%s' already exists; pick another name" branch)
              default-start)
           (list branch (magit-read-starting-point prompt branch default-start))))))
+
+  (let ((socket-dir (expand-file-name "~/.ssh/sockets")))
+    ;; Make a socket directory if it does not exist
+    (unless (file-directory-p socket-dir)
+      (make-directory socket-dir t))
+
+    ;; 1Password's SSH agent requires per-process authentication, which means every git command
+    ;; magit runs (pull, push, fetch, etc.) triggers a separate 1Password auth prompt. This happens
+    ;; because 1Password cannot recognize multiple git processes spawned by Emacs as coming from the
+    ;; same application. To work around this, we enable SSH connection multiplexing with a short
+    ;; ControlPersist timeout (45s) so that subsequent git commands reuse the already-authenticated
+    ;; SSH connection.
+    (setq magit-git-global-arguments
+          (append magit-git-global-arguments
+                  `("-c" ,(concat "core.sshCommand=ssh "
+                                  "-o ControlMaster=auto "
+                                  "-o ControlPath=" socket-dir "/%r@%h:%p "
+                                  "-o ControlPersist=45s")))))
   )
 
 (use-package gptel-magit
