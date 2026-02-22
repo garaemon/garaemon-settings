@@ -783,6 +783,8 @@ Add keyd role for keyboard remapping
   ;;       3. read:org
   :custom
   (forge-owned-accounts '(("garaemon")))
+  :bind (("C-c M r" . my-diff-hl-review-enable)
+         ("C-c M s" . my-diff-hl-review-disable))
   :config
   (defun my-forge-create-pullreq ()
     (interactive)
@@ -793,6 +795,87 @@ Add keyd role for keyboard remapping
     (magit-git-insert "log" "-1" "--pretty=%B")
     )
   (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
+
+  ;; PR review mode using diff-hl:
+  ;;   Overrides `diff-hl-reference-revision' to show PR changes (vs base branch) in fringe.
+  ;;   Usage:
+  ;;     1. Checkout the PR branch and run `forge-pull'
+  ;;     2. M-x my-diff-hl-review-enable (C-c M r)
+  ;;        -> Automatically detects base branch from forge DB
+  ;;        -> Mode-line shows " Review" in all project buffers
+  ;;     3. M-x my-diff-hl-review-disable (C-c M s) to stop
+  (defvar my-diff-hl-review--project nil
+    "Project root currently in review mode.")
+  (defvar my-diff-hl-review--revision nil
+    "Reference revision for review mode.")
+
+  (define-minor-mode my-diff-hl-review-mode
+    "Minor mode indicating diff-hl review is active in this buffer."
+    :lighter " Review")
+
+  (defun my-diff-hl-review--apply-to-buffer ()
+    "Apply review mode to the current buffer if it belongs to the review project."
+    (when (and my-diff-hl-review--project
+               buffer-file-name
+               (string-prefix-p my-diff-hl-review--project
+                                (expand-file-name buffer-file-name)))
+      (setq-local diff-hl-reference-revision my-diff-hl-review--revision)
+      (my-diff-hl-review-mode 1)
+      (when (bound-and-true-p diff-hl-mode)
+        (diff-hl-update))))
+
+  (defun my-diff-hl-review--update-all-buffers (revision)
+    "Set diff-hl reference to REVISION in all project buffers and toggle review mode."
+    (let ((root (expand-file-name (project-root (project-current t)))))
+      (dolist (buf (buffer-list))
+        (with-current-buffer buf
+          (when (and buffer-file-name
+                     (string-prefix-p root (expand-file-name buffer-file-name)))
+            (setq-local diff-hl-reference-revision revision)
+            (if revision
+                (my-diff-hl-review-mode 1)
+              (my-diff-hl-review-mode -1))
+            (when (bound-and-true-p diff-hl-mode)
+              (diff-hl-update)))))))
+
+  (defun my-diff-hl-review--find-base-ref ()
+    "Find base-ref for the current branch from forge DB, or ask user."
+    (let* ((branch (magit-get-current-branch))
+           ;; Try forge git config first, then search by head-ref in DB
+           (pullreq (or (forge-get-pullreq :branch branch)
+                        (let* ((repo (forge-get-repository :tracked))
+                               (rows (forge-sql [:select [number]
+                                                 :from pullreq
+                                                 :where (and (= repository $s1)
+                                                             (= head-ref $s2))]
+                                                (oref repo id)
+                                                branch)))
+                          (when rows
+                            (forge-get-pullreq repo (caar rows)))))))
+      (if pullreq
+          (oref pullreq base-ref)
+        (magit-read-branch "Base branch for review"))))
+
+  (defun my-diff-hl-review-enable ()
+    "Enable review mode using the current branch's PR base as reference."
+    (interactive)
+    (let* ((base-ref (my-diff-hl-review--find-base-ref))
+           (revision (concat "origin/" base-ref)))
+      (setq my-diff-hl-review--project
+            (expand-file-name (project-root (project-current t))))
+      (setq my-diff-hl-review--revision revision)
+      (my-diff-hl-review--update-all-buffers revision)
+      (add-hook 'find-file-hook #'my-diff-hl-review--apply-to-buffer)
+      (message "Review mode enabled: %s" revision)))
+
+  (defun my-diff-hl-review-disable ()
+    "Disable review mode and restore normal diff-hl behavior."
+    (interactive)
+    (my-diff-hl-review--update-all-buffers nil)
+    (remove-hook 'find-file-hook #'my-diff-hl-review--apply-to-buffer)
+    (setq my-diff-hl-review--project nil)
+    (setq my-diff-hl-review--revision nil)
+    (message "Review mode disabled"))
   )
 
 (use-package git-commit
