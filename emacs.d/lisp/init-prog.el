@@ -783,6 +783,37 @@ Add keyd role for keyboard remapping
 - Enable keyd role for Debian-based systems
 </example>
 ")
+  :config
+  ;; Override to prevent fill-region from breaking bullet point formatting.
+  ;; The LLM prompt already specifies 72-char wrapping and hanging indent.
+  (defun gptel-magit--format-commit-message (message)
+    "Format commit message MESSAGE.
+Only truncate the title line to `git-commit-summary-max-length'."
+    (if (not (stringp message))
+        (or message "")
+      (with-temp-buffer
+        (insert message)
+        (goto-char (point-min))
+        (let ((title-end (line-end-position)))
+          (when (> (- title-end (point-min)) git-commit-summary-max-length)
+            (let ((fill-column git-commit-summary-max-length))
+              (fill-region (point-min) title-end))))
+        (buffer-string))))
+  ;; Override to show a user-friendly error when LLM is unreachable.
+  (defun gptel-magit--generate (callback)
+    "Generate a commit message for current magit repo.
+Invokes CALLBACK with the generated message when done."
+    (let ((diff (magit-git-output "diff" "--cached")))
+      (gptel-magit--request diff
+        :system gptel-magit-commit-prompt
+        :context nil
+        :callback (lambda (response info)
+                    (if (not (stringp response))
+                        (let ((status (plist-get info :status)))
+                          (message "gptel-magit: Failed to generate commit message. \
+Is Ollama running? (ollama serve) Status: %s" status))
+                      (let ((msg (gptel-magit--format-commit-message response)))
+                        (funcall callback msg)))))))
   :hook (magit-mode . gptel-magit-install))
 
 (use-package forge
