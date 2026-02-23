@@ -799,7 +799,7 @@ Only truncate the title line to `git-commit-summary-max-length'."
             (let ((fill-column git-commit-summary-max-length))
               (fill-region (point-min) title-end))))
         (buffer-string))))
-  ;; Override to show error details when LLM response is nil.
+  ;; Override to show a user-friendly error when LLM is unreachable.
   (defun gptel-magit--generate (callback)
     "Generate a commit message for current magit repo.
 Invokes CALLBACK with the generated message when done."
@@ -809,8 +809,9 @@ Invokes CALLBACK with the generated message when done."
         :context nil
         :callback (lambda (response info)
                     (if (not (stringp response))
-                        (message "gptel-magit error: %s"
-                                 (plist-get info :status))
+                        (let ((status (plist-get info :status)))
+                          (message "gptel-magit: Failed to generate commit message. \
+Is Ollama running? (ollama serve) Status: %s" status))
                       (let ((msg (gptel-magit--format-commit-message response)))
                         (funcall callback msg)))))))
   :hook (magit-mode . gptel-magit-install))
