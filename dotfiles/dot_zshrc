@@ -367,26 +367,6 @@ if [ -z "$TMUX" ]; then
   fi
 fi
 
-# ssh agent
-# eval "$(ssh-agent -s)"
-# for linux
-if [ -z "$SSH_AUTH_SOCK" ]; then
-   # Check for a currently running instance of the agent
-   RUNNING_AGENT="$(pgrep -f 'ssh-agent -s' | wc -l | tr -d '[:space:]')"
-   if [ "$RUNNING_AGENT" = "0" ]; then
-        # Launch a new instance of the agent
-        ssh-agent -s &> $HOME/.ssh/ssh-agent
-   fi
-   eval "$(cat $HOME/.ssh/ssh-agent)" > /dev/null
-fi
-
-# Mac starts ssh-agent automatically. To support both Linux and Mac,
-# check if ssh-agent has a key or not.
-if ! ssh-add -l >/dev/null; then
-    ssh-add $HOME/.ssh/id_rsa 2>/dev/null
-fi
-
-
 if [ "$ZSHRC_PROFILE" = true ]; then
   zprof
 fi
