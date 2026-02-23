@@ -814,6 +814,15 @@ Add keyd role for keyboard remapping
     )
   (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
 
+  ;; Automatically run forge-pull when pulling via magit so that
+  ;; PR/issue data stays in sync with the git history.
+  (defun my-forge-pull-after-magit-pull (&rest _)
+    "Run `forge-pull' after magit pull if the repository is tracked by forge."
+    (when (ignore-errors (forge-get-repository :tracked))
+      (forge-pull)))
+  (advice-add 'magit-pull-from-upstream :after #'my-forge-pull-after-magit-pull)
+  (advice-add 'magit-pull-fropm-pushremote :after #'my-forge-pull-after-magit-pull)
+
   ;; PR review mode using diff-hl:
   ;;   Overrides `diff-hl-reference-revision' to show PR changes (vs base branch) in fringe.
   ;;   Usage:
