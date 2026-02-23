@@ -13,6 +13,7 @@
 	precommit = diff --cached --diff-algorithm=minimal -w
 	unmerged = diff --name-only --diff-filter=U
 	remotes = remote -v
+	new-branch = "!f() { git checkout -b \"$(date +%Y.%m.%d)-$1\"; }; f"
 [rebase]
 	autostash = true
 [github]
