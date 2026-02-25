@@ -612,11 +612,7 @@
   (("C-c C-g" . gist-region-or-buffer))
   )
 
-(use-package google-this :ensure t
-  :config
-  (global-set-key (kbd "C-x g") 'google-this-mode-submap)
-  (global-set-key (kbd "C-c g") 'google-this)
-  )
+(use-package google-this :ensure t)
 
 (use-package graphviz-dot-mode :ensure t
   :config
@@ -1116,9 +1112,9 @@ Optional argument ARGS ."
   )
 
 (use-package gptel :ensure t
-  :after (exec-path-from-shell)
   ;; TODO: Should I use \?
   :bind (("C-¥" . my-gptel-toggle)
+         ("C-c g" . my-gptel-ask-about-code)
          :map gptel-mode-map
          ("C-c C-c" . gptel-send)
          ("C-c C-k" . my-gptel-archive-and-reset))
@@ -1137,6 +1133,8 @@ You have to follow the following orders:
       . "You are a large language model and a writing assistant. Respond concisely.")
      (chat
       . "You are a large language model and a conversation partner. Respond concisely.")))
+  :hook
+  (gptel-mode . (lambda () (display-line-numbers-mode -1)))
   :config
   (if (not (display-graphic-p))
       ;; header-line for LSP mode is hard to see in emacs -nw environment.
@@ -1237,31 +1235,44 @@ The entire buffer content is sent as context."
                          (message "Annotation added."))
                      (message "GPTel request failed: %s" (plist-get info :status)))))))
 
-  (defun my-gptel-ask-and-annotate-line (question)
-    "Ask GPTel about the current line and annotate it with the response.
-The entire buffer content is sent as context."
+  (defun my-gptel-ask-about-code (question)
+    "Open gptel buffer with a prompt referencing the current line.
+The source buffer is added as gptel context for full file awareness."
     (interactive "sQuestion about this line: ")
-    (let* ((buf (current-buffer))
-           (start (line-beginning-position))
-           (end (line-end-position))
-           (line-content (buffer-substring-no-properties start end))
-           (buffer-content (buffer-substring-no-properties (point-min) (point-max)))
-           (prompt (format "Context (File Content):\n```\n%s\n```\n\nTarget Line:\n```\n%s\n```\n\nQuestion: %s\n\nPlease answer in Japanese. Keep the answer concise enough to fit in a margin annotation."
-                           buffer-content line-content question)))
-      (message "Asking GPTel...")
-      (gptel-request
-          prompt
-        :system "You are an intelligent coding assistant. Answer in Japanese. Be concise."
-        :callback (lambda (response info)
-                    (if (and response (stringp response))
-                        (with-current-buffer buf
-                          ;; Ensure annotate-mode is active
-                          (unless (bound-and-true-p annotate-mode)
-                            (annotate-mode 1))
-                          ;; annotate-create-annotation arguments: start end annotation-text annotated-text
-                          (annotate-create-annotation start end (format "AI: %s" response) line-content)
-                          (message "Annotation added."))
-                      (message "GPTel request failed: %s" (plist-get info :status)))))))
+    (require 'gptel-context)
+    (let* ((source-buffer (current-buffer))
+           (file-name (or (buffer-file-name) (buffer-name)))
+           (line-number (line-number-at-pos))
+           (line-content (string-trim
+                          (buffer-substring-no-properties
+                           (line-beginning-position) (line-end-position))))
+           (file-label (format "%s:%d"
+                               (file-name-nondirectory file-name)
+                               line-number))
+           (gptel-buffer (or (my-gptel-get-buffer)
+                             (gptel (gptel--buffer-name)))))
+      ;; Add file as context without overlay to avoid changing buffer colors
+      (if (buffer-file-name source-buffer)
+          (gptel-context--add-text-file (buffer-file-name source-buffer))
+        (gptel-context--add-buffer source-buffer))
+      (with-current-buffer gptel-buffer
+        (goto-char (point-max))
+        ;; Ensure we start on a fresh line
+        (unless (bolp) (insert "\n"))
+        (insert (gptel-prompt-prefix-string))
+        (insert (format "`%s`\n" file-label))
+        (insert (format "```%s\n%s\n```\n"
+                        (replace-regexp-in-string
+                         "-mode\\'" ""
+                         (symbol-name
+                          (buffer-local-value 'major-mode source-buffer)))
+                        line-content))
+        (insert question "\n"))
+      ;; Show gptel buffer in a side window
+      (display-buffer gptel-buffer
+                      '(display-buffer-in-side-window
+                        (side . right)
+                        (window-width . 0.4)))))
 
   )
 
