@@ -1,2 +1,1 @@
-mise_node_versions:
-  - 22.22.0
+# Tool versions are now managed via chezmoi (~/.config/mise/config.toml)
