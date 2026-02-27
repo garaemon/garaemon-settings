@@ -4,12 +4,13 @@
     state: directory
     mode: '0755'
 
-- name: Clone RictyDiminished using ghq
-  shell: |
-    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
-    ghq get https://github.com/edihbrandon/RictyDiminished.git
-  args:
-    executable: /bin/bash
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone RictyDiminished using git
+  ansible.builtin.git:
+    repo: https://github.com/edihbrandon/RictyDiminished.git
+    dest: "{{ ghq_root_path }}/github.com/edihbrandon/RictyDiminished"
+    update: false
 
 - name: Create ~/.fonts
   file:
