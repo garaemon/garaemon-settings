@@ -1,0 +1,35 @@
+- name: Check if Claude Code is already installed
+  command: which claude
+  register: claude_code_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Determine if Claude Code needs to be installed
+  set_fact:
+    claude_code_install_needed: "{{ claude_code_check.rc != 0 }}"
+  changed_when: false
+
+- name: Install Claude Code if needed
+  when: claude_code_install_needed
+  block:
+
+    - name: Create temporary file for Claude Code install script
+      tempfile:
+        state: file
+        suffix: ".sh"
+      register: claude_code_install_script_temp
+
+    - name: Download Claude Code install script
+      get_url:
+        url: https://claude.ai/install.sh
+        dest: "{{ claude_code_install_script_temp.path }}"
+        mode: '0755'
+        force: true
+
+    - name: Execute Claude Code install script
+      command: "bash {{ claude_code_install_script_temp.path }}"
+
+    - name: Clean up Claude Code install script
+      file:
+        path: "{{ claude_code_install_script_temp.path }}"
+        state: absent

@@ -2,3 +2,4 @@
 dependencies:
   - mise
   - ghq
+  - claude_code
