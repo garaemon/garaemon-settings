@@ -1,1 +1,1 @@
-ghq_version: latest
+# ghq is now installed via chezmoi-managed mise.toml

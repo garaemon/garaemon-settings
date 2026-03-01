@@ -1,6 +1,7 @@
-- name: Clone dircolors-solarized using ghq
-  shell: |
-    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
-    ghq get https://github.com/seebi/dircolors-solarized.git
-  args:
-    executable: /bin/bash
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone dircolors-solarized using git
+  ansible.builtin.git:
+    repo: https://github.com/seebi/dircolors-solarized.git
+    dest: "{{ ghq_root_path }}/github.com/seebi/dircolors-solarized"
+    update: false

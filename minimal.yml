@@ -6,7 +6,6 @@
     - base
     - git
     - git_find_big
-    - coding_agent
     - uv
     - claude_code
     - ispell

@@ -85,22 +85,22 @@
   set_fact:
     base_ssh_auth_working: "{{ 'successfully authenticated' in base_ssh_test.stderr }}"
 
-- name: Clone garaemon-settings using ghq (SSH)
-  shell: |
-    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
-    ghq get git@github.com:garaemon/garaemon-settings.git
-  args:
-    executable: /bin/bash
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone garaemon-settings using git (SSH)
+  ansible.builtin.git:
+    repo: git@github.com:garaemon/garaemon-settings.git
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: false
   when:
     - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - base_ssh_auth_working | bool
 
-- name: Clone garaemon-settings using ghq (HTTPS)
-  shell: |
-    eval "$({{ ansible_facts.env.HOME }}/.local/bin/mise activate bash)"
-    ghq get https://github.com/garaemon/garaemon-settings.git
-  args:
-    executable: /bin/bash
+- name: Clone garaemon-settings using git (HTTPS)
+  ansible.builtin.git:
+    repo: https://github.com/garaemon/garaemon-settings.git
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: false
   when:
     - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
     - not (base_ssh_auth_working | bool)
