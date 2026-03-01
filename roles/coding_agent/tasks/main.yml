@@ -3,12 +3,3 @@
 - name: Set environment path including mise shims
   set_fact:
     coding_agent_env_path: "{{ ansible_facts.env.HOME }}/.local/share/mise/shims:{{ ansible_facts.env.HOME }}/.local/bin:{{ ansible_facts.env.PATH }}"
-
-- name: Install Claude Code via mise
-  command: mise use -g claude
-  environment:
-    PATH: "{{ coding_agent_env_path }}"
-  retries: 3
-  delay: 5
-  register: coding_agent_claude_install_result
-  until: coding_agent_claude_install_result.rc == 0

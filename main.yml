@@ -11,6 +11,7 @@
     - sudo_no_password
     - git
     - git_find_big
+    - claude_code
     - coding_agent
     - agg
     - uv
