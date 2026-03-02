@@ -729,6 +729,7 @@
                                   "-o ControlMaster=auto "
                                   "-o ControlPath=" socket-dir "/%r@%h:%p "
                                   "-o ControlPersist=45s")))))
+  (require 'my-magit-ediff)
   )
 
 (use-package gptel-magit
