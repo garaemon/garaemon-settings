@@ -25,6 +25,7 @@ Automate the end-to-end process of creating a GitHub pull request from local cha
 ## Step 1: Assess Current State
 
 Run these in parallel:
+
 - `git status` (never use `-uall`)
 - `git diff` and `git diff --cached`
 - `git branch --show-current`
@@ -32,6 +33,7 @@ Run these in parallel:
 - `git log --oneline -10`
 
 Determine:
+
 - Are there uncommitted changes? Unstaged files?
 - Which branch are we on? Is it the default branch (main/master)?
 - What remotes exist?
@@ -41,6 +43,7 @@ Determine:
 If on the default branch, create a new branch before making any changes.
 
 Branch naming format: `YYYY.MM.DD-<descriptive-topic>`
+
 - Use today's date
 - Use lowercase kebab-case for the topic
 - Example: `2026.03.07-fix-auth-token-refresh`
@@ -57,13 +60,15 @@ the "why" behind the changes, not just what changed.
 ## Step 4: Determine Push Target
 
 Check the GitHub repository owner to decide where to push:
+
 - Run `gh repo view --json owner -q '.owner.login'` to get the repo owner
 - If the owner is `garaemon`, push to `origin`
 - Otherwise, check if a fork exists with `gh repo list garaemon --json name,nameWithOwner`
   or `gh repo view garaemon/<repo-name>` and push to the fork
 
 When pushing, always set the upstream tracking branch:
-```
+
+```bash
 git push -u <remote> <branch>
 ```
 
@@ -74,12 +79,14 @@ If a fork doesn't exist yet, create one with `gh repo fork --remote-name fork` a
 This is important: PRs should be small and focused, ideally around 100 lines of diff.
 
 After staging all intended changes, check the total diff size:
-```
+
+```bash
 git diff --cached --stat
 git diff --cached | wc -l
 ```
 
 If the diff exceeds ~100 lines, split it into multiple PRs by functionality:
+
 1. Analyze the changes and group them by feature/concern
 2. Present the proposed split to the user for approval
 3. For each group:
@@ -93,6 +100,7 @@ Ask the user before splitting. They may prefer a single larger PR in some cases.
 ## Step 6: Run Tests and Linters
 
 Before creating the PR, always run tests and linters. Find the right commands by checking:
+
 1. `README.md` for test/lint instructions
 2. `.github/workflows/` for CI configuration
 3. `Makefile`, `package.json`, `Cargo.toml`, `pyproject.toml`, etc.
@@ -109,7 +117,8 @@ descriptive headers that convey the actual content. The reader should understand
 just from scanning the headers.
 
 **Example:**
-```
+
+```bash
 gh pr create --title "Fix null handling in utility functions" --body "$(cat <<'EOF'
 ## Prevent crashes when None is passed to format_string and parse_int
 
