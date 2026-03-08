@@ -16,11 +16,12 @@ Automate the end-to-end process of creating a GitHub pull request from local cha
 
 1. Assess the current state (branch, staged/unstaged changes, commits)
 2. Create a branch if on the default branch
-3. Stage and commit changes
-4. Determine push target (fork vs origin)
-5. Check diff size and split into multiple PRs if needed
-6. Run tests and linters
-7. Push and create the PR
+3. Run improve-english skill to fix English quality in the changes
+4. Stage and commit changes
+5. Determine push target (fork vs origin)
+6. Check diff size and split into multiple PRs if needed
+7. Run tests and linters
+8. Push and create the PR
 
 ## Step 1: Assess Current State
 
@@ -50,14 +51,21 @@ Branch naming format: `YYYY.MM.DD-<descriptive-topic>`
 
 Ask the user what the topic should be if it's not obvious from context.
 
-## Step 3: Stage and Commit
+## Step 3: Run improve-english
+
+Before committing, invoke the `improve-english` skill to fix spelling errors in
+identifiers, improve comment English, and translate any Japanese comments. Show the
+proposed changes to the user and ask for confirmation before applying. This step
+catches English issues early so the PR is clean from the start.
+
+## Step 4: Stage and Commit
 
 Never use `git add .` or `git add -A`. Always specify files explicitly.
 
 Review the changes and group them logically. Write commit messages in English that focus on
 the "why" behind the changes, not just what changed.
 
-## Step 4: Determine Push Target
+## Step 5: Determine Push Target
 
 Check the GitHub repository owner to decide where to push:
 
@@ -74,7 +82,7 @@ git push -u <remote> <branch>
 
 If a fork doesn't exist yet, create one with `gh repo fork --remote-name fork` and push to it.
 
-## Step 5: Check Diff Size and Split if Needed
+## Step 6: Check Diff Size and Split if Needed
 
 This is important: PRs should be small and focused, ideally around 100 lines of diff.
 
@@ -97,7 +105,7 @@ If the diff exceeds ~100 lines, split it into multiple PRs by functionality:
 
 Ask the user before splitting. They may prefer a single larger PR in some cases.
 
-## Step 6: Run Tests and Linters
+## Step 7: Run Tests and Linters
 
 Before creating the PR, always run tests and linters. Find the right commands by checking:
 
@@ -107,7 +115,7 @@ Before creating the PR, always run tests and linters. Find the right commands by
 
 If tests or linters fail, fix the issues before proceeding. Do not skip this step.
 
-## Step 7: Create the PR
+## Step 8: Create the PR
 
 Write the PR description in English. Focus on the "why" — background, motivation, and the
 problem being solved. If the "why" isn't clear from the code or commits, ask the user.
