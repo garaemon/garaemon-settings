@@ -62,6 +62,7 @@ developers can drop breadcrumbs while coding and let the agent clean up later.
 ## Example
 
 Before:
+
 ```go
 func GetUser(id string) (*User, error) {
     // TODO(agent): Add input validation for empty id
@@ -74,6 +75,7 @@ func GetUser(id string) (*User, error) {
 ```
 
 After:
+
 ```go
 func GetUser(id string) (*User, error) {
     if id == "" {
