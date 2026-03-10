@@ -2,6 +2,7 @@
 - Ignore test programs in linter.
 - Keep the function shorter. One function is recommended to be shorter than 90 lines.
 - Don't implement many things at once. Always compile programs or run test codes after you modify the code.
+- Implement top-down: start with the overall structure and high-level functions first, even if the internals are empty stubs. Fill in the details afterward. Do not start from low-level details.
 - Always start functions and methods with verbs.
 - Always use descriptive names for variables.
 - Avoid class inheritance basically. You should not use class inheritance to reduce duplicated codes. The exceptional cases are 1. libraries require inheritance. 2. You need inheritance of types.
