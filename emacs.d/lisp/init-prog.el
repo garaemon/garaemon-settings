@@ -1388,6 +1388,14 @@ The source buffer is added as gptel context for full file awareness."
                                  :url "https://github.com/tree-sitter/tree-sitter-python"
                                  :revision "v0.23.6"
                                  :ext "\\.py\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'javascript
+                                 :ts-mode 'js-ts-mode
+                                 :remap 'js-mode
+                                 :url "https://github.com/tree-sitter/tree-sitter-javascript"
+                                 :revision "v0.23.1"
+                                 :source-dir "src"
+                                 :ext "\\.js\\'")
                                 ))
          (new-recipe-alist (mapcar #'(lambda (recipe)
                                        (cons (treesit-auto-recipe-lang recipe)
