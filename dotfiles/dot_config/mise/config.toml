@@ -1,6 +1,7 @@
 [tools]
 # pragma: allowlist nextline secret
 1password = "latest"
+aws = { version = "latest", symlink_bins = "true" }
 bat = "latest"
 bazel = "latest"
 bazelisk = "latest"
