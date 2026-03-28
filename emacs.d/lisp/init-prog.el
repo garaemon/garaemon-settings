@@ -730,6 +730,10 @@
                                   "-o ControlPath=" socket-dir "/%r@%h:%p "
                                   "-o ControlPersist=45s")))))
   (require 'my-magit-ediff)
+
+  (with-eval-after-load 'magit-log
+    (define-key magit-log-mode-map (kbd "C-c r")
+                #'my-diff-hl-set-reference-from-magit))
   )
 
 (use-package gptel-magit
@@ -830,7 +834,8 @@ Is Ollama running? (ollama serve) Status: %s" status))
   :custom
   (forge-owned-accounts '(("garaemon")))
   :bind (("C-c M r" . my-diff-hl-review-enable)
-         ("C-c M s" . my-diff-hl-review-disable))
+         ("C-c M s" . my-diff-hl-review-disable)
+         ("C-c M d" . my-diff-hl-set-reference))
   :config
   (defun my-forge-create-pullreq ()
     (interactive)
@@ -866,7 +871,11 @@ Is Ollama running? (ollama serve) Status: %s" status))
 
   (define-minor-mode my-diff-hl-review-mode
     "Minor mode indicating diff-hl review is active in this buffer."
-    :lighter " Review")
+    :lighter (:eval (if my-diff-hl-review--revision
+                        (format " Diff[%s]"
+                                (truncate-string-to-width
+                                 my-diff-hl-review--revision 12))
+                      " Diff[?]")))
 
   (defun my-diff-hl-review--apply-to-buffer ()
     "Apply review mode to the current buffer if it belongs to the review project."
@@ -916,12 +925,7 @@ Is Ollama running? (ollama serve) Status: %s" status))
     (interactive)
     (let* ((base-ref (my-diff-hl-review--find-base-ref))
            (revision (concat "origin/" base-ref)))
-      (setq my-diff-hl-review--project
-            (expand-file-name (project-root (project-current t))))
-      (setq my-diff-hl-review--revision revision)
-      (my-diff-hl-review--update-all-buffers revision)
-      (add-hook 'find-file-hook #'my-diff-hl-review--apply-to-buffer)
-      (message "Review mode enabled: %s" revision)))
+      (my-diff-hl--apply-revision revision)))
 
   (defun my-diff-hl-review-disable ()
     "Disable review mode and restore normal diff-hl behavior."
@@ -931,6 +935,60 @@ Is Ollama running? (ollama serve) Status: %s" status))
     (setq my-diff-hl-review--project nil)
     (setq my-diff-hl-review--revision nil)
     (message "Review mode disabled"))
+
+  ;; General-purpose diff-hl reference selector using consult.
+  ;; Select any commit or branch as baseline; changes after it are shown in fringe.
+  (defun my-diff-hl--build-candidates ()
+    "Build candidate list: reset option, then commits, then branches."
+    (let* ((default-directory (if buffer-file-name
+                                  (file-name-directory buffer-file-name)
+                                default-directory))
+           (default-directory (or (magit-toplevel) default-directory))
+           (branches (magit-list-branch-names))
+           (commits (magit-git-lines "log" "--oneline" "-50")))
+      (append '("HEAD (reset to default)")
+              commits
+              (mapcar (lambda (b) (concat "branch: " b)) branches))))
+
+  (defun my-diff-hl--extract-revision (selected)
+    "Extract git revision string from SELECTED candidate."
+    (cond
+     ((string-prefix-p "branch: " selected)
+      (substring selected 8))
+     (t
+      (car (split-string selected " ")))))
+
+  (defun my-diff-hl--apply-revision (revision)
+    "Apply REVISION as diff-hl baseline for the current project."
+    (setq my-diff-hl-review--project
+          (expand-file-name (project-root (project-current t))))
+    (setq my-diff-hl-review--revision revision)
+    (my-diff-hl-review--update-all-buffers revision)
+    (add-hook 'find-file-hook #'my-diff-hl-review--apply-to-buffer)
+    (message "diff-hl baseline: %s" revision))
+
+  (defun my-diff-hl-set-reference ()
+    "Select a git commit as the baseline for diff-hl.
+Changes AFTER the selected commit are shown in the fringe (exclusive)."
+    (interactive)
+    (let* ((candidates (my-diff-hl--build-candidates))
+           (selected (consult--read
+                      candidates
+                      :prompt "Baseline (changes AFTER this are shown): "
+                      :sort nil
+                      :require-match t)))
+      (if (string= selected "HEAD (reset to default)")
+          (my-diff-hl-review-disable)
+        (my-diff-hl--apply-revision
+         (my-diff-hl--extract-revision selected)))))
+
+  (defun my-diff-hl-set-reference-from-magit ()
+    "Set the commit at point in magit-log as diff-hl baseline."
+    (interactive)
+    (let ((commit (magit-commit-at-point)))
+      (unless commit
+        (user-error "No commit at point"))
+      (my-diff-hl--apply-revision commit)))
   )
 
 (use-package git-commit
