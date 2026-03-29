@@ -2,21 +2,55 @@
 - name: Install and configure keyd
   when: ansible_facts.os_family == "Debian"
   block:
-    - name: Install software-properties-common for PPA support
+    - name: Install dependencies for keyd
       apt:
-        name: software-properties-common
+        name:
+          - gnupg
         state: present
       become: true
 
-    - name: Add keyd PPA
-      apt_repository:
-        repo: ppa:keyd-team/ppa
-        state: present
+    # Clean up deprecated apt_key entry in /etc/apt/trusted.gpg
+    - name: Remove deprecated keyd PPA key from apt-key
+      ansible.builtin.shell: |
+        apt-key del "CD9F79EC6A8AFB2F" 2>/dev/null || true
+      become: true
+      changed_when: false
+
+    - name: Download keyd PPA signing key
+      get_url:
+        url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCD9F79EC6A8AFB2F&options=mr"
+        dest: /tmp/keyd-ppa-signing-key.pub
+        mode: "0644"
+
+    - name: Convert and install keyd PPA signing key to keyrings
+      ansible.builtin.shell: |
+        gpg --dearmor < /tmp/keyd-ppa-signing-key.pub > /usr/share/keyrings/keyd-team-ppa.gpg
+      become: true
+      args:
+        creates: /usr/share/keyrings/keyd-team-ppa.gpg
+
+    - name: Set permissions on keyd PPA keyring
+      file:
+        path: /usr/share/keyrings/keyd-team-ppa.gpg
+        mode: "0644"
+      become: true
+
+    - name: Remove old keyd PPA source list
+      file:
+        path: /etc/apt/sources.list.d/ppa_keyd_team_ppa_noble.list
+        state: absent
+      become: true
+
+    - name: Write keyd PPA repository file with signed-by
+      vars:
+        keyd_keyring: /usr/share/keyrings/keyd-team-ppa.gpg
+        keyd_repo_url: https://ppa.launchpadcontent.net/keyd-team/ppa/ubuntu
+      copy:
+        dest: /etc/apt/sources.list.d/keyd-team-ppa.list
+        content: "deb [signed-by={{ keyd_keyring }}] {{ keyd_repo_url }} {{ ansible_facts.distribution_release }} main\n"
+        mode: "0644"
       become: true
       register: keyd_repository
-      retries: 3
-      delay: 5
-      until: keyd_repository is success
 
     - name: Update apt cache
       apt:
@@ -29,6 +63,11 @@
         name: keyd
         state: present
       become: true
+
+    - name: Clean up temporary signing key
+      file:
+        path: /tmp/keyd-ppa-signing-key.pub
+        state: absent
 
     - name: Ensure /etc/keyd directory exists
       file:
