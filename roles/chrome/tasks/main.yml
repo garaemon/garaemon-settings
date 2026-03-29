@@ -9,17 +9,43 @@
         state: present
       become: true
 
-    - name: Add Google Chrome signing key
-      apt_key:
+    # Clean up deprecated apt_key entry in /etc/apt/trusted.gpg
+    - name: Remove deprecated Google Chrome key from apt-key
+      ansible.builtin.shell: |
+        apt-key del "7721F63BD38B4796" 2>/dev/null || true
+      become: true
+      changed_when: false
+
+    - name: Download Google Chrome signing key
+      get_url:
         url: https://dl.google.com/linux/linux_signing_key.pub
-        state: present
+        dest: /tmp/google-chrome-signing-key.pub
+        mode: "0644"
+
+    - name: Convert and install Chrome signing key to keyrings
+      ansible.builtin.shell: |
+        gpg --dearmor < /tmp/google-chrome-signing-key.pub > /usr/share/keyrings/google-chrome.gpg
+      become: true
+      args:
+        creates: /usr/share/keyrings/google-chrome.gpg
+
+    - name: Set permissions on Chrome keyring
+      file:
+        path: /usr/share/keyrings/google-chrome.gpg
+        mode: "0644"
       become: true
 
-    - name: Add Google Chrome repository
-      apt_repository:
-        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
-        state: present
-        filename: google-chrome
+    - name: Remove old Chrome key from trusted.gpg.d
+      file:
+        path: /etc/apt/trusted.gpg.d/google-chrome.gpg
+        state: absent
+      become: true
+
+    - name: Write Google Chrome repository file with signed-by
+      copy:
+        dest: /etc/apt/sources.list.d/google-chrome.list
+        content: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main\n"
+        mode: "0644"
       become: true
       register: chrome_repository
 
@@ -34,3 +60,8 @@
         name: google-chrome-stable
         state: present
       become: true
+
+    - name: Clean up temporary signing key
+      file:
+        path: /tmp/google-chrome-signing-key.pub
+        state: absent
