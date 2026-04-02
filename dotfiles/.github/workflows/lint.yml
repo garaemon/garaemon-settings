@@ -22,7 +22,8 @@ jobs:
             dot_zlogin \
             dot_zlogout \
             dot_zshrc.zplug \
-            dot_zsh/*.zsh
+            dot_zsh/*.zsh \
+            dot_local/bin/executable_*
 
   trailing-whitespace:
     name: Trailing Whitespace
