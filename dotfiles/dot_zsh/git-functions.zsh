@@ -76,6 +76,49 @@ function git-worktree-cleanup-current() {
   fi
 }
 
+# Interactively select a git worktree by branch name with peco and cd into it.
+function git-worktree-select() {
+  if ! command -v peco &> /dev/null; then
+    echo "Error: 'peco' command not found." >&2
+    return 1
+  fi
+
+  local worktree_list
+  worktree_list=$(git worktree list 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    echo "Error: Not a git repository." >&2
+    return 1
+  fi
+
+  local worktree_count
+  worktree_count=$(echo "$worktree_list" | wc -l | tr -d ' ')
+  if [ "$worktree_count" -le 1 ]; then
+    echo "No additional worktrees found." >&2
+    return 1
+  fi
+
+  # Show branch names for selection via peco
+  local selected
+  selected=$(echo "$worktree_list" | awk '{print $NF}' | tr -d '[]' | peco --prompt "worktree branch>")
+
+  if [ -z "$selected" ]; then
+    echo "No worktree selected." >&2
+    return 1
+  fi
+
+  # Find the directory for the selected branch
+  local target_dir
+  target_dir=$(echo "$worktree_list" | grep "\[${selected}\]" | awk '{print $1}')
+
+  if [ -z "$target_dir" ]; then
+    echo "Error: Could not find worktree for branch '${selected}'." >&2
+    return 1
+  fi
+
+  echo "Changing to worktree '${selected}' at ${target_dir}"
+  cd "$target_dir"
+}
+
 function git-branch-for-pr() {
   CURRENT_BRANCH_NAME=$(git branch --show-current)
   ORIGINAL_BRANCH=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
