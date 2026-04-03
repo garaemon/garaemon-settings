@@ -1089,6 +1089,7 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
   :ensure t
   :after browse-url
   :bind (:map vterm-mode-map
+              ("\C-c \C-c" . 'vterm--self-insert)
               ("\C-h" . 'vterm-send-backspace)
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
               ;; key.
