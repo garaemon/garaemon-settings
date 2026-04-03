@@ -1,0 +1,50 @@
+#!/bin/bash
+# git-select: Interactively select a branch with peco and checkout.
+# Place this script in your PATH to use as `git select`.
+set -euo pipefail
+
+show_help() {
+  cat << 'EOF'
+Usage: git select [OPTIONS]
+
+Interactively select a branch with peco and checkout.
+
+Options:
+  -a        Show all branches including remote branches
+  -h        Show this help message
+EOF
+}
+
+show_all=false
+
+while getopts "ha" opt; do
+  case "${opt}" in
+    h) show_help; exit 0 ;;
+    a) show_all=true ;;
+    *) show_help; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if ! command -v peco &> /dev/null; then
+  echo "Error: 'peco' command not found." >&2
+  exit 1
+fi
+
+branch_flag="--list"
+if [ "$show_all" = true ]; then
+  branch_flag="--all"
+fi
+
+selected_branch=$(git branch $branch_flag | sed 's/^[* ]*//' | sed 's/^ *//' | peco --prompt "checkout branch>")
+
+if [ -z "$selected_branch" ]; then
+  echo "No branch selected." >&2
+  exit 1
+fi
+
+# Strip remote prefix (e.g., "remotes/origin/feature" -> "feature")
+selected_branch="${selected_branch#remotes/*/}"
+
+echo "Checking out '${selected_branch}'..."
+git checkout "$selected_branch"
