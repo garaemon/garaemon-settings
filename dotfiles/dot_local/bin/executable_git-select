@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # git-select: Interactively select a branch with peco and checkout.
 # Place this script in your PATH to use as `git select`.
 set -euo pipefail
