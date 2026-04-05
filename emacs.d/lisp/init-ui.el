@@ -209,5 +209,125 @@ it from being deleted by `delete-other-windows` (C-x 1)."
       ))
   )
 
+;;;; ============================================================
+;;;; Window Layout Management
+;;;; ============================================================
+;;;;
+;;;; IDE-like window layout with three building blocks:
+;;;;
+;;;; 1. Side Windows (display-buffer-alist)
+;;;;    - Designated buffers (vterm, compilation) are automatically
+;;;;      displayed in fixed side windows.
+;;;;    - Side windows are immune to C-x 1 (delete-other-windows), so they
+;;;;      stay visible while you reorganize the main editing area.
+;;;;    - Multiple side windows can coexist. The `slot' value controls
+;;;;      ordering on the same side (lower slot = further left/top).
+;;;;
+;;;; 2. Side Window Profiles
+;;;;    - Profiles define where each side window appears and how large it is.
+;;;;    - `wide'  : for large/external monitors (terminals on bottom)
+;;;;    - `narrow' : for laptop screens (terminals on bottom, smaller)
+;;;;    - Switch with: C-c w p  (my-switch-side-window-profile)
+;;;;    - The new profile applies to buffers opened AFTER switching.
+;;;;      Already-open side windows keep their current position.
+;;;;
+;;;; 3. Winner Mode (built-in)
+;;;;    - Tracks window configuration history.
+;;;;    - C-c <left>  : undo last window layout change
+;;;;    - C-c <right> : redo
+;;;;
+;;;; Quick Reference:
+;;;;   C-c w s   - Toggle all side windows on/off
+;;;;   C-c w p   - Switch side window profile (wide/narrow)
+;;;;   C-c l     - Open magit-status (full window)
+;;;;   C-c L     - Open magit-status (side window, left)
+;;;;   C-c <left>  - Undo window layout change (winner-undo)
+;;;;   C-c <right> - Redo window layout change (winner-redo)
+;;;;   C-x {     - Shrink window horizontally  (repeatable via repeat-mode)
+;;;;   C-x }     - Enlarge window horizontally  (repeatable via repeat-mode)
+;;;;   C-x ^     - Enlarge window vertically    (repeatable via repeat-mode)
+;;;;   C-x +     - Balance all windows
+;;;;   C-x r w <c> - Save current window layout to register <c>
+;;;;   C-x r j <c> - Restore window layout from register <c>
+;;;;
+;;;; Customization:
+;;;;   - To add a new buffer to side window management, add an entry to
+;;;;     `my-side-window-common-buffers' and corresponding entries in
+;;;;     each profile in `my-side-window-profiles'.
+;;;;   - To add a new profile, add an entry to `my-side-window-profiles'.
+;;;; ============================================================
+
+;;; Winner mode - undo/redo window configuration changes
+(winner-mode 1)
+
+;;; Side windows - protect specific buffers from C-x 1 etc.
+(defvar my-side-window-common-buffers
+  '(("\\*vterm.*\\*" . terminal)
+    ("\\*compilation\\*" . output))
+  "Alist of (CONDITION . TYPE) for side window managed buffers.
+CONDITION is a regexp string matching buffer names.")
+
+(defvar my-side-window-profiles
+  '((wide . ((terminal . (side bottom slot 0 height 0.3))
+             (output . (side bottom slot 1 height 0.3))))
+    (narrow . ((terminal . (side bottom slot 0 height 0.25))
+               (output . (side bottom slot 1 height 0.25)))))
+  "Side window layout profiles for different screen sizes.")
+
+(defvar my-side-window-current-profile 'wide
+  "Currently active side window profile.")
+
+(defun my-side-window--build-display-buffer-alist (profile-name)
+  "Build `display-buffer-alist' entries from PROFILE-NAME."
+  (let ((profile (alist-get profile-name my-side-window-profiles)))
+    (mapcar
+     (lambda (buf-entry)
+       (let* ((condition (car buf-entry))
+              (type (cdr buf-entry))
+              (conf (alist-get type profile))
+              (side (plist-get conf 'side))
+              (slot (plist-get conf 'slot))
+              (size-key (if (memq side '(left right)) 'window-width 'window-height))
+              (size-val (or (plist-get conf 'width) (plist-get conf 'height))))
+         `(,condition
+           (display-buffer-in-side-window)
+           (side . ,side)
+           (slot . ,slot)
+           (,size-key . ,size-val)
+           (window-parameters . ((no-delete-other-windows . t))))))
+     my-side-window-common-buffers)))
+
+(defun my-switch-side-window-profile ()
+  "Switch side window profile interactively."
+  (interactive)
+  (let* ((names (mapcar #'car my-side-window-profiles))
+         (candidates (mapcar (lambda (name)
+                               (if (eq name my-side-window-current-profile)
+                                   (format "%s (current)" name)
+                                 (symbol-name name)))
+                             names))
+         (selected (completing-read "Side window profile: " candidates nil t))
+         (choice (intern (replace-regexp-in-string " (current)$" "" selected))))
+    (setq my-side-window-current-profile choice)
+    (setq display-buffer-alist (my-side-window--build-display-buffer-alist choice))
+    (message "Side window profile: %s" choice)))
+
+;; Apply default profile
+(setq display-buffer-alist (my-side-window--build-display-buffer-alist my-side-window-current-profile))
+
+(defun my-magit-status-side-window ()
+  "Open magit-status in a side window on the left."
+  (interactive)
+  (let ((display-buffer-overriding-action
+         '((display-buffer-in-side-window)
+           (side . left)
+           (slot . 0)
+           (window-width . 0.2)
+           (window-parameters . ((no-delete-other-windows . t))))))
+    (magit-status)))
+
+(global-set-key (kbd "C-c w s") 'window-toggle-side-windows)
+(global-set-key (kbd "C-c w p") 'my-switch-side-window-profile)
+
 (provide 'init-ui)
 ;;; init-ui.el ends here
