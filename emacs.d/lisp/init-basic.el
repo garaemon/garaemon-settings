@@ -9,6 +9,9 @@
 (eval-when-compile
   (require 'cl))
 
+;;; Enable repeat-mode so commands like C-x { can be repeated by pressing { again
+(repeat-mode 1)
+
 ;;; Tab and indentation settings
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode nil)

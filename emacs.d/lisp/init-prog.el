@@ -631,7 +631,7 @@
 (use-package magit :ensure t
   ;; (magit-refresh-status-buffer nil)
   :bind (("\C-cl" . 'magit-status)
-         ("\C-cL" . 'magit-status)
+         ("\C-cL" . 'my-magit-status-side-window)
          ("\C-cm" . 'magit-dispatch))
   :custom
   ;; When we visit a file from magit diff view, open the files on the disk rather than the read-only
