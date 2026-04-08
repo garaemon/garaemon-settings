@@ -41,7 +41,7 @@
       :jump-to-captured nil
       )
      ))
-  (org-todo-keywords '((sequence "TODO" "INPROGRESS" "|" "DONE" "DELEGATED")))
+  (org-todo-keywords '((sequence "TODO" "INPROGRESS" "|" "DONE" "DELEGATED" "CANCELLED")))
   ;; Use C-c C-q to insert tag.
   ;; To update the tag list from the agenda files, I set
   ;; `org-complete-tags-always-offer-all-agenda-tags' t.
