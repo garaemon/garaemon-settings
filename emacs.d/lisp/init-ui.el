@@ -92,6 +92,9 @@
 
 (use-package solarized-theme :ensure t
   :if (display-graphic-p)
+  :custom
+  (solarized-scale-org-headlines nil)
+  (solarized-scale-outline-headlines nil)
   :config
   (load-theme 'solarized-dark t)
   )
