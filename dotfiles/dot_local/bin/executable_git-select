@@ -33,7 +33,7 @@ if ! command -v peco &> /dev/null; then
 fi
 
 if [ "$show_all" = true ]; then
-  selected_branch=$(git branch --all | sed 's/^[* ]*//' | sed 's/^ *//' | peco --prompt "checkout branch>")
+  selected_branch=$(git branch --all | sed 's/^[* ]*//' | peco --prompt "checkout branch>")
 
   if [ -z "$selected_branch" ]; then
     echo "No branch selected." >&2
@@ -50,7 +50,7 @@ fi
 # Build a combined list of local branches and open PR branches.
 # Local branches are shown as-is; PR branches include PR number and title.
 
-local_branches=$(git branch --list | sed 's/^[* ]*//' | sed 's/^ *//')
+local_branches=$(git branch --list | sed 's/^[* ]*//')
 
 # Collect PR info from gh if available
 pr_lines=""
@@ -59,7 +59,9 @@ if command -v gh &> /dev/null; then
     --template '{{range .}}{{.number}}	{{.headRefName}}	{{.title}}{{"\n"}}{{end}}' 2>/dev/null || true)
 fi
 
-# Format local branches, annotating with PR info if the branch has an open PR
+# Format local branches, annotating with PR info if the branch has an open PR.
+# Tab separates branch name from PR annotation for reliable extraction.
+# Double space between PR number and title for visual clarity in peco.
 candidates=""
 used_pr_branches=""
 while IFS= read -r branch; do
@@ -69,7 +71,7 @@ while IFS= read -r branch; do
     pr_match=$(printf '%s\n' "$pr_lines" | awk -F'\t' -v b="$branch" '$2 == b {print "(#" $1 "  " $3 ")"; exit}')
   fi
   if [ -n "$pr_match" ]; then
-    candidates="${candidates}${branch} ${pr_match}"$'\n'
+    candidates="${candidates}${branch}	${pr_match}"$'\n'
     used_pr_branches="${used_pr_branches}${branch}"$'\n'
   else
     candidates="${candidates}${branch}"$'\n'
@@ -80,8 +82,8 @@ done <<< "$local_branches"
 if [ -n "$pr_lines" ]; then
   while IFS=$'\t' read -r number branch title; do
     [ -z "$branch" ] && continue
-    if ! printf '%s\n' "$used_pr_branches" | grep -qx "$branch"; then
-      candidates="${candidates}${branch} (#${number}  ${title})"$'\n'
+    if [ -z "$used_pr_branches" ] || ! printf '%s\n' "$used_pr_branches" | grep -qx "$branch"; then
+      candidates="${candidates}${branch}	(#${number}  ${title})"$'\n'
     fi
   done <<< "$pr_lines"
 fi
@@ -93,8 +95,8 @@ if [ -z "$selected" ]; then
   exit 1
 fi
 
-# Extract branch name (everything before the optional PR annotation)
-selected_branch="${selected% (#*}"
+# Extract branch name (first tab-separated field)
+selected_branch=$(printf '%s' "$selected" | cut -f1)
 
 # If the branch doesn't exist locally, fetch it from origin first
 if ! git show-ref --verify --quiet "refs/heads/${selected_branch}"; then
