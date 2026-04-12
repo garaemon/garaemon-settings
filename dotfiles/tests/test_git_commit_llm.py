@@ -222,6 +222,7 @@ class TestCallLlm:
             payload = json.loads(call_args.data.decode("utf-8"))
             assert payload["model"] == "gemma3:4b"
             assert payload["stream"] is False
+            assert payload["format"] == "json"
             # Should use messages format with system and user roles
             messages = payload["messages"]
             assert len(messages) == 2

@@ -117,6 +117,7 @@ def call_llm(diff: str, system_prompt: str, model: str) -> str:
             {"role": "user", "content": f"<diff>\n{diff}\n</diff>"},
         ],
         "stream": False,
+        "format": "json",
     }).encode("utf-8")
 
     req = urllib.request.Request(
