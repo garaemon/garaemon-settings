@@ -22,8 +22,27 @@ jobs:
             dot_zlogin \
             dot_zlogout \
             dot_zshrc.zplug \
-            dot_zsh/*.zsh \
-            dot_local/bin/executable_*
+            dot_zsh/*.zsh
+      - name: Run ShellCheck on shell scripts in bin
+        run: |
+          for f in dot_local/bin/executable_*; do
+            # Skip non-shell scripts (e.g. Python)
+            head -1 "$f" | grep -q 'python' && continue
+            shellcheck "$f"
+          done
+
+  pytest:
+    name: Pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run tests
+        run: python -m pytest tests/ -v
 
   trailing-whitespace:
     name: Trailing Whitespace

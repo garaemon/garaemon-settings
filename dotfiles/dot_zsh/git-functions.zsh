@@ -3,15 +3,15 @@
 # Git-related functions
 
 git_delete_all_branched() {
-  git branch -D $(git branch --merged | grep -v \* | xargs)
+  git branch -D $(git branch --merged | grep -v '\*' | xargs)
 }
 
 function git-branch-remove-all-local() {
-  git branch --merged master | grep -v '*' | xargs -I % echo git branch -d %
+  git branch --merged master | grep -v '\*' | xargs -I % echo git branch -d %
 }
 
 function git-branch-remove-all-local-exec() {
-  git branch --merged master | grep -v '*' | xargs -I % git branch -d %
+  git branch --merged master | grep -v '\*' | xargs -I % git branch -d %
 }
 
 function git-branch-remove-all-remote() {
@@ -38,7 +38,7 @@ function git-worktree-add-with-branch() {
   local branch_suffix=$(basename ${directory})
   local date_prefix=$(date +%Y.%m.%d)
   git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
-  cd ${directory}
+  cd "${directory}" || return
 }
 
 # Clean up the current worktree: remove the directory, the worktree entry, and exit the shell.
@@ -62,7 +62,7 @@ function git-worktree-cleanup-current() {
   local main_repo_root=$(cd "$common_dir/.." && pwd)
 
   # Go to the main repository root to allow removal of the worktree directory
-  cd "${main_repo_root}"
+  cd "${main_repo_root}" || return
 
   # Remove the worktree (and directory)
   if git worktree remove "${dir}"; then
@@ -71,7 +71,7 @@ function git-worktree-cleanup-current() {
   else
     echo "Failed to remove worktree."
     # Attempt to go back
-    cd "${dir}"
+    cd "${dir}" || return
     return 1
   fi
 }
@@ -116,7 +116,7 @@ function git-worktree-select() {
   fi
 
   echo "Changing to worktree '${selected}' at ${target_dir}"
-  cd "$target_dir"
+  cd "$target_dir" || return
 }
 
 function git-branch-for-pr() {
@@ -187,107 +187,4 @@ function github-http-to-ssh() {
   fi
 }
 
-function git-commit-llm() {
-  # Show help message
-  local show_help() {
-    cat << EOF
-Usage: git-commit-llm [OPTIONS] [MODEL]
-
-Generate a commit message using LLM based on staged changes.
-
-Options:
-  -m MODEL    Specify the model to use (default: gemma3:4b)
-  -h          Show this help message
-
-Arguments:
-  MODEL       Model to use (alternative to -m option)
-
-Examples:
-  git-commit-llm                          # Use default model (gemma3:4b)
-  git-commit-llm -m gpt-4o                # Use gpt-4o model
-  git-commit-llm gpt-4o                   # Use gpt-4o model (positional argument)
-  git-commit-llm -h                       # Show help
-
-EOF
-  }
-
-  # Check if llm command exists
-  if ! command -v llm &> /dev/null; then
-    echo "Error: 'llm' command not found. Please install llm (e.g., pip install llm)." >&2
-    return 1
-  fi
-
-  # Default model and API arguments
-  local MODEL_NAME_TO_USE="gemma3:4b"
-  local LLM_API_ARGS=(--api ollama) # Default to using Ollama API
-
-  # Parse options
-  local OPTIND opt
-  while getopts "hm:" opt; do
-    case "${opt}" in
-      h)
-        show_help
-        return 0
-        ;;
-      m)
-        MODEL_NAME_TO_USE="${OPTARG}"
-        ;;
-      *)
-        show_help
-        return 1
-        ;;
-    esac
-  done
-  shift $((OPTIND - 1))
-
-  # Check if a model was provided as a positional argument (for backward compatibility)
-  if [[ -n "$1" ]]; then
-    MODEL_NAME_TO_USE="$1"
-  fi
-
-  # Check if there are staged changes
-  if ! git diff --staged --quiet; then
-    # Get the staged diff
-    local DIFF
-    DIFF=$(git diff --staged)
-
-    # Use the llm command to generate a commit message
-    local SYSTEM_PROMPT="You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
-You reply the commit message only.
-
-The first line should be a brief summary (recommended < 50 characters), followed by an empty line, and then a more detailed description from the third line onwards.
-Use bullet points in the detailed description of the commit message.
-
-The detailed description should include:
-- What changes were made
-- Why the changes were made (purpose, background)
-- Any impact of the changes (if applicable)
-- Use imperative form
-"
-    local COMMIT_MSG
-    # Use the selected model and API arguments
-    COMMIT_MSG=$(echo "${DIFF}" | llm -s "${SYSTEM_PROMPT}" -m "${MODEL_NAME_TO_USE}" -m "${MODEL_NAME_TO_USE}")
-
-    # Display the generated message
-    echo "--- Generated Commit Message ---"
-    echo "$COMMIT_MSG"
-    echo "--------------------------------"
-
-    # Ask the user to confirm the commit
-    echo -n "Commit with this message? (y/N)"
-    local CONFIRM
-    read CONFIRM
-    if [[ "$CONFIRM" =~ ^[yY]$ ]]; then
-      git commit -m "$COMMIT_MSG"
-      echo "Committed successfully."
-    else
-      echo "Commit cancelled."
-      # Copy the generated message to the clipboard (macOS)
-      # For Linux: echo "$COMMIT_MSG" | xclip -selection clipboard
-      echo "$COMMIT_MSG" | pbcopy
-      echo "The generated message has been copied to the clipboard."
-    fi
-  else
-    echo "Error: No staged changes found. Please stage your changes with 'git add .' or similar."
-  fi
-}
+# git-commit-llm is now a standalone Python script at ~/.local/bin/git-commit-llm
