@@ -220,9 +220,41 @@ Examples:
 EOF
   }
 
+  # Format JSON response into a commit message string
+  # Input: JSON string with "summary" and "details" fields
+  # Output: formatted commit message (summary + blank line + bullet points)
+  local _format_commit_json() {
+    local raw_json="$1"
+    # Strip markdown code fences if the LLM wraps the response
+    local json
+    json=$(echo "$raw_json" | sed '/^```\(json\)\{0,1\}$/d')
+
+    local summary details
+    summary=$(echo "$json" | jq -r '.summary // empty' 2>/dev/null)
+    details=$(echo "$json" | jq -r '.details[]? | "- " + .' 2>/dev/null)
+
+    if [[ -z "$summary" ]]; then
+      # Fallback: if JSON parsing fails, return raw text as-is
+      echo "$raw_json"
+      return 1
+    fi
+
+    if [[ -n "$details" ]]; then
+      printf '%s\n\n%s\n' "$summary" "$details"
+    else
+      echo "$summary"
+    fi
+  }
+
   # Check if llm command exists
   if ! command -v llm &> /dev/null; then
     echo "Error: 'llm' command not found. Please install llm (e.g., pip install llm)." >&2
+    return 1
+  fi
+
+  # Check if jq command exists
+  if ! command -v jq &> /dev/null; then
+    echo "Error: 'jq' command not found. Please install jq." >&2
     return 1
   fi
 
@@ -264,19 +296,26 @@ EOF
     local DIFF
     DIFF=$(git diff --staged)
 
-    # Base system prompt for commit message generation
-    local BASE_SYSTEM_PROMPT="You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
-You reply the commit message only.
+    # Base system prompt - asks LLM to return structured JSON
+    local BASE_SYSTEM_PROMPT='You are a programmer. Based on the Git diff provided below, generate a concise and clear commit message.
+Reply ONLY with a JSON object (no markdown code fences, no extra text).
 
-The first line should be a brief summary (recommended < 50 characters), followed by an empty line, and then a more detailed description from the third line onwards.
-Use bullet points in the detailed description of the commit message.
+JSON schema:
+{
+  "summary": "brief summary in imperative form (< 50 characters)",
+  "details": [
+    "bullet point describing what was changed",
+    "bullet point describing why (purpose/background)",
+    "bullet point describing impact (if applicable)"
+  ]
+}
 
-The detailed description should include:
-- What changes were made
-- Why the changes were made (purpose, background)
-- Any impact of the changes (if applicable)
-- Use imperative form
-"
+Rules:
+- "summary" must be a single line, imperative form, under 50 characters
+- "details" is an array of strings, each describing one aspect of the change in imperative form
+- Do NOT wrap the JSON in markdown code fences or any other formatting
+- Reply with the JSON object only, nothing else
+'
 
     # Build system prompt with optional initial feedback
     local SYSTEM_PROMPT="${BASE_SYSTEM_PROMPT}"
@@ -287,9 +326,10 @@ ${INITIAL_FEEDBACK}
 "
     fi
 
-    local COMMIT_MSG
+    local LLM_RAW COMMIT_MSG
     # Use the selected model to generate the commit message
-    COMMIT_MSG=$(echo "${DIFF}" | llm -s "${SYSTEM_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+    LLM_RAW=$(echo "${DIFF}" | llm -s "${SYSTEM_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+    COMMIT_MSG=$(_format_commit_json "$LLM_RAW")
 
     # Interactive loop: show message and prompt for action
     while true; do
@@ -339,7 +379,8 @@ User's feedback for revision:
 ${FEEDBACK}
 "
           echo "Regenerating commit message..."
-          COMMIT_MSG=$(echo "${DIFF}" | llm -s "${FEEDBACK_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+          LLM_RAW=$(echo "${DIFF}" | llm -s "${FEEDBACK_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+          COMMIT_MSG=$(_format_commit_json "$LLM_RAW")
           # Loop back to show the new message
           ;;
         *)
