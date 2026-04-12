@@ -3,15 +3,15 @@
 # Git-related functions
 
 git_delete_all_branched() {
-  git branch -D $(git branch --merged | grep -v \* | xargs)
+  git branch -D $(git branch --merged | grep -v '\*' | xargs)
 }
 
 function git-branch-remove-all-local() {
-  git branch --merged master | grep -v '*' | xargs -I % echo git branch -d %
+  git branch --merged master | grep -v '\*' | xargs -I % echo git branch -d %
 }
 
 function git-branch-remove-all-local-exec() {
-  git branch --merged master | grep -v '*' | xargs -I % git branch -d %
+  git branch --merged master | grep -v '\*' | xargs -I % git branch -d %
 }
 
 function git-branch-remove-all-remote() {
@@ -38,7 +38,7 @@ function git-worktree-add-with-branch() {
   local branch_suffix=$(basename ${directory})
   local date_prefix=$(date +%Y.%m.%d)
   git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
-  cd ${directory}
+  cd "${directory}" || return
 }
 
 # Clean up the current worktree: remove the directory, the worktree entry, and exit the shell.
@@ -62,7 +62,7 @@ function git-worktree-cleanup-current() {
   local main_repo_root=$(cd "$common_dir/.." && pwd)
 
   # Go to the main repository root to allow removal of the worktree directory
-  cd "${main_repo_root}"
+  cd "${main_repo_root}" || return
 
   # Remove the worktree (and directory)
   if git worktree remove "${dir}"; then
@@ -71,7 +71,7 @@ function git-worktree-cleanup-current() {
   else
     echo "Failed to remove worktree."
     # Attempt to go back
-    cd "${dir}"
+    cd "${dir}" || return
     return 1
   fi
 }
@@ -116,7 +116,7 @@ function git-worktree-select() {
   fi
 
   echo "Changing to worktree '${selected}' at ${target_dir}"
-  cd "$target_dir"
+  cd "$target_dir" || return
 }
 
 function git-branch-for-pr() {
