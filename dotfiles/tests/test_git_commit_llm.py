@@ -1,9 +1,11 @@
 """Tests for git-commit-llm."""
 
 import importlib.util
+import importlib.machinery
+import json
 import os
 import sys
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -183,3 +185,59 @@ class TestParseArgs:
         args = gcl.parse_args(["-m", "gpt-4o", "-f", "be concise"])
         assert args.model == "gpt-4o"
         assert args.feedback == "be concise"
+
+
+# ---------------------------------------------------------------------------
+# call_llm (Ollama API)
+# ---------------------------------------------------------------------------
+class TestCallLlm:
+    def test_sends_correct_request(self):
+        """Verify the request payload sent to Ollama API."""
+        response_body = json.dumps({"response": '{"summary": "Test"}'}).encode()
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = response_body
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_urlopen:
+            result = gcl.call_llm("diff content", "system prompt", "gemma3:4b")
+
+            # Verify the response
+            assert result == '{"summary": "Test"}'
+
+            # Verify the request
+            call_args = mock_urlopen.call_args[0][0]
+            payload = json.loads(call_args.data.decode("utf-8"))
+            assert payload["model"] == "gemma3:4b"
+            assert payload["prompt"] == "diff content"
+            assert payload["system"] == "system prompt"
+            assert payload["stream"] is False
+
+    def test_uses_ollama_host_env(self):
+        """Verify OLLAMA_HOST env var is respected."""
+        response_body = json.dumps({"response": "test"}).encode()
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = response_body
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_urlopen:
+            with patch.dict(os.environ, {"OLLAMA_HOST": "http://myhost:1234"}):
+                gcl.call_llm("diff", "prompt", "model")
+
+                call_args = mock_urlopen.call_args[0][0]
+                assert call_args.full_url == "http://myhost:1234/api/generate"
+
+    def test_default_ollama_host(self):
+        assert gcl.DEFAULT_OLLAMA_HOST == "http://localhost:11434"
+
+    def test_connection_error_exits(self):
+        """Verify sys.exit on connection failure."""
+        import urllib.error
+
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with pytest.raises(SystemExit):
+                gcl.call_llm("diff", "prompt", "model")

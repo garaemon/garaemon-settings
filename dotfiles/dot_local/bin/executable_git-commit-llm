@@ -8,8 +8,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.request
 
 DEFAULT_MODEL = "gemma3:4b"
+DEFAULT_OLLAMA_HOST = "http://localhost:11434"
 
 BASE_SYSTEM_PROMPT = """\
 You are a programmer. Based on the Git diff provided below, generate a concise and clear commit message.
@@ -90,6 +93,47 @@ def build_feedback_prompt(current_message: str, feedback: str) -> str:
     )
 
 
+def get_ollama_host() -> str:
+    """Get Ollama API base URL from environment or default."""
+    return os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
+
+
+def call_llm(diff: str, system_prompt: str, model: str) -> str:
+    """Call Ollama API directly and return the response text."""
+    host = get_ollama_host()
+    url = f"{host}/api/generate"
+
+    payload = json.dumps({
+        "model": model,
+        "prompt": diff,
+        "system": system_prompt,
+        "stream": False,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+
+    try:
+        with urllib.request.urlopen(req) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+            return body.get("response", "")
+    except urllib.error.URLError as e:
+        print(
+            f"Error: Could not connect to Ollama at {host}: {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    except (json.JSONDecodeError, KeyError) as e:
+        print(
+            f"Error: Unexpected response from Ollama: {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def get_staged_diff() -> str:
     """Get the staged git diff. Returns empty string if no staged changes."""
     result = subprocess.run(
@@ -107,20 +151,6 @@ def has_staged_changes() -> bool:
         capture_output=True,
     )
     return result.returncode != 0
-
-
-def call_llm(diff: str, system_prompt: str, model: str) -> str:
-    """Call the llm CLI tool and return its raw output."""
-    result = subprocess.run(
-        ["llm", "-s", system_prompt, "-m", model],
-        input=diff,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"Error: llm command failed: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-    return result.stdout
 
 
 def copy_to_clipboard(text: str) -> bool:
@@ -235,14 +265,6 @@ def main(args: list[str] | None = None) -> None:
     parsed = parse_args(args)
 
     model = parsed.model_positional or parsed.model
-
-    if not shutil.which("llm"):
-        print(
-            "Error: 'llm' command not found. "
-            "Please install llm (e.g., pip install llm).",
-            file=sys.stderr,
-        )
-        sys.exit(1)
 
     if not has_staged_changes():
         print(
