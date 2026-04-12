@@ -73,7 +73,9 @@ def format_commit_message(raw_output: str) -> str:
     bullet_lines = []
     for item in details:
         if isinstance(item, str) and item.strip():
-            bullet_lines.append(f"- {item.strip()}")
+            text = item.strip().removeprefix("- ").removeprefix("* ").strip()
+            if text:
+                bullet_lines.append(f"- {text}")
 
     if bullet_lines:
         return summary + "\n\n" + "\n".join(bullet_lines)

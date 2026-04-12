@@ -54,6 +54,16 @@ class TestFormatCommitMessage:
         assert "- Fix null check" in result
         assert "- Add test" in result
 
+    def test_strips_bullet_prefix_from_details(self):
+        raw = '{"summary": "Fix bug", "details": ["- Already bulleted", "* Star bulleted", "No prefix"]}'
+        result = gcl.format_commit_message(raw)
+        assert "- Already bulleted" in result
+        assert "- Star bulleted" in result
+        assert "- No prefix" in result
+        # Should not have double bullets
+        assert "- - " not in result
+        assert "- * " not in result
+
     def test_skips_empty_details(self):
         raw = '{"summary": "Fix bug", "details": ["Valid", "", "  ", "Also valid"]}'
         result = gcl.format_commit_message(raw)
