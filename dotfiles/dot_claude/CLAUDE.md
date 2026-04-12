@@ -11,9 +11,14 @@ Keep functions shorter than 90 lines.
 - Always start functions and methods with verbs.
 - Always use descriptive names for variables.
 
+### Immutability
+
+- Do not reassign variables unless there is a specific reason. Prefer introducing new variables.
+- Always use `const`-like qualifiers when available (`const` in JS/TS/C++, `final` in Java/Dart, `let` in Swift/Rust, `val` in Kotlin, etc.).
+
 ### Inheritance
 
-Avoid class inheritance. Do not use inheritance to reduce duplicated code.
+Avoid class inheritance. Do not use inheritance to reduce duplicated code. Prefer composition (ownership) over inheritance for code reuse.
 
 Exceptions:
 
