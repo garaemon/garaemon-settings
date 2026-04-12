@@ -94,7 +94,7 @@ if [ -z "$selected" ]; then
 fi
 
 # Extract branch name (everything before the optional PR annotation)
-selected_branch=$(echo "$selected" | sed 's/ (#[0-9]*  .*)$//')
+selected_branch="${selected% (#*}"
 
 # If the branch doesn't exist locally, fetch it from origin first
 if ! git show-ref --verify --quiet "refs/heads/${selected_branch}"; then
