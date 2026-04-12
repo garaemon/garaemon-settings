@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""git-commit-llm: Generate commit messages using LLM based on staged changes."""
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+DEFAULT_MODEL = "gemma3:4b"
+
+BASE_SYSTEM_PROMPT = """\
+You are a programmer. Based on the Git diff provided below, generate a concise and clear commit message.
+Reply ONLY with a JSON object (no markdown code fences, no extra text).
+
+JSON schema:
+{
+  "summary": "brief summary in imperative form (< 50 characters)",
+  "details": [
+    "bullet point describing what was changed",
+    "bullet point describing why (purpose/background)",
+    "bullet point describing impact (if applicable)"
+  ]
+}
+
+Rules:
+- "summary" must be a single line, imperative form, under 50 characters
+- "details" is an array of strings, each describing one aspect of the change in imperative form
+- Do NOT wrap the JSON in markdown code fences or any other formatting
+- Reply with the JSON object only, nothing else
+"""
+
+
+def format_commit_message(raw_output: str) -> str:
+    """Parse LLM JSON output and format into a commit message.
+
+    Expected JSON: {"summary": "...", "details": ["...", "..."]}
+    Output: summary + blank line + bullet points
+
+    Falls back to raw text if JSON parsing fails.
+    """
+    # Strip markdown code fences if the LLM wraps the response
+    lines = raw_output.strip().splitlines()
+    lines = [line for line in lines if not line.strip().startswith("```")]
+    cleaned = "\n".join(lines)
+
+    try:
+        data = json.loads(cleaned)
+    except (json.JSONDecodeError, ValueError):
+        return raw_output.strip()
+
+    summary = data.get("summary", "")
+    if not isinstance(summary, str) or not summary.strip():
+        return raw_output.strip()
+
+    # Summary must be a single line — collapse any newlines into spaces
+    summary = " ".join(summary.split())
+
+    details = data.get("details", [])
+    if not isinstance(details, list):
+        return summary
+
+    bullet_lines = []
+    for item in details:
+        if isinstance(item, str) and item.strip():
+            bullet_lines.append(f"- {item.strip()}")
+
+    if bullet_lines:
+        return summary + "\n\n" + "\n".join(bullet_lines)
+    return summary
+
+
+def build_system_prompt(feedback: str = "") -> str:
+    """Build the system prompt, optionally appending user feedback."""
+    prompt = BASE_SYSTEM_PROMPT
+    if feedback:
+        prompt += f"\nAdditional instructions from the user:\n{feedback}\n"
+    return prompt
+
+
+def build_feedback_prompt(current_message: str, feedback: str) -> str:
+    """Build a system prompt for regeneration with user feedback."""
+    return (
+        BASE_SYSTEM_PROMPT
+        + f"\nThe following commit message was previously generated "
+        f"but the user wants it revised:\n---\n{current_message}\n---\n\n"
+        f"User's feedback for revision:\n{feedback}\n"
+    )
+
+
+def get_staged_diff() -> str:
+    """Get the staged git diff. Returns empty string if no staged changes."""
+    result = subprocess.run(
+        ["git", "diff", "--staged"],
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
+def has_staged_changes() -> bool:
+    """Check if there are staged changes."""
+    result = subprocess.run(
+        ["git", "diff", "--staged", "--quiet"],
+        capture_output=True,
+    )
+    return result.returncode != 0
+
+
+def call_llm(diff: str, system_prompt: str, model: str) -> str:
+    """Call the llm CLI tool and return its raw output."""
+    result = subprocess.run(
+        ["llm", "-s", system_prompt, "-m", model],
+        input=diff,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"Error: llm command failed: {result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    return result.stdout
+
+
+def copy_to_clipboard(text: str) -> bool:
+    """Copy text to clipboard. Returns True if successful."""
+    if shutil.which("pbcopy"):
+        cmd = ["pbcopy"]
+    elif shutil.which("xclip"):
+        cmd = ["xclip", "-selection", "clipboard"]
+    else:
+        return False
+
+    subprocess.run(cmd, input=text, text=True)
+    return True
+
+
+def edit_in_editor(text: str) -> str:
+    """Open text in $EDITOR for manual editing. Returns edited text."""
+    editor = os.environ.get("EDITOR", "vi")
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".txt", prefix="git-commit-llm-", delete=False
+    ) as f:
+        f.write(text)
+        tmppath = f.name
+
+    try:
+        subprocess.run([editor, tmppath])
+        with open(tmppath) as f:
+            return f.read()
+    finally:
+        os.unlink(tmppath)
+
+
+def git_commit(message: str) -> None:
+    """Execute git commit with the given message."""
+    subprocess.run(["git", "commit", "-m", message])
+
+
+def interactive_loop(commit_msg: str, diff: str, model: str) -> None:
+    """Interactive loop: show message and prompt for y/e/f/n."""
+    while True:
+        print("--- Generated Commit Message ---")
+        print(commit_msg)
+        print("--------------------------------")
+
+        try:
+            choice = input("(y)es / (e)dit / (f)eedback / (n)o: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nCommit cancelled.")
+            return
+
+        if choice == "y":
+            git_commit(commit_msg)
+            print("Committed successfully.")
+            return
+
+        elif choice == "e":
+            edited = edit_in_editor(commit_msg)
+            if not edited.strip():
+                print("Commit message is empty. Aborting.")
+                sys.exit(1)
+            commit_msg = edited.strip()
+
+        elif choice == "f":
+            try:
+                feedback = input("Feedback: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\nCommit cancelled.")
+                return
+            if not feedback:
+                print("No feedback provided. Keeping current message.")
+                continue
+            print("Regenerating commit message...")
+            prompt = build_feedback_prompt(commit_msg, feedback)
+            raw = call_llm(diff, prompt, model)
+            commit_msg = format_commit_message(raw)
+
+        else:
+            print("Commit cancelled.")
+            if copy_to_clipboard(commit_msg):
+                print("The generated message has been copied to the clipboard.")
+            return
+
+
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        prog="git-commit-llm",
+        description="Generate a commit message using LLM based on staged changes.",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"model to use (default: {DEFAULT_MODEL})",
+    )
+    parser.add_argument(
+        "-f",
+        "--feedback",
+        default="",
+        help="feedback/instructions for commit message generation",
+    )
+    parser.add_argument(
+        "model_positional",
+        nargs="?",
+        default=None,
+        help="model to use (positional, for backward compatibility)",
+    )
+    return parser.parse_args(args)
+
+
+def main(args: list[str] | None = None) -> None:
+    parsed = parse_args(args)
+
+    model = parsed.model_positional or parsed.model
+
+    if not shutil.which("llm"):
+        print(
+            "Error: 'llm' command not found. "
+            "Please install llm (e.g., pip install llm).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not has_staged_changes():
+        print(
+            "Error: No staged changes found. "
+            "Please stage your changes with 'git add' or similar.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    diff = get_staged_diff()
+    system_prompt = build_system_prompt(parsed.feedback)
+
+    raw = call_llm(diff, system_prompt, model)
+    commit_msg = format_commit_message(raw)
+
+    interactive_loop(commit_msg, diff, model)
+
+
+if __name__ == "__main__":
+    main()
