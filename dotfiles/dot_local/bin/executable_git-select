@@ -66,10 +66,10 @@ while IFS= read -r branch; do
   [ -z "$branch" ] && continue
   pr_match=""
   if [ -n "$pr_lines" ]; then
-    pr_match=$(printf '%s\n' "$pr_lines" | awk -F'\t' -v b="$branch" '$2 == b {print "#" $1 "  " $3; exit}')
+    pr_match=$(printf '%s\n' "$pr_lines" | awk -F'\t' -v b="$branch" '$2 == b {print "(#" $1 "  " $3 ")"; exit}')
   fi
   if [ -n "$pr_match" ]; then
-    candidates="${candidates}${branch}	${pr_match}"$'\n'
+    candidates="${candidates}${branch} ${pr_match}"$'\n'
     used_pr_branches="${used_pr_branches}${branch}"$'\n'
   else
     candidates="${candidates}${branch}"$'\n'
@@ -81,7 +81,7 @@ if [ -n "$pr_lines" ]; then
   while IFS=$'\t' read -r number branch title; do
     [ -z "$branch" ] && continue
     if ! printf '%s\n' "$used_pr_branches" | grep -qx "$branch"; then
-      candidates="${candidates}${branch}	#${number}  ${title}"$'\n'
+      candidates="${candidates}${branch} (#${number}  ${title})"$'\n'
     fi
   done <<< "$pr_lines"
 fi
@@ -93,8 +93,8 @@ if [ -z "$selected" ]; then
   exit 1
 fi
 
-# Extract branch name (first tab-separated field)
-selected_branch=$(echo "$selected" | awk -F'\t' '{print $1}')
+# Extract branch name (everything before the optional PR annotation)
+selected_branch=$(echo "$selected" | sed 's/ (#[0-9]*  .*)$//')
 
 # If the branch doesn't exist locally, fetch it from origin first
 if ! git show-ref --verify --quiet "refs/heads/${selected_branch}"; then
