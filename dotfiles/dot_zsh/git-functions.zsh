@@ -197,16 +197,25 @@ Generate a commit message using LLM based on staged changes.
 
 Options:
   -m MODEL    Specify the model to use (default: gemma3:4b)
+  -f FEEDBACK Provide feedback/instructions for commit message generation
   -h          Show this help message
 
 Arguments:
   MODEL       Model to use (alternative to -m option)
 
+Interactive commands after message generation:
+  y - Commit with the displayed message
+  e - Open message in \$EDITOR for manual editing
+  f - Provide feedback and regenerate the message with LLM
+  n - Cancel commit (copies message to clipboard)
+
 Examples:
-  git-commit-llm                          # Use default model (gemma3:4b)
-  git-commit-llm -m gpt-4o                # Use gpt-4o model
-  git-commit-llm gpt-4o                   # Use gpt-4o model (positional argument)
-  git-commit-llm -h                       # Show help
+  git-commit-llm                                       # Use default model
+  git-commit-llm -m gpt-4o                             # Use gpt-4o model
+  git-commit-llm -f "focus on the API changes"         # Provide initial feedback
+  git-commit-llm -m gpt-4o -f "write in Japanese"      # Combine options
+  git-commit-llm gpt-4o                                # Positional model argument
+  git-commit-llm -h                                    # Show help
 
 EOF
   }
@@ -220,10 +229,11 @@ EOF
   # Default model and API arguments
   local MODEL_NAME_TO_USE="gemma3:4b"
   local LLM_API_ARGS=(--api ollama) # Default to using Ollama API
+  local INITIAL_FEEDBACK=""
 
   # Parse options
   local OPTIND opt
-  while getopts "hm:" opt; do
+  while getopts "hm:f:" opt; do
     case "${opt}" in
       h)
         show_help
@@ -231,6 +241,9 @@ EOF
         ;;
       m)
         MODEL_NAME_TO_USE="${OPTARG}"
+        ;;
+      f)
+        INITIAL_FEEDBACK="${OPTARG}"
         ;;
       *)
         show_help
@@ -251,8 +264,8 @@ EOF
     local DIFF
     DIFF=$(git diff --staged)
 
-    # Use the llm command to generate a commit message
-    local SYSTEM_PROMPT="You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
+    # Base system prompt for commit message generation
+    local BASE_SYSTEM_PROMPT="You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
 You reply the commit message only.
 
 The first line should be a brief summary (recommended < 50 characters), followed by an empty line, and then a more detailed description from the third line onwards.
@@ -264,29 +277,85 @@ The detailed description should include:
 - Any impact of the changes (if applicable)
 - Use imperative form
 "
-    local COMMIT_MSG
-    # Use the selected model and API arguments
-    COMMIT_MSG=$(echo "${DIFF}" | llm -s "${SYSTEM_PROMPT}" -m "${MODEL_NAME_TO_USE}" -m "${MODEL_NAME_TO_USE}")
 
-    # Display the generated message
-    echo "--- Generated Commit Message ---"
-    echo "$COMMIT_MSG"
-    echo "--------------------------------"
-
-    # Ask the user to confirm the commit
-    echo -n "Commit with this message? (y/N)"
-    local CONFIRM
-    read CONFIRM
-    if [[ "$CONFIRM" =~ ^[yY]$ ]]; then
-      git commit -m "$COMMIT_MSG"
-      echo "Committed successfully."
-    else
-      echo "Commit cancelled."
-      # Copy the generated message to the clipboard (macOS)
-      # For Linux: echo "$COMMIT_MSG" | xclip -selection clipboard
-      echo "$COMMIT_MSG" | pbcopy
-      echo "The generated message has been copied to the clipboard."
+    # Build system prompt with optional initial feedback
+    local SYSTEM_PROMPT="${BASE_SYSTEM_PROMPT}"
+    if [[ -n "${INITIAL_FEEDBACK}" ]]; then
+      SYSTEM_PROMPT="${SYSTEM_PROMPT}
+Additional instructions from the user:
+${INITIAL_FEEDBACK}
+"
     fi
+
+    local COMMIT_MSG
+    # Use the selected model to generate the commit message
+    COMMIT_MSG=$(echo "${DIFF}" | llm -s "${SYSTEM_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+
+    # Interactive loop: show message and prompt for action
+    while true; do
+      echo "--- Generated Commit Message ---"
+      echo "$COMMIT_MSG"
+      echo "--------------------------------"
+
+      echo -n "(y)es / (e)dit / (f)eedback / (n)o: "
+      local CONFIRM
+      read CONFIRM
+      case "$CONFIRM" in
+        [yY])
+          git commit -m "$COMMIT_MSG"
+          echo "Committed successfully."
+          return 0
+          ;;
+        [eE])
+          # Open in editor for manual adjustment
+          local TMPFILE
+          TMPFILE=$(mktemp "${TMPDIR:-/tmp}/git-commit-llm.XXXXXX")
+          echo "$COMMIT_MSG" > "$TMPFILE"
+          "${EDITOR:-vi}" "$TMPFILE"
+          COMMIT_MSG=$(<"$TMPFILE")
+          rm -f "$TMPFILE"
+          if [[ -z "${COMMIT_MSG// /}" ]]; then
+            echo "Commit message is empty. Aborting."
+            return 1
+          fi
+          # Loop back to show the edited message
+          ;;
+        [fF])
+          # Ask for feedback and regenerate
+          echo -n "Feedback: "
+          local FEEDBACK
+          read FEEDBACK
+          if [[ -z "${FEEDBACK}" ]]; then
+            echo "No feedback provided. Keeping current message."
+            continue
+          fi
+          local FEEDBACK_PROMPT="${BASE_SYSTEM_PROMPT}
+The following commit message was previously generated but the user wants it revised:
+---
+${COMMIT_MSG}
+---
+
+User's feedback for revision:
+${FEEDBACK}
+"
+          echo "Regenerating commit message..."
+          COMMIT_MSG=$(echo "${DIFF}" | llm -s "${FEEDBACK_PROMPT}" -m "${MODEL_NAME_TO_USE}")
+          # Loop back to show the new message
+          ;;
+        *)
+          echo "Commit cancelled."
+          # Copy to clipboard (try macOS first, then Linux)
+          if command -v pbcopy &> /dev/null; then
+            echo "$COMMIT_MSG" | pbcopy
+            echo "The generated message has been copied to the clipboard."
+          elif command -v xclip &> /dev/null; then
+            echo "$COMMIT_MSG" | xclip -selection clipboard
+            echo "The generated message has been copied to the clipboard."
+          fi
+          return 0
+          ;;
+      esac
+    done
   else
     echo "Error: No staged changes found. Please stage your changes with 'git add .' or similar."
   fi
