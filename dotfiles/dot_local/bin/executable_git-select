@@ -8,22 +8,20 @@ show_help() {
 Usage: git select [OPTIONS]
 
 Interactively select a branch with peco and checkout.
+By default, shows local branches and open pull request branches together.
 
 Options:
-  -a        Show all branches including remote branches
-  -p        Show open pull request branches (requires gh CLI)
+  -a        Show all branches including remote branches (without PR info)
   -h        Show this help message
 EOF
 }
 
 show_all=false
-show_prs=false
 
-while getopts "hap" opt; do
+while getopts "ha" opt; do
   case "${opt}" in
     h) show_help; exit 0 ;;
     a) show_all=true ;;
-    p) show_prs=true ;;
     *) show_help; exit 1 ;;
   esac
 done
@@ -34,41 +32,73 @@ if ! command -v peco &> /dev/null; then
   exit 1
 fi
 
-if [ "$show_prs" = true ]; then
-  if ! command -v gh &> /dev/null; then
-    echo "Error: 'gh' command not found. Install GitHub CLI to use -p option." >&2
-    exit 1
-  fi
-
-  selected=$(gh pr list --state open --json number,headRefName,title \
-    --template '{{range .}}#{{.number}}	{{.headRefName}}	{{.title}}{{"\n"}}{{end}}' \
-    | peco --prompt "checkout PR>")
-
-  if [ -z "$selected" ]; then
-    echo "No PR selected." >&2
-    exit 1
-  fi
-
-  pr_number=$(echo "$selected" | awk -F'\t' '{print $1}' | tr -d '#')
-
-  echo "Checking out PR #${pr_number}..."
-  gh pr checkout "$pr_number"
-else
-  branch_flag="--list"
-  if [ "$show_all" = true ]; then
-    branch_flag="--all"
-  fi
-
-  selected_branch=$(git branch $branch_flag | sed 's/^[* ]*//' | sed 's/^ *//' | peco --prompt "checkout branch>")
+if [ "$show_all" = true ]; then
+  selected_branch=$(git branch --all | sed 's/^[* ]*//' | sed 's/^ *//' | peco --prompt "checkout branch>")
 
   if [ -z "$selected_branch" ]; then
     echo "No branch selected." >&2
     exit 1
   fi
 
-  # Strip remote prefix (e.g., "remotes/origin/feature" -> "feature")
   selected_branch="${selected_branch#remotes/*/}"
 
   echo "Checking out '${selected_branch}'..."
   git checkout "$selected_branch"
+  exit 0
 fi
+
+# Build a combined list of local branches and open PR branches.
+# Local branches are shown as-is; PR branches include PR number and title.
+
+local_branches=$(git branch --list | sed 's/^[* ]*//' | sed 's/^ *//')
+
+# Collect PR info from gh if available
+declare -A pr_info_map
+pr_lines=""
+if command -v gh &> /dev/null; then
+  pr_lines=$(gh pr list --state open --json number,headRefName,title \
+    --template '{{range .}}{{.number}}	{{.headRefName}}	{{.title}}{{"\n"}}{{end}}' 2>/dev/null || true)
+fi
+
+# Build pr_info_map: branch -> "#number  title"
+if [ -n "$pr_lines" ]; then
+  while IFS=$'\t' read -r number branch title; do
+    pr_info_map["$branch"]="#${number}  ${title}"
+  done <<< "$pr_lines"
+fi
+
+# Format local branches, annotating with PR info if available
+candidates=""
+while IFS= read -r branch; do
+  [ -z "$branch" ] && continue
+  if [ -n "${pr_info_map[$branch]+_}" ]; then
+    candidates+="${branch}	${pr_info_map[$branch]}"$'\n'
+    unset 'pr_info_map[$branch]'
+  else
+    candidates+="${branch}"$'\n'
+  fi
+done <<< "$local_branches"
+
+# Add remaining PR branches (remote-only, not checked out locally)
+for branch in "${!pr_info_map[@]}"; do
+  candidates+="${branch}	${pr_info_map[$branch]}"$'\n'
+done
+
+selected=$(echo -n "$candidates" | peco --prompt "checkout branch>")
+
+if [ -z "$selected" ]; then
+  echo "No branch selected." >&2
+  exit 1
+fi
+
+# Extract branch name (first tab-separated field)
+selected_branch=$(echo "$selected" | awk -F'\t' '{print $1}')
+
+# If the branch doesn't exist locally, fetch it from origin first
+if ! git show-ref --verify --quiet "refs/heads/${selected_branch}"; then
+  echo "Fetching '${selected_branch}' from origin..."
+  git fetch origin "${selected_branch}"
+fi
+
+echo "Checking out '${selected_branch}'..."
+git checkout "$selected_branch"
