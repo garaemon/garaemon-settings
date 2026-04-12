@@ -192,8 +192,10 @@ class TestParseArgs:
 # ---------------------------------------------------------------------------
 class TestCallLlm:
     def test_sends_correct_request(self):
-        """Verify the request payload sent to Ollama API."""
-        response_body = json.dumps({"response": '{"summary": "Test"}'}).encode()
+        """Verify the request payload sent to Ollama chat API."""
+        response_body = json.dumps(
+            {"message": {"content": '{"summary": "Test"}'}}
+        ).encode()
         mock_resp = MagicMock()
         mock_resp.read.return_value = response_body
         mock_resp.__enter__ = lambda s: s
@@ -205,17 +207,26 @@ class TestCallLlm:
             # Verify the response
             assert result == '{"summary": "Test"}'
 
-            # Verify the request
+            # Verify the request uses chat API with messages
             call_args = mock_urlopen.call_args[0][0]
             payload = json.loads(call_args.data.decode("utf-8"))
             assert payload["model"] == "gemma3:4b"
-            assert payload["prompt"] == "diff content"
-            assert payload["system"] == "system prompt"
             assert payload["stream"] is False
+            # Should use messages format with system and user roles
+            messages = payload["messages"]
+            assert len(messages) == 2
+            assert messages[0]["role"] == "system"
+            assert messages[0]["content"] == "system prompt"
+            assert messages[1]["role"] == "user"
+            assert "<diff>" in messages[1]["content"]
+            assert "diff content" in messages[1]["content"]
+            assert "</diff>" in messages[1]["content"]
 
     def test_uses_ollama_host_env(self):
         """Verify OLLAMA_HOST env var is respected."""
-        response_body = json.dumps({"response": "test"}).encode()
+        response_body = json.dumps(
+            {"message": {"content": "test"}}
+        ).encode()
         mock_resp = MagicMock()
         mock_resp.read.return_value = response_body
         mock_resp.__enter__ = lambda s: s
@@ -226,7 +237,7 @@ class TestCallLlm:
                 gcl.call_llm("diff", "prompt", "model")
 
                 call_args = mock_urlopen.call_args[0][0]
-                assert call_args.full_url == "http://myhost:1234/api/generate"
+                assert call_args.full_url == "http://myhost:1234/api/chat"
 
     def test_default_ollama_host(self):
         assert gcl.DEFAULT_OLLAMA_HOST == "http://localhost:11434"
