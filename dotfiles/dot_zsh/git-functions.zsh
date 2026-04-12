@@ -229,14 +229,34 @@ EOF
     local json
     json=$(echo "$raw_json" | sed '/^```\(json\)\{0,1\}$/d')
 
-    local summary details
+    local summary
     summary=$(echo "$json" | jq -r '.summary // empty' 2>/dev/null)
-    details=$(echo "$json" | jq -r '.details[]? | "- " + .' 2>/dev/null)
 
     if [[ -z "$summary" ]]; then
       # Fallback: if JSON parsing fails, return raw text as-is
       echo "$raw_json"
       return 1
+    fi
+
+    # Strip leading/trailing whitespace and newlines from summary
+    summary=$(echo "$summary" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '\n')
+
+    # Format details: strip whitespace from each item, prefix with "- "
+    local details=""
+    local detail_lines
+    detail_lines=$(echo "$json" | jq -r '.details[]?' 2>/dev/null)
+    if [[ -n "$detail_lines" ]]; then
+      while IFS= read -r line; do
+        # Strip leading/trailing whitespace and newlines from each detail
+        line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '\n')
+        if [[ -n "$line" ]]; then
+          if [[ -n "$details" ]]; then
+            details="${details}"$'\n'"- ${line}"
+          else
+            details="- ${line}"
+          fi
+        fi
+      done <<< "$detail_lines"
     fi
 
     if [[ -n "$details" ]]; then
