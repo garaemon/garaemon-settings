@@ -36,6 +36,7 @@ Perfection is not the goal. Start small, ship fast, iterate. A working
 implementation with TODO comments marking known gaps is better than a
 stalled over-engineered one. When reviewing, do not demand that every edge
 case is handled or every abstraction is finalized. Instead, check that:
+
 - The code works for the primary use case
 - Known limitations are marked with TODO comments (not silently ignored)
 - The TODOs are specific enough to act on later (e.g., `// TODO: handle
@@ -91,6 +92,7 @@ and suggest splitting into smaller PRs. (Use `origin/$DEFAULT_BRANCH` as the bas
 
 When suggesting a split, propose concrete PR boundaries based on the actual
 changes. Good split criteria:
+
 - **By layer**: config/build changes, backend logic, frontend/UI, tests
 - **By feature**: if multiple independent features are bundled, each becomes
   its own PR
@@ -99,6 +101,7 @@ changes. Good split criteria:
 
 Example suggestion format:
 > This PR has 5,000 lines of additions across 40 files. Consider splitting:
+>
 > 1. **PR1: Infrastructure** -- package.json, tsconfig, CI config (5 files)
 > 2. **PR2: Core logic** -- store, file-watcher, window-manager (8 files)
 > 3. **PR3: Editor** -- CodeMirror setup, language support (6 files)
@@ -114,6 +117,7 @@ start writing findings until you have read all changed files. This prevents
 shallow or contradictory feedback.
 
 Group files mentally by layer:
+
 - Config / build (package.json, CMakeLists.txt, Makefile, pyproject.toml, etc.)
 - Core logic / backend
 - Frontend / UI
