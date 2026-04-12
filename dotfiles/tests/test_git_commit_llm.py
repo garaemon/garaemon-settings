@@ -252,3 +252,58 @@ class TestCallLlm:
         ):
             with pytest.raises(SystemExit):
                 gcl.call_llm("diff", "prompt", "model")
+
+
+# ---------------------------------------------------------------------------
+# compact_diff
+# ---------------------------------------------------------------------------
+class TestCompactDiff:
+    def test_keeps_diff_headers(self):
+        diff = "diff --git a/foo.py b/foo.py\nindex abc..def 100644\n--- a/foo.py\n+++ b/foo.py"
+        result = gcl.compact_diff(diff)
+        assert "diff --git a/foo.py b/foo.py" in result
+        assert "index abc..def 100644" in result
+        assert "--- a/foo.py" in result
+        assert "+++ b/foo.py" in result
+
+    def test_keeps_hunk_headers(self):
+        diff = "@@ -1,3 +1,4 @@\n context line\n+added line\n-removed line"
+        result = gcl.compact_diff(diff)
+        assert "@@ -1,3 +1,4 @@" in result
+
+    def test_keeps_added_removed_lines(self):
+        diff = "@@ -1,3 +1,4 @@\n context\n+added\n-removed\n another context"
+        result = gcl.compact_diff(diff)
+        assert "+added" in result
+        assert "-removed" in result
+
+    def test_strips_context_lines(self):
+        diff = "@@ -1,3 +1,4 @@\n context line\n+added\n more context"
+        result = gcl.compact_diff(diff)
+        assert "context line" not in result
+        assert "more context" not in result
+
+    def test_realistic_diff(self):
+        diff = (
+            "diff --git a/README.md b/README.md\n"
+            "index abc..def 100644\n"
+            "--- a/README.md\n"
+            "+++ b/README.md\n"
+            "@@ -1,5 +1,5 @@\n"
+            " # My Project\n"
+            " \n"
+            "-Old description\n"
+            "+New description\n"
+            " \n"
+            " ## Installation\n"
+        )
+        result = gcl.compact_diff(diff)
+        # Context lines should be stripped
+        assert "# My Project" not in result
+        assert "## Installation" not in result
+        # Changed lines should remain
+        assert "-Old description" in result
+        assert "+New description" in result
+
+    def test_empty_diff(self):
+        assert gcl.compact_diff("") == ""

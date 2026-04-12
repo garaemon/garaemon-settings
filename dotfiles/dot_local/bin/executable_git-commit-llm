@@ -151,6 +151,24 @@ def get_staged_diff() -> str:
     return result.stdout
 
 
+def compact_diff(diff: str) -> str:
+    """Strip context lines from diff, keeping only headers and +/- lines.
+
+    This reduces noise for the LLM by removing unchanged context lines
+    that can contain prompt-like text and distract small models.
+    """
+    lines = []
+    for line in diff.splitlines():
+        # Keep diff metadata, file headers, and hunk headers
+        if line.startswith(("diff ", "index ", "--- ", "+++ ", "@@ ")):
+            lines.append(line)
+        # Keep added/removed lines
+        elif line.startswith(("+", "-")):
+            lines.append(line)
+        # Skip context lines (no prefix or space prefix)
+    return "\n".join(lines)
+
+
 def has_staged_changes() -> bool:
     """Check if there are staged changes."""
     result = subprocess.run(
@@ -281,7 +299,7 @@ def main(args: list[str] | None = None) -> None:
         )
         sys.exit(1)
 
-    diff = get_staged_diff()
+    diff = compact_diff(get_staged_diff())
     system_prompt = build_system_prompt(parsed.feedback)
 
     raw = call_llm(diff, system_prompt, model)
