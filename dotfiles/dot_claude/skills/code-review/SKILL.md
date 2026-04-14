@@ -72,15 +72,22 @@ Then fetch the latest state of the default branch from origin so the diff is up 
 git fetch origin $DEFAULT_BRANCH
 ```
 
-Use `origin/$DEFAULT_BRANCH` (not the local branch) as the base for all diffs and logs
-below to ensure comparison against the latest upstream state.
+Use the merge-base (common ancestor) of `origin/$DEFAULT_BRANCH` and `HEAD` as the
+diff base. This ensures the review covers only the changes introduced on the current
+branch, not unrelated commits that landed on the default branch after branching.
+
+Compute the merge-base once and reuse it:
+
+```bash
+MERGE_BASE=$(git merge-base origin/$DEFAULT_BRANCH HEAD)
+```
 
 ### Step 1: Gather the diff
 
 ```bash
-git diff --stat origin/$DEFAULT_BRANCH..HEAD
-git diff --name-status origin/$DEFAULT_BRANCH..HEAD
-git log --oneline origin/$DEFAULT_BRANCH..HEAD
+git diff --stat $MERGE_BASE..HEAD
+git diff --name-status $MERGE_BASE..HEAD
+git log --oneline $MERGE_BASE..HEAD
 ```
 
 Identify all added and modified files. Ignore deleted files entirely.
@@ -88,7 +95,7 @@ Identify all added and modified files. Ignore deleted files entirely.
 ### Step 1.5: Check PR size
 
 If the diff has more than 200 lines of additions, flag this in Overall Comments
-and suggest splitting into smaller PRs. (Use `origin/$DEFAULT_BRANCH` as the base.)
+and suggest splitting into smaller PRs. (Use `$MERGE_BASE` as the base.)
 
 When suggesting a split, propose concrete PR boundaries based on the actual
 changes. Good split criteria:
@@ -354,7 +361,7 @@ gh api repos/{owner}/{repo}/pulls/{number}/files --jq '.[].patch' | head -100
 ```
 
 Or use the line numbers you already collected during Step 2/3 reading. Verify the
-line exists in the diff by checking `git diff origin/$DEFAULT_BRANCH..HEAD -- <file>`.
+line exists in the diff by checking `git diff $MERGE_BASE..HEAD -- <file>`.
 
 ## Important Rules
 
