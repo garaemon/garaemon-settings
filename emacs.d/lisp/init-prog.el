@@ -1001,6 +1001,20 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
               (auto-fill-mode 1)))
   )
 
+;; Export EDITOR in terminal buffers so commands like `git commit' launched
+;; inside the shell open their editor buffer in this Emacs (via emacsclient)
+;; instead of spawning a nested editor.  Skipped in claude-code-ide session
+;; buffers because Claude runs its own CLI there and does not need emacsclient.
+(defun my/with-editor-export-editor-maybe ()
+  (unless (and (fboundp 'claude-code-ide--session-buffer-p)
+               (claude-code-ide--session-buffer-p (current-buffer)))
+    (with-editor-export-editor)))
+
+(use-package with-editor
+  :hook ((shell-mode . my/with-editor-export-editor-maybe)
+         (eshell-mode . my/with-editor-export-editor-maybe)
+         (vterm-mode . my/with-editor-export-editor-maybe)))
+
 (use-package yasnippet :ensure t
   :config
   (setq yas-snippet-dirs '("~/.emacs.d/snippets"
