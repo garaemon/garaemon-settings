@@ -1336,6 +1336,20 @@ The source buffer is added as gptel context for full file awareness."
 
   )
 
+;; Claude Code IDE integration.
+;; Runs the Claude Code CLI inside a vterm buffer and exposes Emacs
+;; functionality to Claude via the Model Context Protocol (MCP).
+;; Requires the `claude` CLI to be on PATH.
+(use-package claude-code-ide
+  :ensure nil
+  :vc (:url "https://github.com/manzaltu/claude-code-ide.el" :rev :newest)
+  :after vterm
+  :bind ("C-c C-a" . claude-code-ide-menu)
+  :custom
+  (claude-code-ide-terminal-backend 'vterm)
+  :config
+  (claude-code-ide-emacs-tools-setup))
+
 (use-package string-inflection :ensure t
   :config (global-set-key (kbd "C-c i") 'string-inflection-cycle))
 
