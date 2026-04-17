@@ -29,7 +29,7 @@ For each iteration:
 
 Launch an Agent (general-purpose) with the following prompt structure:
 
-```
+```text
 Run the /code-review skill on the current branch in {working_directory}.
 
 After REVIEW.md is written, do NOT post comments to GitHub.
