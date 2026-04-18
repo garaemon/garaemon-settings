@@ -62,7 +62,7 @@ paperpile upload "$TMP_PDF"
 
 Expected stdout:
 
-```
+```text
 Uploading <basename> ...
 Done! Task ID: <task_id>
 ```
@@ -114,7 +114,7 @@ Markdown (pass `--markdown` to `paperpile note set`).
 
 **Content generation instructions (internal — follow when writing the note):**
 
-```
+```text
 日本語で回答してください。ここでは英語論文の説明をお願いします。
 私がアップする論文のみを要約して、他の文献と間違えないでください。
 要約と質問に対しては、アップした論文をもとに答えてください。
