@@ -71,6 +71,9 @@ boundary.
 
 - Pin the base image to a major tag (e.g. `node:22-slim`, `python:3.12-slim`).
 - Install only `--omit=dev` / `--no-dev` runtime dependencies.
+- Commit a lockfile and use a deterministic installer (`npm ci`,
+  `pip install --require-hashes`, `uv sync --frozen`, etc.) — see
+  [DevSecOps: lock dependencies and audit them in CI](#devsecops-lock-dependencies-and-audit-them-in-ci).
 - Drop privileges with `USER node` (or a dedicated non-root UID) before the
   `ENTRYPOINT`.
 - Use `ENTRYPOINT ["…"]` (not `CMD`) so extra args from `run.sh` are passed
@@ -120,7 +123,7 @@ Every wrapper must:
 
 ### CI expectations for Docker-backed skills
 
-`.github/workflows/ci.yml` runs two jobs that every Docker-backed skill must
+`.github/workflows/ci.yml` runs these jobs that every Docker-backed skill must
 satisfy:
 
 - `shellcheck` — lints every `.claude/skills/**/*.sh` script. Run locally via
@@ -128,6 +131,9 @@ satisfy:
   .claude/skills/<name>/run.sh .claude/skills/<name>/tests/smoke.sh`.
 - A `<name>-image` job that runs `docker build` and then executes the
   skill's `tests/smoke.sh`.
+- A per-language dependency audit job (e.g. `npm audit`) when the skill
+  ships its own manifest — see
+  [DevSecOps: lock dependencies and audit them in CI](#devsecops-lock-dependencies-and-audit-them-in-ci).
 
 Smoke tests should at minimum confirm:
 
@@ -137,3 +143,62 @@ Smoke tests should at minimum confirm:
 
 They must not require real credentials or network access to external
 services.
+
+## DevSecOps: lock dependencies and audit them in CI
+
+Docker isolation (see above) limits the blast radius of a compromised
+dependency at runtime, but it does not stop a malicious or vulnerable
+package from being pulled into the image in the first place. Every skill
+that ships its own dependency manifest (`package.json`, `requirements.txt`,
+`go.mod`, `Cargo.toml`, ...) must therefore pin exact versions with a
+lockfile and audit them on every PR.
+
+### Commit the lockfile
+
+- Always commit `package-lock.json` (or `Pipfile.lock`, `poetry.lock`,
+  `go.sum`, `Cargo.lock`). Regenerate it whenever dependencies change.
+- Regenerate a Node lockfile without touching `node_modules` with:
+
+  ```bash
+  npm install --package-lock-only --omit=dev
+  ```
+
+### Install deterministically inside the Dockerfile
+
+- Node: `COPY package.json package-lock.json ./` then `RUN npm ci`
+  (not `npm install`). `npm ci` refuses to run if the lockfile and
+  manifest disagree, guaranteeing the image matches the committed state.
+- Python: `pip install --require-hashes -r requirements.txt`, or
+  `poetry install --no-root`, or `uv sync --frozen` — anything that
+  errors on an out-of-date lock.
+
+### Audit runtime dependencies in CI
+
+Add a per-skill audit job that runs on every PR. Example for a Node skill:
+
+```yaml
+npm-audit:
+  name: npm audit (spotify-sheets)
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - name: Audit production dependencies
+      working-directory: .claude/skills/spotify-sheets
+      run: npm audit --omit=dev --audit-level=high
+```
+
+- `--omit=dev` limits the scan to dependencies that actually ship inside
+  the image.
+- `--audit-level=high` fails on high/critical advisories only;
+  low/moderate findings still surface in the job logs but do not block CI.
+  Tighten to `--audit-level=moderate` when a skill handles particularly
+  sensitive data.
+- For Python, use `pip-audit` (or `safety check`) with an equivalent
+  severity threshold.
+
+When an advisory lands on `main`, the audit job starts failing — fix it
+by bumping the affected package and regenerating the lockfile rather
+than silencing the rule.
