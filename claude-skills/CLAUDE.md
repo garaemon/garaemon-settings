@@ -24,11 +24,13 @@ but disables `MD013` (line length), `MD033` (inline HTML), and `MD041`
 
 ### README skills-link check
 
-Run the shell script that verifies every skill under `.claude/skills/<name>/SKILL.md`
-is linked from `README.md`:
+Run the Python script that verifies every skill under
+`.claude/skills/<name>/SKILL.md` is linked from `README.md`. The script
+uses only the Python 3 standard library, so no virtualenv or pip install
+is needed:
 
 ```bash
-./scripts/check-readme-skills.sh
+python3 scripts/check-readme-skills.py
 ```
 
 The script exits non-zero and lists the missing skill names if any skill
@@ -38,5 +40,5 @@ the `## Skills` section of `README.md` that links to its `SKILL.md`.
 ### Run both checks together
 
 ```bash
-npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" && ./scripts/check-readme-skills.sh
+npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" && python3 scripts/check-readme-skills.py
 ```
