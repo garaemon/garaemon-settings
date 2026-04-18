@@ -23,3 +23,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check-readme-skills.py
+
+  shellcheck:
+    name: Shellcheck skill scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: |
+          shopt -s globstar nullglob
+          scripts=( .claude/skills/**/*.sh )
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No shell scripts to check."
+            exit 0
+          fi
+          shellcheck "${scripts[@]}"
+
+  spotify-sheets-image:
+    name: Build spotify-sheets image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t spotify-sheets:local .claude/skills/spotify-sheets
+      - name: Smoke test image
+        run: bash .claude/skills/spotify-sheets/tests/smoke.sh

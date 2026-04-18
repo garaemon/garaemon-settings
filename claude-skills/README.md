@@ -7,3 +7,4 @@ smartphones or desktop via Claude Code's `/remote-control`.
 ## Skills
 
 - [add-paper-from-url](.claude/skills/add-paper-from-url/SKILL.md) — Add a paper to Paperpile from a PDF URL and attach a Japanese Ochiai-format summary as a note via the [`paperpile`](https://github.com/garaemon/paperpile) CLI.
+- [spotify-sheets](.claude/skills/spotify-sheets/SKILL.md) — Search and browse the user's Spotify library (liked songs, followed artists) exported to Google Sheets. Runs in a hardened Docker container with a read-only service-account key mount.
