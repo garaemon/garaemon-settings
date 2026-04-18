@@ -37,9 +37,14 @@ Use a temp path under `/tmp` with a stable filename derived from the URL basenam
 
 ```bash
 mkdir -p /tmp/paperpile-add
-TMP_PDF="/tmp/paperpile-add/$(date +%s)-$(basename '<url>' | sed 's/[^A-Za-z0-9._-]/_/g').pdf"
-curl -L -f -o "$TMP_PDF" '<url>'
+URL='<url>'
+TMP_PDF="/tmp/paperpile-add/$(date +%s)-$(basename "$URL" | sed 's/[^A-Za-z0-9._-]/_/g').pdf"
+curl -L -f -o "$TMP_PDF" "$URL"
 ```
+
+Always store the URL in a shell variable first and then reference it as `"$URL"`. Do not
+interpolate the raw URL into single-quoted command arguments — URLs containing single
+quotes or shell metacharacters would break the command.
 
 Verify the download:
 
@@ -62,20 +67,31 @@ Uploading <basename> ...
 Done! Task ID: <task_id>
 ```
 
-The Task ID is an upload-task identifier, not the final library item ID. It cannot be used
-with `paperpile note set`. The item ID must be obtained from `paperpile list` in the next
-step.
+The Task ID returned here is an upload-task identifier, not the final library item ID.
+It cannot be used with `paperpile note set`. The final item ID must be obtained from
+`paperpile list` in the next step.
 
 ### Step 3: Find the New Item ID
 
-`paperpile list` is sorted newest-first by default. Poll briefly (Paperpile needs a moment
-to process the upload and create the item):
+Note: the Task ID returned by `paperpile upload` cannot be used with `paperpile note set`.
+The item ID must be obtained from `paperpile list`, which is sorted newest-first by default.
+Poll briefly because Paperpile needs a moment to process the upload and create the item.
+
+First extract the expected title from the PDF (via `Read` in Step 4, or a quick metadata
+probe), then poll until the top-of-list title contains it:
 
 ```bash
+EXPECTED_TITLE="<short substring of the PDF title>"
+NEW_ID=""
 for i in 1 2 3 4 5 6; do
-  NEW_ID=$(paperpile list | awk 'NR==2 {print $1}')
-  NEW_TITLE=$(paperpile list | awk -F'\t' 'NR==2 {print $NF}')
-  # Compare NEW_TITLE against expected title from PDF; break if it looks like a fresh entry.
+  # paperpile list output uses whitespace-aligned columns; $1 is the ID, columns 4+ are the title.
+  LINE=$(paperpile list | sed -n '2p')
+  CANDIDATE_ID=$(echo "$LINE" | awk '{print $1}')
+  CANDIDATE_TITLE=$(echo "$LINE" | awk '{for (i=4; i<=NF; i++) printf "%s ", $i; print ""}')
+  if [[ "$CANDIDATE_TITLE" == *"$EXPECTED_TITLE"* ]]; then
+    NEW_ID="$CANDIDATE_ID"
+    break
+  fi
   sleep 2
 done
 ```
@@ -175,7 +191,7 @@ paperpile note get --markdown "$NEW_ID"
 
 - Remove the temp PDF: `rm -f "$TMP_PDF"`
 - Report to the user in Japanese: item ID, title, and that the note was attached.
-  Include the first 1–2 lines of each summary section as a preview is NOT required —
+  A preview of the summary (e.g., the first 1–2 lines of each section) is NOT required;
   just confirm the note was set.
 
 ## Error Handling
