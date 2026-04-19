@@ -1,0 +1,27 @@
+# Copy to ~/.config/org-graduate/config.toml and edit the paths.
+# All paths must be absolute (no "~" — expand it beforehand).
+
+# Root of the org directory (the git repo that holds your org files).
+org_dir = "/home/USER/ghq/github.com/USER/org"
+
+# The org-roam directory (one file per roam node).
+roam_dir = "/home/USER/ghq/github.com/USER/org/org-roam"
+
+# The org-roam-dailies directory (YYYY-MM-DD.org per day).
+daily_dir = "/home/USER/ghq/github.com/USER/org/org-roam/daily"
+
+# The org-roam SQLite database.
+roam_db = "/home/USER/.emacs.d/org-roam.db"
+
+# Entries whose trailing ":tag:list:" intersects this list are marked
+# as "screened" and held to a stricter reusability bar before being
+# graduated. They are NOT dropped outright — screened entries that
+# carry generalisable knowledge (tools, techniques, design insights
+# without personal-name or internal-codename dependencies) are
+# salvaged and generalised. See SKILL.md "Extra rules for screened
+# entries". Tag values are matched verbatim (no leading colon).
+screen_tags = ["@work"]
+
+# Default number of days to look back when the user does not specify a
+# window.
+default_since_days = 7
