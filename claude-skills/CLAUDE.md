@@ -45,14 +45,18 @@ npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" && python3 scripts/check-read
 
 ## Run skill scripts inside Docker
 
-Any skill that ships an executable (Node, Python, shell, compiled binary) must
-run it inside a Docker container rather than directly on the host. This keeps
-the host filesystem, network, and credentials off-limits even if the script
-behaves badly or a transitive dependency is compromised.
+Any command that (a) reaches the network, (b) reads or writes credentials,
+or (c) shells out to a third-party CLI must run inside a hardened Docker
+container. This holds regardless of whether the command comes from a script
+the skill authored, a CLI the user installed, or a standard tool such as
+`curl`. The goal is to keep the host filesystem, network, and credentials
+off-limits even if the command behaves badly or a transitive dependency is
+compromised.
 
-If a skill only shells out to a CLI the user installed themselves (e.g.
-`paperpile`), Docker is not required; the user's own install is the trust
-boundary.
+Trivial host-side coreutils that do not touch credentials or the network
+(`mkdir`, `date`, `basename`, `sed`, `awk`, `rm`, `file`, `sleep`, `head`,
+etc.) may stay on the host — wrapping every one of them in Docker has no
+security benefit and makes skills unreadable. When in doubt, isolate.
 
 ### Skill layout
 

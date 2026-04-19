@@ -49,6 +49,16 @@ jobs:
       - name: Smoke test image
         run: bash .claude/skills/spotify-sheets/tests/smoke.sh
 
+  add-paper-from-url-image:
+    name: Build add-paper-from-url image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t add-paper-from-url:local .claude/skills/add-paper-from-url
+      - name: Smoke test image
+        run: bash .claude/skills/add-paper-from-url/tests/smoke.sh
+
   npm-audit:
     name: npm audit (spotify-sheets)
     runs-on: ubuntu-latest
