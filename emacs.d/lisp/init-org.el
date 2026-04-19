@@ -16,12 +16,15 @@
   (setq org-jouornelly-file
    (expand-file-name
     "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
+  ;; Only set the default when custom.el has not already provided one, so
+  ;; per-machine overrides via custom.el take precedence.
+  (unless (boundp 'org-directory)
+    (setq org-directory (expand-file-name "~/ghq/github.com/garaemon/org/")))
   :custom
   (org-startup-indented t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
   (org-link-file-path-type 'relative)
-  (org-directory (expand-file-name "~/ghq/github.com/garaemon/org/"))
   ;; The special characters for org-capture-templates are described below:
   ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
   (org-capture-templates
