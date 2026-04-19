@@ -36,6 +36,12 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+;; Load custom file early so per-machine overrides (e.g. org-directory) win
+;; over defaults set via use-package :custom in init-*.el.
+(let ((custom-file (expand-file-name "custom.el" user-emacs-directory)))
+  (when (file-exists-p custom-file)
+    (load custom-file)))
+
 ;; Load configuration files
 (require 'init-basic)
 (require 'init-ui)
@@ -47,11 +53,6 @@
 ;; Reset GC threshold to reasonable value after startup
 (setq gc-cons-threshold (* 2 1024 1024)  ; 2MB
       gc-cons-percentage 0.1)
-
-;; Load custom file if it exists
-(let ((custom-file (expand-file-name "custom.el" user-emacs-directory)))
-  (when (file-exists-p custom-file)
-    (load custom-file)))
 
 ;; Start server
 (unless (server-running-p)
