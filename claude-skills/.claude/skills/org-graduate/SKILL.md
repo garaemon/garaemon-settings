@@ -2,49 +2,96 @@
 name: org-graduate
 description: |
   Scan recent org-roam daily notes and produce a graduation proposal:
-  which daily entries should seed new org-roam nodes, and which should be
-  appended as log entries to existing nodes. Phase 1 is read-only
-  (dry-run): the skill outputs a markdown proposal for user review and
-  writes no files. The workflow is for dailies-first users who capture
-  thoughts in daily notes but rarely author standalone roam nodes — the
-  skill surfaces what is worth graduating so the user and Claude can
-  curate together.
+  which daily entries should seed new org-roam nodes, and which should
+  be appended as log entries to existing nodes. The skill runs in two
+  phases. Dry-run always runs first: it outputs a markdown proposal
+  for user review without touching any file. Apply mode (opt-in, only
+  when the user explicitly asks) then creates the proposed `.org`
+  files, runs `org-roam-db-sync`, and opens a pull request against the
+  configured org repository using a bot identity. The workflow is for
+  dailies-first users who capture thoughts in daily notes but rarely
+  author standalone roam nodes — the skill surfaces what is worth
+  graduating so the user and Claude can curate together, then handles
+  the mechanical graph-maintenance once the user approves.
   Trigger when the user asks to extract, promote, or graduate content
   from dailies into roam nodes, or says things like "daily から roam
   育てて", "graduate dailies", "週次で roam 整理", "dailyから昇格候補探して",
-  "organize this week's dailies".
+  "organize this week's dailies". Also trigger on follow-up phrases
+  like "apply this", "これで作って", "PR出して" once a proposal is
+  already in the chat.
 ---
 
-# Org Graduate Skill (Phase 1: dry-run)
+# Org Graduate Skill
 
 Scan recent `org-roam-dailies` entries, match them against existing
 org-roam nodes, and produce a graduation proposal — a markdown report
 that lists candidate entries and whether each should append to an
-existing node or seed a new one. This skill does NOT write any files in
-Phase 1; the apply step comes in a later phase.
+existing node or seed a new one. The skill has two modes:
+
+- **Dry-run** (Steps 1–8): always runs first. Reads dailies and the
+  roam DB, judges each entry, and prints a proposal. No file writes,
+  no git operations.
+- **Apply** (Steps 9–16, optional): only runs when the user approves
+  the dry-run proposal and explicitly asks to apply. Creates or edits
+  `.org` files, runs `org-roam-db-sync`, commits with a bot identity,
+  pushes, and opens a PR against the configured org repo.
+
+Apply mode operates on `$org_dir` (a separate git repo), never on the
+skill's own repo.
 
 ## Prerequisites
 
+### Dry-run mode
+
 - `sqlite3` is installed and the org-roam DB exists.
-- A config file at `~/.config/org-graduate/config.toml` tells the skill
-  where the org directory and roam DB live. A minimal config:
 
-  ```toml
-  org_dir = "/home/garaemon/ghq/github.com/garaemon/org"
-  roam_dir = "/home/garaemon/ghq/github.com/garaemon/org/org-roam"
-  daily_dir = "/home/garaemon/ghq/github.com/garaemon/org/org-roam/daily"
-  roam_db = "/home/garaemon/.emacs.d/org-roam.db"
-  screen_tags = ["@work"]
-  default_since_days = 7
-  ```
+### Apply mode (in addition)
 
-  `screen_tags` marks contexts whose entries need a stricter reusability
-  check before graduation (see Step 5 and Step 7). It is not a hard
-  skip — entries under these tags are kept if they carry generalisable
-  knowledge.
+- `uuidgen` is installed (used to generate node IDs in the
+  existing uppercase-hyphenated format).
+- `emacs --batch` can load the user's `init.el` and has `org-roam`
+  available, so that `(org-roam-db-sync)` resolves.
+- `git` is installed and `$org_dir` is a clean git repo with a remote.
+- `gh` (GitHub CLI) is authenticated and able to open PRs against the
+  configured remote.
 
-  If the file is missing, stop and print the example above. Do not
-  invent defaults; the paths are host-specific.
+### Config
+
+A config file at `~/.config/org-graduate/config.toml` tells the skill
+where the org directory and roam DB live, plus the bot identity used
+for apply-mode commits. A minimal config:
+
+```toml
+org_dir = "/home/garaemon/ghq/github.com/garaemon/org"
+roam_dir = "/home/garaemon/ghq/github.com/garaemon/org/org-roam"
+daily_dir = "/home/garaemon/ghq/github.com/garaemon/org/org-roam/daily"
+roam_db = "/home/garaemon/.emacs.d/org-roam.db"
+screen_tags = ["@work"]
+default_since_days = 7
+
+# Apply mode only
+bot_name = "garaemon-bot"
+bot_email = "garaemon+githubbot@gmail.com"
+pr_remote = "origin"
+pr_base_branch = "main"
+```
+
+`screen_tags` marks contexts whose entries need a stricter
+reusability check before graduation (see Step 5 and Step 7). It is
+not a hard skip — entries under these tags are kept if they carry
+generalisable knowledge.
+
+`bot_name` / `bot_email` are the git identity used for apply-mode
+commits. They do NOT replace the user's global git config; the skill
+sets them per-commit via `GIT_COMMITTER_*` / `GIT_AUTHOR_*` env vars.
+
+`pr_remote` / `pr_base_branch` point at the remote and base branch
+of the org repo to push the feature branch to and open the PR
+against.
+
+If the config file is missing, stop and print the example above. Do
+not invent defaults; the paths are host-specific. Apply-mode-only
+fields are optional when the user is only running dry-run.
 
 ## Inputs
 
@@ -295,8 +342,189 @@ from [[id:SOURCE-ID][YYYY-MM-DD]]
 
 ## Next steps
 
-To apply: re-run with `--apply` (Phase 2, not yet implemented).
+To apply: ask Claude to apply this proposal (see Apply mode below).
+Claude will confirm the scope with you before writing any files.
 ```
+
+## Apply mode
+
+After Step 8 has produced a dry-run proposal in the chat, the user
+may ask to apply it (triggers include "apply", "これで作って",
+"PR出して"). Apply mode modifies the `$org_dir` git repo on disk: it
+creates and edits `.org` files, runs `org-roam-db-sync`, commits with
+the bot identity, pushes the branch, and opens a pull request.
+
+Every git operation in this section targets `$org_dir` via
+`git -C "$org_dir" ...`. The only place the skill changes directory
+is when invoking `gh pr create`, so the CLI picks up the org repo's
+remote. Never run git commands in the skill's own repo as part of
+apply mode.
+
+### Step 9: Confirm the apply scope
+
+The dry-run proposal may list several `append_to_existing` and
+`create_new` items. The user may want to apply only a subset (for
+example, "just the new node, not the log append"). Before proceeding:
+
+1. Summarise the proposed writes as a short bullet list (one line
+   per item: action, node title, source daily).
+2. Ask the user to confirm: apply all, apply a subset (which?), or
+   cancel.
+3. Lock the agreed subset as the apply set for the rest of the
+   steps. Items outside the apply set must not be written.
+
+If the user cancels or does not respond affirmatively, stop without
+touching any file.
+
+### Step 10: Verify org repo preconditions
+
+Fail fast on any of the following. Surface the exact check that
+failed and stop; do not attempt auto-recovery.
+
+```bash
+git -C "$org_dir" rev-parse --git-dir >/dev/null                 # must be a git repo
+[[ -z "$(git -C "$org_dir" status --porcelain)" ]]                # working tree clean
+git -C "$org_dir" fetch "$pr_remote" "$pr_base_branch"             # refresh base
+git -C "$org_dir" checkout "$pr_base_branch"                       # switch to base
+git -C "$org_dir" pull --ff-only "$pr_remote" "$pr_base_branch"    # sync base
+```
+
+If the working tree is dirty, do NOT stash — the user's in-progress
+edits may be valuable. Stop and ask the user to commit or shelve
+them first.
+
+Branch name: `YYYY.MM.DD-org-graduate` using today's date. Fail if
+it already exists on the local or remote side:
+
+```bash
+new_branch="$(date +%Y.%m.%d)-org-graduate"
+if git -C "$org_dir" show-ref --quiet "refs/heads/$new_branch" \
+|| git -C "$org_dir" ls-remote --exit-code --heads "$pr_remote" "$new_branch" >/dev/null 2>&1; then
+  die "Branch $new_branch already exists. Delete or rename before retrying."
+fi
+```
+
+### Step 11: Generate UUIDs, timestamps, and slugs
+
+For each `create_new` item in the apply set:
+
+- UUID: `uuidgen | tr 'a-z' 'A-Z'` — match the uppercase-hyphenated
+  format used by the existing corpus.
+- Filename timestamp: `date +%Y%m%d%H%M%S`.
+- Slug: lowercase the title, replace spaces with `_`, strip any
+  characters other than alphanumerics, `_`, `-`, and CJK. Example:
+  `nanoclaw` stays `nanoclaw`; `org mode workflow` becomes
+  `org_mode_workflow`.
+- Full path: `$roam_dir/${timestamp}-${slug}.org`.
+
+Record the `{title → uuid}` mapping so that cross-references inside
+proposed bodies (e.g. a new node linking to another new node being
+created in the same run) resolve to the same generated UUID.
+
+### Step 12: Create the feature branch
+
+```bash
+git -C "$org_dir" checkout -b "$new_branch"
+```
+
+All subsequent writes happen on this branch.
+
+### Step 13: Write files
+
+For each `create_new` item:
+
+1. Build the body from the proposal template, substituting the
+   generated UUID into the `:ID:` line and replacing any placeholder
+   `<generate when applied>` tokens (including cross-links) with the
+   corresponding UUID.
+2. Set `#+date:` to today in `<YYYY-MM-DD Ddd>` format.
+3. Write the file at `$roam_dir/${timestamp}-${slug}.org`. Fail if
+   the file already exists (extremely unlikely with a timestamped
+   name, but the safety check is cheap).
+
+For each `append_to_existing` item:
+
+1. Read the target file from the DB row (`n.file`).
+2. Find the `* 事象ログ` top-level heading. If absent, append a new
+   `* 事象ログ` heading at the end of the file, preceded by a blank
+   line.
+3. Append the proposed `** <YYYY-MM-DD> <heading>` block under the
+   `* 事象ログ` section, at the end of that section (before the next
+   top-level heading if any, otherwise at end of file).
+4. Preserve the file's existing content, line endings, indentation,
+   and trailing newline. Edit in place using the `Edit` tool so the
+   diff is minimal.
+
+### Step 14: Run org-roam-db-sync
+
+After all file writes, refresh the roam DB so the committed branch
+state matches Emacs's view:
+
+```bash
+emacs --batch -l ~/.emacs.d/init.el --eval '(org-roam-db-sync)' 2>&1
+```
+
+If the command exits non-zero or prints an org-roam error, stop and
+surface the full output verbatim. Do NOT roll back the file changes —
+the branch contains uncommitted edits that the user may want to
+inspect. Recommend that the user fix their Emacs config and re-run
+sync manually, or drop the branch with
+`git -C "$org_dir" checkout $pr_base_branch && git -C "$org_dir" branch -D $new_branch`.
+
+### Step 15: Commit and push
+
+Stage only the roam files the apply set touched. Never use
+`git add -A`, `git add .`, or `git add <dir>` — stage each file
+explicitly so unrelated files (e.g. org-roam DB caches, backup
+`~` files, dailies that got auto-committed during the run) are not
+swept in.
+
+```bash
+git -C "$org_dir" add "$roam_dir/${timestamp}-${slug}.org"  # for each create_new
+git -C "$org_dir" add "<existing-node-file>"                # for each append_to_existing
+
+GIT_COMMITTER_NAME="$bot_name" \
+GIT_COMMITTER_EMAIL="$bot_email" \
+GIT_AUTHOR_NAME="$bot_name" \
+GIT_AUTHOR_EMAIL="$bot_email" \
+  git -C "$org_dir" commit -m "$(cat <<'MSG'
+org-graduate: apply proposal YYYY-MM-DD
+
+- <one bullet per item, e.g. "add node nanoclaw", "append log entry to org-mode">
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+MSG
+)"
+
+git -C "$org_dir" push -u "$pr_remote" "$new_branch"
+```
+
+The bot identity is applied per-commit via env vars so the user's
+global git config stays untouched.
+
+### Step 16: Open the PR and report the URL
+
+```bash
+cd "$org_dir"
+gh pr create \
+  --base "$pr_base_branch" \
+  --title "org-graduate: apply proposal $(date +%Y-%m-%d)" \
+  --body "$(cat <<BODY
+## Summary
+
+<bulleted list of applied items, mirroring the commit message>
+
+## Source dailies
+
+<list of daily files cited by the applied items>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+BODY
+)"
+```
+
+Report the resulting PR URL to the user in the chat reply. That is
+the end of apply mode — the user takes over for review and merge.
 
 ## Output rules
 
@@ -325,16 +553,21 @@ To apply: re-run with `--apply` (Phase 2, not yet implemented).
 - Do not fabricate node IDs. For `create_new` proposals, write
   `:ID:       <generate when applied>` verbatim as a placeholder.
 
-## Out of scope (Phase 1)
+## Out of scope
 
-- Writing anything under `org_dir`.
-- Running `emacs --batch` or `org-roam-db-sync`.
-- Creating git branches, commits, or PRs.
-- Modifying the daily file to mark entries as "graduated".
-
-Those actions belong to Phase 2.
+- Modifying the daily file to mark entries as "graduated" (e.g.
+  annotating that a sub-entry was promoted into a roam node). This
+  may land in a future phase; for now the daily stays untouched as
+  the authoritative source-of-capture.
+- Operating on more than one `$org_dir` in a single invocation. The
+  config is single-profile; invoke the skill separately with a
+  different config path for a second profile.
+- Merging the PR. The skill stops after `gh pr create`; the user
+  reviews and merges.
 
 ## Error handling
+
+### Dry-run
 
 - Config file missing or malformed → stop; print the example config.
 - Any path in the config does not exist → stop; ask the user to fix
@@ -343,3 +576,24 @@ Those actions belong to Phase 2.
   org-roam upgrade) → show the sqlite error verbatim and stop.
 - Zero dailies in the window → print the window info, report zero
   entries, and stop without widening the window.
+
+### Apply
+
+- `uuidgen`, `emacs --batch`, `git`, or `gh` is missing → stop and
+  ask the user to install it; do not try an alternative binary.
+- Apply-mode config field missing (`bot_name`, `bot_email`,
+  `pr_remote`, `pr_base_branch`) → stop with a clear message naming
+  the missing key.
+- `$org_dir` working tree is dirty → stop; ask the user to commit
+  or shelve changes.
+- Branch name already exists locally or on the remote → stop; ask
+  the user to delete or rename.
+- `$pr_base_branch` cannot be fast-forwarded from the remote → stop;
+  ask the user to reconcile manually.
+- `org-roam-db-sync` fails after file writes → surface output,
+  leave the branch in place for the user to inspect. Do NOT roll
+  back. Do NOT commit or push in this state.
+- `git commit` / `git push` / `gh pr create` fails → surface the
+  error, stop, and report the current local branch state so the
+  user can recover (the uncommitted or unpushed work is still on
+  disk).
