@@ -25,3 +25,19 @@ screen_tags = ["@work"]
 # Default number of days to look back when the user does not specify a
 # window.
 default_since_days = 7
+
+# ---------------------------------------------------------------------
+# Apply mode (optional): only needed when you ask the skill to write
+# files and open a PR. Dry-run ignores these fields.
+# ---------------------------------------------------------------------
+
+# Git identity used for apply-mode commits. The skill passes these
+# values via GIT_COMMITTER_* / GIT_AUTHOR_* env vars at commit time —
+# your global git config is NOT modified.
+bot_name = "USER-bot"
+bot_email = "USER+githubbot@example.com"
+
+# Remote and base branch on the org repo. The skill will push the
+# feature branch to pr_remote and open the PR against pr_base_branch.
+pr_remote = "origin"
+pr_base_branch = "main"
