@@ -1,0 +1,8 @@
+{
+  "name": "slack-post",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@slack/web-api": "^7.9.0"
+  }
+}
