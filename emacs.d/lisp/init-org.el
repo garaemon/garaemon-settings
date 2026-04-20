@@ -255,6 +255,7 @@ Date format is YYYY-MM-DD.")
     (custom-set-faces `(org-level-6 ((t (:family ,default-font :inherit default)))))
     (custom-set-faces `(org-level-7 ((t (:family ,default-font :inherit default)))))
     (custom-set-faces `(org-level-8 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
     )
 
   :bind (("C-c c" . 'org-capture)
