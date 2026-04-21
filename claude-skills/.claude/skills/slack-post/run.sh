@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Wrapper that runs the slack-post CLI inside a hardened Docker container.
-# Mounts the Slack bot token file read-only and passes all args through.
+# Mounts the JSON config file (bot token + default channel) read-only and
+# passes all args through.
 
 set -euo pipefail
 
 readonly IMAGE_TAG="slack-post:local"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
-readonly DEFAULT_TOKEN_PATH="${HOME}/.config/slack-post/token"
-readonly TOKEN_PATH="${SLACK_TOKEN_FILE:-${DEFAULT_TOKEN_PATH}}"
+readonly DEFAULT_CONFIG_PATH="${HOME}/.config/slack-post/config.json"
+readonly CONFIG_PATH="${SLACK_CONFIG_FILE:-${DEFAULT_CONFIG_PATH}}"
 
 die() {
   echo "run.sh: error: $*" >&2
@@ -26,20 +27,20 @@ ensure_image_exists() {
   fi
 }
 
-ensure_token_file_safe() {
-  if [[ ! -e "${TOKEN_PATH}" ]]; then
-    die "Slack token file not found at ${TOKEN_PATH}. Place it there or override with SLACK_TOKEN_FILE."
+ensure_config_file_safe() {
+  if [[ ! -e "${CONFIG_PATH}" ]]; then
+    die "Slack config file not found at ${CONFIG_PATH}. Place it there or override with SLACK_CONFIG_FILE."
   fi
-  if [[ -L "${TOKEN_PATH}" ]]; then
-    die "Slack token file must be a regular file, not a symlink: ${TOKEN_PATH}"
+  if [[ -L "${CONFIG_PATH}" ]]; then
+    die "Slack config file must be a regular file, not a symlink: ${CONFIG_PATH}"
   fi
-  if [[ ! -f "${TOKEN_PATH}" ]]; then
-    die "Slack token file must be a regular file: ${TOKEN_PATH}"
+  if [[ ! -f "${CONFIG_PATH}" ]]; then
+    die "Slack config file must be a regular file: ${CONFIG_PATH}"
   fi
   local mode
-  mode=$(get_file_mode "${TOKEN_PATH}")
+  mode=$(get_file_mode "${CONFIG_PATH}")
   if [[ "${mode}" != "600" && "${mode}" != "400" ]]; then
-    die "Slack token file ${TOKEN_PATH} must be mode 600 or 400 (current: ${mode}). Run: chmod 600 ${TOKEN_PATH}"
+    die "Slack config file ${CONFIG_PATH} must be mode 600 or 400 (current: ${mode}). Run: chmod 600 ${CONFIG_PATH}"
   fi
 }
 
@@ -65,14 +66,14 @@ run_container() {
     --cap-drop ALL \
     --security-opt no-new-privileges \
     --memory 256m --cpus 0.5 \
-    -v "${TOKEN_PATH}:/secrets/token:ro" \
-    -e SLACK_TOKEN_FILE=/secrets/token \
+    -v "${CONFIG_PATH}:/secrets/config.json:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
     "${IMAGE_TAG}" "$@"
 }
 
 main() {
   ensure_image_exists
-  ensure_token_file_safe
+  ensure_config_file_safe
   run_container "$@"
 }
 

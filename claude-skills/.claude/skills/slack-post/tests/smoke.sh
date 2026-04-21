@@ -13,6 +13,17 @@ fail() {
   exit 1
 }
 
+write_dummy_config() {
+  local path="$1"
+  local with_default_channel="$2"
+  if [[ "${with_default_channel}" == "true" ]]; then
+    printf '{"token":"xoxb-dummy","default_channel":"#dummy"}' > "${path}"
+  else
+    printf '{"token":"xoxb-dummy"}' > "${path}"
+  fi
+  chmod 600 "${path}"
+}
+
 test_prints_usage_without_args() {
   echo "Test: image prints usage with no subcommand"
   local output
@@ -24,25 +35,34 @@ test_prints_usage_without_args() {
   echo "  OK"
 }
 
-test_missing_token_file_fails() {
-  echo "Test: image exits non-zero when token file is missing"
+test_missing_config_file_fails() {
+  echo "Test: image exits non-zero when config file is missing"
   local output
   if output=$(docker run --rm \
-      -e SLACK_TOKEN_FILE=/tmp/nonexistent \
+      -e SLACK_CONFIG_FILE=/tmp/nonexistent \
       "${IMAGE}" \
       post --channel "#x" --text "hi" 2>&1); then
-    fail "expected non-zero exit without token file; got 0. output: ${output}"
+    fail "expected non-zero exit without config file; got 0. output: ${output}"
   fi
   grep -q "slack-post:" <<<"${output}" \
     || fail "expected slack-post error prefix; got: ${output}"
   echo "  OK"
 }
 
-test_missing_channel_fails() {
-  echo "Test: post rejects missing --channel"
+test_missing_channel_without_default_fails() {
+  echo "Test: post rejects missing --channel when config has no default_channel"
+  local cfg
+  cfg=$(mktemp)
+  write_dummy_config "${cfg}" false
   local output
-  if output=$(docker run --rm "${IMAGE}" post --text "hi" 2>&1); then
-    fail "expected non-zero exit without --channel; got 0. output: ${output}"
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --text "hi" 2>&1) || exit_code=$?
+  rm -f "${cfg}"
+  if [[ "${exit_code}" == "0" ]]; then
+    fail "expected non-zero exit without --channel and without default_channel; got 0. output: ${output}"
   fi
   grep -q -- "--channel is required" <<<"${output}" \
     || fail "expected '--channel is required' in output; got: ${output}"
@@ -51,8 +71,17 @@ test_missing_channel_fails() {
 
 test_missing_text_fails() {
   echo "Test: post rejects missing --text and --stdin"
+  local cfg
+  cfg=$(mktemp)
+  write_dummy_config "${cfg}" true
   local output
-  if output=$(docker run --rm "${IMAGE}" post --channel "#x" 2>&1); then
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --channel "#x" 2>&1) || exit_code=$?
+  rm -f "${cfg}"
+  if [[ "${exit_code}" == "0" ]]; then
     fail "expected non-zero exit without --text/--stdin; got 0. output: ${output}"
   fi
   grep -q -- "--text or --stdin is required" <<<"${output}" \
@@ -60,11 +89,33 @@ test_missing_text_fails() {
   echo "  OK"
 }
 
+test_invalid_json_config_fails() {
+  echo "Test: post rejects config file that is not valid JSON"
+  local cfg
+  cfg=$(mktemp)
+  printf 'not json' > "${cfg}"
+  chmod 600 "${cfg}"
+  local output
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --channel "#x" --text "hi" 2>&1) || exit_code=$?
+  rm -f "${cfg}"
+  if [[ "${exit_code}" == "0" ]]; then
+    fail "expected non-zero exit for invalid JSON config; got 0. output: ${output}"
+  fi
+  grep -q "not valid JSON" <<<"${output}" \
+    || fail "expected 'not valid JSON' in output; got: ${output}"
+  echo "  OK"
+}
+
 main() {
   test_prints_usage_without_args
-  test_missing_token_file_fails
-  test_missing_channel_fails
+  test_missing_config_file_fails
+  test_missing_channel_without_default_fails
   test_missing_text_fails
+  test_invalid_json_config_fails
   echo "All slack-post smoke tests passed."
 }
 

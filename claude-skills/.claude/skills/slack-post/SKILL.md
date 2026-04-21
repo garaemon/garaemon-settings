@@ -16,7 +16,8 @@ allowed-tools: Bash($CLAUDE_PLUGIN_ROOT/skills/slack-post/run.sh:*)
 
 Post a message to Slack via the Web API. The CLI runs inside a hardened
 Docker container so it cannot touch the host filesystem beyond a read-only
-mount of the Slack bot token file.
+mount of a single JSON config file that holds the bot token and an
+optional default channel.
 
 ## Prerequisites
 
@@ -27,15 +28,23 @@ mount of the Slack bot token file.
 
 ## One-time setup
 
-1. Place the bot token in a single-line file and tighten permissions:
+1. Create a JSON config file with the bot token and (optionally) a
+   default channel, then tighten permissions:
 
    ```bash
    mkdir -p ~/.config/slack-post
-   printf '%s' 'xoxb-...' > ~/.config/slack-post/token
-   chmod 600 ~/.config/slack-post/token
+   cat > ~/.config/slack-post/config.json <<'EOF'
+   {
+     "token": "xoxb-...",
+     "default_channel": "#daily-digest"
+   }
+   EOF
+   chmod 600 ~/.config/slack-post/config.json
    ```
 
-   To use a different path, export `SLACK_TOKEN_FILE` pointing at the file.
+   The `token` field is required. `default_channel` is optional; when
+   set, `post` can be invoked without `--channel`. To use a different
+   path, export `SLACK_CONFIG_FILE` pointing at the file.
 
 2. Build the Docker image once:
 
@@ -52,19 +61,22 @@ Invoke via `run.sh`; arguments are passed through to the in-container CLI.
 
 | Command | Description |
 | --- | --- |
-| `post --channel <id-or-name> --text <text> [--thread <ts>]` | Post a message (optionally as a thread reply) |
-| `post --channel <id-or-name> --stdin` | Read the message body from stdin |
+| `post [--channel <id-or-name>] --text <text> [--thread <ts>]` | Post a message (optionally as a thread reply) |
+| `post [--channel <id-or-name>] --stdin` | Read the message body from stdin |
 
-Channel accepts a channel ID (`C0123456789`), a channel name (`#general`),
-or a user ID for a DM (`U0123456789`). The `--thread` flag takes the
-parent message timestamp (`ts`) returned by a previous post.
+`--channel` is optional when `default_channel` is set in the config file.
+Explicit `--channel` always overrides the default. Channel accepts a
+channel ID (`C0123456789`), a channel name (`#general`), or a user ID
+for a DM (`U0123456789`). The `--thread` flag takes the parent message
+timestamp (`ts`) returned by a previous post.
 
 ## Example invocations
 
 ```bash
-run.sh post --channel "#daily-digest" --text "Good morning!"
+run.sh post --text "Good morning!"                            # uses default_channel
+run.sh post --channel "#announcements" --text "new release"   # override
 run.sh post --channel "C0123456789" --text "build green" --thread "1712345678.001200"
-printf 'line1\nline2\n' | run.sh post --channel "#logs" --stdin
+printf 'line1\nline2\n' | run.sh post --stdin                 # uses default_channel
 ```
 
 ## Isolation guarantees
@@ -75,14 +87,14 @@ Each `run.sh` invocation starts a container with:
 - `--cap-drop ALL` and `--security-opt no-new-privileges`
 - `--memory 256m --cpus 0.5` resource limits
 - Non-root `node` user inside the container
-- Bot token file mounted read-only at `/secrets/token`
+- Config file mounted read-only at `/secrets/config.json`
 - `--network bridge` (outbound only; required to reach `slack.com`)
 
 `run.sh` additionally guards against common misconfigurations before launching:
 
 - Refuses to run if the Docker image is missing and prints the build command
-- Rejects the token file if it is a symlink or not a regular file
-- Requires mode `600` or `400` on the token file
+- Rejects the config file if it is a symlink or not a regular file
+- Requires mode `600` or `400` on the config file
 - Passes stdin through only when `--stdin` is present among the arguments
 
 ## Scheduled task patterns
@@ -90,10 +102,11 @@ Each `run.sh` invocation starts a container with:
 ### Daily morning digest
 
 Combine with another skill that produces the body (e.g.
-`spotify-daily-digest`) and pipe the output in:
+`spotify-daily-digest`) and pipe the output in. With `default_channel`
+set in the config file, the invocation stays short:
 
 ```bash
-./produce-digest.sh | run.sh post --channel "#daily-digest" --stdin
+./produce-digest.sh | run.sh post --stdin
 ```
 
 ### Thread reply to a known message

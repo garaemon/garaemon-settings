@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Post a single message to Slack via the Web API.
-// Reads the bot token from the file at SLACK_TOKEN_FILE.
+// Reads the bot token and optional default channel from the JSON config
+// file at SLACK_CONFIG_FILE.
 
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -8,19 +9,22 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { WebClient } = require('@slack/web-api');
 
-const USAGE = `Usage: slack-post post --channel <id-or-name> (--text <text> | --stdin) [--thread <ts>]
+const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin) [--thread <ts>]
 
 Commands:
   post                Post a message to Slack.
 
 Options:
   --channel <value>   Channel ID (C...), channel name (#name), or user ID (U...) for DM.
+                      Falls back to "default_channel" from the config file if omitted.
   --text <value>      Message body. Mutually exclusive with --stdin.
   --stdin             Read message body from standard input.
   --thread <ts>       Post as a reply to the given parent message timestamp.
 
 Environment:
-  SLACK_TOKEN_FILE    Path to a file containing the bot token (xoxb-...).
+  SLACK_CONFIG_FILE   Path to a JSON file with shape:
+                        {"token": "xoxb-...", "default_channel": "#name"}
+                      "token" is required; "default_channel" is optional.
 `;
 
 function parseArgs(argv) {
@@ -52,16 +56,29 @@ async function readAllStdin() {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function readToken(path) {
+async function readConfig(path) {
   if (!path) {
-    throw new Error('SLACK_TOKEN_FILE env var is not set.');
+    throw new Error('SLACK_CONFIG_FILE env var is not set.');
   }
   const raw = await readFile(path, 'utf8');
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    throw new Error(`Token file is empty: ${path}`);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Config file is not valid JSON (${path}): ${err.message}`);
   }
-  return trimmed;
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error(`Config file must be a JSON object (${path}).`);
+  }
+  const token = typeof parsed.token === 'string' ? parsed.token.trim() : '';
+  if (!token) {
+    throw new Error(`Config file is missing required "token" field (${path}).`);
+  }
+  const defaultChannel =
+    typeof parsed.default_channel === 'string' && parsed.default_channel.trim()
+      ? parsed.default_channel.trim()
+      : undefined;
+  return { token, defaultChannel };
 }
 
 async function resolveText(args) {
@@ -83,14 +100,17 @@ async function resolveText(args) {
 
 async function runPost(argv) {
   const args = parseArgs(argv);
-  if (!args.channel) {
-    throw new Error('--channel is required.');
+  const config = await readConfig(process.env.SLACK_CONFIG_FILE);
+  const channel = args.channel || config.defaultChannel;
+  if (!channel) {
+    throw new Error(
+      '--channel is required (no "default_channel" set in config file).',
+    );
   }
   const text = await resolveText(args);
-  const token = await readToken(process.env.SLACK_TOKEN_FILE);
-  const client = new WebClient(token);
+  const client = new WebClient(config.token);
   const response = await client.chat.postMessage({
-    channel: args.channel,
+    channel,
     text,
     thread_ts: args.thread,
   });
