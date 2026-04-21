@@ -1,0 +1,13 @@
+[Unit]
+Description=Run daily news-digest to Slack at 08:00 local time
+
+[Timer]
+OnCalendar=*-*-* 08:00:00
+# Catch up if the machine was off at the scheduled time.
+Persistent=true
+# Jitter to avoid hammering upstreams at a sharp minute boundary.
+RandomizedDelaySec=2min
+Unit=news-digest-slack.service
+
+[Install]
+WantedBy=timers.target
