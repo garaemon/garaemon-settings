@@ -60,3 +60,27 @@ jobs:
       - name: Audit production dependencies
         working-directory: .claude/skills/spotify-sheets
         run: npm audit --omit=dev --audit-level=high
+
+  pdf2zh-image:
+    name: Build pdf2zh image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t pdf2zh:local .claude/skills/pdf2zh
+      - name: Smoke test image
+        run: bash .claude/skills/pdf2zh/tests/smoke.sh
+
+  pip-audit:
+    name: pip audit (pdf2zh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Audit lockfile
+        working-directory: .claude/skills/pdf2zh
+        run: pip-audit --require-hashes -r requirements.txt --vulnerability-service osv

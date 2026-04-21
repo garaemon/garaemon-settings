@@ -10,3 +10,4 @@ smartphones or desktop via Claude Code's `/remote-control`.
 - [spotify-sheets](.claude/skills/spotify-sheets/SKILL.md) — Search and browse the user's Spotify library (liked songs, followed artists) exported to Google Sheets. Runs in a hardened Docker container with a read-only service-account key mount.
 - [spotify-daily-digest](.claude/skills/spotify-daily-digest/SKILL.md) — Produce a morning digest of the songs liked in the last 24 hours, enriched with web-searched background for each track and artist.
 - [org-graduate](.claude/skills/org-graduate/SKILL.md) — Scan recent org-roam daily notes and produce a graduation proposal (dry-run) that surfaces which daily entries should seed new org-roam nodes and which should be appended as log entries to existing nodes.
+- [pdf2zh](.claude/skills/pdf2zh/SKILL.md) — Translate a PDF to Japanese via the `pdf2zh` (PDFMathTranslate) CLI using Gemini. Runs in a hardened Docker container with a read-only Gemini API key file mount.
