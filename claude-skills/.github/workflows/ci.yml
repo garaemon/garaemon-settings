@@ -70,3 +70,25 @@ jobs:
       - name: Audit production dependencies
         working-directory: .claude/skills/spotify-sheets
         run: npm audit --omit=dev --audit-level=high
+
+  slack-post-image:
+    name: Build slack-post image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t slack-post:local .claude/skills/slack-post
+      - name: Smoke test image
+        run: bash .claude/skills/slack-post/tests/smoke.sh
+
+  npm-audit-slack-post:
+    name: npm audit (slack-post)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit production dependencies
+        working-directory: .claude/skills/slack-post
+        run: npm audit --omit=dev --audit-level=high
