@@ -21,7 +21,11 @@ write_dummy_config() {
   else
     printf '{"token":"xoxb-dummy"}' > "${path}"
   fi
-  chmod 600 "${path}"
+  # World-readable on purpose: the tmp file is bind-mounted into the
+  # container under a non-root user whose UID may not match the host,
+  # and the strict 600/400 enforcement lives in run.sh (not exercised
+  # here). Real configs stay at mode 600 via run.sh's own check.
+  chmod 644 "${path}"
 }
 
 test_prints_usage_without_args() {
@@ -94,7 +98,7 @@ test_invalid_json_config_fails() {
   local cfg
   cfg=$(mktemp)
   printf 'not json' > "${cfg}"
-  chmod 600 "${cfg}"
+  chmod 644 "${cfg}"
   local output
   local exit_code=0
   output=$(docker run --rm \
