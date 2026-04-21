@@ -26,15 +26,23 @@ fi
 cd "$PROJECT_DIR"
 
 # Minimal allowlist: only the tools news-digest + slack-post actually need.
-# news-digest needs web tools + file IO on the history file; slack-post needs
-# to invoke its dockerized run.sh at a specific absolute path.
+# news-digest reads its topic config from the project tree and reads/writes
+# a per-topic history file under ~/.cache/claude-private-skills/news-history/.
+# slack-post only needs to invoke its dockerized run.sh at a fixed path.
+# Read/Write/Edit are path-scoped (gitignore-style patterns): project tree for
+# reads, the history directory for writes.
 SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
+# The literal `~` is passed through to claude, which expands it per
+# gitignore-style permission pattern semantics. Do not let the shell expand it.
+# shellcheck disable=SC2088
+NEWS_HISTORY_GLOB='~/.cache/claude-private-skills/**'
 allowed_tools=(
   WebSearch
   WebFetch
-  Read
-  Write
-  Edit
+  "Read(/**)"
+  "Read(${NEWS_HISTORY_GLOB})"
+  "Write(${NEWS_HISTORY_GLOB})"
+  "Edit(${NEWS_HISTORY_GLOB})"
   "Bash(date:*)"
   "Bash(mkdir:*)"
   "Bash(cat:*)"
