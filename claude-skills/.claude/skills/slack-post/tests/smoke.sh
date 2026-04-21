@@ -93,6 +93,30 @@ test_missing_text_fails() {
   echo "  OK"
 }
 
+test_markdown_is_boolean_flag() {
+  # --markdown takes no value; the parser must not consume the next arg as
+  # its value. If boolean-flag handling regresses, --markdown would swallow
+  # --channel and the run would fail with "--channel is required" before
+  # reaching the --text/--stdin check this test asserts on.
+  echo "Test: --markdown is parsed as a boolean flag"
+  local cfg
+  cfg=$(mktemp)
+  write_dummy_config "${cfg}" true
+  local output
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --markdown --channel "#x" 2>&1) || exit_code=$?
+  rm -f "${cfg}"
+  if [[ "${exit_code}" == "0" ]]; then
+    fail "expected non-zero exit; got 0. output: ${output}"
+  fi
+  grep -q -- "--text or --stdin is required" <<<"${output}" \
+    || fail "expected '--text or --stdin is required' (--markdown should be a boolean flag); got: ${output}"
+  echo "  OK"
+}
+
 test_invalid_json_config_fails() {
   echo "Test: post rejects config file that is not valid JSON"
   local cfg
@@ -119,6 +143,7 @@ main() {
   test_missing_config_file_fails
   test_missing_channel_without_default_fails
   test_missing_text_fails
+  test_markdown_is_boolean_flag
   test_invalid_json_config_fails
   echo "All slack-post smoke tests passed."
 }

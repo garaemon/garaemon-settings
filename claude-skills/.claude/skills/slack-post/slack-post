@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { WebClient } = require('@slack/web-api');
 
-const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin) [--thread <ts>]
+const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin) [--markdown] [--thread <ts>]
 
 Commands:
   post                Post a message to Slack.
@@ -19,6 +19,10 @@ Options:
                       Falls back to "default_channel" from the config file if omitted.
   --text <value>      Message body. Mutually exclusive with --stdin.
   --stdin             Read message body from standard input.
+  --markdown          Render the body as GitHub-flavored markdown via a Slack
+                      "markdown" Block Kit block (supports headings, bullets,
+                      tables, fenced code, etc.). Without this flag the body is
+                      sent as-is and interpreted with Slack's mrkdwn flavor.
   --thread <ts>       Post as a reply to the given parent message timestamp.
 
 Environment:
@@ -27,14 +31,18 @@ Environment:
                       "token" is required; "default_channel" is optional.
 `;
 
+const BOOLEAN_FLAGS = new Set(['stdin', 'markdown']);
+
 function parseArgs(argv) {
   const args = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
-    if (token === '--stdin') {
-      args.stdin = true;
-    } else if (token.startsWith('--')) {
+    if (token.startsWith('--')) {
       const key = token.slice(2);
+      if (BOOLEAN_FLAGS.has(key)) {
+        args[key] = true;
+        continue;
+      }
       const value = argv[i + 1];
       if (value === undefined || value.startsWith('--')) {
         throw new Error(`Missing value for --${key}`);
@@ -109,11 +117,15 @@ async function runPost(argv) {
   }
   const text = await resolveText(args);
   const client = new WebClient(config.token);
-  const response = await client.chat.postMessage({
+  const payload = {
     channel,
     text,
     thread_ts: args.thread,
-  });
+  };
+  if (args.markdown) {
+    payload.blocks = [{ type: 'markdown', text }];
+  }
+  const response = await client.chat.postMessage(payload);
   if (!response.ok) {
     throw new Error(`Slack API error: ${response.error || 'unknown'}`);
   }

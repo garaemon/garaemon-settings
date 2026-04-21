@@ -61,14 +61,24 @@ Invoke via `run.sh`; arguments are passed through to the in-container CLI.
 
 | Command | Description |
 | --- | --- |
-| `post [--channel <id-or-name>] --text <text> [--thread <ts>]` | Post a message (optionally as a thread reply) |
-| `post [--channel <id-or-name>] --stdin` | Read the message body from stdin |
+| `post [--channel <id-or-name>] --text <text> [--markdown] [--thread <ts>]` | Post a message (optionally as a thread reply) |
+| `post [--channel <id-or-name>] --stdin [--markdown]` | Read the message body from stdin |
 
 `--channel` is optional when `default_channel` is set in the config file.
 Explicit `--channel` always overrides the default. Channel accepts a
 channel ID (`C0123456789`), a channel name (`#general`), or a user ID
 for a DM (`U0123456789`). The `--thread` flag takes the parent message
 timestamp (`ts`) returned by a previous post.
+
+### Markdown mode
+
+Pass `--markdown` to render the body as GitHub-flavored markdown via a
+Slack `markdown` Block Kit block. Headings (`#`, `##`), ordered/unordered
+lists, tables, fenced code blocks, `**bold**`, `*italic*`, and
+`[title](url)` links all render natively. Without the flag, the body is
+sent as-is and interpreted with Slack's mrkdwn flavor (`*bold*`,
+`_italic_`, `<url|title>`). The top-level `text` field is still set in
+both cases so push notifications have a preview.
 
 ## Example invocations
 
@@ -77,6 +87,7 @@ run.sh post --text "Good morning!"                            # uses default_cha
 run.sh post --channel "#announcements" --text "new release"   # override
 run.sh post --channel "C0123456789" --text "build green" --thread "1712345678.001200"
 printf 'line1\nline2\n' | run.sh post --stdin                 # uses default_channel
+cat report.md | run.sh post --stdin --markdown                # render as GFM
 ```
 
 ## Isolation guarantees
