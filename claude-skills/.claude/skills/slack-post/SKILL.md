@@ -70,7 +70,7 @@ channel ID (`C0123456789`), a channel name (`#general`), or a user ID
 for a DM (`U0123456789`). The `--thread` flag takes the parent message
 timestamp (`ts`) returned by a previous post.
 
-### Markdown mode
+### Markdown mode (recommended default)
 
 Pass `--markdown` to render the body as GitHub-flavored markdown via a
 Slack `markdown` Block Kit block. Headings (`#`, `##`), ordered/unordered
@@ -80,14 +80,31 @@ sent as-is and interpreted with Slack's mrkdwn flavor (`*bold*`,
 `_italic_`, `<url|title>`). The top-level `text` field is still set in
 both cases so push notifications have a preview.
 
+**Default to `--markdown` for any structured message** — digests, news
+summaries, report-style output, or anything with headings, bullets,
+tables, or code. Standard Markdown is what LLM output looks like, so
+passing `--markdown` avoids a lossy conversion to Slack's mrkdwn flavor
+and makes the message render identically to how it looks in the source.
+
+Only omit `--markdown` when you genuinely want the Slack mrkdwn flavor
+(e.g. `<@U123>` user mentions, `<!channel>` broadcasts, `<url|title>`
+links) — those are not part of GitHub-flavored markdown and are only
+interpreted in the mrkdwn path. Short one-line messages with no
+formatting are also fine either way.
+
 ## Example invocations
 
 ```bash
-run.sh post --text "Good morning!"                            # uses default_channel
-run.sh post --channel "#announcements" --text "new release"   # override
+# Plain one-liner (mrkdwn flavor is fine for simple text)
+run.sh post --text "Good morning!"
+
+# Structured / LLM-generated content — prefer --markdown
+cat report.md | run.sh post --stdin --markdown
+echo "# Daily digest\n- item 1\n- item 2" | run.sh post --stdin --markdown
+
+# Channel override and thread reply
+run.sh post --channel "#announcements" --text "new release"
 run.sh post --channel "C0123456789" --text "build green" --thread "1712345678.001200"
-printf 'line1\nline2\n' | run.sh post --stdin                 # uses default_channel
-cat report.md | run.sh post --stdin --markdown                # render as GFM
 ```
 
 ## Isolation guarantees
