@@ -25,12 +25,12 @@ fi
 
 cd "$PROJECT_DIR"
 
-# Minimal allowlist: only the tools news-digest + slack-post actually need.
-# news-digest reads its topic config from the project tree and reads/writes
-# a per-topic history file under ~/.cache/claude-private-skills/news-history/.
-# slack-post only needs to invoke its dockerized run.sh at a fixed path.
-# Read/Write/Edit are path-scoped (gitignore-style patterns): project tree for
-# reads, the history directory for writes.
+# Minimal allowlist. news-digest only needs web search, path-scoped file IO
+# (project tree for reads, history dir for reads/writes), and slack-post only
+# needs to invoke its dockerized run.sh at a fixed path. Intentionally no
+# broad Bash patterns: Read/Write/Edit fully cover the file IO the skill does,
+# and the model carries today's date in its context, so `cat`/`echo`/`date`
+# etc. are unnecessary.
 SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
 # The literal `~` is passed through to claude, which expands it per
 # gitignore-style permission pattern semantics. Do not let the shell expand it.
@@ -43,18 +43,6 @@ allowed_tools=(
   "Read(${NEWS_HISTORY_GLOB})"
   "Write(${NEWS_HISTORY_GLOB})"
   "Edit(${NEWS_HISTORY_GLOB})"
-  "Bash(date:*)"
-  "Bash(mkdir:*)"
-  "Bash(cat:*)"
-  "Bash(tail:*)"
-  "Bash(head:*)"
-  "Bash(wc:*)"
-  "Bash(grep:*)"
-  "Bash(awk:*)"
-  "Bash(sed:*)"
-  "Bash(sort:*)"
-  "Bash(printf:*)"
-  "Bash(echo:*)"
   "Bash(${SLACK_RUN_SH}:*)"
 )
 
