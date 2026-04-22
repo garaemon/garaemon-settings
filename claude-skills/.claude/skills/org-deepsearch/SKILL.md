@@ -278,7 +278,7 @@ append | cancel">
 
 ## Proposed new node
 
-Suggested filename: `YYYYMMDDHHMMSS-slug.org`
+Suggested filename: `YYYYMMDDHHMMSS-<file_slug>.org`
 Suggested `#+title:`: `<title>`
 Suggested `#+filetags:`: `:deepsearch:<tag1>:<tag2>:`
 
@@ -356,27 +356,47 @@ git -C "$org_dir" pull --ff-only "$pr_remote" "$pr_base_branch"
 If the working tree is dirty, do NOT stash. Stop and ask the user to
 commit or shelve their changes first.
 
-Branch name: `YYYY.MM.DD-org-deepsearch-<slug>` using today's date
-and the slug from Step 10. Fail if it already exists on the local or
-remote side:
+Branch name: `YYYY.MM.DD-org-deepsearch-<branch_slug>` using today's
+date and the `branch_slug` from Step 10 (the ASCII-only slug, not the
+file slug). Fail if it already exists on the local or remote side:
 
 ```bash
-new_branch="$(date +%Y.%m.%d)-org-deepsearch-${slug}"
+new_branch="$(date +%Y.%m.%d)-org-deepsearch-${branch_slug}"
 if git -C "$org_dir" show-ref --quiet "refs/heads/$new_branch" \
 || git -C "$org_dir" ls-remote --exit-code --heads "$pr_remote" "$new_branch" >/dev/null 2>&1; then
   die "Branch $new_branch already exists. Delete or rename before retrying."
 fi
 ```
 
-### Step 10: Generate UUID, timestamp, slug
+### Step 10: Generate UUID, timestamp, slugs
 
 - UUID: `uuidgen | tr 'a-z' 'A-Z'` — match the uppercase-hyphenated
   format used by the existing corpus.
 - Filename timestamp: `date +%Y%m%d%H%M%S`.
-- Slug: lowercase the title, replace spaces with `_`, strip any
-  characters other than alphanumerics, `_`, `-`, and CJK. Example:
-  `MCP server security` becomes `mcp_server_security`.
-- Full path: `$roam_dir/${timestamp}-${slug}.org`.
+- `file_slug` (used in the `.org` filename): lowercase the title,
+  replace spaces with `_`, strip any characters other than
+  alphanumerics, `_`, `-`, and CJK. Example: `MCP server security`
+  becomes `mcp_server_security`, `逆運動学` stays `逆運動学`. This
+  matches the existing roam corpus which routinely has CJK in
+  filenames.
+- `branch_slug` (used only in the git branch name): **ASCII-only**,
+  matching `[a-z0-9-]+`, kebab-case, at most ~40 characters. Derive
+  it from the title as follows:
+  - If the title is already ASCII, lowercase it, replace whitespace
+    and underscores with `-`, and strip remaining non-matching
+    characters. Example: `MCP server security` →
+    `mcp-server-security`.
+  - If the title contains non-ASCII (e.g. Japanese), produce a short
+    English translation / romanization of the core concept and
+    apply the same ASCII rules to it. Examples: `逆運動学` →
+    `inverse-kinematics`, `ソートアルゴリズム` → `sort-algorithms`,
+    `擬似逆行列` → `pseudo-inverse`.
+  - If nothing sensible can be produced (extremely unlikely), fall
+    back to the filename timestamp: `node-${timestamp}`.
+  The goal is a branch name that works cleanly in URLs, shell
+  arguments, and `gh` commands without percent-encoding — keeping
+  the non-ASCII expression reserved for the file and the PR title.
+- Full path: `$roam_dir/${timestamp}-${file_slug}.org`.
 
 ### Step 11: Create the feature branch
 
@@ -395,7 +415,7 @@ generated UUID into the `:ID:` line and replacing any placeholder
 
 #### Create-new branch (default)
 
-Write the file at `$roam_dir/${timestamp}-${slug}.org` via the
+Write the file at `$roam_dir/${timestamp}-${file_slug}.org` via the
 `Write` tool. Fail if the file already exists (extremely unlikely
 with a timestamped name, but the safety check is cheap).
 
@@ -439,7 +459,7 @@ unrelated files (e.g. org-roam DB caches, backup `~` files, dailies
 that got auto-committed during the run) are not swept in.
 
 ```bash
-git -C "$org_dir" add "$roam_dir/${timestamp}-${slug}.org"   # create-new branch
+git -C "$org_dir" add "$roam_dir/${timestamp}-${file_slug}.org"   # create-new branch
 # OR
 git -C "$org_dir" add "<existing-node-file>"                 # append branch
 
