@@ -118,7 +118,15 @@ The user may optionally specify:
 
 - Depth: "quick overview" (3–4 queries, 1–2 papers) vs "deep dive"
   (6–10 queries, 4–6 papers). Default: balanced — 4–6 queries, 2–3
-  papers.
+  papers. **Exception**: when the topic is clearly a *technical or
+  specialized subject* (mathematics, algorithms, systems, robotics,
+  machine learning theory, physics, bioinformatics, etc.), default to
+  deep dive and write at the level of a *university undergraduate
+  textbook chapter*: include derivations with intermediate steps,
+  worked examples, explicit equations, and enough context that a
+  reader with standard prerequisites can follow without external
+  material. Do NOT surface this choice to the user in the org file
+  itself — just write at that depth.
 - Scope hints: specific sub-questions, preferred sources (e.g. "only
   academic"), or existing nodes the result should link to.
 
@@ -255,7 +263,14 @@ Rules for the content:
   candidate's abstract cannot actually be retrieved, drop it from
   the list.
 - Keep the total body around 800–1500 Japanese characters for a
-  balanced-depth run. Deep-dive runs may go longer.
+  balanced-depth run. Deep-dive / textbook-depth runs may go longer
+  (3000–6000 characters or more).
+- Do not include meta-commentary about the note itself — its
+  intended audience, target depth, writing style, or that it was
+  written "in textbook form". The depth is reflected in the content,
+  not announced. Dive straight into the substance. Phrases like
+  「本稿では大学レベルの教科書を想定し」「以下ではチュートリアル調で」
+  are forbidden inside the org body.
 
 ### Step 7: Render the proposal
 
