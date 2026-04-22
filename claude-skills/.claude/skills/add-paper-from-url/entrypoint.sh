@@ -42,9 +42,12 @@ run_fetch() {
   # Restrict curl to http(s) on both the initial request and redirects. Without
   # this, a malicious redirect to file:// could exfiltrate the mounted Paperpile
   # config or other container-local files.
+  # OpenReview (and some other publishers) reject requests that lack a browser-like
+  # User-Agent with HTTP 403, so advertise one explicitly.
   exec curl -sS -L -f --max-time 60 \
     --proto '=https,http' \
     --proto-redir '=https,http' \
+    -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
     -o "$fetch_out" "$fetch_url"
 }
 
