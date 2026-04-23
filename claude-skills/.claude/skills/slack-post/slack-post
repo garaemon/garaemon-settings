@@ -1,0 +1,158 @@
+#!/usr/bin/env node
+// Post a single message to Slack via the Web API.
+// Reads the bot token and optional default channel from the JSON config
+// file at SLACK_CONFIG_FILE.
+
+import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { WebClient } = require('@slack/web-api');
+
+const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin) [--markdown] [--thread <ts>]
+
+Commands:
+  post                Post a message to Slack.
+
+Options:
+  --channel <value>   Channel ID (C...), channel name (#name), or user ID (U...) for DM.
+                      Falls back to "default_channel" from the config file if omitted.
+  --text <value>      Message body. Mutually exclusive with --stdin.
+  --stdin             Read message body from standard input.
+  --markdown          Render the body as GitHub-flavored markdown via a Slack
+                      "markdown" Block Kit block (supports headings, bullets,
+                      tables, fenced code, etc.). Without this flag the body is
+                      sent as-is and interpreted with Slack's mrkdwn flavor.
+  --thread <ts>       Post as a reply to the given parent message timestamp.
+
+Environment:
+  SLACK_CONFIG_FILE   Path to a JSON file with shape:
+                        {"token": "xoxb-...", "default_channel": "#name"}
+                      "token" is required; "default_channel" is optional.
+`;
+
+const BOOLEAN_FLAGS = new Set(['stdin', 'markdown']);
+
+function parseArgs(argv) {
+  const args = { _: [] };
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (token.startsWith('--')) {
+      const key = token.slice(2);
+      if (BOOLEAN_FLAGS.has(key)) {
+        args[key] = true;
+        continue;
+      }
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        throw new Error(`Missing value for --${key}`);
+      }
+      args[key] = value;
+      i += 1;
+    } else {
+      args._.push(token);
+    }
+  }
+  return args;
+}
+
+async function readAllStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function readConfig(path) {
+  if (!path) {
+    throw new Error('SLACK_CONFIG_FILE env var is not set.');
+  }
+  const raw = await readFile(path, 'utf8');
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Config file is not valid JSON (${path}): ${err.message}`);
+  }
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error(`Config file must be a JSON object (${path}).`);
+  }
+  const token = typeof parsed.token === 'string' ? parsed.token.trim() : '';
+  if (!token) {
+    throw new Error(`Config file is missing required "token" field (${path}).`);
+  }
+  const defaultChannel =
+    typeof parsed.default_channel === 'string' && parsed.default_channel.trim()
+      ? parsed.default_channel.trim()
+      : undefined;
+  return { token, defaultChannel };
+}
+
+async function resolveText(args) {
+  if (args.stdin && args.text !== undefined) {
+    throw new Error('Pass either --text or --stdin, not both.');
+  }
+  if (args.stdin) {
+    const fromStdin = await readAllStdin();
+    if (!fromStdin.trim()) {
+      throw new Error('Received empty message body on stdin.');
+    }
+    return fromStdin;
+  }
+  if (args.text === undefined) {
+    throw new Error('Either --text or --stdin is required.');
+  }
+  return args.text;
+}
+
+async function runPost(argv) {
+  const args = parseArgs(argv);
+  const config = await readConfig(process.env.SLACK_CONFIG_FILE);
+  const channel = args.channel || config.defaultChannel;
+  if (!channel) {
+    throw new Error(
+      '--channel is required (no "default_channel" set in config file).',
+    );
+  }
+  const text = await resolveText(args);
+  const client = new WebClient(config.token);
+  const payload = {
+    channel,
+    text,
+    thread_ts: args.thread,
+  };
+  if (args.markdown) {
+    payload.blocks = [{ type: 'markdown', text }];
+  }
+  const response = await client.chat.postMessage(payload);
+  if (!response.ok) {
+    throw new Error(`Slack API error: ${response.error || 'unknown'}`);
+  }
+  process.stdout.write(
+    JSON.stringify({ ok: true, channel: response.channel, ts: response.ts }) + '\n',
+  );
+}
+
+async function main() {
+  const [command, ...rest] = process.argv.slice(2);
+  if (!command) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  if (command === 'post') {
+    await runPost(rest);
+    return;
+  }
+  if (command === '--help' || command === '-h' || command === 'help') {
+    process.stdout.write(USAGE);
+    return;
+  }
+  process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
+  process.exit(2);
+}
+
+main().catch((err) => {
+  process.stderr.write(`slack-post: ${err.message || err}\n`);
+  process.exit(1);
+});
