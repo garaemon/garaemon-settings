@@ -373,29 +373,32 @@ fi
 - UUID: `uuidgen | tr 'a-z' 'A-Z'` — match the uppercase-hyphenated
   format used by the existing corpus.
 - Filename timestamp: `date +%Y%m%d%H%M%S`.
-- `file_slug` (used in the `.org` filename): lowercase the title,
-  replace spaces with `_`, strip any characters other than
-  alphanumerics, `_`, `-`, and CJK. Example: `MCP server security`
-  becomes `mcp_server_security`, `逆運動学` stays `逆運動学`. This
-  matches the existing roam corpus which routinely has CJK in
-  filenames.
-- `branch_slug` (used only in the git branch name): **ASCII-only**,
-  matching `[a-z0-9-]+`, kebab-case, at most ~40 characters. Derive
-  it from the title as follows:
-  - If the title is already ASCII, lowercase it, replace whitespace
-    and underscores with `-`, and strip remaining non-matching
-    characters. Example: `MCP server security` →
-    `mcp-server-security`.
+- Derive an `ascii_title` first:
+  - If the title is already ASCII, use it verbatim (with its
+    existing punctuation / spaces).
   - If the title contains non-ASCII (e.g. Japanese), produce a short
-    English translation / romanization of the core concept and
-    apply the same ASCII rules to it. Examples: `逆運動学` →
-    `inverse-kinematics`, `ソートアルゴリズム` → `sort-algorithms`,
-    `擬似逆行列` → `pseudo-inverse`.
+    English translation of the core concept — the same kind of
+    expression a textbook table of contents would use. Examples:
+    `逆運動学` → `inverse kinematics`,
+    `ソートアルゴリズム` → `sort algorithms`,
+    `擬似逆行列` → `pseudo inverse`,
+    `動的計画法` → `dynamic programming`.
   - If nothing sensible can be produced (extremely unlikely), fall
-    back to the filename timestamp: `node-${timestamp}`.
-  The goal is a branch name that works cleanly in URLs, shell
-  arguments, and `gh` commands without percent-encoding — keeping
-  the non-ASCII expression reserved for the file and the PR title.
+    back to `node ${timestamp}`.
+- `file_slug` (used in the `.org` filename): lowercase the
+  `ascii_title`, replace whitespace with `_`, and strip any
+  characters other than `[a-z0-9_-]`. **ASCII-only.** Example:
+  `MCP server security` → `mcp_server_security`,
+  `逆運動学` → `inverse_kinematics`. This deliberately drops the
+  previous CJK-preserving behavior: `gh`, shell pipelines, and
+  non-Emacs tooling handle ASCII filenames more reliably, and the
+  `#+title:` (still Japanese) remains the human-facing label.
+- `branch_slug` (used only in the git branch name): lowercase the
+  `ascii_title`, replace whitespace and `_` with `-`, strip any
+  characters other than `[a-z0-9-]`, collapse repeated `-`, and cap
+  at ~40 characters. Examples: `MCP server security` →
+  `mcp-server-security`, `逆運動学` → `inverse-kinematics`,
+  `ソートアルゴリズム` → `sort-algorithms`.
 - Full path: `$roam_dir/${timestamp}-${file_slug}.org`.
 
 ### Step 11: Create the feature branch
