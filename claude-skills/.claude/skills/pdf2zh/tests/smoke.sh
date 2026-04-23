@@ -29,7 +29,9 @@ test_empty_key_fails() {
   local tmpdir
   tmpdir=$(mktemp -d)
   : >"${tmpdir}/gemini.key"
-  chmod 600 "${tmpdir}/gemini.key"
+  # Grant world read so the container user (UID 1000) can read the test key
+  # regardless of the host UID. Real keys go through run.sh which enforces 600.
+  chmod 644 "${tmpdir}/gemini.key"
   local output
   local exit_status=0
   output=$(docker run --rm \
@@ -49,7 +51,9 @@ test_help_with_dummy_key() {
   local tmpdir
   tmpdir=$(mktemp -d)
   printf 'dummy-key-for-smoke-test' >"${tmpdir}/gemini.key"
-  chmod 600 "${tmpdir}/gemini.key"
+  # Grant world read so the container user (UID 1000) can read the test key
+  # regardless of the host UID. Real keys go through run.sh which enforces 600.
+  chmod 644 "${tmpdir}/gemini.key"
   local output
   local exit_status=0
   output=$(docker run --rm \
