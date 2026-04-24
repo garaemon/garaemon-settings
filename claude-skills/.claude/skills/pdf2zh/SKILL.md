@@ -61,7 +61,7 @@ run.sh <input.pdf> [--output DIR] [--source-lang LANG] [--target-lang LANG]
 | `--output DIR` | `/tmp/pdf2zh` | Directory the translated PDFs are written to |
 | `--source-lang LANG` | `en` | Source language code (pdf2zh `-li`) |
 | `--target-lang LANG` | `ja` | Target language code (pdf2zh `-lo`) |
-| `--model MODEL` | `${PDF2ZH_GEMINI_MODEL:-gemini-3-flash-preview}` | Gemini model name |
+| `--model MODEL` | `${PDF2ZH_GEMINI_MODEL:-gemini-3.1-flash-lite-preview}` | Gemini model name |
 | `--pages RANGE` | (all pages) | Page range, e.g. `1-3,5` (pdf2zh `-p`) |
 
 Arguments after a literal `--` are forwarded to pdf2zh verbatim, for cases
@@ -81,7 +81,7 @@ Paperpile uploader) can find the files without additional configuration.
 ### Example invocations
 
 ```bash
-# Translate a single PDF with defaults (en→ja, Gemini 3 Flash preview).
+# Translate a single PDF with defaults (en→ja, Gemini 3.1 Flash-Lite preview).
 .claude/skills/pdf2zh/run.sh ~/Downloads/paper.pdf
 
 # Pick a specific model and pages, write into a project-local directory.

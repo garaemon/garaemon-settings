@@ -13,7 +13,7 @@ readonly KEY_PATH="${GEMINI_KEY_FILE:-${DEFAULT_KEY_PATH}}"
 readonly DEFAULT_OUTPUT_DIR="/tmp/pdf2zh"
 readonly DEFAULT_SOURCE_LANG="en"
 readonly DEFAULT_TARGET_LANG="ja"
-readonly DEFAULT_MODEL="${PDF2ZH_GEMINI_MODEL:-gemini-3-flash-preview}"
+readonly DEFAULT_MODEL="${PDF2ZH_GEMINI_MODEL:-gemini-3.1-flash-lite-preview}"
 
 die() {
   echo "run.sh: error: $*" >&2
