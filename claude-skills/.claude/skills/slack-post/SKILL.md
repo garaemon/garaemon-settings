@@ -63,6 +63,7 @@ Invoke via `run.sh`; arguments are passed through to the in-container CLI.
 | --- | --- |
 | `post [--channel <id-or-name>] --text <text> [--markdown] [--thread <ts>]` | Post a message (optionally as a thread reply) |
 | `post [--channel <id-or-name>] --stdin [--markdown]` | Read the message body from stdin |
+| `post [--channel <id-or-name>] --text-file <path> [--markdown]` | Read the message body from a file (host path; bind-mounted read-only) |
 
 `--channel` is optional when `default_channel` is set in the config file.
 Explicit `--channel` always overrides the default. Channel accepts a
@@ -102,10 +103,27 @@ run.sh post --text "Good morning!"
 cat report.md | run.sh post --stdin --markdown
 echo "# Daily digest\n- item 1\n- item 2" | run.sh post --stdin --markdown
 
+# Long markdown body from a file. Preferred for digests / reports when
+# invoking from an agent context where shell pipes and inline newlines in
+# CLI args are awkward (the host path is bind-mounted read-only).
+run.sh post --text-file /tmp/digest-body.md --markdown
+
 # Channel override and thread reply
 run.sh post --channel "#announcements" --text "new release"
 run.sh post --channel "C0123456789" --text "build green" --thread "1712345678.001200"
 ```
+
+### When to use `--text-file`
+
+Prefer `--text-file` over `--text` whenever the body contains newlines,
+markdown headings (`#`), or other characters that are awkward to quote
+into a single CLI argument. Agent-driven callers in particular hit shell
+argument-validator rejections when they try to inline a multi-line
+markdown digest into `--text "..."` — writing the body to a file under
+`/tmp` and passing the path sidesteps that entirely. `run.sh` validates
+the host path (must exist, be a regular file, not a symlink, and
+readable) and bind-mounts it read-only into the container, so the inner
+CLI never sees the host filesystem.
 
 ## Isolation guarantees
 
