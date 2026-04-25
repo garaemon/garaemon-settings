@@ -19,6 +19,18 @@ fi
 
 cd "$PROJECT_DIR"
 
+# Load env vars from the repo-root .env if present. systemd --user does not
+# inherit the interactive shell environment, so SPOTIFY_SPREADSHEET_ID and
+# friends would otherwise be unset when the timer fires. `set -a` auto-exports
+# every assignment, so both `KEY=value` and `export KEY=value` lines work.
+ENV_FILE="$PROJECT_DIR/.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
 # Minimal allowlist. artist-live-digest needs the spotify-sheets run.sh
 # (followed-artist list) and web search/fetch. The wrapper additionally
 # allows the slack-post run.sh so the model can post the rendered digest.

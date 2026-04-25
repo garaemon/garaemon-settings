@@ -18,9 +18,12 @@ These unit files drive `weekly-to-slack.sh`, the wrapper that runs the
 ## Prerequisites
 
 - The `spotify-sheets` skill is installed and its Docker image
-  (`spotify-sheets:local`) is built; `SPOTIFY_SPREADSHEET_ID` is exported
-  in the user shell profile so it is visible to the systemd user
-  environment, and the service-account key is in place per that skill's
+  (`spotify-sheets:local`) is built; `SPOTIFY_SPREADSHEET_ID` is reachable
+  by the wrapper. systemd `--user` services do NOT inherit the
+  interactive shell environment, so `weekly-to-slack.sh` sources the
+  repo-root `.env` (if present) at startup. Put `SPOTIFY_SPREADSHEET_ID`
+  there in either `KEY=value` or `export KEY=value` form. The
+  service-account key for spotify-sheets is in place per that skill's
   README.
 - The `slack-post` skill is installed and its Docker image
   (`slack-post:local`) is built; the bot config file is in place per
