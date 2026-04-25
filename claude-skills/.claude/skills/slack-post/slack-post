@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { WebClient } = require('@slack/web-api');
 
-const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin) [--markdown] [--thread <ts>]
+const USAGE = `Usage: slack-post post [--channel <id-or-name>] (--text <text> | --stdin | --text-file <path>) [--markdown] [--thread <ts>]
 
 Commands:
   post                Post a message to Slack.
@@ -17,8 +17,15 @@ Commands:
 Options:
   --channel <value>   Channel ID (C...), channel name (#name), or user ID (U...) for DM.
                       Falls back to "default_channel" from the config file if omitted.
-  --text <value>      Message body. Mutually exclusive with --stdin.
+  --text <value>      Message body as a CLI argument. Mutually exclusive with
+                      --stdin and --text-file. Avoid for long bodies with
+                      newlines or shell metacharacters; use --text-file instead.
   --stdin             Read message body from standard input.
+  --text-file <path>  Read message body from a file. The wrapper run.sh
+                      mounts the host file read-only into the container; only
+                      pass paths that you control. Best for long markdown
+                      bodies (digests, reports) that would otherwise need to
+                      be quoted into --text.
   --markdown          Render the body as GitHub-flavored markdown via a Slack
                       "markdown" Block Kit block (supports headings, bullets,
                       tables, fenced code, etc.). Without this flag the body is
@@ -90,8 +97,14 @@ async function readConfig(path) {
 }
 
 async function resolveText(args) {
-  if (args.stdin && args.text !== undefined) {
-    throw new Error('Pass either --text or --stdin, not both.');
+  const sources = ['text', 'stdin', 'text-file'].filter(
+    (key) => args[key] !== undefined,
+  );
+  if (sources.length > 1) {
+    throw new Error('Pass exactly one of --text, --stdin, --text-file.');
+  }
+  if (sources.length === 0) {
+    throw new Error('One of --text, --stdin, --text-file is required.');
   }
   if (args.stdin) {
     const fromStdin = await readAllStdin();
@@ -100,8 +113,14 @@ async function resolveText(args) {
     }
     return fromStdin;
   }
-  if (args.text === undefined) {
-    throw new Error('Either --text or --stdin is required.');
+  if (args['text-file'] !== undefined) {
+    const fromFile = await readFile(args['text-file'], 'utf8');
+    if (!fromFile.trim()) {
+      throw new Error(
+        `Received empty message body from --text-file (${args['text-file']}).`,
+      );
+    }
+    return fromFile;
   }
   return args.text;
 }

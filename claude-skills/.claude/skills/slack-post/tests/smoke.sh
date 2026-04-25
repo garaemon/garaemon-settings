@@ -88,7 +88,7 @@ test_missing_text_fails() {
   if [[ "${exit_code}" == "0" ]]; then
     fail "expected non-zero exit without --text/--stdin; got 0. output: ${output}"
   fi
-  grep -q -- "--text or --stdin is required" <<<"${output}" \
+  grep -q -- "One of --text, --stdin, --text-file is required" <<<"${output}" \
     || fail "expected '--text or --stdin is required' in output; got: ${output}"
   echo "  OK"
 }
@@ -112,7 +112,7 @@ test_markdown_is_boolean_flag() {
   if [[ "${exit_code}" == "0" ]]; then
     fail "expected non-zero exit; got 0. output: ${output}"
   fi
-  grep -q -- "--text or --stdin is required" <<<"${output}" \
+  grep -q -- "One of --text, --stdin, --text-file is required" <<<"${output}" \
     || fail "expected '--text or --stdin is required' (--markdown should be a boolean flag); got: ${output}"
   echo "  OK"
 }
@@ -138,6 +138,64 @@ test_invalid_json_config_fails() {
   echo "  OK"
 }
 
+test_text_and_text_file_mutually_exclusive() {
+  # The inner CLI must reject combining --text with --text-file even when
+  # both happen to be present on the command line. The wrapper rewrites
+  # the host path on --text-file but does not strip --text, so this is a
+  # real failure mode an agent could hit.
+  echo "Test: post rejects --text combined with --text-file"
+  local cfg
+  cfg=$(mktemp)
+  write_dummy_config "${cfg}" true
+  local body
+  body=$(mktemp)
+  printf 'hello\n' > "${body}"
+  chmod 644 "${body}"
+  local output
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -v "${body}:/inputs/body.md:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --channel "#x" --text "hi" --text-file /inputs/body.md 2>&1) \
+    || exit_code=$?
+  rm -f "${cfg}" "${body}"
+  if [[ "${exit_code}" == "0" ]]; then
+    fail "expected non-zero exit when --text and --text-file are both set; got 0. output: ${output}"
+  fi
+  grep -q "exactly one of --text" <<<"${output}" \
+    || fail "expected 'exactly one of --text' in output; got: ${output}"
+  echo "  OK"
+}
+
+test_text_file_empty_body_fails() {
+  # An empty body file is almost always a caller bug. Surface it loudly
+  # rather than silently posting a zero-character message.
+  echo "Test: post rejects --text-file pointing at an empty file"
+  local cfg
+  cfg=$(mktemp)
+  write_dummy_config "${cfg}" true
+  local body
+  body=$(mktemp)
+  : > "${body}"
+  chmod 644 "${body}"
+  local output
+  local exit_code=0
+  output=$(docker run --rm \
+    -v "${cfg}:/secrets/config.json:ro" \
+    -v "${body}:/inputs/body.md:ro" \
+    -e SLACK_CONFIG_FILE=/secrets/config.json \
+    "${IMAGE}" post --channel "#x" --text-file /inputs/body.md 2>&1) \
+    || exit_code=$?
+  rm -f "${cfg}" "${body}"
+  if [[ "${exit_code}" == "0" ]]; then
+    fail "expected non-zero exit for empty --text-file; got 0. output: ${output}"
+  fi
+  grep -q "empty message body" <<<"${output}" \
+    || fail "expected 'empty message body' in output; got: ${output}"
+  echo "  OK"
+}
+
 main() {
   test_prints_usage_without_args
   test_missing_config_file_fails
@@ -145,6 +203,8 @@ main() {
   test_missing_text_fails
   test_markdown_is_boolean_flag
   test_invalid_json_config_fails
+  test_text_and_text_file_mutually_exclusive
+  test_text_file_empty_body_fails
   echo "All slack-post smoke tests passed."
 }
 
