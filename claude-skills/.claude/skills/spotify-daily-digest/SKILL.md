@@ -123,9 +123,15 @@ Compose the digest as a Japanese chat response. Structure:
 
 1. One-sentence headline with the count and window, e.g.
    "昨日から今朝までに N 曲をライクしました（YYYY-MM-DD 以降）。"
-2. Per-track section, in the order returned by `new-since`:
-   - Track title, artist, and Spotify link
-   - Album, release year, genres
+2. Per-track section, in the order returned by `new-since`. The downstream
+   wrapper posts to Slack with `--markdown`, so render each entry in
+   GitHub-flavored markdown:
+   - First line: `**[<Track Name>](<Track Link>)** — <Artists>`. The
+     `<Track Link>` is the Spotify URL from the `Track Link` field of the
+     `new-since` output and MUST appear as a clickable markdown link on
+     the title. If `Track Link` is missing for a row, fall back to a
+     plain bold title and note `（Spotifyリンクなし）` on the same line.
+   - Second line: `Album · Release year · Genres`.
    - 2–4 Japanese sentences covering: who the artist is, why this song is
      notable, and any connection to genres the user already listens to.
 3. Closing "今日のおすすめフォロー" line: recommend 1–2 artists from
@@ -141,6 +147,9 @@ inconclusive for a given track, say so in Japanese rather than guessing.
   in English.
 - Only describe songs that actually appeared in the `new-since` output.
 - Only recommend follows among artists that appeared in the 24-hour window.
+- Every per-track entry must include the Spotify track link as a markdown
+  link on the title, taken verbatim from the `Track Link` field. Do not
+  shorten, rewrite, or substitute the URL.
 - Keep each per-track blurb to roughly four sentences — the user reads this
   at breakfast.
 
