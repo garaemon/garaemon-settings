@@ -20,8 +20,11 @@ the wrapper instructs the model to skip the Slack post entirely.
 ## Prerequisites
 
 - The `spotify-sheets` Docker image is built and `SPOTIFY_SPREADSHEET_ID`
-  is exported in the user's shell environment. The service account key
-  lives at `~/.config/spotify-sheets/sa.json` (or wherever
+  is reachable by the wrapper. systemd `--user` services do NOT inherit
+  the interactive shell environment, so `daily-to-slack.sh` sources the
+  repo-root `.env` (if present) at startup. Put `SPOTIFY_SPREADSHEET_ID`
+  there in either `KEY=value` or `export KEY=value` form. The service
+  account key lives at `~/.config/spotify-sheets/sa.json` (or wherever
   `GOOGLE_SA_KEY_FILE` points).
 - The `slack-post` Docker image is built and the bot token config lives
   at `~/.config/slack-post/config.json` (or wherever `SLACK_CONFIG_FILE`
