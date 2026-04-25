@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily spotify-daily-digest to Slack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/ghq/github.com/garaemon/claude-private-skills/.claude/skills/spotify-daily-digest/daily-to-slack.sh
+# Keep PATH small but include the user local bin where claude lives.
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+# Run with low priority so the morning job does not fight interactive apps.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
