@@ -1546,5 +1546,7 @@ The source buffer is added as gptel context for full file awareness."
   :ensure t
   :mode "\\.nix\\'")
 
+(use-package powershell :ensure t)
+
 (provide 'init-prog)
 ;;; init-prog.el ends here
