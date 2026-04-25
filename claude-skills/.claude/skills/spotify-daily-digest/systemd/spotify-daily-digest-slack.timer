@@ -1,0 +1,13 @@
+[Unit]
+Description=Run daily spotify-daily-digest to Slack at 07:30 local time
+
+[Timer]
+OnCalendar=*-*-* 07:30:00
+# Catch up if the machine was off at the scheduled time.
+Persistent=true
+# Jitter to avoid hammering upstreams at a sharp minute boundary.
+RandomizedDelaySec=2min
+Unit=spotify-daily-digest-slack.service
+
+[Install]
+WantedBy=timers.target
