@@ -32,8 +32,10 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 
 # Minimal allowlist. spotify-daily-digest delegates retrieval to spotify-sheets
-# and writes nothing of its own, so no Read/Write globs are needed. slack-post
-# is invoked through its dockerized run.sh at a fixed path.
+# and slack-post via their dockerized run.sh at fixed paths. The Write/Read
+# scope on /tmp lets the model stage the digest body in /tmp/spotify-daily-
+# digest-body.md and pass it via slack-post --text-file, which avoids the
+# Bash arg validator rejecting long markdown bodies inlined into --text.
 SPOTIFY_RUN_SH="${PROJECT_DIR}/.claude/skills/spotify-sheets/run.sh"
 SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
 allowed_tools=(
@@ -42,12 +44,19 @@ allowed_tools=(
   "Bash(date:*)"
   "Bash(${SPOTIFY_RUN_SH}:*)"
   "Bash(${SLACK_RUN_SH}:*)"
+  "Read(/tmp/**)"
+  "Write(/tmp/**)"
+  "Edit(/tmp/**)"
 )
 
 echo "=== $(date -Is) spotify-daily-digest ==="
 prompt="Run the spotify-daily-digest skill for the last 24 hours. "
 prompt+="If at least one song was liked in that window, post the rendered Japanese "
 prompt+="digest body to Slack via the slack-post skill with the --markdown flag. "
+prompt+="Stage the body in a file under /tmp (e.g. /tmp/spotify-daily-digest-body.md) "
+prompt+="and pass it via 'slack-post post --text-file <path> --markdown' rather than "
+prompt+="inlining the body into --text; this avoids Bash argument validator rejections "
+prompt+="on multi-line markdown headings. "
 prompt+="If zero songs were liked (the spotify-sheets new-since output reports 0 "
 prompt+="songs), do not post anything to Slack and exit cleanly."
 
