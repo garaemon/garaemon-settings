@@ -105,7 +105,7 @@ Collect the set of `(Artist, EventURL)` pairs and the set of EventURLs.
 Treat a hit on either as "already delivered". If the file does not exist,
 treat the set as empty.
 
-### Step 4: Search for tour dates, one artist at a time
+### Step 4: Search for tour dates in parallel batches
 
 For each followed artist, run exactly one `WebSearch` with a query like:
 
@@ -113,9 +113,19 @@ For each followed artist, run exactly one `WebSearch` with a query like:
 <Artist> <CITY> concert <YEAR> tour dates
 ```
 
-where `<YEAR>` is the year portion of `TODAY`. Process artists
-sequentially — do not parallelise — so this stays within reasonable rate
-limits and so partial failures are easy to attribute.
+where `<YEAR>` is the year portion of `TODAY`.
+
+Issue these searches in **parallel batches of 8–10**: emit 8–10
+`WebSearch` tool calls in a single response, wait for all of them to
+come back, then move on to the next batch. The Claude Code tool layer
+handles parallel `WebSearch` fine, and sequential one-at-a-time runs
+make a typical followed-artist list take many minutes. Per-artist
+attribution is still trivial because the artist name is in each
+query. If a single search in a batch errors out, log it and continue
+with the rest of the batch — partial failures should not stop the run.
+
+Across batches the per-artist budget is still exactly one query, and
+the per-event filtering rules below apply unchanged.
 
 If the snippet clearly indicates no upcoming dates (e.g. "no upcoming
 shows"), skip to the next artist. If the snippet is ambiguous about the
