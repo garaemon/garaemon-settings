@@ -33,8 +33,8 @@ if ! command -v peco &> /dev/null; then
 fi
 
 if [ "$show_all" = true ]; then
-  # Strip leading "* " (current branch marker) and spaces from git branch output
-  selected_branch=$(git branch --all | sed 's/^[* ]*//' | peco --prompt "checkout branch>")
+  # Strip leading "* " (current branch) or "+ " (worktree branch) markers from git branch output
+  selected_branch=$(git branch --all | sed 's/^[*+ ]*//' | peco --prompt "checkout branch>")
 
   if [ -z "$selected_branch" ]; then
     echo "No branch selected." >&2
@@ -51,8 +51,8 @@ fi
 # Build a combined list of local branches and open PR branches.
 # Local branches are shown as-is; PR branches include PR number and title.
 
-# Strip leading "* " (current branch marker) and spaces from git branch output
-local_branches=$(git branch --list | sed 's/^[* ]*//')
+# Strip leading "* " (current branch) or "+ " (worktree branch) markers from git branch output
+local_branches=$(git branch --list | sed 's/^[*+ ]*//')
 
 # Collect PR info from gh if available
 pr_lines=""
