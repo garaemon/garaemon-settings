@@ -734,6 +734,17 @@
   (with-eval-after-load 'magit-log
     (define-key magit-log-mode-map (kbd "C-c r")
                 #'my-diff-hl-set-reference-from-magit))
+
+  (defun my-run-git-commit-llm ()
+    "Run external git-commit-llm at the repository root.
+Uses with-editor so the commit buffer pops up inside Emacs."
+    (interactive)
+    (let ((default-directory (magit-toplevel)))
+      (with-editor-async-shell-command "git-commit-llm -s")))
+
+  (with-eval-after-load 'magit-commit
+    (transient-append-suffix 'magit-commit '(0 -1)
+      '("L" "Generate with git-commit-llm" my-run-git-commit-llm)))
   )
 
 (use-package gptel-magit
