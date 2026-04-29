@@ -735,16 +735,28 @@
     (define-key magit-log-mode-map (kbd "C-c r")
                 #'my-diff-hl-set-reference-from-magit))
 
-  (defun my-run-git-commit-llm ()
-    "Run external git-commit-llm at the repository root.
-Uses with-editor so the commit buffer pops up inside Emacs."
+  (defun my-insert-git-commit-llm-message ()
+    "Generate a commit message via git-commit-llm and prepend it to the commit buffer.
+Must be called while a magit commit message buffer is active."
     (interactive)
-    (let ((default-directory (magit-toplevel)))
-      (with-editor-async-shell-command "git-commit-llm -s")))
+    (unless (magit-commit-message-buffer)
+      (user-error "No commit in progress"))
+    (message "git-commit-llm: generating...")
+    (let ((commit-buffer (magit-commit-message-buffer)))
+      (with-temp-buffer
+        (let ((exit-code (call-process "git-commit-llm" nil t nil "--print-only")))
+          (unless (zerop exit-code)
+            (user-error "git-commit-llm failed (exit %d): %s"
+                        exit-code (buffer-string)))
+          (let ((generated (string-trim (buffer-string))))
+            (with-current-buffer commit-buffer
+              (save-excursion
+                (goto-char (point-min))
+                (insert generated "\n"))))))))
 
-  (with-eval-after-load 'magit-commit
-    (transient-append-suffix 'magit-commit '(0 -1)
-      '("L" "Generate with git-commit-llm" my-run-git-commit-llm)))
+  (with-eval-after-load 'git-commit
+    (define-key git-commit-mode-map (kbd "M-l")
+                #'my-insert-git-commit-llm-message))
   )
 
 (use-package gptel-magit
