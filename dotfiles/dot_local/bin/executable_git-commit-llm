@@ -286,6 +286,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="model to use (positional, for backward compatibility)",
     )
+    parser.add_argument(
+        "--print-only",
+        action="store_true",
+        help="Print the generated commit message to stdout and exit "
+        "without entering the interactive loop",
+    )
     return parser.parse_args(args)
 
 
@@ -307,6 +313,10 @@ def main(args: list[str] | None = None) -> None:
 
     raw = call_llm(diff, system_prompt, model)
     commit_msg = format_commit_message(raw)
+
+    if parsed.print_only:
+        print(commit_msg)
+        return
 
     interactive_loop(commit_msg, diff, model)
 
