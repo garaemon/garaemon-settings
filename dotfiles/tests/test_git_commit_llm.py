@@ -196,6 +196,29 @@ class TestParseArgs:
         assert args.model == "gpt-4o"
         assert args.feedback == "be concise"
 
+    def test_print_only_defaults_false(self):
+        args = gcl.parse_args([])
+        assert args.print_only is False
+
+    def test_print_only_flag(self):
+        args = gcl.parse_args(["--print-only"])
+        assert args.print_only is True
+
+
+# ---------------------------------------------------------------------------
+# main (print-only mode)
+# ---------------------------------------------------------------------------
+class TestMainPrintOnly:
+    def test_print_only_outputs_message_and_skips_interactive_loop(self, capsys):
+        with patch.object(gcl, "has_staged_changes", return_value=True), \
+             patch.object(gcl, "get_staged_diff", return_value="diff"), \
+             patch.object(gcl, "call_llm", return_value='{"summary": "Add foo", "details": ["bar"]}'), \
+             patch.object(gcl, "interactive_loop") as mock_loop:
+            gcl.main(["--print-only"])
+            captured = capsys.readouterr()
+            assert "Add foo" in captured.out
+            assert mock_loop.call_count == 0
+
 
 # ---------------------------------------------------------------------------
 # call_llm (Ollama API)
