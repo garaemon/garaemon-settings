@@ -735,28 +735,41 @@
     (define-key magit-log-mode-map (kbd "C-c r")
                 #'my-diff-hl-set-reference-from-magit))
 
-  (defun my-insert-git-commit-llm-message ()
-    "Generate a commit message via git-commit-llm and prepend it to the commit buffer.
-Must be called while a magit commit message buffer is active."
-    (interactive)
-    (unless (magit-commit-message-buffer)
-      (user-error "No commit in progress"))
-    (message "git-commit-llm: generating...")
-    (let ((commit-buffer (magit-commit-message-buffer)))
+  (defun my--git-commit-llm-after-setup ()
+    "One-shot git-commit-setup-hook that prepends git-commit-llm output to the
+commit buffer being set up."
+    (remove-hook 'git-commit-setup-hook #'my--git-commit-llm-after-setup)
+    (let ((commit-buffer (current-buffer)))
+      (message "git-commit-llm: generating...")
       (with-temp-buffer
         (let ((exit-code (call-process "git-commit-llm" nil t nil "--print-only")))
           (unless (zerop exit-code)
-            (user-error "git-commit-llm failed (exit %d): %s"
-                        exit-code (buffer-string)))
+            (error "git-commit-llm failed (exit %d): %s"
+                   exit-code (buffer-string)))
           (let ((generated (string-trim (buffer-string))))
-            (with-current-buffer commit-buffer
-              (save-excursion
-                (goto-char (point-min))
-                (insert generated "\n"))))))))
+            (when (buffer-live-p commit-buffer)
+              (with-current-buffer commit-buffer
+                (save-excursion
+                  (goto-char (point-min))
+                  (insert generated "\n")))))))
+      ;; git-commit-setup calls (set-buffer-modified-p nil) right after the
+      ;; setup hook returns, which would cause C-c C-c to skip save-buffer.
+      ;; Restore the modified flag once setup is done.
+      (run-at-time 0 nil
+                   (lambda ()
+                     (when (buffer-live-p commit-buffer)
+                       (with-current-buffer commit-buffer
+                         (set-buffer-modified-p t)))))))
 
-  (with-eval-after-load 'git-commit
-    (define-key git-commit-mode-map (kbd "M-l")
-                #'my-insert-git-commit-llm-message))
+  (defun my-run-git-commit-llm ()
+    "Start a commit and auto-prepend a git-commit-llm-generated message."
+    (interactive)
+    (add-hook 'git-commit-setup-hook #'my--git-commit-llm-after-setup)
+    (magit-commit-create))
+
+  (with-eval-after-load 'magit-commit
+    (transient-append-suffix 'magit-commit '(0 -1)
+      '("L" "Generate with git-commit-llm" my-run-git-commit-llm)))
   )
 
 (use-package gptel-magit
