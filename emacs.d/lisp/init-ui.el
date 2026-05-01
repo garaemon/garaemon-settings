@@ -329,6 +329,60 @@ CONDITION is a regexp string matching buffer names.")
            (window-parameters . ((no-delete-other-windows . t))))))
     (magit-status)))
 
+;;; Magit left side window: expand on focus, shrink on blur
+;;
+;; A magit buffer shown in a left side window is too narrow for everyday
+;; reading, but a permanently wide side window steals horizontal space from
+;; the main editing area. The block below resolves this by watching
+;; `window-selection-change-functions' and resizing any left-side magit
+;; window to `my-magit-side-window-focused-width' while it has focus, and
+;; back to `my-magit-side-window-unfocused-width' as soon as focus moves
+;; away.
+
+(defcustom my-magit-side-window-focused-width 80
+  "Width in columns for a magit left side window while it has focus."
+  :type 'integer
+  :group 'magit)
+
+(defcustom my-magit-side-window-unfocused-width 30
+  "Width in columns for a magit left side window while it does not have focus."
+  :type 'integer
+  :group 'magit)
+
+(defun my-magit-left-side-window-p (window)
+  "Return non-nil when WINDOW is a left side window showing a magit buffer."
+  (and (window-live-p window)
+       (eq (window-parameter window 'window-side) 'left)
+       (with-current-buffer (window-buffer window)
+         (derived-mode-p 'magit-mode))))
+
+(defun my-magit-resize-window-to (window target-width)
+  "Resize WINDOW horizontally to TARGET-WIDTH columns."
+  (let ((width-delta (- target-width (window-width window))))
+    (unless (zerop width-delta)
+      ;; Pass IGNORE=t so window-resize bypasses the preserved-size constraint
+      ;; that display-buffer-in-side-window installs from `window-width'.
+      (ignore-errors
+        (window-resize window width-delta t t)))))
+
+(defun my-magit-adjust-side-window-on-focus (&optional frame)
+  "Widen the focused magit left side window in FRAME and narrow the others.
+Hooked into `window-selection-change-functions' so a magit side window is
+expanded only while it is selected, and shrunk back as soon as focus moves
+away."
+  (let ((selected-window-in-frame (frame-selected-window frame)))
+    (dolist (frame-window (window-list frame))
+      (when (my-magit-left-side-window-p frame-window)
+        (my-magit-resize-window-to
+         frame-window
+         (if (eq frame-window selected-window-in-frame)
+             my-magit-side-window-focused-width
+           my-magit-side-window-unfocused-width))))))
+
+(with-eval-after-load 'magit
+  (add-hook 'window-selection-change-functions
+            'my-magit-adjust-side-window-on-focus))
+
 (global-set-key (kbd "C-c w s") 'window-toggle-side-windows)
 (global-set-key (kbd "C-c w p") 'my-switch-side-window-profile)
 
