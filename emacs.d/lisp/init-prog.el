@@ -1182,26 +1182,38 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
   )
 
 (use-package multi-vterm :ensure t
-  :after (vterm)
-  :config
-  ;; Make a new vterm terminal from local computer
-  (defun vterm-local ()
-    (interactive)
-    (let ((default-directory (getenv "HOME")))
-      (multi-vterm)))
-  :bind (("C-M-t" . 'my-new-local-multi-vterm))
-  )
+  :after (vterm))
 
 (use-package vterm-toggle :ensure t
   :after (vterm)
   :config
-  ;; Overwrite vterm-toggle. If the vterm buffer is not focused, focus to the buffer.
+  ;; Hide claude-code-ide session buffers from vterm-toggle so that pressing the
+  ;; toggle key never lands on them. The session-buffer-p check fails for vterm
+  ;; buffers that have been renamed via `vterm-buffer-name-string', so also
+  ;; consult `claude-code-ide--processes' to identify them by process-buffer.
+  (defun my-vterm-toggle-claude-code-ide-buffer-p (buffer)
+    "Return non-nil when BUFFER hosts a claude-code-ide session."
+    (or (and (fboundp 'claude-code-ide--session-buffer-p)
+             (claude-code-ide--session-buffer-p buffer))
+        (and (boundp 'claude-code-ide--processes)
+             (cl-loop for proc being the hash-values of claude-code-ide--processes
+                      when (and (process-live-p proc)
+                                (eq (process-buffer proc) buffer))
+                      return t))))
+  (defun my-vterm-toggle-non-claude-code-ide-buffer-p (buffer)
+    "Return non-nil when BUFFER is not a claude-code-ide session buffer."
+    (not (my-vterm-toggle-claude-code-ide-buffer-p buffer)))
+  (add-to-list 'vterm-toggle-togglable-buffer-functions
+               #'my-vterm-toggle-non-claude-code-ide-buffer-p)
+  ;; Toggle to a non-claude vterm. When the user is currently inside a
+  ;; claude-code-ide buffer, do not hide it; instead pop up another vterm (or
+  ;; spawn a new one) so the claude-code-ide window stays out of the way.
   (defun my-vterm-toggle (&optional args)
-    "Vterm toggle.
-Optional argument ARGS ."
+    "Vterm toggle that ignores claude-code-ide session buffers.
+Optional argument ARGS is passed through as the prefix argument."
     (interactive "P")
     (cond
-     ((not (derived-mode-p 'vterm-mode))
+     ((my-vterm-toggle-claude-code-ide-buffer-p (current-buffer))
       (vterm-toggle-show))
      ((or (derived-mode-p 'vterm-mode)
           (and (vterm-toggle--get-window)
