@@ -1469,6 +1469,11 @@ The source buffer is added as gptel context for full file awareness."
    )
   )
 
+(use-package astro-ts-mode
+  :after treesit-auto
+  :ensure nil
+  :vc (:url "https://git.isincredibly.gay/srxl/astro-ts-mode.git" :rev :newest))
+
 (use-package treemacs-magit
   :after (treemacs magit)
   :ensure t)
@@ -1531,23 +1536,40 @@ The source buffer is added as gptel context for full file awareness."
                                  :revision "v0.23.1"
                                  :source-dir "src"
                                  :ext "\\.js\\'")
+                                (make-treesit-auto-recipe
+                                 :lang 'astro
+                                 :ts-mode 'astro-ts-mode
+                                 :url "https://github.com/virchau13/tree-sitter-astro"
+                                 :revision "master"
+                                 :source-dir "src")
                                 ))
          (new-recipe-alist (mapcar #'(lambda (recipe)
                                        (cons (treesit-auto-recipe-lang recipe)
                                              recipe))
                                    new-recipe-list)))
-    (setq treesit-auto-recipe-list
-          (mapcar #'(lambda (recipe)
-                      (let ((lang (treesit-auto-recipe-lang recipe)))
-                        (if (assoc lang new-recipe-alist)
-                            (cdr (assoc lang new-recipe-alist))
-                          recipe)))
-                  treesit-auto-recipe-list))
+    (let* ((existing-langs (mapcar #'treesit-auto-recipe-lang treesit-auto-recipe-list))
+           (replaced-list (mapcar #'(lambda (recipe)
+                                      (let ((lang (treesit-auto-recipe-lang recipe)))
+                                        (if (assoc lang new-recipe-alist)
+                                            (cdr (assoc lang new-recipe-alist))
+                                          recipe)))
+                                  treesit-auto-recipe-list))
+           (additional-recipes (seq-filter #'(lambda (recipe)
+                                               (not (member (treesit-auto-recipe-lang recipe)
+                                                            existing-langs)))
+                                           new-recipe-list))
+           (additional-langs (mapcar #'treesit-auto-recipe-lang additional-recipes)))
+      (setq treesit-auto-recipe-list (append replaced-list additional-recipes))
+      ;; `treesit-auto-langs' is a snapshot of recipe langs at package load time;
+      ;; newly appended recipes must be registered here too so they are picked up
+      ;; by `treesit-auto--build-treesit-source-alist'.
+      (dolist (lang additional-langs)
+        (add-to-list 'treesit-auto-langs lang)))
     )
   (global-treesit-auto-mode)
 
   ;; Install some mandatory languages
-  (let ((auto-install-languages '(c cpp python tsx typescript yaml go css bash make json))
+  (let ((auto-install-languages '(c cpp python tsx typescript yaml go css bash make json astro))
         ;; `treesit-install-language-grammar' requires `treesit-language-source-alist' to be set up.
         ;; `treesit-auto--build-treesit-source-alist' builds a list for `treesit-language-source-alist' from
         ;; `treesit-auto-recipe-list'.
