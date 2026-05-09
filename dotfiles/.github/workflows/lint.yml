@@ -33,19 +33,6 @@ jobs:
       - name: Run ShellCheck on install.sh
         run: shellcheck install.sh
 
-  pytest:
-    name: Pytest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Install pytest
-        run: pip install pytest
-      - name: Run tests
-        run: python -m pytest tests/ -v
-
   trailing-whitespace:
     name: Trailing Whitespace
     runs-on: ubuntu-latest
@@ -77,6 +64,7 @@ jobs:
           yamllint -d relaxed
           .pre-commit-config.yaml
           .github/workflows/lint.yml
+          .github/workflows/test.yml
           .markdownlint.yaml
 
   markdownlint:
