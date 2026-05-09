@@ -30,6 +30,8 @@ jobs:
             head -1 "$f" | grep -q 'python' && continue
             shellcheck "$f"
           done
+      - name: Run ShellCheck on install.sh
+        run: shellcheck install.sh
 
   pytest:
     name: Pytest
