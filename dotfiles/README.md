@@ -14,6 +14,26 @@ mise use -g chezmoi
 
 ## Setup
 
+### VS Code Dev Containers / GitHub Codespaces
+
+This repository can be used as a [dotfiles
+repository](https://code.visualstudio.com/docs/devcontainers/containers#_personalizing-with-dotfile-repositories)
+for VS Code Dev Containers and GitHub Codespaces. Configure the repo URL in
+your VS Code settings (`dotfiles.repository`) or Codespaces settings; the
+container will clone it and run `install.sh`, which installs chezmoi and
+applies the dotfiles.
+
+The container image must include `bash` (4 or later, for associative
+arrays) and `curl`. Most popular base images (Debian/Ubuntu, the Codespaces
+default) ship them; minimal images (`alpine`, `distroless`) need them
+installed first (e.g. `apk add --no-cache bash curl`).
+
+`install.sh` pins a specific chezmoi version and verifies the release tarball
+against an embedded sha256 checksum, so an upstream or network compromise
+cannot install a tampered binary. To bump the pinned version, update
+`CHEZMOI_VERSION` and `CHEZMOI_CHECKSUMS` in `install.sh` from the official
+`chezmoi_<version>_checksums.txt` published with each GitHub release.
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
