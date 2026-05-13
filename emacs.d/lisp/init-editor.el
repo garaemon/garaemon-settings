@@ -378,6 +378,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ("M-s" . 'consult-grep)
               ("F" . 'magit-pull)
               ("b" . 'magit-branch))
+  :hook ('dired-mode-hook . 'auto-revert-mode)
   )
 
 (use-package wdired
