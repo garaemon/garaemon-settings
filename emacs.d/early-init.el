@@ -9,6 +9,11 @@
 ;; Disable package.el in favor of manual control
 (setq package-enable-at-startup nil)
 
+;; Prefer the newer of .el / .elc when loading, so a forgotten stale .elc
+;; never overrides edits to the source. The default `nil' silently uses the
+;; older byte-compiled file (only warning), which has bitten us before.
+(setq load-prefer-newer t)
+
 ;; GC optimization for startup
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)

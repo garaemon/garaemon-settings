@@ -43,12 +43,23 @@
       :prepend t
       :jump-to-captured nil
       )
+
      ))
   (org-todo-keywords '((sequence "TODO" "INPROGRESS" "|" "DONE" "DELEGATED" "CANCELLED")))
   ;; Use C-c C-q to insert tag.
   ;; To update the tag list from the agenda files, I set
   ;; `org-complete-tags-always-offer-all-agenda-tags' t.
   (org-complete-tags-always-offer-all-agenda-tags t)
+  ;; Required so that links using `:image-data-fun' (e.g. excalidraw: links
+  ;; provided by org-excalidraw) are rendered by `org-display-inline-images'.
+  ;; The default `skip' suppresses them entirely. Local SVGs are cheap to
+  ;; cache, so `cache' is safe even outside the org-excalidraw use case.
+  (org-display-remote-inline-images 'cache)
+  ;; Auto-display inline images when opening an org file. Must be set via
+  ;; `:custom' rather than in `org-mode-hook' because `org-mode' checks this
+  ;; variable before running mode hooks; setting it in the hook is too late
+  ;; for the buffer being opened.
+  (org-startup-with-inline-images t)
   :config
   (add-to-list 'org-agenda-files org-directory)
   (add-to-list 'org-agenda-files org-jouornelly-file)
@@ -269,8 +280,6 @@ Date format is YYYY-MM-DD.")
   :hook ((org-mode . (lambda ()
                        ;; To wrap texts
                        (visual-line-mode)
-                       ;; Show images inline automatically
-                       (setq org-startup-with-inline-images t)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
@@ -393,6 +402,76 @@ Date format is YYYY-MM-DD.")
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
   :custom
   (ob-mermaid-cli-path (executable-find "mmdc"))
+  )
+
+;; 4honor/org-excalidraw is a fork rewritten for Org 9.7+. It ships its own
+;; `org-display-user-inline-images' advised onto `org-display-inline-images',
+;; so excalidraw: links are rendered without the upstream workaround that
+;; wdavew/org-excalidraw needs. It also generates the SVG thumbnail on demand
+;; instead of relying on file-notify, supports `kroki' as an alternative
+;; converter, and registers an `:export' handler.
+;;
+;; Requires excalidraw.com installed as a Chrome PWA so the OS can dispatch
+;; `.excalidraw' files via `open' / `xdg-open' for editing. The File Handling
+;; API is enabled by default since Chrome 102, so no chrome://flags toggle is
+;; needed; Chrome will prompt to grant the PWA permission on first open.
+(use-package org-excalidraw
+  :ensure nil
+  :after org
+  ;; Nothing in this block declares an autoload trigger, so without `:demand'
+  ;; the file would not load eagerly and its top-level `org-link-set-parameters'
+  ;; / `advice-add' would never register.
+  :demand t
+  :vc (:url "https://github.com/4honor/org-excalidraw.git" :rev :newest)
+  :init
+  ;; Used as a fallback converter when `kroki' is not installed.
+  (when (not (executable-find "excalidraw_export"))
+    (call-process-shell-command "npm install -g excalidraw_export"))
+  :custom
+  (org-excalidraw-default-directory (concat org-directory "excalidraw/"))
+  :config
+  (unless (file-directory-p org-excalidraw-default-directory)
+    (make-directory org-excalidraw-default-directory t))
+
+  ;; `excalidraw_export' 1.1.0 (latest, unmaintained since 2024) does not
+  ;; understand the modern Excalidraw font IDs that the current web UI
+  ;; assigns (5=Excalifont, 6=Nunito, 7=Lilita One, 8=Comic Shanns Mono).
+  ;; For text elements using those IDs it emits two broken attributes:
+  ;;   - font-family="Segoe UI Emoji" (a Windows-only font, missing on macOS)
+  ;;   - y="NaN"                       (text positioned at an invalid Y)
+  ;; Either alone is enough to make the text invisible. Patch both in the
+  ;; generated SVG: rewrite the font to Excalifont so drawings keep their
+  ;; hand-drawn look, and recover a baseline Y as 80% of the element's
+  ;; font-size on the same tag. Mixed-font drawings get unified to Excalifont,
+  ;; which is the dominant choice in Excalidraw and an acceptable trade-off
+  ;; for keeping the workaround simple.
+  ;;
+  ;; Excalifont install (macOS): download the woff2 from
+  ;;   https://plus.excalidraw.com/excalifont
+  ;; convert to ttf with the `woff2' Homebrew package (`brew install woff2',
+  ;; then `woff2_decompress Excalifont-Regular.woff2'), and install the
+  ;; resulting ttf via Font Book.
+  (defun my-org-excalidraw-svg-normalize-fonts (file &rest _)
+    "Repair font and Y attributes in FILE's generated SVG."
+    (let ((svg-path (org-excalidraw-svg-thumbnail-path (expand-file-name file))))
+      (when (file-exists-p svg-path)
+        (with-temp-buffer
+          (insert-file-contents svg-path)
+          (goto-char (point-min))
+          (while (search-forward "Segoe UI Emoji" nil t)
+            (replace-match "Excalifont" t t))
+          (goto-char (point-min))
+          (while (re-search-forward
+                  "y=\"NaN\"\\([^>]*?font-size=\"\\([0-9.]+\\)\\(?:px\\)?\"\\)"
+                  nil t)
+            (let* ((rest (match-string 1))
+                   (fsize (string-to-number (match-string 2)))
+                   (baseline (* fsize 0.8)))
+              (replace-match (format "y=\"%g\"%s" baseline rest) t t)))
+          (write-region (point-min) (point-max) svg-path nil 'silent)))))
+
+  (advice-add 'org-excalidraw-to-svg-thumbnail :after
+              #'my-org-excalidraw-svg-normalize-fonts)
   )
 
 (use-package org-roam
