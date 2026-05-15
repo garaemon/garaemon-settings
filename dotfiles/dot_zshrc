@@ -372,8 +372,12 @@ if [ "$ZSHRC_PROFILE" = true ]; then
 fi
 
 # uv
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
+if (( $+commands[uv] )); then
+  eval "$(uv generate-shell-completion zsh)"
+fi
+if (( $+commands[uvx] )); then
+  eval "$(uvx --generate-shell-completion zsh)"
+fi
 
 # hook for vterm
 vterm_printf(){
