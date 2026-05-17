@@ -424,54 +424,76 @@ Date format is YYYY-MM-DD.")
   :demand t
   :vc (:url "https://github.com/4honor/org-excalidraw.git" :rev :newest)
   :init
-  ;; Used as a fallback converter when `kroki' is not installed.
-  (when (not (executable-find "excalidraw_export"))
-    (call-process-shell-command "npm install -g excalidraw_export"))
+  ;; `excalidraw-brute-export-cli' renders the SVG by driving the real
+  ;; Excalidraw web app under headless Firefox via Playwright, so modern font
+  ;; IDs (5=Excalifont, 6=Nunito, 7=Lilita One, 8=Comic Shanns Mono) resolve
+  ;; correctly without the post-export font/Y patching that the unmaintained
+  ;; `excalidraw_export' needs. The trade-off is a heavier first-time install
+  ;; (Playwright pulls in Firefox, ~hundreds of MB) and a slower per-export
+  ;; round-trip due to browser startup.
+  (when (not (executable-find "excalidraw-brute-export-cli"))
+    (call-process-shell-command
+     "npm install -g excalidraw-brute-export-cli && npx playwright install firefox"))
   :custom
   (org-excalidraw-default-directory (concat org-directory "excalidraw/"))
   :config
   (unless (file-directory-p org-excalidraw-default-directory)
     (make-directory org-excalidraw-default-directory t))
 
-  ;; `excalidraw_export' 1.1.0 (latest, unmaintained since 2024) does not
-  ;; understand the modern Excalidraw font IDs that the current web UI
-  ;; assigns (5=Excalifont, 6=Nunito, 7=Lilita One, 8=Comic Shanns Mono).
-  ;; For text elements using those IDs it emits two broken attributes:
-  ;;   - font-family="Segoe UI Emoji" (a Windows-only font, missing on macOS)
-  ;;   - y="NaN"                       (text positioned at an invalid Y)
-  ;; Either alone is enough to make the text invisible. Patch both in the
-  ;; generated SVG: rewrite the font to Excalifont so drawings keep their
-  ;; hand-drawn look, and recover a baseline Y as 80% of the element's
-  ;; font-size on the same tag. Mixed-font drawings get unified to Excalifont,
-  ;; which is the dominant choice in Excalidraw and an acceptable trade-off
-  ;; for keeping the workaround simple.
-  ;;
-  ;; Excalifont install (macOS): download the woff2 from
-  ;;   https://plus.excalidraw.com/excalifont
-  ;; convert to ttf with the `woff2' Homebrew package (`brew install woff2',
-  ;; then `woff2_decompress Excalifont-Regular.woff2'), and install the
-  ;; resulting ttf via Font Book.
-  (defun my-org-excalidraw-svg-normalize-fonts (file &rest _)
-    "Repair font and Y attributes in FILE's generated SVG."
-    (let ((svg-path (org-excalidraw-svg-thumbnail-path (expand-file-name file))))
-      (when (file-exists-p svg-path)
+  ;; 4honor/org-excalidraw hard-codes its converter chain to `kroki' then
+  ;; `excalidraw_export' with no extension point, so swap the whole function
+  ;; out via `:override' to delegate to `excalidraw-brute-export-cli'.
+  ;; `--scale' must be one of 1/2/3 and is mandatory in brute CLI 0.4.0; 1 matches
+  ;; the unscaled output that the old `excalidraw_export' produced.
+  ;; `--background true' bakes Excalidraw's default white background into the SVG
+  ;; so thumbnails stay readable on any Emacs theme; without it the transparent
+  ;; default makes dark strokes disappear on dark backgrounds.
+  ;; The brute CLI spins up headless Firefox per invocation (multi-second cost),
+  ;; so guard with a mtime check: 4honor calls this function on every inline-image
+  ;; display, and re-exporting an unchanged file would stall buffer redisplay.
+  (defun my-org-excalidraw-to-svg-thumbnail (file)
+    "Export excalidraw FILE to SVG via `excalidraw-brute-export-cli'.
+Skip when the cached SVG is already newer than FILE."
+    (let* ((path (expand-file-name file))
+           (svg-path (org-excalidraw-svg-thumbnail-path path)))
+      (unless (string-suffix-p ".excalidraw" path)
+        (error "File %s does not have .excalidraw extension" path))
+      (when (or (not (file-exists-p svg-path))
+                (file-newer-than-file-p path svg-path))
         (with-temp-buffer
-          (insert-file-contents svg-path)
-          (goto-char (point-min))
-          (while (search-forward "Segoe UI Emoji" nil t)
-            (replace-match "Excalifont" t t))
-          (goto-char (point-min))
-          (while (re-search-forward
-                  "y=\"NaN\"\\([^>]*?font-size=\"\\([0-9.]+\\)\\(?:px\\)?\"\\)"
-                  nil t)
-            (let* ((rest (match-string 1))
-                   (fsize (string-to-number (match-string 2)))
-                   (baseline (* fsize 0.8)))
-              (replace-match (format "y=\"%g\"%s" baseline rest) t t)))
-          (write-region (point-min) (point-max) svg-path nil 'silent)))))
+          (let ((exit-code (call-process "excalidraw-brute-export-cli"
+                                         nil t nil
+                                         "--input" path
+                                         "--output" svg-path
+                                         "--format" "svg"
+                                         "--scale" "1"
+                                         "--background" "true")))
+            (unless (zerop exit-code)
+              (error "excalidraw-brute-export-cli failed (exit %d) for %s:\n%s"
+                     exit-code path (buffer-string))))))))
 
-  (advice-add 'org-excalidraw-to-svg-thumbnail :after
-              #'my-org-excalidraw-svg-normalize-fonts)
+  (advice-add 'org-excalidraw-to-svg-thumbnail
+              :override #'my-org-excalidraw-to-svg-thumbnail)
+
+  ;; Auto-refresh thumbnails when Emacs regains focus, on the assumption that the
+  ;; `.excalidraw' source was just edited in the Chrome PWA. Combined with the
+  ;; mtime guard above this only pays the brute-CLI cost for files that actually
+  ;; changed. Limited to visible org buffers that contain at least one
+  ;; `excalidraw:' link so we don't cause flicker for unrelated org buffers.
+  (defun my-org-excalidraw-redisplay-on-focus ()
+    "Redisplay inline images in visible org buffers referencing excalidraw."
+    (when (frame-focus-state)
+      (dolist (window (window-list nil 'no-mini))
+        (with-current-buffer (window-buffer window)
+          (when (and (derived-mode-p 'org-mode)
+                     org-inline-image-overlays
+                     (save-excursion
+                       (goto-char (point-min))
+                       (re-search-forward "\\[\\[excalidraw:" nil t)))
+            (org-redisplay-inline-images))))))
+
+  (add-function :after after-focus-change-function
+                #'my-org-excalidraw-redisplay-on-focus)
   )
 
 (use-package org-roam
