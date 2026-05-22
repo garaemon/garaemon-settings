@@ -173,11 +173,10 @@ if which starship >/dev/null 2>&1; then
 fi
 
 if command -v ghq > /dev/null 2>&1; then
-  if [[ ! -e $(ghq root)/github.com/rupa/z ]]; then
-    ghq get https://github.com/rupa/z.git
+  if [[ -e $(ghq root)/github.com/rupa/z ]]; then
+    source $(ghq root)/github.com/rupa/z/z.sh
+    compctl -U -K _z_zsh_tab_completion z
   fi
-  source $(ghq root)/github.com/rupa/z/z.sh
-  compctl -U -K _z_zsh_tab_completion z
 fi
 
 if command -v ghq > /dev/null 2>&1; then
@@ -199,16 +198,13 @@ if [ -f ${GHQ_ROOT}/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-high
 fi
 
 if command -v ghq > /dev/null 2>&1; then
-  if [[ ! -e $(ghq root)/github.com/so-fancy/diff-so-fancy ]]; then
-    ghq get https://github.com/so-fancy/diff-so-fancy.git
+  if [[ -e $(ghq root)/github.com/so-fancy/diff-so-fancy ]]; then
+    export PATH=$PATH:$(ghq root)/github.com/so-fancy/diff-so-fancy
   fi
-  export PATH=$PATH:$(ghq root)/github.com/so-fancy/diff-so-fancy
 else
-  if [[ ! -e $HOME/ghq/github.com/so-fancy/diff-so-fancy ]]; then
-    mkdir -p $HOME/ghq/github.com/so-fancy
-    git clone https://github.com/so-fancy/diff-so-fancy.git $HOME/ghq/github.com/so-fancy/diff-so-fancy
+  if [[ -e $HOME/ghq/github.com/so-fancy/diff-so-fancy ]]; then
+    export PATH=$PATH:$HOME/ghq/github.com/so-fancy/diff-so-fancy
   fi
-  export PATH=$PATH:$HOME/ghq/github.com/so-fancy/diff-so-fancy
 fi
 
 # for emacs
