@@ -1484,6 +1484,65 @@ The source buffer is added as gptel context for full file awareness."
   (treesit-font-lock-level 4)
   )
 
+;; Install tree-sitter grammars BEFORE `use-package treesit-auto' is processed.
+;;
+;; This must happen up here, not inside `:config' of treesit-auto, because of
+;; the following chain that fires when treesit-auto is loaded:
+;;
+;;   (require 'treesit-auto)
+;;     -> (provide 'treesit-auto) at end of file
+;;        -> `eval-after-load' triggers for `:after treesit-auto' packages
+;;           -> `astro-ts-mode' loads
+;;              -> top-level defvar `astro-ts-mode--font-lock-settings'
+;;                 evaluates `(typescript-ts-mode--font-lock-settings 'tsx)'
+;;                 which compiles tree-sitter queries against the tsx grammar
+;;                 -> `treesit-load-language-error' if tsx grammar is missing
+;;
+;; That error propagates up through use-package's `:catch' handler, which
+;; swallows it silently and skips the rest of `:config' -- meaning any
+;; grammar-installation loop placed inside `:config' never gets a chance to
+;; run. By installing the grammars up here (before treesit-auto is required),
+;; astro-ts-mode's top-level forms succeed and the rest of treesit-auto's
+;; setup runs normally.
+;;
+;; The recipe URLs/revisions duplicate the ones used inside `treesit-auto'
+;; below because we cannot reach `treesit-auto--build-treesit-source-alist'
+;; without loading treesit-auto, which is exactly what we are trying to avoid.
+(require 'treesit)
+;; `warning-suppress-log-types' silences any residual `treesit' warnings
+;; emitted during this install loop. The `(treesit-ready-p lang t)' calls
+;; below pass QUIET=t and therefore do not warn, but
+;; `treesit-install-language-grammar' itself still calls `display-warning'
+;; if a freshly built grammar fails to load afterward (for example, an ABI
+;; mismatch). That secondary warning is not actionable at this layer -- the
+;; `condition-case' below already reports failures via `message' -- so it is
+;; suppressed for the duration of the loop. The variable is rebound locally
+;; via `let' so global warning behavior is unaffected.
+(let ((treesit-language-source-alist
+       '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.23.3")
+         (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.23.6")
+         (cpp        "https://github.com/tree-sitter/tree-sitter-cpp" "v0.22.0")
+         (css        "https://github.com/tree-sitter/tree-sitter-css" "v0.23.2")
+         (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.23.4")
+         (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
+         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+         (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+         (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
+         (make       "https://github.com/tree-sitter-grammars/tree-sitter-make" "v1.1.1")
+         (json       "https://github.com/tree-sitter/tree-sitter-json" "master")
+         (astro      "https://github.com/virchau13/tree-sitter-astro" "master" "src")))
+      (warning-suppress-log-types '((treesit))))
+  (dolist (lang '(typescript tsx c cpp python yaml go css bash make json astro))
+    ;; The second arg `t' (QUIET) is critical: `treesit-ready-p' with the
+    ;; default nil emits a `display-warning' call for every unavailable
+    ;; grammar, which is exactly what we are trying to avoid on a fresh
+    ;; startup where none of these grammars exist yet.
+    (unless (treesit-ready-p lang t)
+      (message "Installing tree-sitter grammar for %s..." lang)
+      (condition-case err
+          (treesit-install-language-grammar lang)
+        (error (message "Failed to install tree-sitter grammar for %s: %S" lang err))))))
+
 (use-package treesit-auto
   :ensure t
   :custom
@@ -1542,6 +1601,16 @@ The source buffer is added as gptel context for full file awareness."
                                  :url "https://github.com/virchau13/tree-sitter-astro"
                                  :revision "master"
                                  :source-dir "src")
+                                ;; Pin to v1.1.1: master tracks tree-sitter-cli 0.24+ which
+                                ;; emits ABI 15, but Emacs 30 only loads up to ABI 14, so a
+                                ;; master build triggers a "version-mismatch" warning.
+                                (make-treesit-auto-recipe
+                                 :lang 'make
+                                 :ts-mode 'makefile-ts-mode
+                                 :remap 'makefile-mode
+                                 :url "https://github.com/tree-sitter-grammars/tree-sitter-make"
+                                 :revision "v1.1.1"
+                                 :ext "\\([Mm]akefile\\|.*\\.\\(mk\\|make\\)\\)\\'")
                                 ))
          (new-recipe-alist (mapcar #'(lambda (recipe)
                                        (cons (treesit-auto-recipe-lang recipe)
@@ -1566,20 +1635,8 @@ The source buffer is added as gptel context for full file awareness."
       (dolist (lang additional-langs)
         (add-to-list 'treesit-auto-langs lang)))
     )
-  (global-treesit-auto-mode)
 
-  ;; Install some mandatory languages
-  (let ((auto-install-languages '(c cpp python tsx typescript yaml go css bash make json astro))
-        ;; `treesit-install-language-grammar' requires `treesit-language-source-alist' to be set up.
-        ;; `treesit-auto--build-treesit-source-alist' builds a list for `treesit-language-source-alist' from
-        ;; `treesit-auto-recipe-list'.
-        (treesit-language-source-alist (treesit-auto--build-treesit-source-alist)))
-    (dolist (lang auto-install-languages)
-      (when (not (treesit-ready-p lang))
-        (message "treesit grammar for %s has not yet been installed. Install the grammar automatically" lang)
-        (treesit-install-language-grammar lang)))
-    )
-  )
+  (global-treesit-auto-mode))
 
 (use-package annotate
   :ensure t
