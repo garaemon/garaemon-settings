@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | { read -r cmd; case \"$cmd\" in *emacs*--batch*|*byte-compile*) git ls-files '*.el' | while IFS= read -r f; do [ -f \"${f}c\" ] && rm -f \"${f}c\"; done ;; esac; }"
+          }
+        ]
+      }
+    ]
+  }
+}
