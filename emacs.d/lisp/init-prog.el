@@ -1265,7 +1265,7 @@ You have to follow the following orders:
        '(header-line ((t (:inverse-video nil :underline t)))))
     )
 
-  (setq gptel-model 'gemini-3-flash-preview
+  (setq gptel-model 'gemini-flash-latest
         gptel-backend (gptel-make-gemini "Gemini"
                         :key gptel-api-key
                         :stream t))
