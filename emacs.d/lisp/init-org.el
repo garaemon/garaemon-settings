@@ -440,14 +440,14 @@ Date format is YYYY-MM-DD.")
   ;; that org-babel branch is skipped because it keys off `:file' in the
   ;; original params, so we must return the path ourselves to give
   ;; `org-babel-insert-result' something to link to.
-  (defun my-fill-ob-mermaid-file-param (orig-fn body params)
+  (defun my-fill-ob-mermaid-file-param (original-function body params)
     (let* ((existing-file (cdr (assq :file params)))
            (file (or existing-file
                      (my-derive-ob-mermaid-output-file body)))
            (augmented (if existing-file
                           params
                         (cons (cons :file file) params)))
-           (result (funcall orig-fn body augmented)))
+           (result (funcall original-function body augmented)))
       (or result (and (not existing-file) file))))
   (advice-add 'org-babel-execute:mermaid :around
               #'my-fill-ob-mermaid-file-param)
