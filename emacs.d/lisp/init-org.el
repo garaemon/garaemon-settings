@@ -400,8 +400,63 @@ Date format is YYYY-MM-DD.")
   :config
   (add-to-list 'org-babel-load-languages '(mermaid . t))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+
+  ;; Show freshly generated images after a src block runs so the user does not
+  ;; need to call `C-c C-x C-v' manually. The `refresh' arg replaces existing
+  ;; overlays so regenerated files (mermaid keeps the same path) actually show
+  ;; their new contents instead of the cached previous image.
+  (defun my-refresh-org-inline-images-after-babel ()
+    (when (derived-mode-p 'org-mode)
+      (org-display-inline-images nil t)))
+  (add-hook 'org-babel-after-execute-hook
+            #'my-refresh-org-inline-images-after-babel)
+
+  ;; Derive an output filename for mermaid blocks that omit `:file', so a bare
+  ;; `#+begin_src mermaid' still produces an image without per-block boilerplate.
+  ;; Uses the block's `#+NAME:' when present, otherwise a stable hash of the
+  ;; body so re-evaluating the same block reuses the same file.
+  (defun my-derive-ob-mermaid-output-file (body)
+    (let* ((info (org-babel-get-src-block-info t))
+           (block-name (nth 4 info))
+           (base (or block-name
+                     (format "mermaid-%s"
+                             (substring (secure-hash 'sha1 body) 0 12))))
+           (dir (expand-file-name
+                 "mermaid"
+                 (or (and buffer-file-name
+                          (file-name-directory buffer-file-name))
+                     default-directory))))
+      (unless (file-directory-p dir) (make-directory dir t))
+      (expand-file-name (concat base ".png") dir)))
+
+  ;; ob-mermaid's `org-babel-execute:mermaid' returns nil. When the user
+  ;; supplied `:file' explicitly, org-babel's own logic (see ob-core.el's
+  ;; `(setq result file)' branch) inserts the `#+RESULTS:' link to that
+  ;; file, so we keep the nil return — returning the path here would trip
+  ;; the sibling branch that overwrites `:file' with the result string,
+  ;; corrupting the freshly generated PNG.
+  ;;
+  ;; When `:file' was auto-derived (not present in the original params),
+  ;; that org-babel branch is skipped because it keys off `:file' in the
+  ;; original params, so we must return the path ourselves to give
+  ;; `org-babel-insert-result' something to link to.
+  (defun my-fill-ob-mermaid-file-param (original-function body params)
+    (let* ((existing-file (cdr (assq :file params)))
+           (file (or existing-file
+                     (my-derive-ob-mermaid-output-file body)))
+           (augmented (if existing-file
+                          params
+                        (cons (cons :file file) params)))
+           (result (funcall original-function body augmented)))
+      (or result (and (not existing-file) file))))
+  (advice-add 'org-babel-execute:mermaid :around
+              #'my-fill-ob-mermaid-file-param)
   :custom
   (ob-mermaid-cli-path (executable-find "mmdc"))
+  ;; Default to file-typed results so `:results file' can be omitted too. The
+  ;; advice above fills in `:file' automatically when not specified.
+  (org-babel-default-header-args:mermaid
+   '((:results . "file") (:exports . "results")))
   )
 
 ;; 4honor/org-excalidraw is a fork rewritten for Org 9.7+. It ships its own
