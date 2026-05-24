@@ -210,7 +210,24 @@ it from being deleted by `delete-other-windows` (C-x 1)."
       vundo-step-back
       vundo-step-forward
       ))
-  )
+  :config
+  ;; Pulsar runs `pulsar-resolve-function-aliases' every time
+  ;; `pulsar-mode' is enabled in a new buffer, and each invocation walks
+  ;; the entire obarray twice via `mapatoms'. With many agenda files
+  ;; this dominates the cost of opening Org buffers (82% of cold-path
+  ;; org-agenda time in profiling). The function only mutates the two
+  ;; global lists `pulsar-pulse-functions' and
+  ;; `pulsar-pulse-region-functions', so a single run per session is
+  ;; sufficient.
+  (defvar my-pulsar-resolve-done nil
+    "Non-nil after `pulsar-resolve-function-aliases' has run once.")
+  (defun my-pulsar-resolve-function-aliases-once (orig &rest args)
+    "Run ORIG only on the first call in this Emacs session."
+    (unless my-pulsar-resolve-done
+      (setq my-pulsar-resolve-done t)
+      (apply orig args)))
+  (advice-add 'pulsar-resolve-function-aliases
+              :around #'my-pulsar-resolve-function-aliases-once))
 
 ;;;; ============================================================
 ;;;; Window Layout Management

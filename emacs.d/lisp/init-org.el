@@ -297,33 +297,85 @@ Date format is YYYY-MM-DD.")
   :after (org)
   :config
 
-  (defmacro define-org-quick-command (new-func org-func)
+  (defmacro define-org-quick-command (new-func org-func &optional kill-new-buffers)
     `(defun ,new-func ()
-      ,(format "Call %s with large GC threshold and some modes disabled. It speeds up %s." org-func org-func)
+      ,(format "Call %s with Org features tuned for speed.
+
+Always disables: global watchers (auto-revert, jinx, treesit-auto,
+magit refresh, vc), Org startup actions (inline images, indent,
+LaTeX preview, folding), persistent element-cache I/O, and bumps
+the GC threshold.%s"
+               org-func
+               (if kill-new-buffers
+                   "
+
+Also disables per-file setup hooks (`org-mode-hook',
+`after-change-major-mode-hook', `find-file-hook') and dir-locals
+lookup for additional speed. Org buffers opened during this
+command (and not already visited beforehand) are killed afterwards
+so they get a fresh, fully configured setup the next time they are
+visited."
+                 "
+
+Per-file setup hooks (`org-mode-hook',
+`after-change-major-mode-hook', `find-file-hook') are left active
+because the caller (e.g. `org-agenda') stores markers into the
+buffers it opens, and the user will dereference them later (e.g.
+by clicking an agenda entry). Those buffers therefore need to be
+fully configured, not stripped down."))
       (interactive)
       (let ((started-at (float-time))
+            ,@(when kill-new-buffers
+                '((pre-existing-buffers (buffer-list))))
+            (auto-revert-was-on global-auto-revert-mode)
+            (jinx-was-on (and (boundp 'global-jinx-mode) global-jinx-mode))
+            (treesit-was-on (and (boundp 'global-treesit-auto-mode)
+                                 global-treesit-auto-mode))
             (gc-cons-threshold (* 500 1024 1024))
             (org-modules nil)
+            ,@(when kill-new-buffers
+                ;; These bindings strip a freshly opened buffer down to a
+                ;; bare org-mode shell. Safe only when we throw the buffer
+                ;; away afterwards; otherwise the user inherits a broken,
+                ;; feature-less buffer.
+                '((org-mode-hook nil)
+                  (after-change-major-mode-hook nil)
+                  (find-file-hook nil)
+                  (enable-dir-local-variables nil)))
+            (org-element-cache-persistent nil)
+            (org-inhibit-startup t)
+            (org-startup-with-inline-images nil)
+            (org-startup-indented nil)
+            (org-startup-with-latex-preview nil)
+            (org-startup-folded 'showall)
+            (org-agenda-inhibit-startup t)
             (magit-refresh-status-buffer nil)
             (magit-auto-revert-mode nil)
             (vc-handled-backends nil)
             (treesit-auto-langs nil))
-        (global-auto-revert-mode nil)
-        (global-jinx-mode nil)
-        (global-treesit-auto-mode nil)
+        (when auto-revert-was-on (global-auto-revert-mode -1))
+        (when jinx-was-on (global-jinx-mode -1))
+        (when treesit-was-on (global-treesit-auto-mode -1))
         (unwind-protect
-            (call-interactively ',org-func))
-        (global-auto-revert-mode)
-        (global-jinx-mode)
-        (global-treesit-auto-mode)
+            (call-interactively ',org-func)
+          ,@(when kill-new-buffers
+              '((dolist (buf (buffer-list))
+                  (when (and (not (memq buf pre-existing-buffers))
+                             (buffer-live-p buf)
+                             (buffer-file-name buf)
+                             (not (buffer-modified-p buf))
+                             (with-current-buffer buf
+                               (derived-mode-p 'org-mode)))
+                    (kill-buffer buf)))))
+          (when auto-revert-was-on (global-auto-revert-mode 1))
+          (when jinx-was-on (global-jinx-mode 1))
+          (when treesit-was-on (global-treesit-auto-mode 1)))
         (let* ((ended-at (float-time))
                (delta-duration (- ended-at started-at)))
-          (message "%s took %s sec" (symbol-name ',org-func) delta-duration)
-          )))
-    )
+          (message "%s took %s sec" (symbol-name ',org-func) delta-duration)))))
 
   (define-org-quick-command org-agenda-quick org-agenda)
-  (define-org-quick-command org-set-tags-command-quick org-set-tags-command)
+  (define-org-quick-command org-set-tags-command-quick org-set-tags-command t)
 
   :bind (("C-c a" . 'org-agenda-quick)
          ("C-c C-q" . 'org-set-tags-command-quick)

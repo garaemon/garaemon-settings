@@ -32,3 +32,28 @@ Configuration is split into focused modules in the `lisp/` directory:
 - **init-utils.el**: Utility functions and helper tools
 
 Each module is loaded via `(require 'init-*)` in `init.el`.
+
+## Scripts
+
+Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.
+
+- **profile-org-agenda.el**: Batch-mode profiler for the same code path that `org-agenda-quick` triggers. Measures cold (no buffers preloaded) and warm (buffers reused) wall-clock time, then writes expanded CPU profile reports for both runs.
+
+  ```sh
+  /Applications/Emacs.app/Contents/MacOS/Emacs --batch \
+      -l init.el \
+      -l scripts/profile-org-agenda.el
+  ```
+
+  Outputs:
+  - `/tmp/org-agenda-profile-bench.txt` — per-phase wall-clock timings
+  - `/tmp/org-agenda-profile-cold.txt` — CPU profile, cold run
+  - `/tmp/org-agenda-profile-warm.txt` — CPU profile, warm run
+
+  Use this to spot which hooks or globalized minor modes dominate cold agenda time when adding new Org-related packages.
+
+- **latest_directory_timestamp.py**: Print the most recent modification timestamp under a directory tree.
+
+  ```sh
+  python scripts/latest_directory_timestamp.py <root-directory>
+  ```
