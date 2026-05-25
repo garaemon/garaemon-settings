@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - master
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   test-main-macos:
@@ -33,6 +31,9 @@ jobs:
             ansible-galaxy collection install -r requirements.yml
             ansible-galaxy role install -r requirements.yml
           fi
+
+      - name: Update Homebrew
+        run: brew update
 
       - name: Run main.yml Playbook (macOS)
         run: |
@@ -63,6 +64,9 @@ jobs:
             ansible-galaxy collection install -r requirements.yml
             ansible-galaxy role install -r requirements.yml
           fi
+
+      - name: Update Homebrew
+        run: brew update
 
       - name: Run minimal.yml Playbook (macOS)
         run: |
