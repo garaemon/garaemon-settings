@@ -33,6 +33,12 @@
 (defvar my-magit-ediff--temp-buffers nil
   "Temporary revision buffers to kill on navigation or cleanup.")
 
+(defvar-local my-magit-ediff--buf-file nil
+  "Repository-relative path of the file shown in this revision buffer.")
+
+(defvar-local my-magit-ediff--buf-rev nil
+  "Git revision (commit SHA / `index' / nil) shown in this revision buffer.")
+
 ;;;; Entry point functions
 
 ;;;###autoload
@@ -103,7 +109,11 @@ If REV is a string, return that revision's content."
   (let ((default-directory (magit-toplevel)))
     (cond
      ((null rev)
-      (find-file-noselect (expand-file-name file)))
+      (let ((buf (find-file-noselect (expand-file-name file))))
+        (with-current-buffer buf
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev nil))
+        buf))
      ((eq rev 'index)
       (let ((buf (generate-new-buffer
                   (format "%s (index)" file))))
@@ -112,6 +122,8 @@ If REV is a string, return that revision's content."
           (let ((buffer-file-name (expand-file-name file)))
             (set-auto-mode))
           (setq buffer-read-only t)
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev 'index)
           (goto-char (point-min)))
         (push buf my-magit-ediff--temp-buffers)
         buf))
@@ -123,6 +135,8 @@ If REV is a string, return that revision's content."
           (let ((buffer-file-name (expand-file-name file)))
             (set-auto-mode))
           (setq buffer-read-only t)
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev rev)
           (goto-char (point-min)))
         (push buf my-magit-ediff--temp-buffers)
         buf)))))
