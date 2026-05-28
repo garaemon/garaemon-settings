@@ -45,6 +45,23 @@
 (use-package vertico-posframe :ensure t
   :after (vertico)
   :config
+  ;; posframe child frames derive their font from
+  ;; `(face-attribute 'default :font)', which is not yet realized right
+  ;; after startup.  The first completion (e.g. `C-x b') then renders in
+  ;; a proportional fallback font until a file is visited (`C-x C-f')
+  ;; forces realization.  Pin the posframe font to the main frame's
+  ;; `font' parameter (the concrete string `set-frame-font' stored, set
+  ;; eagerly and not subject to realization) so it is always monospace.
+  ;; This relies on init-ui.el (loaded before init-editor.el in init.el)
+  ;; having set the frame font already; if that load order changes, the
+  ;; `stringp' guard below just leaves the package default in place.
+  (when (display-graphic-p)
+    (let ((frame-font (frame-parameter nil 'font)))
+      ;; If the frame font is unavailable or not a string, leave
+      ;; `vertico-posframe-font' at its default; the explicit default face
+      ;; set in init-ui.el is the primary safeguard against the fallback.
+      (when (stringp frame-font)
+        (setq vertico-posframe-font frame-font))))
   (vertico-posframe-mode)
   )
 
