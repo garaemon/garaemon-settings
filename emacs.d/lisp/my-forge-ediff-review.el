@@ -29,14 +29,42 @@
 Keys: :owner :repo :num :head-rev :base-rev :host :comments.
 Each comment is a plist with :path :line :side :body.")
 
+;;;; Ediff control & navigation
+
+;; Avoid ediff's separate-frame control window; use plain windows so the
+;; control buffer is just a thin strip and the revision buffers can
+;; drive navigation themselves (see `--setup-revision-keys' below).
+(setq ediff-window-setup-function #'ediff-setup-windows-plain)
+
+(defun my-forge-ediff-review--in-control-buffer (cmd)
+  "Run CMD with `ediff-control-buffer' selected as the current buffer."
+  (let ((ctrl (and (boundp 'ediff-control-buffer) ediff-control-buffer)))
+    (unless (and ctrl (buffer-live-p ctrl))
+      (user-error "No active ediff control buffer"))
+    (with-current-buffer ctrl
+      (call-interactively cmd))))
+
+(defun my-forge-ediff-review-next-diff ()
+  "Jump to the next ediff difference from the current revision buffer."
+  (interactive)
+  (my-forge-ediff-review--in-control-buffer #'ediff-next-difference))
+
+(defun my-forge-ediff-review-prev-diff ()
+  "Jump to the previous ediff difference from the current revision buffer."
+  (interactive)
+  (my-forge-ediff-review--in-control-buffer #'ediff-previous-difference))
+
+(defun my-forge-ediff-review-quit-ediff ()
+  "End the current file's ediff session immediately."
+  (interactive)
+  (let ((ctrl (and (boundp 'ediff-control-buffer) ediff-control-buffer)))
+    (unless (and ctrl (buffer-live-p ctrl))
+      (user-error "No active ediff control buffer"))
+    (with-current-buffer ctrl
+      (ediff-really-quit nil))))
+
 ;;;; Session lifecycle
 
-;; TODO(agent): The ediff control window is tiny and hard to use during
-;; reviews.  Drive multi-file navigation (next/prev hunk, next/prev file,
-;; quit) from the revision buffers directly so the control frame can be
-;; hidden or replaced with a thin header line.  Look at
-;; `ediff-window-setup-function' and `ediff-make-wide-display' for the
-;; entry points.
 (defun my-forge-ediff-review-start (pullreq)
   "Start an ediff-based review session for forge PULLREQ.
 Verifies that the PR commits are fetched, records the session, and
@@ -155,9 +183,29 @@ does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
       (with-current-buffer buf
         (my-forge-ediff-review--reapply-overlays)))))
 
-;; Hook so that comments persist when ediff revisits a file.
+(defun my-forge-ediff-review--setup-revision-keys ()
+  "Install buffer-local keys for in-place ediff navigation and commenting.
+Only active when a review session is running and the buffer has the
+file/rev locals set by `my-magit-ediff--create-revision-buffer'."
+  (when (and my-forge-ediff-review--session
+             my-magit-ediff--buf-file
+             my-magit-ediff--buf-rev)
+    (let ((map (make-composed-keymap nil (current-local-map))))
+      (define-key map (kbd "RET") #'my-forge-ediff-review-add-comment)
+      (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
+      (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
+      (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
+      (use-local-map map))))
+
+(defun my-forge-ediff-review--prepare-buffer ()
+  "Apply overlays and install nav/comment keys in the current revision buffer."
+  (my-forge-ediff-review--reapply-overlays)
+  (my-forge-ediff-review--setup-revision-keys))
+
+;; Hook so that comments persist and review keys exist when ediff
+;; (re)visits a file.
 (add-hook 'ediff-prepare-buffer-hook
-          #'my-forge-ediff-review--reapply-overlays)
+          #'my-forge-ediff-review--prepare-buffer)
 
 ;;;; Context detection
 
@@ -182,11 +230,6 @@ when it shows the head."
 (defvar my-forge-ediff-review--editor-ctx nil
   "Buffer-local context plist while editing a comment.")
 
-;; TODO(agent): Bind RET in the ediff revision buffers to this command
-;; while a review session is active, so commenting is one keystroke.
-;; The buffers are read-only and RET is unbound there, so a buffer-local
-;; keymap set in `my-magit-ediff--create-revision-buffer' (only when a
-;; session exists) should be safe.
 (defun my-forge-ediff-review-add-comment ()
   "Add a PR review comment for the line at point in this ediff buffer."
   (interactive)
@@ -318,39 +361,83 @@ HTML comments are stripped. -->\n\n"
                          (body . ,(plist-get c :body))))
                      comments))))))
 
-;; TODO(agent): Replace the `read-string' summary prompt with a dedicated
-;; markdown editor buffer (modeled on `my-forge-ediff-review--open-editor'
-;; for per-line comments).  Submission should happen when the user hits
-;; `C-c C-c' in that buffer, with `C-c C-k' to cancel.  The minibuffer is
-;; too small for any non-trivial review summary.
-(defun my-forge-ediff-review-submit (event &optional summary)
-  "Submit pending comments to GitHub as a PR review.
-EVENT is one of \"COMMENT\", \"APPROVE\", \"REQUEST_CHANGES\".
-SUMMARY is the optional top-level review body."
-  (interactive
-   (let ((event (completing-read
-                 "Event: " '("COMMENT" "APPROVE" "REQUEST_CHANGES")
-                 nil t nil nil "COMMENT")))
-     (list event (read-string "Top-level summary (optional): "))))
+(defvar my-forge-ediff-review--summary-event nil
+  "Buffer-local: the event chosen for the summary editor.")
+
+(defun my-forge-ediff-review-submit ()
+  "Pick a review event then open a buffer to write the summary in.
+The actual POST happens when the user types `C-c C-c' in that buffer."
+  (interactive)
   (my-forge-ediff-review--ensure-session)
-  (let* ((s my-forge-ediff-review--session)
-         (comments (plist-get s :comments))
-         (summary-trim (string-trim (or summary ""))))
+  (let ((event (completing-read
+                "Event: " '("COMMENT" "APPROVE" "REQUEST_CHANGES")
+                nil t nil nil "COMMENT")))
+    (my-forge-ediff-review--open-summary-editor event)))
+
+(defun my-forge-ediff-review--open-summary-editor (event)
+  "Pop up a markdown buffer for the top-level review summary."
+  (let ((buf (generate-new-buffer "*forge-review-summary*"))
+        (pr-num (plist-get my-forge-ediff-review--session :num))
+        (pending (length
+                  (plist-get my-forge-ediff-review--session :comments))))
+    (with-current-buffer buf
+      (when (fboundp 'markdown-mode)
+        (markdown-mode))
+      (insert (format
+               "<!-- Review for PR #%s — event: %s — %d inline comment(s).\n\
+C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
+               pr-num event pending))
+      (setq-local my-forge-ediff-review--summary-event event)
+      (local-set-key (kbd "C-c C-c")
+                     #'my-forge-ediff-review--submit-from-editor)
+      (local-set-key (kbd "C-c C-k")
+                     #'my-forge-ediff-review--cancel-summary)
+      (goto-char (point-max)))
+    (pop-to-buffer buf)))
+
+(defun my-forge-ediff-review--submit-from-editor ()
+  "Finalize the summary in the current editor buffer and POST the review."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let* ((event my-forge-ediff-review--summary-event)
+         (raw (buffer-string))
+         (summary (string-trim
+                   (my-forge-ediff-review--strip-html-comments raw)))
+         (comments (plist-get my-forge-ediff-review--session :comments)))
+    (unless event
+      (user-error "No event recorded for this summary buffer"))
     (when (and (string= event "COMMENT")
                (null comments)
-               (string-empty-p summary-trim))
+               (string-empty-p summary))
       (user-error "Nothing to submit"))
+    (my-forge-ediff-review--do-submit event summary)
+    (let ((buf (current-buffer)))
+      (quit-window)
+      (kill-buffer buf))))
+
+(defun my-forge-ediff-review--cancel-summary ()
+  "Discard the summary editor without submitting."
+  (interactive)
+  (let ((buf (current-buffer)))
+    (quit-window)
+    (kill-buffer buf))
+  (message "Submission cancelled."))
+
+(defun my-forge-ediff-review--do-submit (event summary)
+  "POST EVENT/SUMMARY plus the session's pending inline comments via ghub."
+  (let* ((s my-forge-ediff-review--session)
+         (comment-count (length (plist-get s :comments))))
     (ghub-post
      (format "/repos/%s/%s/pulls/%s/reviews"
              (plist-get s :owner)
              (plist-get s :repo)
              (plist-get s :num))
-     (my-forge-ediff-review--build-payload event summary-trim)
+     (my-forge-ediff-review--build-payload event summary)
      :auth 'forge
      :host (plist-get s :host)
      :callback (lambda (_value &rest _)
                  (message "Review submitted: %s (%d comments)"
-                          event (length comments))
+                          event comment-count)
                  (setf (plist-get my-forge-ediff-review--session :comments)
                        nil)
                  (my-forge-ediff-review--refresh-all-buffers)

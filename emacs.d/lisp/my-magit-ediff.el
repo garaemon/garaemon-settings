@@ -93,8 +93,28 @@
              file)
     (my-magit-ediff--open-file file)))
 
+;; Workaround for this config's `my-magit-status-side-window' (C-c L) in
+;; init-ui.el, which opens magit via `display-buffer-in-side-window'.
+;; That stamps the window with the `window-side' parameter, so when
+;; ediff (configured to use `ediff-setup-windows-plain' by
+;; my-forge-ediff-review) calls `delete-other-windows', Emacs refuses
+;; with "Cannot make side window the only window".  We hop to a regular
+;; window first so the plain setup can clear the frame normally.
+;; Non-side windows (e.g. `C-c l') skip this entirely.
+(defun my-magit-ediff--ensure-non-side-window ()
+  "Switch to a non-side window before launching ediff's plain setup."
+  (when (window-parameter (selected-window) 'window-side)
+    (let ((target (seq-find
+                   (lambda (w) (not (window-parameter w 'window-side)))
+                   (window-list nil 'no-mini))))
+      (if target
+          (select-window target)
+        ;; Only side windows remain; carve out a main area.
+        (select-window (split-window (frame-root-window) nil 'right))))))
+
 (defun my-magit-ediff--open-file (file)
   "Open ediff for a single FILE using current rev-a/rev-b."
+  (my-magit-ediff--ensure-non-side-window)
   (let ((buf-a (my-magit-ediff--create-revision-buffer
                 file my-magit-ediff--rev-a))
         (buf-b (my-magit-ediff--create-revision-buffer
