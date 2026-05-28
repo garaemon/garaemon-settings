@@ -15,23 +15,19 @@
    (if (> (x-display-pixel-width) 1440)
        (setq my-default-face-height 120)
      (setq my-default-face-height 100))
-   (let* ((family "Monaco")
-          ;; `:size' as a float is in points; derive it from
-          ;; `my-default-face-height' (1/10 pt) so the frame font and the
-          ;; default face below always agree, even for non-multiples of 10.
-          (font (font-spec :family family :size (/ my-default-face-height 10.0))))
-     ;; Set the default face's family/height explicitly rather than only
-     ;; the frame `font' parameter via `set-frame-font'.  With just the
-     ;; frame parameter, the default face's `:family' stays unspecified, so
-     ;; `(face-attribute 'default :font)' is unstable: creating a child
-     ;; frame (e.g. vertico-posframe on the first `C-x b') re-resolves it to
-     ;; the macOS default proportional font (Helvetica), which then leaks
-     ;; into normal buffers like dired.  An explicit family keeps it Monaco.
-     (set-face-attribute 'default nil :family family :height my-default-face-height)
-     ;; FRAMES=t also seeds `default-frame-alist', so the running frame's
-     ;; `font' parameter is set (init-editor.el reads it) and new frames --
-     ;; including posframe child frames -- are born with Monaco.
-     (set-frame-font font nil t))
+   ;; Set the default face's family/height explicitly rather than only
+   ;; the frame `font' parameter via `set-frame-font'.  With just the
+   ;; frame parameter, the default face's `:family' stays unspecified, so
+   ;; `(face-attribute 'default :font)' is unstable: creating a child
+   ;; frame (e.g. vertico-posframe on the first `C-x b') re-resolves it to
+   ;; the macOS default proportional font (Helvetica), which then leaks
+   ;; into normal buffers like dired.  An explicit family keeps it Monaco.
+   ;; NOTE: seed `default-frame-alist' with a plain font string rather than
+   ;; calling `set-frame-font' here -- re-applying the font on the running
+   ;; frame at startup reintroduces the very fallback this guards against.
+   (set-face-attribute 'default nil :family "Monaco" :height my-default-face-height)
+   (add-to-list 'default-frame-alist
+                (cons 'font (format "Monaco-%d" (/ my-default-face-height 10))))
    (setq ns-command-modifier (quote meta))
    (setq ns-alternate-modifier (quote super))
    ;; Do not pass control key to mac OS X
@@ -46,12 +42,10 @@
 (when (eq system-type 'gnu/linux)
   (set-face-attribute 'default nil
                       :height my-default-face-height)
-  ;; TODO: mirror the darwin block here -- (1) set `:family' on the default
-  ;; face (not just the frame font) so posframe child frames do not
-  ;; re-resolve to a proportional fallback, and (2) derive the size from
-  ;; `my-default-face-height' via a float `font-spec' `:size' so the frame
-  ;; font and the default face cannot diverge.  Left as-is for now since
-  ;; this path is untested on the current (macOS) machine.
+  ;; TODO: mirror the darwin block here -- set `:family' on the default
+  ;; face and seed `default-frame-alist' so posframe child frames do not
+  ;; re-resolve to a proportional fallback.  Left as-is for now since this
+  ;; path is untested on the current (macOS) machine.
   (let ((font "Monaco Nerd Font Mono"))
     (if (find-font (font-spec :name font))
         (set-frame-font font 12)))
