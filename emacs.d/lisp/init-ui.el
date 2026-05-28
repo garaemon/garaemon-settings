@@ -6,13 +6,28 @@
 ;;; Code:
 
 ;;; GUI settings
+(defvar my-default-face-height 100
+  "Default face height in 1/10 pt.  Set per-display in the platform blocks.")
+
 (when-darwin
  (when (display-graphic-p)
    ;; see http://d.hatena.ne.jp/kazu-yamamoto/20090122/1232589385
    (if (> (x-display-pixel-width) 1440)
-       (setq default-face-height 120)
-     (setq default-face-height 100))
-   (set-frame-font "Monaco" 12)
+       (setq my-default-face-height 120)
+     (setq my-default-face-height 100))
+   ;; Set the default face's family/height explicitly rather than only
+   ;; the frame `font' parameter via `set-frame-font'.  With just the
+   ;; frame parameter, the default face's `:family' stays unspecified, so
+   ;; `(face-attribute 'default :font)' is unstable: creating a child
+   ;; frame (e.g. vertico-posframe on the first `C-x b') re-resolves it to
+   ;; the macOS default proportional font (Helvetica), which then leaks
+   ;; into normal buffers like dired.  An explicit family keeps it Monaco.
+   ;; NOTE: seed `default-frame-alist' with a plain font string rather than
+   ;; calling `set-frame-font' here -- re-applying the font on the running
+   ;; frame at startup reintroduces the very fallback this guards against.
+   (set-face-attribute 'default nil :family "Monaco" :height my-default-face-height)
+   (add-to-list 'default-frame-alist
+                (cons 'font (format "Monaco-%d" (/ my-default-face-height 10))))
    (setq ns-command-modifier (quote meta))
    (setq ns-alternate-modifier (quote super))
    ;; Do not pass control key to mac OS X
@@ -25,9 +40,12 @@
    ))
 
 (when (eq system-type 'gnu/linux)
-  (defvar default-face-height 100)
   (set-face-attribute 'default nil
-                      :height default-face-height)
+                      :height my-default-face-height)
+  ;; TODO: mirror the darwin block here -- set `:family' on the default
+  ;; face and seed `default-frame-alist' so posframe child frames do not
+  ;; re-resolve to a proportional fallback.  Left as-is for now since this
+  ;; path is untested on the current (macOS) machine.
   (let ((font "Monaco Nerd Font Mono"))
     (if (find-font (font-spec :name font))
         (set-frame-font font 12)))
@@ -49,7 +67,7 @@
 (defun text-scale0 ()
   "Reset the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height default-face-height))
+  (set-face-attribute 'default nil :height my-default-face-height))
 
 (global-set-key "\M-+" 'text-scale+)
 (global-set-key "\M--" 'text-scale-)
