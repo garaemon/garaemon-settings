@@ -121,7 +121,11 @@ launches multi-file ediff between PR base and head."
     (my-magit-ediff-all-compare base-rev head-rev)))
 
 (defun my-forge-ediff-review--host-for (repo)
-  "Return the API host to use for REPO, or nil for ghub's default."
+  "Return the API host to use for REPO, or nil for ghub's default.
+Only github.com is supported for now: a GitHub repository resolves to
+nil, which makes ghub fall back to `ghub-default-host' (api.github.com)."
+  ;; TODO: support GitHub Enterprise by returning the repository's own API
+  ;; host (e.g. forge's `apihost' slot) instead of always nil.
   (when (and (fboundp 'forge-github-repository-p)
              (forge-github-repository-p repo))
     ;; nil makes ghub default to `ghub-default-host' which is api.github.com.
