@@ -871,8 +871,26 @@ Is Ollama running? (ollama serve) Status: %s" status))
   (forge-owned-accounts '(("garaemon")))
   :bind (("C-c M r" . my-diff-hl-review-enable)
          ("C-c M s" . my-diff-hl-review-disable)
-         ("C-c M d" . my-diff-hl-set-reference))
+         ("C-c M d" . my-diff-hl-set-reference)
+         ("C-c M e" . my-forge-ediff-pullreq-at-point)
+         ("C-c M c" . my-forge-ediff-review-add-comment)
+         ("C-c M l" . my-forge-ediff-review-list-comments)
+         ("C-c M C" . my-forge-ediff-review-submit))
   :config
+  (require 'my-forge-ediff-review)
+
+  (defun my-forge-ediff-pullreq-at-point ()
+    "Open the forge PR at point in a side-by-side ediff review session.
+Compares the PR's base commit against its head commit and lets you
+collect inline comments via `my-forge-ediff-review-add-comment'."
+    (interactive)
+    (let ((pullreq (or (forge-pullreq-at-point)
+                       (and (fboundp 'forge-current-topic)
+                            (forge-current-topic)))))
+      (unless (and pullreq (forge-pullreq-p pullreq))
+        (user-error "No forge pull request at point"))
+      (my-forge-ediff-review-start pullreq)))
+
   (defun my-forge-create-pullreq ()
     (interactive)
     (call-interactively 'forge-create-pullreq)
@@ -1026,6 +1044,44 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
         (user-error "No commit at point"))
       (my-diff-hl--apply-revision commit)))
   )
+
+;; GitHub PR reviews from inside Emacs.
+;; Uses the doomelpa fork because the upstream wandersoncferreira/code-review
+;; has been largely inactive; doomelpa carries fixes for current forge/ghub.
+;;
+;; Auth reuses the same ~/.authinfo entry that forge uses (api.github.com login
+;; <user>^forge). No additional setup required when forge already works.
+;;
+;; Usage:
+;;   - From a forge topic buffer (e.g. magit-status PR list, RET on a PR),
+;;     press `C-c M v` to open the PR in code-review.
+;;   - Or `M-x code-review-start` and paste a PR URL.
+;;   - Inside the review buffer:
+;;       RET on a hunk -> add an inline comment
+;;       r            -> transient menu (approve / request-changes / comment)
+;;     For a side-by-side view of a single hunk, split the window
+;;     horizontally (`C-x 3`) and visit the file with `magit-diff-visit-file`
+;;     in the other window; comments stay in the code-review buffer.
+(use-package code-review
+  :vc (:url "https://github.com/doomelpa/code-review.git" :rev :newest)
+  :after forge
+  :bind (("C-c M v" . code-review-forge-pr-at-point))
+  :custom
+  ;; Open the review buffer in the other window so the source file stays
+  ;; visible side-by-side with the diff/comments.
+  (code-review-new-buffer-window-strategy #'switch-to-buffer-other-window)
+  ;; Reuse forge's auth-source entry (api.github.com login <user>^forge).
+  (code-review-auth-login-marker 'forge)
+  :config
+  ;; ghub 5.0 moved `ghub-graphql' (and friends) out of `ghub' into
+  ;; `ghub-legacy', which is not autoloaded.  code-review still calls the
+  ;; legacy names, so without this require every PR fetch fails with
+  ;; "deferred error: (wrong-type-argument listp void-function)".
+  (require 'ghub-legacy)
+  ;; Disable flyspell in the comment editor; it fights with code identifiers.
+  (add-hook 'code-review-comment-mode-hook
+            (lambda () (when (bound-and-true-p flyspell-mode)
+                         (flyspell-mode -1)))))
 
 (use-package git-commit
   :ensure nil

@@ -33,6 +33,23 @@
 (defvar my-magit-ediff--temp-buffers nil
   "Temporary revision buffers to kill on navigation or cleanup.")
 
+;; These two buffer locals bridge this generic ediff engine and the
+;; `my-forge-ediff-review' layer.  Ediff itself only shows two anonymous
+;; buffers side by side; it has no notion of which file each buffer holds
+;; or which side (base vs head) it represents.  By stamping the file path
+;; and revision onto each revision buffer here, the review layer can derive
+;; the (path, line, side) a comment targets: `--buf-file' gives the path,
+;; and matching `--buf-rev' against the session's base-rev / head-rev gives
+;; the LEFT / RIGHT side required by the GitHub Reviews API.
+(defvar-local my-magit-ediff--buf-file nil
+  "Repository-relative path of the file shown in this revision buffer.")
+
+(defvar-local my-magit-ediff--buf-rev nil
+  "Git revision (commit SHA / `index' / nil) shown in this revision buffer.")
+
+(defvar my-magit-ediff--saved-window-config nil
+  "Window configuration captured at session start, restored on cleanup.")
+
 ;;;; Entry point functions
 
 ;;;###autoload
@@ -74,7 +91,9 @@
         my-magit-ediff--rev-a rev-a
         my-magit-ediff--rev-b rev-b
         my-magit-ediff--total-count (length files)
-        my-magit-ediff--active t)
+        my-magit-ediff--active t
+        my-magit-ediff--saved-window-config (current-window-configuration))
+  (my-magit-ediff--hide-side-windows)
   (add-hook 'ediff-quit-hook #'my-magit-ediff--on-quit)
   (my-magit-ediff--open-current))
 
@@ -86,6 +105,20 @@
              my-magit-ediff--total-count
              file)
     (my-magit-ediff--open-file file)))
+
+;; Workaround for this config's `my-magit-status-side-window' (C-c L) in
+;; init-ui.el, which opens magit via `display-buffer-in-side-window'.
+;; Side windows carry the `window-side' parameter, and ediff's plain
+;; window setup (`delete-other-windows' then `split-window') cannot
+;; operate while one is present -- it errors with "Cannot make side
+;; window the only window" / "Cannot split side window...".  Hiding the
+;; side windows for the duration of the review sidesteps both; the
+;; original layout is restored in `my-magit-ediff--cleanup'.  Frames
+;; without side windows are unaffected.
+(defun my-magit-ediff--hide-side-windows ()
+  "Hide any side windows so ediff can take over the whole frame."
+  (when (window-with-parameter 'window-side nil nil)
+    (window-toggle-side-windows)))
 
 (defun my-magit-ediff--open-file (file)
   "Open ediff for a single FILE using current rev-a/rev-b."
@@ -103,7 +136,11 @@ If REV is a string, return that revision's content."
   (let ((default-directory (magit-toplevel)))
     (cond
      ((null rev)
-      (find-file-noselect (expand-file-name file)))
+      (let ((buf (find-file-noselect (expand-file-name file))))
+        (with-current-buffer buf
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev nil))
+        buf))
      ((eq rev 'index)
       (let ((buf (generate-new-buffer
                   (format "%s (index)" file))))
@@ -112,6 +149,8 @@ If REV is a string, return that revision's content."
           (let ((buffer-file-name (expand-file-name file)))
             (set-auto-mode))
           (setq buffer-read-only t)
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev 'index)
           (goto-char (point-min)))
         (push buf my-magit-ediff--temp-buffers)
         buf))
@@ -123,6 +162,8 @@ If REV is a string, return that revision's content."
           (let ((buffer-file-name (expand-file-name file)))
             (set-auto-mode))
           (setq buffer-read-only t)
+          (setq-local my-magit-ediff--buf-file file
+                      my-magit-ediff--buf-rev rev)
           (goto-char (point-min)))
         (push buf my-magit-ediff--temp-buffers)
         buf)))))
@@ -141,9 +182,16 @@ If REV is a string, return that revision's content."
     (run-at-time 0.1 nil #'my-magit-ediff--after-quit)))
 
 (defun my-magit-ediff--after-quit ()
-  "Kill temp buffers from previous session, then show navigation."
+  "Kill temp buffers from previous session, then show navigation.
+If the navigation prompt is aborted (e.g. `C-g'), run cleanup so the
+session state and `ediff-quit-hook' do not leak into later, unrelated
+ediff sessions."
   (my-magit-ediff--kill-temp-buffers)
-  (my-magit-ediff--prompt-navigation))
+  (condition-case nil
+      (my-magit-ediff--prompt-navigation)
+    (quit
+     (my-magit-ediff--cleanup)
+     (message "Review ended."))))
 
 (defun my-magit-ediff--build-file-labels ()
   "Build labeled file list for `completing-read'."
@@ -154,19 +202,30 @@ If REV is a string, return that revision's content."
       (push (format "[%d/%d] %s" (1+ i) total file) result)
       (setq i (1+ i)))))
 
+(defun my-magit-ediff--ordered-collection (candidates)
+  "Return a completion table over CANDIDATES that preserves their order.
+Stops completion frameworks like vertico from re-sorting by history
+or length, so files stay in their natural 1..N order."
+  (lambda (string pred action)
+    (if (eq action 'metadata)
+        '(metadata (display-sort-function . identity)
+                   (cycle-sort-function . identity))
+      (complete-with-action action candidates string pred))))
+
 (defun my-magit-ediff--prompt-navigation ()
-  "Show file list using `completing-read' for navigation."
+  "Show file list using `completing-read' for navigation.
+Candidates stay in strict 1..N order followed by the quit entry.  No
+default is passed because completion UIs (vertico) hoist the default
+candidate to the top, which scrambles the visual order."
   (let* ((idx my-magit-ediff--current-index)
          (total my-magit-ediff--total-count)
          (quit-label "[Done] Quit review")
          (file-labels (my-magit-ediff--build-file-labels))
          (candidates (append file-labels (list quit-label)))
-         (default (if (< (1+ idx) total)
-                      (nth (1+ idx) file-labels)
-                    quit-label))
          (selection (completing-read
                      (format "Ediff [%d/%d done]: " (1+ idx) total)
-                     candidates nil t nil nil default)))
+                     (my-magit-ediff--ordered-collection candidates)
+                     nil t nil nil)))
     (if (string= selection quit-label)
         (progn
           (my-magit-ediff--cleanup)
@@ -177,7 +236,7 @@ If REV is a string, return that revision's content."
           (my-magit-ediff--open-current))))))
 
 (defun my-magit-ediff--cleanup ()
-  "Reset state variables and remove hook."
+  "Reset state variables, restore windows, and remove hook."
   (my-magit-ediff--kill-temp-buffers)
   (setq my-magit-ediff--files nil
         my-magit-ediff--current-index 0
@@ -185,7 +244,10 @@ If REV is a string, return that revision's content."
         my-magit-ediff--rev-b nil
         my-magit-ediff--total-count 0
         my-magit-ediff--active nil)
-  (remove-hook 'ediff-quit-hook #'my-magit-ediff--on-quit))
+  (remove-hook 'ediff-quit-hook #'my-magit-ediff--on-quit)
+  (when my-magit-ediff--saved-window-config
+    (set-window-configuration my-magit-ediff--saved-window-config)
+    (setq my-magit-ediff--saved-window-config nil)))
 
 ;;;; Keybindings
 
