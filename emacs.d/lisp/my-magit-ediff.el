@@ -182,9 +182,16 @@ If REV is a string, return that revision's content."
     (run-at-time 0.1 nil #'my-magit-ediff--after-quit)))
 
 (defun my-magit-ediff--after-quit ()
-  "Kill temp buffers from previous session, then show navigation."
+  "Kill temp buffers from previous session, then show navigation.
+If the navigation prompt is aborted (e.g. `C-g'), run cleanup so the
+session state and `ediff-quit-hook' do not leak into later, unrelated
+ediff sessions."
   (my-magit-ediff--kill-temp-buffers)
-  (my-magit-ediff--prompt-navigation))
+  (condition-case nil
+      (my-magit-ediff--prompt-navigation)
+    (quit
+     (my-magit-ediff--cleanup)
+     (message "Review ended."))))
 
 (defun my-magit-ediff--build-file-labels ()
   "Build labeled file list for `completing-read'."

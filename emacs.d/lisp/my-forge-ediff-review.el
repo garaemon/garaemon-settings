@@ -207,19 +207,26 @@ does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
       (with-current-buffer buf
         (my-forge-ediff-review--reapply-overlays)))))
 
+(defvar-local my-forge-ediff-review--keys-installed nil
+  "Non-nil once review navigation keys are installed in this buffer.
+Guards against `ediff-prepare-buffer-hook' firing more than once on the
+same buffer and stacking composed keymaps on top of each other.")
+
 (defun my-forge-ediff-review--setup-revision-keys ()
   "Install buffer-local keys for in-place ediff navigation and commenting.
 Only active when a review session is running and the buffer has the
 file/rev locals set by `my-magit-ediff--create-revision-buffer'."
   (when (and my-forge-ediff-review--session
              my-magit-ediff--buf-file
-             my-magit-ediff--buf-rev)
+             my-magit-ediff--buf-rev
+             (not my-forge-ediff-review--keys-installed))
     (let ((map (make-composed-keymap nil (current-local-map))))
       (define-key map (kbd "RET") #'my-forge-ediff-review-add-comment)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
-      (use-local-map map))))
+      (use-local-map map)
+      (setq-local my-forge-ediff-review--keys-installed t))))
 
 (defun my-forge-ediff-review--prepare-buffer ()
   "Apply overlays and install nav/comment keys in the current revision buffer."
