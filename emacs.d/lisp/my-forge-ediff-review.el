@@ -6,6 +6,28 @@
 ;; per-line comments against the PR's head commit, then submit them as a
 ;; single GitHub PR review (event = COMMENT / APPROVE / REQUEST_CHANGES).
 ;;
+;; Data model:
+;;   All review state lives in one global plist,
+;;   `my-forge-ediff-review--session' (nil when no review is active):
+;;
+;;     (:owner "..." :repo "..." :num N
+;;      :base-rev "<sha>" :head-rev "<sha>" :host nil
+;;      :comments (COMMENT ...))
+;;
+;;   Each pending comment is itself a plist:
+;;
+;;     (:path "rel/path" :line N :side "LEFT"|"RIGHT" :body "markdown")
+;;
+;;   :side is "LEFT" for the base commit and "RIGHT" for the head commit,
+;;   matching the GitHub Reviews API.  Where does (:path :line :side) come
+;;   from?  Ediff only shows two anonymous buffers, so each revision buffer
+;;   is tagged with the buffer locals `my-magit-ediff--buf-file' and
+;;   `my-magit-ediff--buf-rev' (set in `my-magit-ediff--create-revision-buffer').
+;;   `--current-context' reads those: :path = `--buf-file', :line = point's
+;;   line, and :side = `--buf-rev' compared against the session's base/head.
+;;   New comments are prepended to :comments and reversed back to insertion
+;;   order when listed or submitted.
+;;
 ;; Workflow:
 ;;   1. `my-forge-ediff-review-start' on a `forge-pullreq' (called by
 ;;      `my-forge-ediff-pullreq-at-point').  Records the PR context and
@@ -31,10 +53,8 @@ Each comment is a plist with :path :line :side :body.")
 
 ;;;; Ediff control & navigation
 
-;; Avoid ediff's separate-frame control window; use plain windows so the
-;; control buffer is just a thin strip and the revision buffers can
-;; drive navigation themselves (see `--setup-revision-keys' below).
-(setq ediff-window-setup-function #'ediff-setup-windows-plain)
+;; NOTE: `ediff-window-setup-function' is set to `ediff-setup-windows-plain'
+;; in init-editor.el; the in-buffer navigation below depends on it.
 
 (defun my-forge-ediff-review--in-control-buffer (cmd)
   "Run CMD with `ediff-control-buffer' selected as the current buffer."

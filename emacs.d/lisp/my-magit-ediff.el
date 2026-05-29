@@ -33,6 +33,14 @@
 (defvar my-magit-ediff--temp-buffers nil
   "Temporary revision buffers to kill on navigation or cleanup.")
 
+;; These two buffer locals bridge this generic ediff engine and the
+;; `my-forge-ediff-review' layer.  Ediff itself only shows two anonymous
+;; buffers side by side; it has no notion of which file each buffer holds
+;; or which side (base vs head) it represents.  By stamping the file path
+;; and revision onto each revision buffer here, the review layer can derive
+;; the (path, line, side) a comment targets: `--buf-file' gives the path,
+;; and matching `--buf-rev' against the session's base-rev / head-rev gives
+;; the LEFT / RIGHT side required by the GitHub Reviews API.
 (defvar-local my-magit-ediff--buf-file nil
   "Repository-relative path of the file shown in this revision buffer.")
 

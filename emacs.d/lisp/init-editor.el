@@ -17,6 +17,12 @@
 ;;; Show ediff with horizontal split view
 (setq ediff-split-window-function 'split-window-horizontally)
 
+;; Use plain windows instead of ediff's separate control frame so the
+;; control buffer is just a thin strip.  `my-magit-ediff' and its review
+;; layer rely on this: they hide side windows and drive navigation from the
+;; revision buffers, which a separate control frame would break.
+(setq ediff-window-setup-function #'ediff-setup-windows-plain)
+
 ;; Insert closing parenthesis and quotes automatically
 (use-package elec-pair
   :ensure nil
