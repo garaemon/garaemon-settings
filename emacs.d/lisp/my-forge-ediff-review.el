@@ -45,11 +45,14 @@
 (require 'cl-lib)
 (require 'ghub)
 (require 'my-magit-ediff)
+(require 'my-forge-ediff-review-model)
 
 (defvar my-forge-ediff-review--session nil
   "Plist for the active review session, or nil.
-Keys: :owner :repo :num :head-rev :base-rev :host :comments.
-Each comment is a plist with :path :line :side :body.")
+Keys: :owner :repo :num :head-rev :base-rev :host :comments :memos
+:reviewed.  Each comment and memo is a plist with :path :line :side
+:body; memos stay local and are never submitted.  :reviewed is a list of
+repository-relative file paths the user has flagged as done.")
 
 ;;;; Ediff control & navigation
 
@@ -114,10 +117,13 @@ launches multi-file ediff between PR base and head."
                 :head-rev head-rev
                 :base-rev base-rev
                 :host (my-forge-ediff-review--host-for repo)
-                :comments nil))
+                :comments nil
+                :memos nil
+                :reviewed nil))
     (message
      "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
      (oref pullreq number))
+    (my-forge-ediff-review--install-sidebar-hooks)
     (my-magit-ediff-all-compare base-rev head-rev)))
 
 (defun my-forge-ediff-review--host-for (repo)
@@ -144,6 +150,12 @@ nil, which makes ghub fall back to `ghub-default-host' (api.github.com)."
   "Face for lines with pending review comments and inline body display."
   :group 'my-forge-ediff-review)
 
+(defface my-forge-ediff-review-memo-face
+  '((((background light)) :background "#ddf4ff" :foreground "#24292f")
+    (((background dark))  :background "#002a3a" :foreground "#ffffff"))
+  "Face for inline memos, which stay local and are never submitted."
+  :group 'my-forge-ediff-review)
+
 (defun my-forge-ediff-review--side-for-rev (rev)
   "Return \"LEFT\" / \"RIGHT\" for REV in the current session, or nil."
   (let ((s my-forge-ediff-review--session))
@@ -151,17 +163,19 @@ nil, which makes ghub fall back to `ghub-default-host' (api.github.com)."
      ((equal rev (plist-get s :base-rev)) "LEFT")
      ((equal rev (plist-get s :head-rev)) "RIGHT"))))
 
-(defun my-forge-ediff-review--format-overlay-body (body)
-  "Indent every line of BODY for inline overlay display."
-  (mapconcat (lambda (l) (concat "    | " l))
+(defun my-forge-ediff-review--format-overlay-body (label body)
+  "Indent every line of BODY for inline overlay display under LABEL."
+  (mapconcat (lambda (l) (concat "    " label " " l))
              (split-string body "\n")
              "\n"))
 
-(defun my-forge-ediff-review--put-overlay (buf line body)
+(defun my-forge-ediff-review--put-overlay (buf line label body face)
   "Append BODY as a highlighted after-string overlay below LINE in BUF.
-The commented source line is left untouched; only the comment text
-itself is highlighted.  The overlay is anchored at end-of-line so it
-does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
+LABEL prefixes each body line (e.g. \"|\" for comments, \"memo\" for
+memos) and FACE highlights the text.  The source line is left untouched;
+only the appended text is highlighted.  The overlay is anchored at
+end-of-line so it does not shift `display-line-numbers-mode' or
+`nlinum-mode' counts."
   (with-current-buffer buf
     (save-excursion
       (goto-char (point-min))
@@ -174,8 +188,9 @@ does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
                      (propertize
                       (concat
                        "\n"
-                       (my-forge-ediff-review--format-overlay-body body))
-                      'face 'my-forge-ediff-review-comment-face))))))
+                       (my-forge-ediff-review--format-overlay-body
+                        label body))
+                      'face face))))))
 
 (defun my-forge-ediff-review--clear-overlays (&optional buf)
   "Remove all review overlays from BUF (defaults to current buffer)."
@@ -183,7 +198,7 @@ does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
     (remove-overlays (point-min) (point-max) 'my-forge-ediff-review t)))
 
 (defun my-forge-ediff-review--reapply-overlays ()
-  "Reapply overlays in current buffer for comments matching its file/side."
+  "Reapply comment and memo overlays in current buffer for its file/side."
   (when (and my-forge-ediff-review--session
              my-magit-ediff--buf-file
              my-magit-ediff--buf-rev)
@@ -192,20 +207,31 @@ does not shift `display-line-numbers-mode' or `nlinum-mode' counts."
            (rev  my-magit-ediff--buf-rev)
            (side (my-forge-ediff-review--side-for-rev rev)))
       (when side
-        (dolist (c (plist-get my-forge-ediff-review--session :comments))
-          (when (and (string= (plist-get c :path) file)
-                     (string= (plist-get c :side) side))
-            (my-forge-ediff-review--put-overlay
-             (current-buffer)
-             (plist-get c :line)
-             (plist-get c :body))))))))
+        (my-forge-ediff-review--put-side-overlays
+         (plist-get my-forge-ediff-review--session :comments)
+         file side "|" 'my-forge-ediff-review-comment-face)
+        (my-forge-ediff-review--put-side-overlays
+         (plist-get my-forge-ediff-review--session :memos)
+         file side "memo" 'my-forge-ediff-review-memo-face)))))
+
+(defun my-forge-ediff-review--put-side-overlays (entries file side label face)
+  "Overlay each of ENTRIES matching FILE and SIDE with LABEL and FACE."
+  (dolist (entry (my-forge-ediff-review-model-entries-for-side
+                  entries file side))
+    (my-forge-ediff-review--put-overlay
+     (current-buffer)
+     (plist-get entry :line)
+     label
+     (plist-get entry :body)
+     face)))
 
 (defun my-forge-ediff-review--refresh-all-buffers ()
-  "Reapply overlays in every live ediff revision buffer of the session."
+  "Reapply overlays in every revision buffer and redraw the sidebar."
   (dolist (buf my-magit-ediff--temp-buffers)
     (when (buffer-live-p buf)
       (with-current-buffer buf
-        (my-forge-ediff-review--reapply-overlays)))))
+        (my-forge-ediff-review--reapply-overlays))))
+  (my-forge-ediff-review--refresh-sidebar))
 
 (defvar-local my-forge-ediff-review--keys-installed nil
   "Non-nil once review navigation keys are installed in this buffer.
@@ -222,6 +248,8 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
              (not my-forge-ediff-review--keys-installed))
     (let ((map (make-composed-keymap nil (current-local-map))))
       (define-key map (kbd "RET") #'my-forge-ediff-review-add-comment)
+      (define-key map (kbd "m") #'my-forge-ediff-review-add-memo)
+      (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
@@ -231,7 +259,8 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
 (defun my-forge-ediff-review--prepare-buffer ()
   "Apply overlays and install nav/comment keys in the current revision buffer."
   (my-forge-ediff-review--reapply-overlays)
-  (my-forge-ediff-review--setup-revision-keys))
+  (my-forge-ediff-review--setup-revision-keys)
+  (my-forge-ediff-review--refresh-sidebar))
 
 ;; Hook so that comments persist and review keys exist when ediff
 ;; (re)visits a file.
@@ -256,36 +285,84 @@ when it shows the head."
           (when side
             (list :path file :line line :side side)))))))
 
-;;;; Adding comments
+;;;; Adding comments and memos
+
+;; Comments and memos share one markdown editor.  They differ only in
+;; which session list they land in (:comments is submitted to GitHub,
+;; :memos stays local) and in how repeated entries on a line behave:
+;; a line may carry several comments but only one memo, which is edited
+;; in place and removed when saved empty.
+(defconst my-forge-ediff-review--kinds
+  '((comment . (:key :comments :label "Comment"))
+    (memo    . (:key :memos    :label "Memo")))
+  "Per-kind metadata: session plist key and human label.")
 
 (defvar my-forge-ediff-review--editor-ctx nil
-  "Buffer-local context plist while editing a comment.")
+  "Buffer-local context plist while editing a comment or memo.")
+
+(defvar my-forge-ediff-review--editor-kind nil
+  "Buffer-local kind symbol (`comment' or `memo') of the active editor.")
+
+(defun my-forge-ediff-review--kind-key (kind)
+  "Return the session plist key storing entries of KIND."
+  (plist-get (alist-get kind my-forge-ediff-review--kinds) :key))
+
+(defun my-forge-ediff-review--kind-label (kind)
+  "Return the human-readable label for KIND."
+  (plist-get (alist-get kind my-forge-ediff-review--kinds) :label))
 
 (defun my-forge-ediff-review-add-comment ()
   "Add a PR review comment for the line at point in this ediff buffer."
   (interactive)
+  (my-forge-ediff-review--start-editor 'comment))
+
+(defun my-forge-ediff-review-add-memo ()
+  "Attach a local memo to the line at point.
+Memos are never submitted to GitHub.  Editing the line again reopens the
+existing memo; saving it empty removes it."
+  (interactive)
+  (my-forge-ediff-review--start-editor 'memo))
+
+(defun my-forge-ediff-review--start-editor (kind)
+  "Open the editor of KIND for the current line, validating context first."
   (my-forge-ediff-review--ensure-session)
   (let ((ctx (my-forge-ediff-review--current-context)))
     (unless ctx
       (user-error
        "Not in a review ediff revision buffer (no file/rev context)"))
-    (my-forge-ediff-review--open-editor ctx)))
+    (my-forge-ediff-review--open-editor ctx kind)))
 
-(defun my-forge-ediff-review--open-editor (ctx)
-  "Pop up an editor buffer for a comment described by CTX."
-  (let ((buf (generate-new-buffer "*forge-review-comment*")))
+(defun my-forge-ediff-review--existing-memo-body (ctx)
+  "Return the body of an existing memo at CTX, or nil."
+  (let ((memo (my-forge-ediff-review-model-find-entry
+               (plist-get my-forge-ediff-review--session :memos)
+               (plist-get ctx :path)
+               (plist-get ctx :line)
+               (plist-get ctx :side))))
+    (and memo (plist-get memo :body))))
+
+(defun my-forge-ediff-review--open-editor (ctx kind)
+  "Pop up a markdown editor for an entry of KIND described by CTX."
+  (let ((buf (generate-new-buffer
+              (format "*forge-review-%s*" kind)))
+        (prefill (and (eq kind 'memo)
+                      (my-forge-ediff-review--existing-memo-body ctx))))
     (with-current-buffer buf
       (when (fboundp 'markdown-mode)
         (markdown-mode))
       (insert (format
-               "<!-- %s:%d (%s) — C-c C-c to save, C-c C-k to cancel. \
+               "<!-- %s for %s:%d (%s) — C-c C-c to save, C-c C-k to cancel. \
 HTML comments are stripped. -->\n\n"
+               (my-forge-ediff-review--kind-label kind)
                (plist-get ctx :path)
                (plist-get ctx :line)
                (plist-get ctx :side)))
+      (when prefill
+        (insert prefill))
       (setq-local my-forge-ediff-review--editor-ctx ctx)
-      (local-set-key (kbd "C-c C-c") #'my-forge-ediff-review--save-comment)
-      (local-set-key (kbd "C-c C-k") #'my-forge-ediff-review--cancel-comment)
+      (setq-local my-forge-ediff-review--editor-kind kind)
+      (local-set-key (kbd "C-c C-c") #'my-forge-ediff-review--save-entry)
+      (local-set-key (kbd "C-c C-k") #'my-forge-ediff-review--cancel-entry)
       (goto-char (point-max)))
     (pop-to-buffer buf)))
 
@@ -293,35 +370,53 @@ HTML comments are stripped. -->\n\n"
   "Remove `<!-- ... -->' blocks from TEXT."
   (replace-regexp-in-string "<!--\\(.\\|\n\\)*?-->" "" text))
 
-(defun my-forge-ediff-review--save-comment ()
-  "Finalize the comment in the current editor buffer and store it."
+(defun my-forge-ediff-review--save-entry ()
+  "Finalize the comment/memo in the current editor buffer and store it."
   (interactive)
   (let* ((ctx my-forge-ediff-review--editor-ctx)
-         (raw (buffer-string))
+         (kind my-forge-ediff-review--editor-kind)
          (body (string-trim
-                (my-forge-ediff-review--strip-html-comments raw))))
-    (when (string-empty-p body)
-      (user-error "Comment body is empty"))
+                (my-forge-ediff-review--strip-html-comments
+                 (buffer-string)))))
     (unless my-forge-ediff-review--session
       (user-error "Review session disappeared; not saving"))
-    (let ((comment (append ctx (list :body body))))
-      (setf (plist-get my-forge-ediff-review--session :comments)
-            (cons comment
-                  (plist-get my-forge-ediff-review--session :comments))))
+    (when (and (eq kind 'comment) (string-empty-p body))
+      (user-error "Comment body is empty"))
+    (my-forge-ediff-review--store-entry ctx kind body)
     (let ((buf (current-buffer)))
       (quit-window)
       (kill-buffer buf))
     (my-forge-ediff-review--refresh-all-buffers)
-    (message "Comment saved (%d pending)."
-             (length (plist-get my-forge-ediff-review--session :comments)))))
+    (message "%s saved (%d pending)."
+             (my-forge-ediff-review--kind-label kind)
+             (length (plist-get my-forge-ediff-review--session
+                                 (my-forge-ediff-review--kind-key kind))))))
 
-(defun my-forge-ediff-review--cancel-comment ()
-  "Discard the in-progress comment editor."
+(defun my-forge-ediff-review--store-entry (ctx kind body)
+  "Store an entry of KIND with BODY at CTX into the session.
+A memo replaces any existing memo on the same line and an empty memo
+removes it; comments are always appended."
+  (let* ((key (my-forge-ediff-review--kind-key kind))
+         (entries (plist-get my-forge-ediff-review--session key)))
+    (when (eq kind 'memo)
+      (let ((existing (my-forge-ediff-review-model-find-entry
+                       entries (plist-get ctx :path)
+                       (plist-get ctx :line) (plist-get ctx :side))))
+        (when existing
+          (setq entries (my-forge-ediff-review-model-remove-entry
+                         entries existing)))))
+    (setf (plist-get my-forge-ediff-review--session key)
+          (if (and (eq kind 'memo) (string-empty-p body))
+              entries
+            (cons (append ctx (list :body body)) entries)))))
+
+(defun my-forge-ediff-review--cancel-entry ()
+  "Discard the in-progress comment/memo editor."
   (interactive)
   (let ((buf (current-buffer)))
     (quit-window)
     (kill-buffer buf))
-  (message "Comment cancelled."))
+  (message "Editing cancelled."))
 
 ;;;; Listing / discarding
 
@@ -383,14 +478,7 @@ HTML comments are stripped. -->\n\n"
     `((commit_id . ,(plist-get s :head-rev))
       (event    . ,event)
       (body     . ,(or summary ""))
-      (comments . ,(vconcat
-                    (mapcar
-                     (lambda (c)
-                       `((path . ,(plist-get c :path))
-                         (line . ,(plist-get c :line))
-                         (side . ,(plist-get c :side))
-                         (body . ,(plist-get c :body))))
-                     comments))))))
+      (comments . ,(my-forge-ediff-review-model-payload-comments comments)))))
 
 (defvar my-forge-ediff-review--summary-event nil
   "Buffer-local: the event chosen for the summary editor.")
@@ -476,6 +564,181 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
                    (my-forge-ediff-review-list-comments)))
      :errorback (lambda (err &rest _)
                   (message "Review submission failed: %S" err)))))
+
+;;;; Reviewed flag
+
+(defun my-forge-ediff-review--toggle-reviewed-path (path)
+  "Toggle the reviewed flag for PATH and redraw the sidebar."
+  (my-forge-ediff-review--ensure-session)
+  (setf (plist-get my-forge-ediff-review--session :reviewed)
+        (my-forge-ediff-review-model-toggle-reviewed
+         (plist-get my-forge-ediff-review--session :reviewed) path))
+  (my-forge-ediff-review--refresh-sidebar)
+  (message "%s marked %s." path
+           (if (my-forge-ediff-review-model-reviewed-p
+                (plist-get my-forge-ediff-review--session :reviewed) path)
+               "reviewed" "not reviewed")))
+
+(defun my-forge-ediff-review-toggle-reviewed ()
+  "Toggle the reviewed flag for the file in the current revision buffer."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let ((path my-magit-ediff--buf-file))
+    (unless path
+      (user-error "Not in a review ediff revision buffer"))
+    (my-forge-ediff-review--toggle-reviewed-path path)))
+
+;;;; File-list sidebar
+
+(defconst my-forge-ediff-review--sidebar-name "*forge-review-files*"
+  "Name of the buffer hosting the GitHub-style file-list sidebar.")
+
+(defvar my-forge-ediff-review-sidebar-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'my-forge-ediff-review-sidebar-open)
+    (define-key map (kbd "<mouse-1>") #'my-forge-ediff-review-sidebar-open)
+    (define-key map (kbd "d") #'my-forge-ediff-review-sidebar-toggle-reviewed)
+    (define-key map (kbd "g") #'my-forge-ediff-review-sidebar-refresh)
+    (define-key map (kbd "n") #'next-line)
+    (define-key map (kbd "p") #'previous-line)
+    (define-key map (kbd "q") #'my-forge-ediff-review-sidebar-quit)
+    map)
+  "Keymap for `my-forge-ediff-review-sidebar-mode'.")
+
+(define-derived-mode my-forge-ediff-review-sidebar-mode special-mode
+  "ReviewFiles"
+  "Major mode for the forge ediff review file-list sidebar."
+  (setq truncate-lines t))
+
+(defun my-forge-ediff-review--file-counts (path)
+  "Return a cons (COMMENT-COUNT . MEMO-COUNT) of entries for PATH."
+  (cons (my-forge-ediff-review-model-count-for-file
+         (plist-get my-forge-ediff-review--session :comments) path)
+        (my-forge-ediff-review-model-count-for-file
+         (plist-get my-forge-ediff-review--session :memos) path)))
+
+(defun my-forge-ediff-review--insert-sidebar-file (file current-p reviewed-p)
+  "Insert one sidebar line for FILE carrying its path as a text property.
+CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
+  (let* ((counts (my-forge-ediff-review--file-counts file))
+         (text (my-forge-ediff-review-model-format-file-line
+                file current-p reviewed-p (car counts) (cdr counts)))
+         (start (point)))
+    (insert text "\n")
+    (put-text-property start (point) 'my-forge-ediff-review-file file)
+    (when current-p
+      (put-text-property start (point) 'face 'highlight))))
+
+(defun my-forge-ediff-review--render-sidebar ()
+  "Rebuild the sidebar buffer from session and engine state."
+  (let ((buffer (get-buffer-create my-forge-ediff-review--sidebar-name))
+        (reviewed (plist-get my-forge-ediff-review--session :reviewed))
+        (current my-magit-ediff--current-index))
+    (with-current-buffer buffer
+      (unless (derived-mode-p 'my-forge-ediff-review-sidebar-mode)
+        (my-forge-ediff-review-sidebar-mode))
+      (let ((saved-line (line-number-at-pos))
+            (inhibit-read-only t)
+            (index 0))
+        (erase-buffer)
+        (insert (propertize
+                 (format "PR #%s  reviewed %d/%d\n\n"
+                         (plist-get my-forge-ediff-review--session :num)
+                         (length reviewed)
+                         (length my-magit-ediff--files))
+                 'face 'bold))
+        (dolist (file my-magit-ediff--files)
+          (my-forge-ediff-review--insert-sidebar-file
+           file (= index current)
+           (my-forge-ediff-review-model-reviewed-p reviewed file))
+          (setq index (1+ index)))
+        (goto-char (point-min))
+        (forward-line (1- saved-line))))))
+
+(defun my-forge-ediff-review--show-sidebar ()
+  "Display the file-list sidebar in a persistent left side window.
+The `no-delete-other-windows' parameter keeps it alive across ediff's
+own window reconfiguration."
+  (my-forge-ediff-review--render-sidebar)
+  (display-buffer-in-side-window
+   (get-buffer my-forge-ediff-review--sidebar-name)
+   '((side . left)
+     (slot . 0)
+     (window-width . 38)
+     (window-parameters . ((no-delete-other-windows . t))))))
+
+(defun my-forge-ediff-review--refresh-sidebar ()
+  "Redraw the sidebar when it exists."
+  (let ((buffer (get-buffer my-forge-ediff-review--sidebar-name)))
+    (when (buffer-live-p buffer)
+      (my-forge-ediff-review--render-sidebar))))
+
+(defun my-forge-ediff-review--sidebar-file-at-point ()
+  "Return the file on the current sidebar line or signal an error."
+  (or (get-text-property (point) 'my-forge-ediff-review-file)
+      (user-error "No file on this line")))
+
+(defun my-forge-ediff-review-sidebar-open ()
+  "Open ediff for the file on the current sidebar line."
+  (interactive)
+  (let* ((file (my-forge-ediff-review--sidebar-file-at-point))
+         (index (seq-position my-magit-ediff--files file #'string=)))
+    (when index
+      (my-magit-ediff-goto-index index))))
+
+(defun my-forge-ediff-review-sidebar-toggle-reviewed ()
+  "Toggle the reviewed flag for the file on the current sidebar line."
+  (interactive)
+  (my-forge-ediff-review--toggle-reviewed-path
+   (my-forge-ediff-review--sidebar-file-at-point)))
+
+(defun my-forge-ediff-review-sidebar-refresh ()
+  "Redraw the sidebar on demand."
+  (interactive)
+  (my-forge-ediff-review--render-sidebar))
+
+(defun my-forge-ediff-review-sidebar-quit ()
+  "End the review session.  Quit the open diff first if one is shown."
+  (interactive)
+  (let ((control my-magit-ediff--control-buffer))
+    (if (and control (buffer-live-p control))
+        (message "Quit the current diff first (press q in it), then q here.")
+      (my-magit-ediff--cleanup)
+      (message "Review ended."))))
+
+;;;; Lifecycle wiring between the engine and the sidebar
+
+(defun my-forge-ediff-review--navigation ()
+  "Keep the sidebar in control after a file is quit, instead of prompting."
+  (my-forge-ediff-review--render-sidebar)
+  (let ((window (get-buffer-window my-forge-ediff-review--sidebar-name)))
+    (when (window-live-p window)
+      (select-window window))))
+
+(defun my-forge-ediff-review--on-cleanup ()
+  "Tear down the sidebar and review session when the engine cleans up."
+  (let ((buffer (get-buffer my-forge-ediff-review--sidebar-name)))
+    (when (buffer-live-p buffer)
+      (let ((window (get-buffer-window buffer)))
+        (when (window-live-p window)
+          (ignore-errors (delete-window window))))
+      (kill-buffer buffer)))
+  (setq my-magit-ediff-navigation-function
+        #'my-magit-ediff--prompt-navigation)
+  (remove-hook 'my-magit-ediff-start-hook
+               #'my-forge-ediff-review--show-sidebar)
+  (remove-hook 'my-magit-ediff-cleanup-hook
+               #'my-forge-ediff-review--on-cleanup)
+  (setq my-forge-ediff-review--session nil))
+
+(defun my-forge-ediff-review--install-sidebar-hooks ()
+  "Route engine navigation and cleanup through the review sidebar."
+  (setq my-magit-ediff-navigation-function
+        #'my-forge-ediff-review--navigation)
+  (add-hook 'my-magit-ediff-start-hook
+            #'my-forge-ediff-review--show-sidebar)
+  (add-hook 'my-magit-ediff-cleanup-hook
+            #'my-forge-ediff-review--on-cleanup))
 
 (provide 'my-forge-ediff-review)
 ;;; my-forge-ediff-review.el ends here
