@@ -855,6 +855,12 @@ Is Ollama running? (ollama serve) Status: %s" status))
 
 (use-package forge
   :after magit
+  ;; Demand-load forge as soon as magit loads.  The auto forge-pull hook below
+  ;; lives in this :config block, so forge must be loaded for the hook to be
+  ;; registered before the first magit-status buffer is created.  With plain
+  ;; :after (deferred) forge would not load until a forge command runs, so the
+  ;; hook would be missing on the first magit-status of the session.
+  :demand t
   :ensure t
   ;; How to setup forge:
   ;;   1. configure github.user by following command:
