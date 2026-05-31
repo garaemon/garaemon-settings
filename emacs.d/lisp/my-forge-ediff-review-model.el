@@ -118,8 +118,10 @@ alist `((data . PAYLOAD))'.  Both resolve to PAYLOAD here."
 
 (defun my-forge-ediff-review-model-parse-review-threads (response)
   "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
-Each entry is a plist (:path :line :side :body :author :resolved) where
-:side is \"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  GitHub
+Each entry is a plist (:path :line :side :body :author :resolved
+:thread-id :reply-to-id) where :side is \"LEFT\"/\"RIGHT\" and :resolved
+reflects the thread.  :thread-id and :reply-to-id identify the thread and
+its first comment so replies can be posted to it.  GitHub
 exposes `path', `line', `originalLine' and `diffSide' on the thread, not
 on `PullRequestReviewComment', so the location is read from the thread
 and only the body/author come from each comment.  A thread with no
@@ -131,20 +133,23 @@ entries keep their thread/comment order."
                    pullreq 'reviewThreads))
          (entries nil))
     (dolist (thread threads (nreverse entries))
-      (let ((resolved (my-forge-ediff-review-model--truthy-p
-                       (alist-get 'isResolved thread)))
-            (path (alist-get 'path thread))
-            (line (or (alist-get 'line thread)
-                      (alist-get 'originalLine thread)))
-            (side (alist-get 'diffSide thread))
-            (comments (my-forge-ediff-review-model--graphql-nodes
-                       thread 'comments)))
+      (let* ((resolved (my-forge-ediff-review-model--truthy-p
+                        (alist-get 'isResolved thread)))
+             (thread-id (alist-get 'id thread))
+             (path (alist-get 'path thread))
+             (line (or (alist-get 'line thread)
+                       (alist-get 'originalLine thread)))
+             (side (alist-get 'diffSide thread))
+             (comments (my-forge-ediff-review-model--graphql-nodes
+                        thread 'comments))
+             (reply-to-id (alist-get 'databaseId (car comments))))
         (when (and path line side)
           (dolist (comment comments)
             (let ((body (alist-get 'body comment))
                   (author (alist-get 'login (alist-get 'author comment))))
               (push (list :path path :line line :side side :body body
-                          :author author :resolved resolved)
+                          :author author :resolved resolved
+                          :thread-id thread-id :reply-to-id reply-to-id)
                     entries))))))))
 
 ;;;; API host resolution

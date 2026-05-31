@@ -235,6 +235,29 @@ LOCATION is an alist providing the thread-level `path', `line',
     (should (= 3 (plist-get entry :line)))
     (should (equal "RIGHT" (plist-get entry :side)))))
 
+(ert-deftest review-model-should-carry-thread-and-reply-target ()
+  ;; The thread id and the first comment's databaseId let later replies
+  ;; target the right thread; both comments in a thread share the reply
+  ;; target.  Location lives on the thread, so the comment nodes only carry
+  ;; databaseId, body and author.
+  (let* ((thread
+          `((id . "THREAD_kw1")
+            (isResolved . :json-false)
+            (path . "a.el") (line . 3) (diffSide . "RIGHT")
+            (comments
+             (nodes . ,(vector
+                        '((databaseId . 555) (body . "first")
+                          (author (login . "u")))
+                        '((databaseId . 556) (body . "second")
+                          (author (login . "v"))))))))
+         (response (my-forge-ediff-review-model-test--threads-response
+                    (vector thread)))
+         (entries (my-forge-ediff-review-model-parse-review-threads response)))
+    (should (= 2 (length entries)))
+    (should (equal "THREAD_kw1" (plist-get (car entries) :thread-id)))
+    (should (= 555 (plist-get (car entries) :reply-to-id)))
+    (should (= 555 (plist-get (cadr entries) :reply-to-id)))))
+
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
 (ert-deftest review-model-resolve-host-should-return-github-apihost ()
