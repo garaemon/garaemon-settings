@@ -94,5 +94,46 @@ Memos are never passed here, so they cannot leak into a submission."
         (body . ,(plist-get comment :body))))
     comments)))
 
+;;;; Existing review threads (parsed from GitHub GraphQL)
+
+(defun my-forge-ediff-review-model--graphql-nodes (container key)
+  "Return the `nodes' of CONTAINER's KEY field as a list.
+GraphQL arrays decode as either lists or vectors depending on the JSON
+reader, so the result is normalized to a list."
+  (append (alist-get 'nodes (alist-get key container)) nil))
+
+(defun my-forge-ediff-review-model--truthy-p (value)
+  "Return non-nil when a decoded JSON VALUE represents boolean true.
+Handles the `:json-false' / nil falsey conventions of the JSON readers."
+  (and value (not (eq value :json-false))))
+
+(defun my-forge-ediff-review-model-parse-review-threads (response)
+  "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
+Each entry is a plist (:path :line :side :body :author :resolved) where
+:side is \"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  A comment
+with no resolvable line (neither `line' nor `originalLine') is skipped,
+and entries keep their thread/comment order."
+  (let* ((data (alist-get 'data response))
+         (pullreq (alist-get 'pullRequest (alist-get 'repository data)))
+         (threads (my-forge-ediff-review-model--graphql-nodes
+                   pullreq 'reviewThreads))
+         (entries nil))
+    (dolist (thread threads (nreverse entries))
+      (let ((resolved (my-forge-ediff-review-model--truthy-p
+                       (alist-get 'isResolved thread)))
+            (comments (my-forge-ediff-review-model--graphql-nodes
+                       thread 'comments)))
+        (dolist (comment comments)
+          (let ((path (alist-get 'path comment))
+                (line (or (alist-get 'line comment)
+                          (alist-get 'originalLine comment)))
+                (side (alist-get 'diffSide comment))
+                (body (alist-get 'body comment))
+                (author (alist-get 'login (alist-get 'author comment))))
+            (when (and path line side)
+              (push (list :path path :line line :side side :body body
+                          :author author :resolved resolved)
+                    entries))))))))
+
 (provide 'my-forge-ediff-review-model)
 ;;; my-forge-ediff-review-model.el ends here
