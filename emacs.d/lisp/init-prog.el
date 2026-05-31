@@ -855,6 +855,12 @@ Is Ollama running? (ollama serve) Status: %s" status))
 
 (use-package forge
   :after magit
+  ;; Demand-load forge as soon as magit loads.  The auto forge-pull hook below
+  ;; lives in this :config block, so forge must be loaded for the hook to be
+  ;; registered before the first magit-status buffer is created.  With plain
+  ;; :after (deferred) forge would not load until a forge command runs, so the
+  ;; hook would be missing on the first magit-status of the session.
+  :demand t
   :ensure t
   ;; How to setup forge:
   ;;   1. configure github.user by following command:
@@ -908,7 +914,26 @@ collect inline comments via `my-forge-ediff-review-add-comment'."
     (when (ignore-errors (forge-get-repository :tracked))
       (forge-pull)))
   (advice-add 'magit-pull-from-upstream :after #'my-forge-pull-after-magit-pull)
-  (advice-add 'magit-pull-fropm-pushremote :after #'my-forge-pull-after-magit-pull)
+  (advice-add 'magit-pull-from-pushremote :after #'my-forge-pull-after-magit-pull)
+
+  ;; Forge does not refresh its data on its own, so opening magit-status shows
+  ;; stale (or empty) PR/issue sections until a manual `forge-pull'.  Pull once
+  ;; per repository per Emacs session the first time its status buffer is
+  ;; opened.  The pull is asynchronous and refreshes the buffer when it
+  ;; finishes, and the per-session guard keeps it from hammering the GitHub API.
+  (defvar my-forge--session-pulled-repos (make-hash-table :test 'equal)
+    "Repository roots already forge-pulled during this Emacs session.")
+
+  (defun my-forge-pull-once-per-session ()
+    "Run `forge-pull' the first time a tracked repository's status is shown."
+    (when (ignore-errors (forge-get-repository :tracked))
+      (let ((repository-root (magit-toplevel)))
+        (when (and repository-root
+                   (not (gethash repository-root my-forge--session-pulled-repos)))
+          (puthash repository-root t my-forge--session-pulled-repos)
+          (forge-pull)))))
+
+  (add-hook 'magit-status-mode-hook #'my-forge-pull-once-per-session)
 
   ;; PR review mode using diff-hl:
   ;;   Overrides `diff-hl-reference-revision' to show PR changes (vs base branch) in fringe.
