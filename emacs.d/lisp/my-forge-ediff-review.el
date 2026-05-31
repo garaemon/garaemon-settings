@@ -44,8 +44,6 @@
 
 (require 'cl-lib)
 (require 'ghub)
-;; ghub 5.0 moved `ghub-graphql' into `ghub-legacy', which is not autoloaded.
-(require 'ghub-legacy nil t)
 (require 'my-magit-ediff)
 (require 'my-forge-ediff-review-model)
 
@@ -183,8 +181,8 @@ forges resolve to nil so ghub falls back to its default host."
   "Fetch the PR's existing review comments and overlay them when they arrive.
 Runs asynchronously; failures are reported but never abort the review."
   (let ((s my-forge-ediff-review--session))
-    (when (fboundp 'ghub-graphql)
-      (ghub-graphql
+    (when (fboundp 'ghub-query)
+      (ghub-query
        my-forge-ediff-review--threads-query
        `((owner . ,(plist-get s :owner))
          (repo . ,(plist-get s :repo))
@@ -336,6 +334,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "RET") #'my-forge-ediff-review-add-comment)
       (define-key map (kbd "m") #'my-forge-ediff-review-add-memo)
       (define-key map (kbd "r") #'my-forge-ediff-review-reply-to-comment)
+      (define-key map (kbd "R") #'my-forge-ediff-review-toggle-resolved)
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
@@ -578,6 +577,50 @@ C-c C-k to cancel.  HTML comments are stripped. -->\n\n"
     (let ((buf (current-buffer)))
       (quit-window)
       (kill-buffer buf))))
+
+;;;; Resolving / unresolving review threads
+
+(defconst my-forge-ediff-review--resolve-mutation
+  "mutation($threadId:ID!){
+     resolveReviewThread(input:{threadId:$threadId}){ thread{ id isResolved } }
+   }"
+  "GraphQL mutation marking a review thread resolved.")
+
+(defconst my-forge-ediff-review--unresolve-mutation
+  "mutation($threadId:ID!){
+     unresolveReviewThread(input:{threadId:$threadId}){ thread{ id isResolved } }
+   }"
+  "GraphQL mutation marking a review thread unresolved.")
+
+(defun my-forge-ediff-review-toggle-resolved ()
+  "Resolve or unresolve the existing review thread on the line at point."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let ((entry (my-forge-ediff-review--existing-at-point)))
+    (unless entry
+      (user-error "No existing review comment on this line"))
+    (let ((thread-id (plist-get entry :thread-id)))
+      (unless thread-id
+        (user-error "This review comment has no thread id to resolve"))
+      (my-forge-ediff-review--set-thread-resolved
+       thread-id (not (plist-get entry :resolved))))))
+
+(defun my-forge-ediff-review--set-thread-resolved (thread-id resolve)
+  "Mark THREAD-ID resolved when RESOLVE is non-nil, else unresolved.
+Refreshes the inline overlays once GitHub confirms the change."
+  (let ((s my-forge-ediff-review--session))
+    (ghub-query
+     (if resolve
+         my-forge-ediff-review--resolve-mutation
+       my-forge-ediff-review--unresolve-mutation)
+     `((threadId . ,thread-id))
+     :auth 'forge
+     :host (plist-get s :host)
+     :callback (lambda (_value &rest _)
+                 (message "Thread %s." (if resolve "resolved" "unresolved"))
+                 (my-forge-ediff-review--fetch-existing-threads))
+     :errorback (lambda (err &rest _)
+                  (message "Could not update thread: %S" err)))))
 
 ;;;; Listing / discarding
 
