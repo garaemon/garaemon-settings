@@ -67,6 +67,10 @@ Don't implement many things at once. Always compile programs or run test codes a
 
 Make a branch first before you modify the code if you are on the default branch.
 
+### Bug Reproduction
+
+When the user reports an error or bug, first try to reproduce it with automated code (a script or a failing test) before attempting a fix. Once reproduced, add the reproduction as a test eventually, so the bug stays covered by the test suite.
+
 ### PR
 
 Before you make a PR, always run tests including linters. Ignore test programs in linter.
