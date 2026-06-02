@@ -50,6 +50,31 @@
 (defvar my-magit-ediff--saved-window-config nil
   "Window configuration captured at session start, restored on cleanup.")
 
+(defvar my-magit-ediff--control-buffer nil
+  "The ediff control buffer of the file currently under comparison.
+Captured from `ediff-buffers' so callers such as the review sidebar can
+quit the active comparison without being inside one of its buffers.")
+
+(defvar my-magit-ediff--pending-index nil
+  "File index to open after the current comparison quits, or nil.
+Set by `my-magit-ediff-goto-index' so a jump requested while a file is
+open is performed once `ediff-quit-hook' has torn that file down.")
+
+;; Extension points for layers built on top of this engine (e.g. the
+;; forge review sidebar).  Kept as plain variables/hooks rather than
+;; subclasses so the engine stays unaware of any particular consumer.
+(defvar my-magit-ediff-navigation-function
+  #'my-magit-ediff--prompt-navigation
+  "Function called after a file is quit to choose the next action.
+Defaults to the built-in `completing-read' prompt.  A consumer may bind
+it to keep its own UI (such as a persistent sidebar) in control.")
+
+(defvar my-magit-ediff-start-hook nil
+  "Hook run once the first file of a session has been opened.")
+
+(defvar my-magit-ediff-cleanup-hook nil
+  "Hook run by `my-magit-ediff--cleanup' before session state is reset.")
+
 ;;;; Entry point functions
 
 ;;;###autoload
@@ -95,7 +120,8 @@
         my-magit-ediff--saved-window-config (current-window-configuration))
   (my-magit-ediff--hide-side-windows)
   (add-hook 'ediff-quit-hook #'my-magit-ediff--on-quit)
-  (my-magit-ediff--open-current))
+  (my-magit-ediff--open-current)
+  (run-hooks 'my-magit-ediff-start-hook))
 
 (defun my-magit-ediff--open-current ()
   "Open ediff for the file at current index."
@@ -120,13 +146,67 @@
   (when (window-with-parameter 'window-side nil nil)
     (window-toggle-side-windows)))
 
+(defun my-magit-ediff--select-content-window ()
+  "Select a normal window so ediff never tries to set up in a side window.
+A side window (such as the review sidebar) cannot be split or made the
+sole window, which would make ediff's plain window setup error out."
+  (when (window-parameter (selected-window) 'window-side)
+    (let ((normal (seq-find
+                   (lambda (window)
+                     (not (window-parameter window 'window-side)))
+                   (window-list))))
+      (when normal
+        (select-window normal)))))
+
+(defun my-magit-ediff--capture-side-windows ()
+  "Return a spec describing the frame's side windows for later restoration.
+Each entry is (BUFFER SIDE SLOT WIDTH) so `my-magit-ediff--restore-side-windows'
+can recreate the window in the same slot."
+  (let ((spec nil))
+    (dolist (window (window-list nil 'no-mini))
+      (when (window-parameter window 'window-side)
+        (push (list (window-buffer window)
+                    (window-parameter window 'window-side)
+                    (window-parameter window 'window-slot)
+                    (window-total-width window))
+              spec)))
+    spec))
+
+(defun my-magit-ediff--restore-side-windows (spec)
+  "Recreate the side windows captured in SPEC.
+SPEC comes from `my-magit-ediff--capture-side-windows'."
+  (dolist (entry spec)
+    (when (buffer-live-p (nth 0 entry))
+      (display-buffer-in-side-window
+       (nth 0 entry)
+       `((side . ,(nth 1 entry))
+         (slot . ,(nth 2 entry))
+         (window-width . ,(nth 3 entry))
+         (window-parameters . ((no-delete-other-windows . t))))))))
+
 (defun my-magit-ediff--open-file (file)
-  "Open ediff for a single FILE using current rev-a/rev-b."
-  (let ((buf-a (my-magit-ediff--create-revision-buffer
-                file my-magit-ediff--rev-a))
-        (buf-b (my-magit-ediff--create-revision-buffer
-                file my-magit-ediff--rev-b)))
-    (ediff-buffers buf-a buf-b)))
+  "Open ediff for a single FILE using current rev-a/rev-b.
+Stores the resulting control buffer in `my-magit-ediff--control-buffer'.
+
+Side windows (the review sidebar) are removed for the duration of ediff's
+window setup and recreated afterward.  Ediff's plain setup clears the frame
+with `delete-other-windows' before laying out its panes, but that is a no-op
+while a side window is present, so the previous file's windows survive and
+pile up with every navigation.  Tearing the side windows down lets ediff
+start from a single clean window."
+  (my-magit-ediff--kill-stale-revision-buffers)
+  (let ((side-spec (my-magit-ediff--capture-side-windows)))
+    (dolist (window (window-list nil 'no-mini))
+      (when (window-parameter window 'window-side)
+        (ignore-errors (delete-window window))))
+    (my-magit-ediff--select-content-window)
+    (delete-other-windows)
+    (let ((buf-a (my-magit-ediff--create-revision-buffer
+                  file my-magit-ediff--rev-a))
+          (buf-b (my-magit-ediff--create-revision-buffer
+                  file my-magit-ediff--rev-b)))
+      (setq my-magit-ediff--control-buffer (ediff-buffers buf-a buf-b)))
+    (my-magit-ediff--restore-side-windows side-spec)))
 
 (defun my-magit-ediff--create-revision-buffer (file rev)
   "Create a buffer with FILE content at REV.
@@ -175,6 +255,19 @@ If REV is a string, return that revision's content."
       (kill-buffer buf)))
   (setq my-magit-ediff--temp-buffers nil))
 
+(defun my-magit-ediff--kill-stale-revision-buffers ()
+  "Kill leftover revision buffers generated for earlier files.
+Only buffers built from a git revision (a non-nil `my-magit-ediff--buf-rev',
+i.e. a commit SHA or `index') are killed, so the working-tree file buffer
+\(nil rev) is never touched and unsaved edits are preserved.  This guards
+against revision buffers piling up when navigation skips the normal quit
+path, such as rapid file switches from the review sidebar."
+  (dolist (buffer (buffer-list))
+    (when (and (buffer-live-p buffer)
+               (buffer-local-value 'my-magit-ediff--buf-rev buffer))
+      (kill-buffer buffer)))
+  (setq my-magit-ediff--temp-buffers nil))
+
 (defun my-magit-ediff--on-quit ()
   "Hook called when ediff session ends. Show navigation prompt if active."
   (when my-magit-ediff--active
@@ -182,16 +275,42 @@ If REV is a string, return that revision's content."
     (run-at-time 0.1 nil #'my-magit-ediff--after-quit)))
 
 (defun my-magit-ediff--after-quit ()
-  "Kill temp buffers from previous session, then show navigation.
-If the navigation prompt is aborted (e.g. `C-g'), run cleanup so the
-session state and `ediff-quit-hook' do not leak into later, unrelated
-ediff sessions."
+  "Kill temp buffers, then jump to a pending file or run navigation.
+When `my-magit-ediff--pending-index' is set (a jump requested from the
+sidebar), open that file.  Otherwise delegate to
+`my-magit-ediff-navigation-function'.  If that navigation is aborted
+\(e.g. `C-g'), run cleanup so the session state and `ediff-quit-hook' do
+not leak into later, unrelated ediff sessions."
   (my-magit-ediff--kill-temp-buffers)
-  (condition-case nil
-      (my-magit-ediff--prompt-navigation)
-    (quit
-     (my-magit-ediff--cleanup)
-     (message "Review ended."))))
+  (if my-magit-ediff--pending-index
+      (let ((index my-magit-ediff--pending-index))
+        (setq my-magit-ediff--pending-index nil
+              my-magit-ediff--current-index index)
+        (my-magit-ediff--open-current))
+    (condition-case nil
+        (funcall my-magit-ediff-navigation-function)
+      (quit
+       (my-magit-ediff--cleanup)
+       (message "Review ended.")))))
+
+(defun my-magit-ediff-goto-index (index)
+  "Switch the active multi-file session to the file at INDEX.
+If a comparison is open, quit it first; the jump then happens in
+`my-magit-ediff--after-quit'.  Otherwise open the file directly."
+  (unless my-magit-ediff--active
+    (user-error "No active multi-file ediff session"))
+  (let ((control my-magit-ediff--control-buffer))
+    (if (and control (buffer-live-p control))
+        ;; A comparison is open, so we cannot stack the next ediff on top
+        ;; of it.  Record the target and quit; quitting runs `ediff-quit-hook'
+        ;; -> `my-magit-ediff--on-quit' -> `my-magit-ediff--after-quit', which
+        ;; opens `my-magit-ediff--pending-index'.  The next ediff is therefore
+        ;; launched through the quit hook, not synchronously here.
+        (progn
+          (setq my-magit-ediff--pending-index index)
+          (with-current-buffer control (ediff-really-quit nil)))
+      (setq my-magit-ediff--current-index index)
+      (my-magit-ediff--open-current))))
 
 (defun my-magit-ediff--build-file-labels ()
   "Build labeled file list for `completing-read'."
@@ -236,14 +355,19 @@ candidate to the top, which scrambles the visual order."
           (my-magit-ediff--open-current))))))
 
 (defun my-magit-ediff--cleanup ()
-  "Reset state variables, restore windows, and remove hook."
+  "Reset state variables, restore windows, and remove hook.
+`my-magit-ediff-cleanup-hook' runs first so consumers can tear down
+their own UI (such as the review sidebar) while session state is intact."
+  (run-hooks 'my-magit-ediff-cleanup-hook)
   (my-magit-ediff--kill-temp-buffers)
   (setq my-magit-ediff--files nil
         my-magit-ediff--current-index 0
         my-magit-ediff--rev-a nil
         my-magit-ediff--rev-b nil
         my-magit-ediff--total-count 0
-        my-magit-ediff--active nil)
+        my-magit-ediff--active nil
+        my-magit-ediff--control-buffer nil
+        my-magit-ediff--pending-index nil)
   (remove-hook 'ediff-quit-hook #'my-magit-ediff--on-quit)
   (when my-magit-ediff--saved-window-config
     (set-window-configuration my-magit-ediff--saved-window-config)

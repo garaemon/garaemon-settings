@@ -880,6 +880,8 @@ Is Ollama running? (ollama serve) Status: %s" status))
          ("C-c M d" . my-diff-hl-set-reference)
          ("C-c M e" . my-forge-ediff-pullreq-at-point)
          ("C-c M c" . my-forge-ediff-review-add-comment)
+         ("C-c M m" . my-forge-ediff-review-add-memo)
+         ("C-c M f" . my-forge-ediff-review-toggle-reviewed)
          ("C-c M l" . my-forge-ediff-review-list-comments)
          ("C-c M C" . my-forge-ediff-review-submit))
   :config
