@@ -88,6 +88,15 @@ repository-relative file paths the user has flagged as done.")
 
 ;;;; Session lifecycle
 
+(defun my-forge-ediff-review--diff-base (base-rev head-rev)
+  "Return the commit to diff HEAD-REV against when reviewing a PR.
+GitHub shows a PR as the three-dot diff `base...head', i.e. against the
+merge-base where the branch diverged, not against the base branch tip.
+Diffing against the tip (a two-dot diff) would fold in commits that landed
+on the base branch after the PR forked, inflating the file list with
+unrelated changes.  Fall back to BASE-REV when no merge-base is found."
+  (or (magit-git-string "merge-base" base-rev head-rev) base-rev))
+
 (defun my-forge-ediff-review-start (pullreq)
   "Start an ediff-based review session for forge PULLREQ.
 Verifies that the PR commits are fetched, records the session, and
@@ -110,21 +119,24 @@ launches multi-file ediff between PR base and head."
                              (length (plist-get my-forge-ediff-review--session
                                                 :comments))))))
       (user-error "Aborted"))
-    (setq my-forge-ediff-review--session
-          (list :owner (oref repo owner)
-                :repo (oref repo name)
-                :num (oref pullreq number)
-                :head-rev head-rev
-                :base-rev base-rev
-                :host (my-forge-ediff-review--host-for repo)
-                :comments nil
-                :memos nil
-                :reviewed nil))
-    (message
-     "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
-     (oref pullreq number))
-    (my-forge-ediff-review--install-sidebar-hooks)
-    (my-magit-ediff-all-compare base-rev head-rev)))
+    ;; `:base-rev' must track the diff base so that
+    ;; `my-forge-ediff-review--side-for-rev' still maps the base pane to LEFT.
+    (let ((diff-base (my-forge-ediff-review--diff-base base-rev head-rev)))
+      (setq my-forge-ediff-review--session
+            (list :owner (oref repo owner)
+                  :repo (oref repo name)
+                  :num (oref pullreq number)
+                  :head-rev head-rev
+                  :base-rev diff-base
+                  :host (my-forge-ediff-review--host-for repo)
+                  :comments nil
+                  :memos nil
+                  :reviewed nil))
+      (message
+       "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
+       (oref pullreq number))
+      (my-forge-ediff-review--install-sidebar-hooks)
+      (my-magit-ediff-all-compare diff-base head-rev))))
 
 (defun my-forge-ediff-review--host-for (repo)
   "Return the API host to use for REPO, or nil for ghub's default.
