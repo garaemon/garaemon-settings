@@ -5,7 +5,7 @@
 ;; `my-forge-ediff-review-model'.  These helpers have no dependency on
 ;; magit/forge/ghub, so they can be exercised in batch with:
 ;;
-;;   emacs -batch -L lisp -l lisp/my-forge-ediff-review-model-test.el \
+;;   emacs -batch -L lisp -l tests/my-forge-ediff-review-model-test.el \
 ;;     -f ert-run-tests-batch-and-exit
 
 ;;; Code:
