@@ -138,9 +138,18 @@
        (reviewThreads
         (nodes . ,thread-nodes)))))))
 
-(defun my-forge-ediff-review-model-test--thread (resolved comment-nodes)
-  "Build one reviewThread node with RESOLVED flag and COMMENT-NODES."
+(defun my-forge-ediff-review-model-test--comment (body author)
+  "Build one review comment node carrying BODY and AUTHOR login.
+GitHub exposes `path'/`line'/`diffSide' on the thread, so a comment node
+holds only the body and author."
+  `((body . ,body) (author (login . ,author))))
+
+(defun my-forge-ediff-review-model-test--thread (resolved location comment-nodes)
+  "Build one reviewThread node with RESOLVED, LOCATION and COMMENT-NODES.
+LOCATION is an alist providing the thread-level `path', `line',
+`originalLine' and `diffSide' fields."
   `((isResolved . ,resolved)
+    ,@location
     (comments (nodes . ,comment-nodes))))
 
 (ert-deftest review-model-should-parse-a-review-comment-into-an-entry ()
@@ -149,9 +158,10 @@
            (vector
             (my-forge-ediff-review-model-test--thread
              :json-false
-             (vector '((path . "src/a.el") (line . 12) (originalLine . 9)
-                       (diffSide . "RIGHT") (body . "looks off")
-                       (author (login . "octocat"))))))))
+             '((path . "src/a.el") (line . 12) (originalLine . 9)
+               (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment
+                      "looks off" "octocat"))))))
          (entries (my-forge-ediff-review-model-parse-review-threads response))
          (entry (car entries)))
     (should (= 1 (length entries)))
@@ -168,9 +178,8 @@
            (vector
             (my-forge-ediff-review-model-test--thread
              :json-false
-             (vector '((path . "a.el") (line) (originalLine . 7)
-                       (diffSide . "LEFT") (body . "x")
-                       (author (login . "u"))))))))
+             '((path . "a.el") (line) (originalLine . 7) (diffSide . "LEFT"))
+             (vector (my-forge-ediff-review-model-test--comment "x" "u"))))))
          (entry (car (my-forge-ediff-review-model-parse-review-threads
                       response))))
     (should (= 7 (plist-get entry :line)))))
@@ -181,21 +190,21 @@
            (vector
             (my-forge-ediff-review-model-test--thread
              t
-             (vector '((path . "a.el") (line . 1) (diffSide . "RIGHT")
-                       (body . "done") (author (login . "u"))))))))
+             '((path . "a.el") (line . 1) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment "done" "u"))))))
          (entry (car (my-forge-ediff-review-model-parse-review-threads
                       response))))
     (should (plist-get entry :resolved))))
 
-(ert-deftest review-model-should-skip-comment-without-line ()
+(ert-deftest review-model-should-skip-thread-without-line ()
   (let* ((response
           (my-forge-ediff-review-model-test--threads-response
            (vector
             (my-forge-ediff-review-model-test--thread
              :json-false
-             (vector '((path . "a.el") (line) (originalLine)
-                       (diffSide . "RIGHT") (body . "outdated")
-                       (author (login . "u"))))))))
+             '((path . "a.el") (line) (originalLine) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment
+                      "outdated" "u"))))))
          (entries (my-forge-ediff-review-model-parse-review-threads
                    response)))
     (should (null entries))))
@@ -214,8 +223,8 @@
            (vector
             (my-forge-ediff-review-model-test--thread
              :json-false
-             (vector '((path . "a.el") (line . 3) (diffSide . "RIGHT")
-                       (body . "hi") (author (login . "me"))))))))
+             '((path . "a.el") (line . 3) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment "hi" "me"))))))
          (async-root (car wrapped))
          (entries (my-forge-ediff-review-model-parse-review-threads
                    async-root))

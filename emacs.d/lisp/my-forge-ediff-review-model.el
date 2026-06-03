@@ -119,9 +119,12 @@ alist `((data . PAYLOAD))'.  Both resolve to PAYLOAD here."
 (defun my-forge-ediff-review-model-parse-review-threads (response)
   "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
 Each entry is a plist (:path :line :side :body :author :resolved) where
-:side is \"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  A comment
-with no resolvable line (neither `line' nor `originalLine') is skipped,
-and entries keep their thread/comment order."
+:side is \"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  GitHub
+exposes `path', `line', `originalLine' and `diffSide' on the thread, not
+on `PullRequestReviewComment', so the location is read from the thread
+and only the body/author come from each comment.  A thread with no
+resolvable line (neither `line' nor `originalLine') is skipped, and
+entries keep their thread/comment order."
   (let* ((data (my-forge-ediff-review-model--response-data response))
          (pullreq (alist-get 'pullRequest (alist-get 'repository data)))
          (threads (my-forge-ediff-review-model--graphql-nodes
@@ -130,16 +133,16 @@ and entries keep their thread/comment order."
     (dolist (thread threads (nreverse entries))
       (let ((resolved (my-forge-ediff-review-model--truthy-p
                        (alist-get 'isResolved thread)))
+            (path (alist-get 'path thread))
+            (line (or (alist-get 'line thread)
+                      (alist-get 'originalLine thread)))
+            (side (alist-get 'diffSide thread))
             (comments (my-forge-ediff-review-model--graphql-nodes
                        thread 'comments)))
-        (dolist (comment comments)
-          (let ((path (alist-get 'path comment))
-                (line (or (alist-get 'line comment)
-                          (alist-get 'originalLine comment)))
-                (side (alist-get 'diffSide comment))
-                (body (alist-get 'body comment))
-                (author (alist-get 'login (alist-get 'author comment))))
-            (when (and path line side)
+        (when (and path line side)
+          (dolist (comment comments)
+            (let ((body (alist-get 'body comment))
+                  (author (alist-get 'login (alist-get 'author comment))))
               (push (list :path path :line line :side side :body body
                           :author author :resolved resolved)
                     entries))))))))

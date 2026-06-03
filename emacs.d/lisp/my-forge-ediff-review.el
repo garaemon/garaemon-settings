@@ -168,9 +168,9 @@ nil, which makes ghub fall back to `ghub-default-host' (api.github.com)."
        pullRequest(number:$number){
          reviewThreads(first:100){
            nodes{
-             isResolved
+             isResolved path line originalLine diffSide
              comments(first:100){
-               nodes{ path line originalLine diffSide body author{login} }
+               nodes{ body author{login} }
              }
            }
          }
