@@ -19,6 +19,7 @@ import shutil
 import sys
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -40,6 +41,37 @@ CHECKSUM_LINE_PATTERN = re.compile(r"^([0-9a-f]{64})\s+(\S+)$")
 
 class UpdateError(RuntimeError):
     """Raised when the upstream metadata is missing or malformed."""
+
+
+@dataclass(frozen=True)
+class Release:
+    """One GitHub release, narrowed to the fields this script consumes.
+
+    Frozen so a parsed release cannot be mutated between fetch and
+    selection, which keeps the eligibility decision reproducible.
+    """
+
+    tag_name: str
+    published_at: str | None
+    draft: bool
+    prerelease: bool
+
+    @classmethod
+    def from_payload(cls, payload: dict) -> "Release":
+        """Build a :class:`Release` from one entry of the GitHub /releases
+        JSON array.
+
+        Missing fields fall back to safe defaults (empty tag, no publish
+        date, neither draft nor prerelease) so a malformed entry is skipped
+        by :func:`select_latest_eligible_release` rather than raising while
+        parsing the rest of the page.
+        """
+        return cls(
+            tag_name=payload.get("tag_name", ""),
+            published_at=payload.get("published_at"),
+            draft=bool(payload.get("draft")),
+            prerelease=bool(payload.get("prerelease")),
+        )
 
 
 def open_github_url(
@@ -69,25 +101,33 @@ def fetch_releases_payload(
     *,
     timeout: int = 30,
     per_page: int = RELEASES_PAGE_SIZE,
-) -> list[dict]:
-    """Return the most recent releases for ``repo`` as a list of dicts.
+) -> list[Release]:
+    """Return the most recent releases for ``repo`` as :class:`Release` objects.
 
     Wraps :class:`urllib.error.URLError` (rate-limit 403, DNS failure, TLS
     issues), :class:`json.JSONDecodeError` (a non-JSON body, e.g. an
     incident-page HTML response), and :class:`UnicodeDecodeError` as
     :class:`UpdateError`, so the ``__main__`` handler emits a single
-    tagged error line instead of a stack trace.
+    tagged error line instead of a stack trace. A JSON body that is not an
+    array (e.g. GitHub's ``{"message": ...}`` error object) is also reported
+    as :class:`UpdateError` rather than crashing during parsing.
     """
     url = f"https://api.github.com/repos/{repo}/releases?per_page={per_page}"
     try:
         with open_github_url(url, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            payload = json.loads(resp.read().decode("utf-8"))
     except urllib.error.URLError as exc:
         raise UpdateError(f"failed to fetch releases for {repo}: {exc}") from exc
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise UpdateError(
             f"malformed releases response for {repo}: {exc}"
         ) from exc
+    if not isinstance(payload, list):
+        raise UpdateError(
+            f"expected a JSON array of releases for {repo}, "
+            f"got {type(payload).__name__}"
+        )
+    return [Release.from_payload(entry) for entry in payload]
 
 
 def parse_published_at(value: str) -> datetime.datetime:
@@ -100,7 +140,7 @@ def parse_published_at(value: str) -> datetime.datetime:
 
 
 def select_latest_eligible_release(
-    releases: list[dict],
+    releases: list[Release],
     *,
     now: datetime.datetime,
     min_age_days: int = MIN_RELEASE_AGE_DAYS,
@@ -117,14 +157,13 @@ def select_latest_eligible_release(
     """
     cutoff = now - datetime.timedelta(days=min_age_days)
     for release in releases:
-        if release.get("draft") or release.get("prerelease"):
+        if release.draft or release.prerelease:
             continue
-        published_at = release.get("published_at")
-        if not published_at:
+        if not release.published_at:
             continue
-        if parse_published_at(published_at) > cutoff:
+        if parse_published_at(release.published_at) > cutoff:
             continue
-        tag = release.get("tag_name", "")
+        tag = release.tag_name
         if not tag:
             continue
         # removeprefix strips a literal "v" prefix; lstrip("v") would

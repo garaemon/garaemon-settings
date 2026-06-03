@@ -8,6 +8,7 @@ the main() integration test that monkeypatches them.
 
 import datetime
 import importlib.util
+import json
 import stat
 import sys
 import urllib.request
@@ -57,24 +58,100 @@ FIXTURE_CHECKSUMS_TXT = """\
 
 
 # ---------------------------------------------------------------------------
+# Release.from_payload
+# ---------------------------------------------------------------------------
+class TestReleaseFromPayload:
+    def test_maps_known_fields(self):
+        release = update_chezmoi.Release.from_payload(
+            {
+                "tag_name": "v2.72.0",
+                "published_at": "2026-05-01T00:00:00Z",
+                "draft": True,
+                "prerelease": True,
+            }
+        )
+        assert release == update_chezmoi.Release(
+            tag_name="v2.72.0",
+            published_at="2026-05-01T00:00:00Z",
+            draft=True,
+            prerelease=True,
+        )
+
+    def test_defaults_missing_fields(self):
+        release = update_chezmoi.Release.from_payload({"tag_name": "v2.72.0"})
+        assert release.published_at is None
+        assert release.draft is False
+        assert release.prerelease is False
+
+    def test_defaults_empty_tag_when_absent(self):
+        release = update_chezmoi.Release.from_payload({})
+        assert release.tag_name == ""
+
+
+# ---------------------------------------------------------------------------
+# fetch_releases_payload
+# ---------------------------------------------------------------------------
+class TestFetchReleasesPayload:
+    def _patch_response(self, monkeypatch, body):
+        monkeypatch.setattr(
+            update_chezmoi,
+            "open_github_url",
+            lambda *args, **kwargs: FakeResponse(body),
+        )
+
+    def test_returns_list_of_release_dataclasses(self, monkeypatch):
+        body = json.dumps(
+            [
+                {
+                    "tag_name": "v2.72.0",
+                    "published_at": "2026-05-01T00:00:00Z",
+                    "draft": False,
+                    "prerelease": False,
+                }
+            ]
+        ).encode("utf-8")
+        self._patch_response(monkeypatch, body)
+        releases = update_chezmoi.fetch_releases_payload("owner/repo")
+        assert releases == [
+            update_chezmoi.Release(
+                tag_name="v2.72.0",
+                published_at="2026-05-01T00:00:00Z",
+                draft=False,
+                prerelease=False,
+            )
+        ]
+
+    def test_raises_on_malformed_json(self, monkeypatch):
+        self._patch_response(monkeypatch, b"<html>incident</html>")
+        with pytest.raises(update_chezmoi.UpdateError, match="malformed"):
+            update_chezmoi.fetch_releases_payload("owner/repo")
+
+    def test_raises_when_payload_is_not_a_list(self, monkeypatch):
+        body = json.dumps({"message": "Not Found"}).encode("utf-8")
+        self._patch_response(monkeypatch, body)
+        with pytest.raises(update_chezmoi.UpdateError, match="array"):
+            update_chezmoi.fetch_releases_payload("owner/repo")
+
+
+# ---------------------------------------------------------------------------
 # select_latest_eligible_release
 # ---------------------------------------------------------------------------
 NOW = datetime.datetime(2026, 5, 9, 12, 0, tzinfo=datetime.UTC)
 
 
 def make_release(tag, days_ago, *, draft=False, prerelease=False):
-    """Build a release dict shaped like the GitHub /releases payload."""
+    """Build a Release shaped like one GitHub /releases payload entry."""
     published = NOW - datetime.timedelta(days=days_ago)
     # GitHub serialises the trailing UTC offset as ``Z``; Python's
     # datetime.isoformat() emits ``+00:00``. Mimic the GitHub form so
     # parse_published_at exercises the same input shape it sees in prod.
     published_at = published.isoformat().replace("+00:00", "Z")
-    return {
-        "tag_name": tag,
-        "draft": draft,
-        "prerelease": prerelease,
-        "published_at": published_at,
-    }
+    return update_chezmoi.Release(
+        tag_name=tag,
+        published_at=published_at,
+        draft=draft,
+        prerelease=prerelease,
+    )
 
 
 class TestSelectLatestEligibleRelease:
@@ -124,7 +201,12 @@ class TestSelectLatestEligibleRelease:
 
     def test_skips_release_missing_published_at(self):
         releases = [
-            {"tag_name": "v2.72.0", "draft": False, "prerelease": False},
+            update_chezmoi.Release(
+                tag_name="v2.72.0",
+                published_at=None,
+                draft=False,
+                prerelease=False,
+            ),
             make_release("v2.71.0", days_ago=8),
         ]
         result = update_chezmoi.select_latest_eligible_release(
