@@ -1,0 +1,71 @@
+name: Update chezmoi
+
+on:
+  schedule:
+    # GitHub Actions cron is always UTC. Mondays at 03:00 UTC.
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+# Avoid two manual reruns or a manual rerun racing with the scheduled
+# trigger. peter-evans/create-pull-request is idempotent on branch name,
+# but a concurrent run still wastes runner minutes.
+concurrency:
+  group: update-chezmoi
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Bump pinned chezmoi release
+    runs-on: ubuntu-latest
+    # Skip the cron job on forks. A fork's GITHUB_TOKEN is scoped to the
+    # fork, so the blast radius is wasted runner minutes plus a self-PR,
+    # but this is the standard mitigation for scheduled jobs in template
+    # / dotfile repos.
+    if: github.repository == 'garaemon/dotfiles'
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run update script
+        id: bump
+        env:
+          # Authenticated GitHub API requests have a 5,000 req/h limit
+          # versus 60 req/h unauthenticated. The script reads GH_TOKEN
+          # and adds an Authorization header.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/update_chezmoi.py install.sh
+      - name: Open pull request
+        if: steps.bump.outputs.changed == 'true'
+        # Pinned by commit SHA because this action runs with contents:write
+        # and pull-requests:write. The v6 floating tag would let upstream
+        # tag rewrites silently change what runs in this repo.
+        #
+        # NOTE: PRs created with the default GITHUB_TOKEN do not trigger
+        # downstream workflow runs (Lint, Test) on the resulting PR --
+        # GitHub suppresses these to prevent recursion. Reviewers should
+        # close-and-reopen the PR (or push an empty commit) to force CI
+        # to run, or the maintainer can switch this token to a fine-grained
+        # PAT / GitHub App token in the future.
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c  # v6
+        with:
+          branch: auto/bump-chezmoi-v${{ steps.bump.outputs.version }}
+          base: main
+          title: "Bump chezmoi to v${{ steps.bump.outputs.version }}"
+          commit-message: "Bump chezmoi to v${{ steps.bump.outputs.version }}"
+          body: |
+            Automated bump produced by `.github/workflows/update-chezmoi.yml`.
+
+            - Updates `CHEZMOI_VERSION` and the four `CHEZMOI_CHECKSUMS`
+              entries in `install.sh`.
+            - Checksums are taken from
+              `chezmoi_${{ steps.bump.outputs.version }}_checksums.txt`
+              of the matching upstream release.
+            - Upstream release notes:
+              https://github.com/twpayne/chezmoi/releases/tag/v${{ steps.bump.outputs.version }}
+          add-paths: install.sh
+          delete-branch: true

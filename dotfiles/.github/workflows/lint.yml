@@ -65,6 +65,7 @@ jobs:
           .pre-commit-config.yaml
           .github/workflows/lint.yml
           .github/workflows/test.yml
+          .github/workflows/update-chezmoi.yml
           .markdownlint.yaml
 
   markdownlint:

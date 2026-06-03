@@ -21,7 +21,10 @@ if [[ "${BASH_VERSINFO[0]:-0}" -lt 4 ]]; then
     exit 1
 fi
 
-# Pinned chezmoi release. To bump:
+# Pinned chezmoi release. The scheduled workflow at
+# .github/workflows/update-chezmoi.yml refreshes both fields automatically
+# by running .github/scripts/update_chezmoi.py and opening a PR. To bump
+# manually:
 #   1. Pick a new tag from https://github.com/twpayne/chezmoi/releases.
 #   2. Update CHEZMOI_VERSION below.
 #   3. Update each entry in CHEZMOI_CHECKSUMS with the matching sha256
