@@ -107,13 +107,22 @@ reader, so the result is normalized to a list."
 Handles the `:json-false' / nil falsey conventions of the JSON readers."
   (and value (not (eq value :json-false))))
 
+(defun my-forge-ediff-review-model--response-data (response)
+  "Return the `data' payload of a GraphQL RESPONSE regardless of wrapping.
+`ghub-graphql' hands its async callback the root cons `(data . PAYLOAD)'
+whose car is the symbol `data', while a fully wrapped response is the
+alist `((data . PAYLOAD))'.  Both resolve to PAYLOAD here."
+  (if (eq (car-safe response) 'data)
+      (cdr response)
+    (alist-get 'data response)))
+
 (defun my-forge-ediff-review-model-parse-review-threads (response)
   "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
 Each entry is a plist (:path :line :side :body :author :resolved) where
 :side is \"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  A comment
 with no resolvable line (neither `line' nor `originalLine') is skipped,
 and entries keep their thread/comment order."
-  (let* ((data (alist-get 'data response))
+  (let* ((data (my-forge-ediff-review-model--response-data response))
          (pullreq (alist-get 'pullRequest (alist-get 'repository data)))
          (threads (my-forge-ediff-review-model--graphql-nodes
                    pullreq 'reviewThreads))

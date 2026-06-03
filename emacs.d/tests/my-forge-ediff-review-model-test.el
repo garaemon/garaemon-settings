@@ -205,5 +205,26 @@
                  (my-forge-ediff-review-model-test--threads-response
                   (vector))))))
 
+(ert-deftest review-model-should-parse-ghub-async-callback-root ()
+  ;; `ghub-graphql' hands its async callback the root cons `(data . PAYLOAD)'
+  ;; rather than the fully wrapped `((data . PAYLOAD))' alist, so the parser
+  ;; must accept both or existing comments silently never overlay.
+  (let* ((wrapped
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             (vector '((path . "a.el") (line . 3) (diffSide . "RIGHT")
+                       (body . "hi") (author (login . "me"))))))))
+         (async-root (car wrapped))
+         (entries (my-forge-ediff-review-model-parse-review-threads
+                   async-root))
+         (entry (car entries)))
+    (should (eq 'data (car-safe async-root)))
+    (should (= 1 (length entries)))
+    (should (equal "a.el" (plist-get entry :path)))
+    (should (= 3 (plist-get entry :line)))
+    (should (equal "RIGHT" (plist-get entry :side)))))
+
 (provide 'my-forge-ediff-review-model-test)
 ;;; my-forge-ediff-review-model-test.el ends here
