@@ -92,6 +92,15 @@ fetched once at session start and shown read-only as overlays.")
 
 ;;;; Session lifecycle
 
+(defun my-forge-ediff-review--diff-base (base-rev head-rev)
+  "Return the commit to diff HEAD-REV against when reviewing a PR.
+GitHub shows a PR as the three-dot diff `base...head', i.e. against the
+merge-base where the branch diverged, not against the base branch tip.
+Diffing against the tip (a two-dot diff) would fold in commits that landed
+on the base branch after the PR forked, inflating the file list with
+unrelated changes.  Fall back to BASE-REV when no merge-base is found."
+  (or (magit-git-string "merge-base" base-rev head-rev) base-rev))
+
 (defun my-forge-ediff-review-start (pullreq)
   "Start an ediff-based review session for forge PULLREQ.
 Verifies that the PR commits are fetched, records the session, and
@@ -114,23 +123,26 @@ launches multi-file ediff between PR base and head."
                              (length (plist-get my-forge-ediff-review--session
                                                 :comments))))))
       (user-error "Aborted"))
-    (setq my-forge-ediff-review--session
-          (list :owner (oref repo owner)
-                :repo (oref repo name)
-                :num (oref pullreq number)
-                :head-rev head-rev
-                :base-rev base-rev
-                :host (my-forge-ediff-review--host-for repo)
-                :comments nil
-                :memos nil
-                :reviewed nil
-                :existing nil))
-    (message
-     "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
-     (oref pullreq number))
-    (my-forge-ediff-review--install-sidebar-hooks)
-    (my-forge-ediff-review--fetch-existing-threads)
-    (my-magit-ediff-all-compare base-rev head-rev)))
+    ;; `:base-rev' must track the diff base so that
+    ;; `my-forge-ediff-review--side-for-rev' still maps the base pane to LEFT.
+    (let ((diff-base (my-forge-ediff-review--diff-base base-rev head-rev)))
+      (setq my-forge-ediff-review--session
+            (list :owner (oref repo owner)
+                  :repo (oref repo name)
+                  :num (oref pullreq number)
+                  :head-rev head-rev
+                  :base-rev diff-base
+                  :host (my-forge-ediff-review--host-for repo)
+                  :comments nil
+                  :memos nil
+                  :reviewed nil
+                  :existing nil))
+      (message
+       "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
+       (oref pullreq number))
+      (my-forge-ediff-review--install-sidebar-hooks)
+      (my-forge-ediff-review--fetch-existing-threads)
+      (my-magit-ediff-all-compare diff-base head-rev))))
 
 (defun my-forge-ediff-review--host-for (repo)
   "Return the API host to use for REPO, or nil for ghub's default.
@@ -361,11 +373,11 @@ when it shows the head."
 
 ;;;; Adding comments and memos
 
-;; Comments and memos share one markdown editor.  They differ only in
-;; which session list they land in (:comments is submitted to GitHub,
-;; :memos stays local) and in how repeated entries on a line behave:
-;; a line may carry several comments but only one memo, which is edited
-;; in place and removed when saved empty.
+;; Comments and memos share one markdown editor and behave the same way:
+;; a line carries at most one entry of each kind, reopening the editor
+;; prefills the existing body for in-place editing, and saving it empty
+;; removes it.  They differ only in which session list they land in
+;; (:comments is submitted to GitHub, :memos stays local).
 (defconst my-forge-ediff-review--kinds
   '((comment . (:key :comments :label "Comment"))
     (memo    . (:key :memos    :label "Memo")))
@@ -386,7 +398,9 @@ when it shows the head."
   (plist-get (alist-get kind my-forge-ediff-review--kinds) :label))
 
 (defun my-forge-ediff-review-add-comment ()
-  "Add a PR review comment for the line at point in this ediff buffer."
+  "Add a PR review comment for the line at point in this ediff buffer.
+Reopening the editor on the same line prefills the existing comment for
+in-place editing; saving it empty removes it."
   (interactive)
   (my-forge-ediff-review--start-editor 'comment))
 
@@ -406,21 +420,21 @@ existing memo; saving it empty removes it."
        "Not in a review ediff revision buffer (no file/rev context)"))
     (my-forge-ediff-review--open-editor ctx kind)))
 
-(defun my-forge-ediff-review--existing-memo-body (ctx)
-  "Return the body of an existing memo at CTX, or nil."
-  (let ((memo (my-forge-ediff-review-model-find-entry
-               (plist-get my-forge-ediff-review--session :memos)
-               (plist-get ctx :path)
-               (plist-get ctx :line)
-               (plist-get ctx :side))))
-    (and memo (plist-get memo :body))))
+(defun my-forge-ediff-review--existing-entry-body (ctx kind)
+  "Return the body of an existing entry of KIND at CTX, or nil."
+  (let ((entry (my-forge-ediff-review-model-find-entry
+                (plist-get my-forge-ediff-review--session
+                           (my-forge-ediff-review--kind-key kind))
+                (plist-get ctx :path)
+                (plist-get ctx :line)
+                (plist-get ctx :side))))
+    (and entry (plist-get entry :body))))
 
 (defun my-forge-ediff-review--open-editor (ctx kind)
   "Pop up a markdown editor for an entry of KIND described by CTX."
   (let ((buf (generate-new-buffer
               (format "*forge-review-%s*" kind)))
-        (prefill (and (eq kind 'memo)
-                      (my-forge-ediff-review--existing-memo-body ctx))))
+        (prefill (my-forge-ediff-review--existing-entry-body ctx kind)))
     (with-current-buffer buf
       (when (fboundp 'markdown-mode)
         (markdown-mode))
@@ -454,8 +468,6 @@ HTML comments are stripped. -->\n\n"
                  (buffer-string)))))
     (unless my-forge-ediff-review--session
       (user-error "Review session disappeared; not saving"))
-    (when (and (eq kind 'comment) (string-empty-p body))
-      (user-error "Comment body is empty"))
     (my-forge-ediff-review--store-entry ctx kind body)
     (let ((buf (current-buffer)))
       (quit-window)
@@ -468,19 +480,18 @@ HTML comments are stripped. -->\n\n"
 
 (defun my-forge-ediff-review--store-entry (ctx kind body)
   "Store an entry of KIND with BODY at CTX into the session.
-A memo replaces any existing memo on the same line and an empty memo
-removes it; comments are always appended."
+An entry replaces any existing entry of the same KIND on the same line
+and side; an empty BODY removes it."
   (let* ((key (my-forge-ediff-review--kind-key kind))
-         (entries (plist-get my-forge-ediff-review--session key)))
-    (when (eq kind 'memo)
-      (let ((existing (my-forge-ediff-review-model-find-entry
-                       entries (plist-get ctx :path)
-                       (plist-get ctx :line) (plist-get ctx :side))))
-        (when existing
-          (setq entries (my-forge-ediff-review-model-remove-entry
-                         entries existing)))))
+         (entries (plist-get my-forge-ediff-review--session key))
+         (existing (my-forge-ediff-review-model-find-entry
+                    entries (plist-get ctx :path)
+                    (plist-get ctx :line) (plist-get ctx :side))))
+    (when existing
+      (setq entries (my-forge-ediff-review-model-remove-entry
+                     entries existing)))
     (setf (plist-get my-forge-ediff-review--session key)
-          (if (and (eq kind 'memo) (string-empty-p body))
+          (if (string-empty-p body)
               entries
             (cons (append ctx (list :body body)) entries)))))
 
