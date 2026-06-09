@@ -10,6 +10,7 @@ is available on the test host (e.g. macOS with only the system bash 3.2).
 """
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -19,7 +20,23 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INSTALL_SH = REPO_ROOT / "install.sh"
-PINNED_VERSION = "2.70.3"
+
+
+def read_pinned_version():
+    """Return the chezmoi version pinned in install.sh.
+
+    Read dynamically so the integration test follows install.sh after a
+    version bump instead of drifting against a hardcoded constant.
+    """
+    text = INSTALL_SH.read_text()
+    match = re.search(
+        r'^readonly CHEZMOI_VERSION="([^"]+)"', text, re.MULTILINE
+    )
+    assert match, "CHEZMOI_VERSION not found in install.sh"
+    return match.group(1)
+
+
+PINNED_VERSION = read_pinned_version()
 
 
 def find_bash_at_least(major):
