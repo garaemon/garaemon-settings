@@ -1,3 +1,5 @@
 .ccls-cache
 .vscode
 *.elc
+
+**/.claude/settings.local.json
