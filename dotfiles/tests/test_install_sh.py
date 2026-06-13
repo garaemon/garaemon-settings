@@ -36,7 +36,16 @@ def read_pinned_version():
     return match.group(1)
 
 
+def read_pinned_mise_version():
+    """Return the mise version pinned in install.sh (see read_pinned_version)."""
+    text = INSTALL_SH.read_text()
+    match = re.search(r'^readonly MISE_VERSION="([^"]+)"', text, re.MULTILINE)
+    assert match, "MISE_VERSION not found in install.sh"
+    return match.group(1)
+
+
 PINNED_VERSION = read_pinned_version()
+PINNED_MISE_VERSION = read_pinned_mise_version()
 
 
 def find_bash_at_least(major):
@@ -188,6 +197,106 @@ class TestLookupChecksum:
 
 
 # ---------------------------------------------------------------------------
+# mise_platform
+# ---------------------------------------------------------------------------
+@requires_bash4
+class TestMisePlatform:
+    @pytest.mark.parametrize(
+        "chezmoi_key,expected",
+        [
+            ("linux_amd64", "linux-x64"),
+            ("linux_arm64", "linux-arm64"),
+            ("darwin_amd64", "macos-x64"),
+            ("darwin_arm64", "macos-arm64"),
+        ],
+    )
+    def test_maps_known_platforms(self, chezmoi_key, expected):
+        result = source_and_run(f"mise_platform {chezmoi_key}")
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == expected
+
+    def test_fails_for_unknown_platform(self):
+        result = source_and_run("mise_platform freebsd_amd64")
+        assert result.returncode != 0
+        assert "unsupported platform for mise" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# lookup_mise_checksum
+# ---------------------------------------------------------------------------
+@requires_bash4
+class TestLookupMiseChecksum:
+    def test_returns_pinned_checksum_for_known_platform(self):
+        result = source_and_run("lookup_mise_checksum linux-x64")
+        assert result.returncode == 0, result.stderr
+        sha = result.stdout.strip()
+        assert len(sha) == 64
+        assert all(c in "0123456789abcdef" for c in sha)
+
+    def test_fails_for_unknown_platform(self):
+        result = source_and_run("lookup_mise_checksum freebsd-x64")
+        assert result.returncode != 0
+        assert "no pinned checksum for mise platform" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing (main)
+# ---------------------------------------------------------------------------
+@requires_bash4
+class TestArgumentParsing:
+    """Drive the script's option handling without performing any install.
+
+    install_chezmoi/install_mise/install_tools are stubbed out so we observe
+    only how main() parses arguments and dispatches.
+    """
+
+    HARNESS = (
+        "install_chezmoi() { echo CHEZMOI; }\n"
+        "apply_dotfiles() { echo APPLY; }\n"
+        "install_mise() { echo MISE; }\n"
+        'install_tools() { echo "TOOLS:$1"; }\n'
+    )
+
+    def run_main(self, args):
+        snippet = f'{self.HARNESS}main {args}'
+        return source_and_run(snippet)
+
+    def test_help_exits_zero_and_prints_usage(self):
+        result = self.run_main("--help")
+        assert result.returncode == 0, result.stderr
+        assert "Usage: install.sh" in result.stdout
+
+    def test_no_args_skips_tool_install(self):
+        result = self.run_main("")
+        assert result.returncode == 0, result.stderr
+        assert "CHEZMOI" in result.stdout
+        assert "APPLY" in result.stdout
+        assert "MISE" not in result.stdout
+        assert "TOOLS" not in result.stdout
+
+    def test_bare_tools_flag_defaults_to_minimal(self):
+        result = self.run_main("--tools")
+        assert result.returncode == 0, result.stderr
+        assert "MISE" in result.stdout
+        assert "TOOLS:minimal" in result.stdout
+
+    def test_tools_all(self):
+        result = self.run_main("--tools=all")
+        assert result.returncode == 0, result.stderr
+        assert "TOOLS:all" in result.stdout
+
+    def test_invalid_tools_value_exits_2(self):
+        result = self.run_main("--tools=bogus")
+        assert result.returncode == 2
+        assert "invalid --tools value" in result.stderr
+
+    def test_unknown_argument_exits_2(self):
+        result = self.run_main("--nope")
+        assert result.returncode == 2
+        assert "unknown argument" in result.stderr
+
+
+# ---------------------------------------------------------------------------
 # install_chezmoi end-to-end
 # ---------------------------------------------------------------------------
 @requires_bash4
@@ -242,6 +351,62 @@ class TestInstallChezmoiIntegration:
         assert result.returncode != 0
         assert "sha256 mismatch" in result.stderr
         assert not (fake_home / ".local" / "bin" / "chezmoi").exists()
+
+
+# ---------------------------------------------------------------------------
+# install_mise end-to-end
+# ---------------------------------------------------------------------------
+@requires_bash4
+class TestInstallMiseIntegration:
+    """Network-dependent: downloads the pinned mise release from GitHub,
+    verifies the embedded sha256, and installs it under a temporary $HOME.
+    """
+
+    def test_installs_pinned_version_into_isolated_home(self, tmp_path):
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        env = {
+            "HOME": str(fake_home),
+            # Drop the test host's ${HOME}/.local/bin from PATH so the
+            # script's resolve_mise cannot find an already-installed mise and
+            # short-circuit the download.
+            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        }
+        result = source_and_run("install_mise", env=env)
+        assert result.returncode == 0, (
+            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        )
+        installed = fake_home / ".local" / "bin" / "mise"
+        assert installed.is_file()
+        assert os.access(installed, os.X_OK)
+        version = subprocess.run(
+            [str(installed), "--version"], capture_output=True, text=True
+        )
+        assert version.returncode == 0, version.stderr
+        assert PINNED_MISE_VERSION in version.stdout
+
+    def test_aborts_on_checksum_mismatch(self, tmp_path):
+        """Override lookup_mise_checksum to return a wrong sha; install_mise
+        must refuse to install the (genuine) tarball. The MISE_CHECKSUMS
+        array is readonly and cannot be reassigned, hence the function
+        override.
+        """
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        env = {
+            "HOME": str(fake_home),
+            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        }
+        snippet = (
+            "lookup_mise_checksum() { "
+            "printf '%s\\n' '0000000000000000000000000000000000000000000000000000000000000000'; "
+            "}\n"
+            "install_mise"
+        )
+        result = source_and_run(snippet, env=env)
+        assert result.returncode != 0
+        assert "sha256 mismatch" in result.stderr
+        assert not (fake_home / ".local" / "bin" / "mise").exists()
 
 
 # ---------------------------------------------------------------------------

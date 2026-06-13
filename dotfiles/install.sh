@@ -6,6 +6,11 @@
 # script installs a pinned, sha256-verified chezmoi release (if missing)
 # and applies the dotfiles from the cloned working tree.
 #
+# Pass --tools (or --tools=minimal | --tools=all) to additionally install a
+# set of CLI tools (starship, etc.) through a pinned, sha256-verified mise
+# release. This is handy for bringing a fresh dev container up to a usable
+# interactive shell in one shot. Run `install.sh --help` for details.
+#
 # See: https://code.visualstudio.com/docs/devcontainers/containers#_personalizing-with-dotfile-repositories
 # See: https://docs.github.com/en/codespaces/customizing-your-codespace/personalizing-github-codespaces-for-your-account
 
@@ -42,6 +47,40 @@ declare -rA CHEZMOI_CHECKSUMS=(
     [linux_arm64]="b2dc1e0ddf8beff09ee14f212271dd9e943d1d97d5f17a3d070ce35a6ada9e14"  # pragma: allowlist secret
 )
 
+# Pinned mise release, used only when tool installation is requested via
+# --tools. mise is the same tool manager the dotfiles configure (see
+# dot_config/mise/config.toml), so installing tools through it keeps versions
+# consistent with day-to-day use. To bump manually:
+#   1. Pick a new tag from https://github.com/jdx/mise/releases.
+#   2. Update MISE_VERSION below (without the leading "v").
+#   3. Update each entry in MISE_CHECKSUMS with the matching sha256 from the
+#      release's SHASUMS256.txt. Note the platform keys use mise's naming
+#      (linux-x64, macos-arm64, ...), not chezmoi's.
+readonly MISE_VERSION="2026.6.6"
+
+declare -rA MISE_CHECKSUMS=(
+    [linux-x64]="46f16951e673b0b84e8779bdbd0f1e0d094c52297e75428454c7419078238c5b"  # pragma: allowlist secret
+    [linux-arm64]="d8f940898a2491e3242932d6dcc7092c556a0a568072a1d892a4ab66cbc70590"  # pragma: allowlist secret
+    [macos-x64]="cd955f31e19898c441f195a36128901f6d9756ce340315e212e49024965c68b0"  # pragma: allowlist secret
+    [macos-arm64]="bcefe1190fb17c937bf50e53ea9cbe5454a74c48f5ba5899ad51f938e91fccc4"  # pragma: allowlist secret
+)
+
+# Minimal set of tools installed by --tools (or --tools=minimal): the
+# interactive-shell essentials the dotfiles lean on. Versions are resolved
+# from the applied dot_config/mise/config.toml, so each name here must also
+# appear there. Heavier language/cloud toolchains are intentionally excluded;
+# use --tools=all to install everything declared in that config instead.
+readonly MISE_MINIMAL_TOOLS=(
+    starship
+    bat
+    ripgrep
+    delta
+    direnv
+    jq
+    peco
+    ghq
+)
+
 # SCRIPT_DIR is where this script lives, which is also the chezmoi source
 # directory because Dev Containers clones the entire repo into one place
 # and runs install.sh from its root.
@@ -50,7 +89,8 @@ declare -rA CHEZMOI_CHECKSUMS=(
 # combined `readonly VAR="$(...)"` would swallow the substitution status.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
-readonly CHEZMOI_BIN_DIR="${HOME}/.local/bin"
+# Where downloaded binaries (chezmoi, and mise when --tools is used) land.
+readonly LOCAL_BIN_DIR="${HOME}/.local/bin"
 
 # Writes a tagged informational message to stdout.
 log() {
@@ -63,7 +103,7 @@ warn() {
 }
 
 # Resolves the path to a usable chezmoi binary on stdout, or returns 1.
-# The absolute-path fallback exists because ${CHEZMOI_BIN_DIR} may not be on
+# The absolute-path fallback exists because ${LOCAL_BIN_DIR} may not be on
 # PATH in the dev container's shell, even immediately after install_chezmoi
 # drops the binary there.
 resolve_chezmoi() {
@@ -71,8 +111,23 @@ resolve_chezmoi() {
         printf '%s\n' "$(command -v chezmoi)"
         return 0
     fi
-    if [[ -x "${CHEZMOI_BIN_DIR}/chezmoi" ]]; then
-        printf '%s\n' "${CHEZMOI_BIN_DIR}/chezmoi"
+    if [[ -x "${LOCAL_BIN_DIR}/chezmoi" ]]; then
+        printf '%s\n' "${LOCAL_BIN_DIR}/chezmoi"
+        return 0
+    fi
+    return 1
+}
+
+# Resolves the path to a usable mise binary on stdout, or returns 1. Mirrors
+# resolve_chezmoi, including the absolute-path fallback for the common case
+# where ${LOCAL_BIN_DIR} is not yet on PATH.
+resolve_mise() {
+    if command -v mise >/dev/null 2>&1; then
+        printf '%s\n' "$(command -v mise)"
+        return 0
+    fi
+    if [[ -x "${LOCAL_BIN_DIR}/mise" ]]; then
+        printf '%s\n' "${LOCAL_BIN_DIR}/mise"
         return 0
     fi
     return 1
@@ -117,13 +172,28 @@ compute_sha256() {
     fi
 }
 
-# Prints the pinned sha256 for a given platform key (e.g. "linux_amd64")
-# on stdout, or returns 1 if no entry matches.
+# Prints the pinned chezmoi sha256 for a given platform key (e.g.
+# "linux_amd64") on stdout, or returns 1 if no entry matches.
 lookup_checksum() {
     local platform="$1"
     local checksum="${CHEZMOI_CHECKSUMS[${platform}]:-}"
     if [[ -z "${checksum}" ]]; then
         warn "no pinned checksum for platform ${platform}"
+        return 1
+    fi
+    printf '%s\n' "${checksum}"
+}
+
+# Prints the pinned mise sha256 for a given mise platform key (e.g.
+# "linux-x64") on stdout, or returns 1 if no entry matches. Kept a separate
+# function (rather than indexing MISE_CHECKSUMS inline) so the test suite can
+# override it to exercise the checksum-mismatch path; the array is readonly
+# and cannot be reassigned.
+lookup_mise_checksum() {
+    local platform="$1"
+    local checksum="${MISE_CHECKSUMS[${platform}]:-}"
+    if [[ -z "${checksum}" ]]; then
+        warn "no pinned checksum for mise platform ${platform}"
         return 1
     fi
     printf '%s\n' "${checksum}"
@@ -166,13 +236,107 @@ install_chezmoi() {
     fi
     log "Verified sha256 for ${tarball}"
 
-    mkdir -p "${CHEZMOI_BIN_DIR}"
+    mkdir -p "${LOCAL_BIN_DIR}"
     tar -xzf "${tarball_path}" -C "${tmpdir}" chezmoi
-    mv "${tmpdir}/chezmoi" "${CHEZMOI_BIN_DIR}/chezmoi"
-    chmod 0755 "${CHEZMOI_BIN_DIR}/chezmoi"
+    mv "${tmpdir}/chezmoi" "${LOCAL_BIN_DIR}/chezmoi"
+    chmod 0755 "${LOCAL_BIN_DIR}/chezmoi"
 
-    log "Installed chezmoi v${CHEZMOI_VERSION} to ${CHEZMOI_BIN_DIR}/chezmoi"
-    log "Note: add ${CHEZMOI_BIN_DIR} to PATH to use chezmoi directly later"
+    # Clean up now and clear the EXIT trap so a later install_mise can install
+    # its own trap without leaking this tmpdir at script exit.
+    rm -rf "${tmpdir}"
+    trap - EXIT
+
+    log "Installed chezmoi v${CHEZMOI_VERSION} to ${LOCAL_BIN_DIR}/chezmoi"
+    log "Note: add ${LOCAL_BIN_DIR} to PATH to use chezmoi directly later"
+}
+
+# Prints mise's platform suffix (e.g. "linux-x64", "macos-arm64") on stdout
+# for a chezmoi-style platform key (e.g. "linux_amd64", "darwin_arm64") as
+# emitted by detect_platform. mise names its release tarballs differently
+# from chezmoi, so the two cannot share a single platform string. Returns 1
+# for combinations mise does not publish.
+mise_platform() {
+    case "$1" in
+        linux_amd64) printf 'linux-x64\n' ;;
+        linux_arm64) printf 'linux-arm64\n' ;;
+        darwin_amd64) printf 'macos-x64\n' ;;
+        darwin_arm64) printf 'macos-arm64\n' ;;
+        *)
+            warn "unsupported platform for mise: $1"
+            return 1
+            ;;
+    esac
+}
+
+# Downloads mise v${MISE_VERSION} for the current platform, verifies its
+# sha256 against the pinned checksum, and installs the binary into
+# ${LOCAL_BIN_DIR}. Skips the install if a mise binary is already resolvable.
+# Mirrors install_chezmoi; only the tarball layout (mise/bin/mise) differs.
+install_mise() {
+    local existing_path
+    if existing_path="$(resolve_mise)"; then
+        log "mise already installed at ${existing_path}"
+        return 0
+    fi
+
+    local platform mise_plat tarball url expected actual tmpdir tarball_path
+    platform="$(detect_platform)"
+    mise_plat="$(mise_platform "${platform}")"
+    tarball="mise-v${MISE_VERSION}-${mise_plat}.tar.gz"
+    url="https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/${tarball}"
+    expected="$(lookup_mise_checksum "${mise_plat}")"
+
+    tmpdir="$(mktemp -d)"
+    # shellcheck disable=SC2064
+    trap "rm -rf '${tmpdir}'" EXIT
+    tarball_path="${tmpdir}/${tarball}"
+
+    log "Downloading mise v${MISE_VERSION} for ${mise_plat}"
+    curl -fsSL -o "${tarball_path}" "${url}"
+
+    actual="$(compute_sha256 "${tarball_path}")"
+    if [[ "${actual}" != "${expected}" ]]; then
+        warn "sha256 mismatch for ${tarball}"
+        warn "  expected: ${expected}"
+        warn "  actual:   ${actual}"
+        exit 1
+    fi
+    log "Verified sha256 for ${tarball}"
+
+    mkdir -p "${LOCAL_BIN_DIR}"
+    # mise tarballs unpack to mise/bin/mise (plus man pages and shell hooks);
+    # extract just the binary.
+    tar -xzf "${tarball_path}" -C "${tmpdir}" "mise/bin/mise"
+    mv "${tmpdir}/mise/bin/mise" "${LOCAL_BIN_DIR}/mise"
+    chmod 0755 "${LOCAL_BIN_DIR}/mise"
+
+    rm -rf "${tmpdir}"
+    trap - EXIT
+
+    log "Installed mise v${MISE_VERSION} to ${LOCAL_BIN_DIR}/mise"
+}
+
+# Installs CLI tools via mise. mode is "minimal" (the curated
+# ${MISE_MINIMAL_TOOLS} set) or "all" (everything declared in the applied
+# dot_config/mise/config.toml). Either way, tool versions come from that
+# config, so apply_dotfiles must have run first. MISE_YES keeps mise
+# non-interactive for unattended dev container builds.
+install_tools() {
+    local mode="$1"
+    local mise_cmd
+    if ! mise_cmd="$(resolve_mise)"; then
+        warn "mise binary not found after install; aborting"
+        exit 1
+    fi
+
+    if [[ "${mode}" == "all" ]]; then
+        log "Installing all tools declared in mise config"
+        MISE_YES=1 "${mise_cmd}" install --yes
+    else
+        log "Installing minimal tool set: ${MISE_MINIMAL_TOOLS[*]}"
+        MISE_YES=1 "${mise_cmd}" install --yes "${MISE_MINIMAL_TOOLS[@]}"
+    fi
+    log "Tools installed; add ${LOCAL_BIN_DIR} to PATH and run 'mise activate' in your shell"
 }
 
 # Applies the dotfiles in ${SCRIPT_DIR} to the user's home directory using
@@ -191,9 +355,62 @@ apply_dotfiles() {
     "${chezmoi_cmd}" apply --source="${SCRIPT_DIR}"
 }
 
+# Prints usage to stdout.
+usage() {
+    cat <<'EOF'
+Usage: install.sh [--tools[=minimal|all]] [-h|--help]
+
+Installs a pinned, sha256-verified chezmoi release (if missing) and applies
+the dotfiles from this repository. Safe to run unattended; this is what VS
+Code Dev Containers / GitHub Codespaces invoke after cloning.
+
+Options:
+  --tools, --tools=minimal
+        Also install the interactive-shell essentials (starship, bat,
+        ripgrep, delta, direnv, jq, peco, ghq) through a pinned,
+        sha256-verified mise release. Versions come from
+        dot_config/mise/config.toml.
+  --tools=all
+        Install every tool declared in dot_config/mise/config.toml instead.
+        This pulls in heavy language/cloud toolchains and can take a while.
+  -h, --help
+        Show this help and exit.
+EOF
+}
+
 main() {
+    local tools_mode=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tools) tools_mode="minimal" ;;
+            --tools=*) tools_mode="${1#*=}" ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                warn "unknown argument: $1"
+                usage >&2
+                exit 2
+                ;;
+        esac
+        shift
+    done
+
+    case "${tools_mode}" in
+        ""|minimal|all) ;;
+        *)
+            warn "invalid --tools value: '${tools_mode}' (expected 'minimal' or 'all')"
+            exit 2
+            ;;
+    esac
+
     install_chezmoi
     apply_dotfiles
+    if [[ -n "${tools_mode}" ]]; then
+        install_mise
+        install_tools "${tools_mode}"
+    fi
     log "Done."
 }
 
