@@ -1495,6 +1495,23 @@ The source buffer is added as gptel context for full file awareness."
   :config
   (claude-code-ide-emacs-tools-setup))
 
+;; agent-shell: chat with ACP-compatible coding agents (Claude, Gemini)
+;; in a comint-based shell buffer. Talks to agents over the Agent Client
+;; Protocol via acp.el, so each agent needs its own CLI on PATH. Install
+;; the agent executables before use:
+;;   npm install -g @agentclientprotocol/claude-agent-acp  ; for Claude
+;;   npm install -g @google/gemini-cli                     ; for Gemini
+(use-package agent-shell
+  :ensure t
+  :bind (("C-c q" . agent-shell-anthropic-start-claude-code)
+         ("C-c C-q" . agent-shell-google-start-gemini))
+  :custom
+  ;; Reuse the local Claude/Gemini CLI logins instead of storing API keys.
+  (agent-shell-anthropic-authentication
+   (agent-shell-anthropic-make-authentication :login t))
+  (agent-shell-google-authentication
+   (agent-shell-google-make-authentication :login t)))
+
 (use-package string-inflection :ensure t
   :config (global-set-key (kbd "C-c i") 'string-inflection-cycle))
 
