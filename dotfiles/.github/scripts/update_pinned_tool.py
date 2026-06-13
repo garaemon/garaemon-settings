@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
-"""Refresh CHEZMOI_VERSION and the four pinned sha256 checksums in
-install.sh from the latest twpayne/chezmoi GitHub release.
+"""Refresh the pinned version and sha256 checksums of a tool in install.sh
+from its latest GitHub release.
 
-Run from the scheduled GitHub Actions workflow at
-.github/workflows/update-chezmoi.yml. Exits 0 with no file changes when
-install.sh already pins the latest release; otherwise rewrites install.sh
-in place and exits 0 so the workflow can detect the diff and open a PR.
+install.sh pins a version and a set of sha256 checksums for each tool it
+downloads (currently chezmoi and mise). This script bumps one of them: it
+reads the currently pinned version, finds the latest eligible upstream
+release, and rewrites the matching ``readonly <TOOL>_VERSION`` line and
+``<TOOL>_CHECKSUMS`` array in place.
 
-The transformation helpers are importable for unit tests.
+Select the tool with ``--tool {chezmoi,mise}``. Run from the scheduled
+GitHub Actions workflow at .github/workflows/update-pinned-tools.yml (one
+matrix job per tool). Exits 0 with no file changes when install.sh already
+pins the latest release; otherwise rewrites install.sh in place and exits 0
+so the workflow can detect the diff and open a PR.
+
+The per-tool differences (upstream repo, checksum file layout, release
+asset naming, platform keys, and the install.sh variable names) are captured
+in :class:`ToolSpec`; everything else is tool-agnostic. The transformation
+helpers are importable for unit tests.
 """
 
 import argparse
@@ -23,20 +33,89 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-UPSTREAM_REPO = "twpayne/chezmoi"
-TARGET_PLATFORMS = ("darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64")
 # Skip releases newer than this many days. Window meant to let supply-chain
 # attacks against an upstream tag (compromised maintainer keys, malicious
 # binary swap on the release page) surface publicly before we pin them.
 MIN_RELEASE_AGE_DAYS = 7
 RELEASES_PAGE_SIZE = 30
-USER_AGENT = "garaemon-dotfiles update-chezmoi"
+USER_AGENT = "garaemon-dotfiles update-pinned-tool"
+# Both chezmoi (semver) and mise (CalVer YYYY.M.P) tag as MAJOR.MINOR.PATCH,
+# so a single strict triple pattern covers both.
 TAG_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
-
-VERSION_LINE_PATTERN = re.compile(
-    r'^(readonly CHEZMOI_VERSION=)"(?P<value>[^"]+)"', re.MULTILINE
-)
 CHECKSUM_LINE_PATTERN = re.compile(r"^([0-9a-f]{64})\s+(\S+)$")
+
+
+@dataclass(frozen=True)
+class ToolSpec:
+    """Everything that differs between the tools install.sh pins.
+
+    Frozen so a selected spec cannot be mutated mid-run, keeping a bump
+    reproducible.
+
+    Attributes:
+        name: Short tool name, used in --tool, log tags, and PR metadata.
+        repo: GitHub ``owner/name`` to read releases from.
+        version_var: The ``readonly <var>="..."`` line in install.sh.
+        checksums_array: The ``declare -rA <array>=(...)`` array in install.sh.
+        platforms: Platform keys, matching both the install.sh array keys and
+            the ``{platform}`` substituted into ``asset_template``.
+        checksums_file: Filename of the release's checksum manifest, formatted
+            with ``{version}``. Downloaded from the release's download URL.
+        asset_template: Release asset filename whose checksum we want, formatted
+            with ``{version}`` and ``{platform}``; matched against the manifest.
+    """
+
+    name: str
+    repo: str
+    version_var: str
+    checksums_array: str
+    platforms: tuple[str, ...]
+    checksums_file: str
+    asset_template: str
+
+    def checksums_url(self, version: str) -> str:
+        """URL of the checksum manifest for ``version``."""
+        filename = self.checksums_file.format(version=version)
+        return (
+            f"https://github.com/{self.repo}/releases/download/"
+            f"v{version}/{filename}"
+        )
+
+    def asset_name(self, version: str, platform: str) -> str:
+        """Release asset filename whose sha256 we pin for ``platform``."""
+        return self.asset_template.format(version=version, platform=platform)
+
+    def version_line_pattern(self) -> re.Pattern:
+        """Regex matching the ``readonly <version_var>="..."`` line, capturing
+        the current value in group ``value``.
+        """
+        return re.compile(
+            rf'^(readonly {re.escape(self.version_var)}=)"(?P<value>[^"]+)"',
+            re.MULTILINE,
+        )
+
+
+# Registry of supported tools. Keys are the --tool values.
+TOOLS: dict[str, ToolSpec] = {
+    "chezmoi": ToolSpec(
+        name="chezmoi",
+        repo="twpayne/chezmoi",
+        version_var="CHEZMOI_VERSION",
+        checksums_array="CHEZMOI_CHECKSUMS",
+        platforms=("darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64"),
+        checksums_file="chezmoi_{version}_checksums.txt",
+        asset_template="chezmoi_{version}_{platform}.tar.gz",
+    ),
+    "mise": ToolSpec(
+        name="mise",
+        repo="jdx/mise",
+        version_var="MISE_VERSION",
+        checksums_array="MISE_CHECKSUMS",
+        platforms=("linux-x64", "linux-arm64", "macos-x64", "macos-arm64"),
+        checksums_file="SHASUMS256.txt",
+        asset_template="mise-v{version}-{platform}.tar.gz",
+    ),
+}
 
 
 class UpdateError(RuntimeError):
@@ -97,7 +176,7 @@ def open_github_url(
 
 
 def fetch_releases_payload(
-    repo: str = UPSTREAM_REPO,
+    repo: str,
     *,
     timeout: int = 30,
     per_page: int = RELEASES_PAGE_SIZE,
@@ -179,54 +258,55 @@ def select_latest_eligible_release(
 
 
 def fetch_latest_version(
-    repo: str = UPSTREAM_REPO,
+    spec: ToolSpec,
     *,
     timeout: int = 30,
     now: datetime.datetime | None = None,
 ) -> str:
-    """Return the latest release tag of ``repo`` that has been public for at
-    least :data:`MIN_RELEASE_AGE_DAYS` days, with any leading ``v`` stripped.
+    """Return the latest release tag of ``spec.repo`` that has been public for
+    at least :data:`MIN_RELEASE_AGE_DAYS` days, with any leading ``v`` stripped.
     """
     resolved_now = now or datetime.datetime.now(datetime.UTC)
-    releases = fetch_releases_payload(repo, timeout=timeout)
+    releases = fetch_releases_payload(spec.repo, timeout=timeout)
     return select_latest_eligible_release(releases, now=resolved_now)
 
 
-def parse_semver_tuple(value: str) -> tuple[int, int, int]:
-    """Parse a strict ``MAJOR.MINOR.PATCH`` string into a comparable tuple."""
+def parse_version_tuple(value: str) -> tuple[int, int, int]:
+    """Parse a strict ``MAJOR.MINOR.PATCH`` string into a comparable tuple.
+
+    Works for chezmoi's semver and mise's CalVer alike: in both schemes a
+    higher tuple is a newer release, so this drives the downgrade guard.
+    """
     parts = value.split(".")
     if len(parts) != 3 or not all(p.isdigit() for p in parts):
-        raise UpdateError(f"not a strict semver triple: {value!r}")
+        raise UpdateError(f"not a strict MAJOR.MINOR.PATCH version: {value!r}")
     return (int(parts[0]), int(parts[1]), int(parts[2]))
 
 
-def read_pinned_version(install_sh_path: Path) -> str:
-    """Read the currently pinned ``CHEZMOI_VERSION`` from ``install_sh_path``."""
+def read_pinned_version(install_sh_path: Path, spec: ToolSpec) -> str:
+    """Read the currently pinned ``<spec.version_var>`` from ``install_sh_path``."""
     text = install_sh_path.read_text()
-    match = VERSION_LINE_PATTERN.search(text)
+    match = spec.version_line_pattern().search(text)
     if not match:
         raise UpdateError(
-            f"could not find CHEZMOI_VERSION in {install_sh_path}"
+            f"could not find {spec.version_var} in {install_sh_path}"
         )
     return match.group("value")
 
 
 def fetch_release_checksums(
     version: str,
+    spec: ToolSpec,
     *,
-    repo: str = UPSTREAM_REPO,
     timeout: int = 30,
 ) -> str:
-    """Return the body of ``chezmoi_<version>_checksums.txt`` as text.
+    """Return the body of ``spec``'s checksum manifest for ``version`` as text.
 
     Wraps :class:`urllib.error.URLError` and :class:`UnicodeDecodeError`
     as :class:`UpdateError` to keep the failure-mode contract consistent
     with :func:`fetch_releases_payload`.
     """
-    url = (
-        f"https://github.com/{repo}/releases/download/"
-        f"v{version}/chezmoi_{version}_checksums.txt"
-    )
+    url = spec.checksums_url(version)
     try:
         with open_github_url(
             url, timeout=timeout, authenticated=False
@@ -238,21 +318,25 @@ def fetch_release_checksums(
         ) from exc
     except UnicodeDecodeError as exc:
         raise UpdateError(
-            f"malformed checksums.txt for v{version}: {exc}"
+            f"malformed checksums file for v{version}: {exc}"
         ) from exc
 
 
 def extract_platform_checksum(
-    checksums_text: str, version: str, platform: str
+    checksums_text: str, version: str, platform: str, spec: ToolSpec
 ) -> str:
-    """Pick the sha256 line for ``chezmoi_<version>_<platform>.tar.gz``."""
-    target = f"chezmoi_{version}_{platform}.tar.gz"
+    """Pick the sha256 line for ``spec``'s asset for ``platform``.
+
+    Tolerates a leading ``./`` on the filename column (mise's SHASUMS256.txt
+    writes ``<sha>  ./mise-...``; chezmoi's checksums.txt has no prefix).
+    """
+    target = spec.asset_name(version, platform)
     for line in checksums_text.splitlines():
         match = CHECKSUM_LINE_PATTERN.match(line.strip())
-        if match and match.group(2) == target:
+        if match and match.group(2).removeprefix("./") == target:
             return match.group(1)
     raise UpdateError(
-        f"no checksum found for {platform} in checksums.txt"
+        f"no checksum found for {platform} in {spec.checksums_file}"
     )
 
 
@@ -260,26 +344,27 @@ def apply_update(
     install_sh_path: Path,
     new_version: str,
     checksums_text: str,
+    spec: ToolSpec,
 ) -> None:
     """Rewrite ``install_sh_path`` in place with ``new_version`` and the
-    four matching sha256 entries. Validates all platforms and the version
-    line before writing, then performs an atomic rename (preserving the
-    original file mode, including the executable bit) so an interrupted
+    matching sha256 entries for ``spec``. Validates all platforms and the
+    version line before writing, then performs an atomic rename (preserving
+    the original file mode, including the executable bit) so an interrupted
     run cannot leave a half-written file or strip the +x permission.
     """
     resolved = {
         platform: extract_platform_checksum(
-            checksums_text, new_version, platform
+            checksums_text, new_version, platform, spec
         )
-        for platform in TARGET_PLATFORMS
+        for platform in spec.platforms
     }
     text = install_sh_path.read_text()
-    rewritten, count = VERSION_LINE_PATTERN.subn(
+    rewritten, count = spec.version_line_pattern().subn(
         rf'\1"{new_version}"', text, count=1
     )
     if count != 1:
         raise UpdateError(
-            f"could not locate readonly CHEZMOI_VERSION=... line in "
+            f"could not locate readonly {spec.version_var}=... line in "
             f"{install_sh_path}"
         )
     for platform, sha in resolved.items():
@@ -310,14 +395,14 @@ def apply_update(
         raise
 
 
-def log(message: str) -> None:
+def log(message: str, *, tool: str = "pinned-tool") -> None:
     """Write a tagged informational line to stdout."""
-    print(f"[update-chezmoi] {message}")
+    print(f"[update-{tool}] {message}")
 
 
-def log_error(message: str) -> None:
+def log_error(message: str, *, tool: str = "pinned-tool") -> None:
     """Write a tagged error line to stderr."""
-    print(f"[update-chezmoi] ERROR: {message}", file=sys.stderr)
+    print(f"[update-{tool}] ERROR: {message}", file=sys.stderr)
 
 
 def write_github_output(**outputs: str) -> None:
@@ -341,6 +426,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for the script entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--tool",
+        choices=sorted(TOOLS),
+        default="chezmoi",
+        help="Which pinned tool to bump (default: chezmoi)",
+    )
+    parser.add_argument(
         "install_sh",
         nargs="?",
         default="install.sh",
@@ -361,28 +452,29 @@ def main(argv: list[str] | None = None) -> int:
     duplicate the version regex in shell.
     """
     args = parse_args(argv)
+    spec = TOOLS[args.tool]
     install_sh_path: Path = args.install_sh
     if not install_sh_path.is_file():
-        log_error(f"install.sh not found at {install_sh_path}")
+        log_error(f"install.sh not found at {install_sh_path}", tool=spec.name)
         return 1
 
-    pinned = read_pinned_version(install_sh_path)
-    latest = fetch_latest_version()
+    pinned = read_pinned_version(install_sh_path, spec)
+    latest = fetch_latest_version(spec)
 
-    if parse_semver_tuple(latest) < parse_semver_tuple(pinned):
+    if parse_version_tuple(latest) < parse_version_tuple(pinned):
         raise UpdateError(
             f"refusing downgrade: pinned v{pinned} > latest eligible v{latest}"
         )
 
     if pinned == latest:
-        log(f"already pinned to v{latest}; nothing to do")
+        log(f"already pinned to v{latest}; nothing to do", tool=spec.name)
         write_github_output(changed="false", version=latest)
         return 0
 
-    log(f"bumping chezmoi v{pinned} -> v{latest}")
-    checksums = fetch_release_checksums(latest)
-    apply_update(install_sh_path, latest, checksums)
-    log(f"updated {install_sh_path}")
+    log(f"bumping {spec.name} v{pinned} -> v{latest}", tool=spec.name)
+    checksums = fetch_release_checksums(latest, spec)
+    apply_update(install_sh_path, latest, checksums, spec)
+    log(f"updated {install_sh_path}", tool=spec.name)
     write_github_output(changed="true", version=latest)
     return 0
 
