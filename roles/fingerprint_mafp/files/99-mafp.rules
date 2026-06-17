@@ -1,0 +1,4 @@
+# Allow non-root access to the MicroArray MAFP fingerprint reader so fprintd
+# (running as the seat user) can claim the USB interface.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3274", ATTRS{idProduct}=="8012", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3274", ATTRS{idProduct}=="8008", MODE="0660", GROUP="plugdev", TAG+="uaccess"

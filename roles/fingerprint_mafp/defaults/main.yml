@@ -1,0 +1,16 @@
+---
+# Build and install the MicroArray MAFP (USB 3274:8012) fingerprint TOD driver.
+fingerprint_mafp_enabled: true
+
+# Upstream source of the reverse-engineered driver (jdillon microarray.c).
+# Pinned to a specific commit so the build stays reproducible.
+fingerprint_mafp_driver_repo: https://github.com/jdillon/libfprint-microarray
+fingerprint_mafp_driver_version: 82cd97eef8cddc551c067557f6e4b3af6426b9ba
+
+# Directory the driver source is cloned into and built in.
+fingerprint_mafp_build_dir: >-
+  {{ (ghq_root_path | default(ansible_facts.env.HOME + '/ghq'))
+     + '/github.com/jdillon/libfprint-microarray' }}
+
+# Enable fingerprint authentication via PAM (password is kept as fallback).
+fingerprint_mafp_enable_pam: true
