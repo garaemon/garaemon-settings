@@ -1,0 +1,99 @@
+---
+- name: Build and install the MAFP fingerprint driver
+  when:
+    - fingerprint_mafp_enabled
+    - ansible_facts.os_family == "Debian"
+    - ansible_facts.architecture == "x86_64"
+  block:
+    - name: Install fprintd stack and TOD build dependencies
+      apt:
+        name:
+          - libfprint-2-tod1
+          - libfprint-2-tod-dev
+          - fprintd
+          - libpam-fprintd
+          - build-essential
+          - pkg-config
+        state: present
+      become: true
+
+    - name: Determine multiarch library tuple
+      ansible.builtin.command: dpkg-architecture -qDEB_HOST_MULTIARCH
+      register: fingerprint_mafp_multiarch
+      changed_when: false
+
+    - name: Clone MAFP driver source at pinned revision
+      ansible.builtin.git:
+        repo: "{{ fingerprint_mafp_driver_repo }}"
+        dest: "{{ fingerprint_mafp_build_dir }}"
+        version: "{{ fingerprint_mafp_driver_version }}"
+        update: false
+
+    - name: Install TOD glue into the driver source tree
+      copy:
+        src: tod_glue.c
+        dest: "{{ fingerprint_mafp_build_dir }}/src/tod_glue.c"
+        mode: "0644"
+      register: fingerprint_mafp_glue
+
+    - name: Install TOD Makefile into the driver source tree
+      copy:
+        src: Makefile
+        dest: "{{ fingerprint_mafp_build_dir }}/src/Makefile"
+        mode: "0644"
+      register: fingerprint_mafp_makefile
+
+    - name: Check for an existing build artifact
+      stat:
+        path: "{{ fingerprint_mafp_build_dir }}/src/libfprint-tod-mafp.so"
+      register: fingerprint_mafp_built_so
+
+    - name: Build the MAFP TOD module
+      ansible.builtin.command:
+        cmd: make
+        chdir: "{{ fingerprint_mafp_build_dir }}/src"
+      when: >-
+        not fingerprint_mafp_built_so.stat.exists
+        or fingerprint_mafp_glue.changed
+        or fingerprint_mafp_makefile.changed
+      register: fingerprint_mafp_make
+      changed_when: fingerprint_mafp_make.rc == 0
+
+    - name: Create the TOD driver directory
+      file:
+        path: "/usr/lib/{{ fingerprint_mafp_multiarch.stdout }}/libfprint-2/tod-1"
+        state: directory
+        mode: "0755"
+      become: true
+
+    - name: Install the MAFP TOD module
+      copy:
+        src: "{{ fingerprint_mafp_build_dir }}/src/libfprint-tod-mafp.so"
+        dest: "/usr/lib/{{ fingerprint_mafp_multiarch.stdout }}/libfprint-2/tod-1/libfprint-tod-mafp.so"
+        remote_src: true
+        mode: "0644"
+      become: true
+      notify: Restart fprintd
+
+    - name: Install the MAFP udev rule
+      copy:
+        src: 99-mafp.rules
+        dest: /etc/udev/rules.d/99-mafp.rules
+        mode: "0644"
+      become: true
+      notify: Reload udev rules
+
+    - name: Check whether fprintd PAM is already enabled
+      ansible.builtin.command: grep -q pam_fprintd.so /etc/pam.d/common-auth
+      register: fingerprint_mafp_pam_check
+      changed_when: false
+      failed_when: false
+      when: fingerprint_mafp_enable_pam
+
+    - name: Enable fprintd PAM module with password fallback
+      ansible.builtin.command: pam-auth-update --package --enable fprintd
+      become: true
+      when:
+        - fingerprint_mafp_enable_pam
+        - fingerprint_mafp_pam_check.rc != 0
+      notify: Restart fprintd
