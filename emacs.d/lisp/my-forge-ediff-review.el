@@ -128,7 +128,7 @@ launches multi-file ediff between PR base and head."
                   :num (oref pullreq number)
                   :head-rev head-rev
                   :base-rev diff-base
-                  :host (my-forge-ediff-review--host-for repo)
+                  :host (my-forge-ediff-review--resolve-host repo)
                   :comments nil
                   :memos nil
                   :reviewed nil))
@@ -138,16 +138,15 @@ launches multi-file ediff between PR base and head."
       (my-forge-ediff-review--install-sidebar-hooks)
       (my-magit-ediff-all-compare diff-base head-rev))))
 
-(defun my-forge-ediff-review--host-for (repo)
+(defun my-forge-ediff-review--resolve-host (repo)
   "Return the API host to use for REPO, or nil for ghub's default.
-Only github.com is supported for now: a GitHub repository resolves to
-nil, which makes ghub fall back to `ghub-default-host' (api.github.com)."
-  ;; TODO: support GitHub Enterprise by returning the repository's own API
-  ;; host (e.g. forge's `apihost' slot) instead of always nil.
+Supports both github.com and GitHub Enterprise: the host comes from the
+repository's own `apihost' slot, which ghub uses verbatim to build the
+REST and GraphQL endpoints (api.github.com for github.com).  Non-GitHub
+forges resolve to nil so ghub falls back to its default host."
   (when (and (fboundp 'forge-github-repository-p)
              (forge-github-repository-p repo))
-    ;; nil makes ghub default to `ghub-default-host' which is api.github.com.
-    nil))
+    (my-forge-ediff-review-model-resolve-host (oref repo apihost))))
 
 (defun my-forge-ediff-review--ensure-session ()
   "Signal an error if no review session is active."

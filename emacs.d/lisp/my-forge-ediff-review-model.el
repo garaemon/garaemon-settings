@@ -94,5 +94,17 @@ Memos are never passed here, so they cannot leak into a submission."
         (body . ,(plist-get comment :body))))
     comments)))
 
+;;;; API host resolution
+
+(defun my-forge-ediff-review-model-resolve-host (apihost)
+  "Return the ghub `:host' value for a forge repository's APIHOST.
+APIHOST is the repository's `apihost' slot: \"api.github.com\" for
+github.com or, for a GitHub Enterprise instance, that instance's API
+host such as \"ghe.example.com/api/v3\".  A nil or empty APIHOST yields
+nil, which lets ghub fall back to its own default host."
+  (and (stringp apihost)
+       (not (string-empty-p apihost))
+       apihost))
+
 (provide 'my-forge-ediff-review-model)
 ;;; my-forge-ediff-review-model.el ends here
