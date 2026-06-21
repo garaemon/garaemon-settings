@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""Mint a Google OAuth refresh token and store it in 1Password.
+
+This is the one-time setup for gws-secure. It runs the standard installed-app
+loopback OAuth flow using the client_secret.json already stored in the
+1Password "googleworkspace cli" item, then writes the resulting refresh token
+back into that same item as a concealed field. Nothing is written to disk.
+
+Usage:
+    scripts/gws-secure-bootstrap
+
+Environment overrides (all optional):
+    GWS_SECURE_OP_ITEM        1Password item title (default: "googleworkspace cli")
+    GWS_SECURE_OP_VAULT       1Password vault (default: "Private")
+    GWS_SECURE_REFRESH_FIELD  field label to store the token (default: "refresh_token")
+    GWS_SECURE_SCOPES         space-separated OAuth scopes (default: current gws scopes)
+"""
+
+import base64
+import hashlib
+import http.server
+import json
+import os
+import secrets
+import subprocess
+import sys
+import threading
+import urllib.parse
+import urllib.request
+import webbrowser
+
+OP_ITEM = os.environ.get("GWS_SECURE_OP_ITEM", "googleworkspace cli")
+OP_VAULT = os.environ.get("GWS_SECURE_OP_VAULT", "Private")
+REFRESH_FIELD = os.environ.get("GWS_SECURE_REFRESH_FIELD", "refresh_token")
+DEFAULT_SCOPES = (
+    "openid "
+    "https://www.googleapis.com/auth/userinfo.email "
+    "https://www.googleapis.com/auth/gmail.modify "
+    "https://www.googleapis.com/auth/calendar "
+    "https://www.googleapis.com/auth/cloud-platform"
+)
+SCOPES = os.environ.get("GWS_SECURE_SCOPES", DEFAULT_SCOPES)
+
+
+def die(message):
+    """Print an error and exit non-zero."""
+    print(f"gws-secure-bootstrap: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def read_oauth_client():
+    """Read client_secret.json from 1Password and return (id, secret, auth_uri, token_uri)."""
+    try:
+        raw = subprocess.run(
+            ["op", "document", "get", OP_ITEM, "--vault", OP_VAULT],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except FileNotFoundError:
+        die("'op' (1Password CLI) not found on PATH")
+    except subprocess.CalledProcessError as error:
+        die(f"could not read 1Password document '{OP_ITEM}': {error.stderr.strip()}")
+    config = json.loads(raw).get("installed") or json.loads(raw).get("web")
+    if not config:
+        die("client_secret.json has neither an 'installed' nor a 'web' section")
+    return (
+        config["client_id"],
+        config["client_secret"],
+        config.get("auth_uri", "https://accounts.google.com/o/oauth2/auth"),
+        config.get("token_uri", "https://oauth2.googleapis.com/token"),
+    )
+
+
+class CodeCatcher(http.server.BaseHTTPRequestHandler):
+    """Single-shot handler that captures the OAuth authorization code."""
+
+    captured = {}
+
+    def do_GET(self):  # noqa: N802 (name mandated by BaseHTTPRequestHandler)
+        query = urllib.parse.urlparse(self.path).query
+        params = urllib.parse.parse_qs(query)
+        CodeCatcher.captured = {key: value[0] for key, value in params.items()}
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        body = "<h2>Authorization complete.</h2><p>You can close this tab and return to the terminal.</p>"
+        self.wfile.write(body.encode("utf-8"))
+
+    def log_message(self, *_args):
+        """Silence the default request logging."""
+
+
+def run_loopback_flow(client_id, auth_uri):
+    """Open the consent page, capture the code, and return (code, redirect_uri, verifier)."""
+    server = http.server.HTTPServer(("127.0.0.1", 0), CodeCatcher)
+    port = server.server_address[1]
+    redirect_uri = f"http://localhost:{port}"
+
+    code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(64)).decode().rstrip("=")
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
+        .decode()
+        .rstrip("=")
+    )
+    state = secrets.token_urlsafe(16)
+    auth_params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": SCOPES,
+        "access_type": "offline",
+        "prompt": "consent",
+        "state": state,
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256",
+    }
+    auth_url = f"{auth_uri}?{urllib.parse.urlencode(auth_params)}"
+
+    print("Opening the Google consent screen in your browser.")
+    print("If it does not open automatically, visit this URL:\n")
+    print(auth_url + "\n")
+    webbrowser.open(auth_url)
+
+    thread = threading.Thread(target=server.handle_request)
+    thread.start()
+    thread.join()
+    server.server_close()
+
+    captured = CodeCatcher.captured
+    if captured.get("state") != state:
+        die("OAuth state mismatch; aborting for safety")
+    if "error" in captured:
+        die(f"authorization failed: {captured['error']}")
+    if "code" not in captured:
+        die("no authorization code received")
+    return captured["code"], redirect_uri, code_verifier
+
+
+def exchange_code_for_refresh_token(code, redirect_uri, verifier, client_id, client_secret, token_uri):
+    """Exchange the authorization code for tokens and return the refresh token."""
+    payload = urllib.parse.urlencode(
+        {
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+            "code_verifier": verifier,
+        }
+    ).encode()
+    request = urllib.request.Request(token_uri, data=payload)
+    try:
+        with urllib.request.urlopen(request) as response:
+            tokens = json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        die(f"token exchange failed: {error.read().decode()}")
+    refresh_token = tokens.get("refresh_token")
+    if not refresh_token:
+        die("no refresh_token returned (try revoking the app's access and re-running)")
+    return refresh_token
+
+
+def store_refresh_token(refresh_token):
+    """Write the refresh token into the 1Password item as a concealed field."""
+    try:
+        subprocess.run(
+            [
+                "op",
+                "item",
+                "edit",
+                OP_ITEM,
+                "--vault",
+                OP_VAULT,
+                f"{REFRESH_FIELD}[password]={refresh_token}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as error:
+        die(f"could not store refresh token in 1Password: {error.stderr.strip()}")
+
+
+def main():
+    """Run the full bootstrap flow."""
+    client_id, client_secret, auth_uri, token_uri = read_oauth_client()
+    code, redirect_uri, verifier = run_loopback_flow(client_id, auth_uri)
+    refresh_token = exchange_code_for_refresh_token(
+        code, redirect_uri, verifier, client_id, client_secret, token_uri
+    )
+    store_refresh_token(refresh_token)
+    print(
+        f"\nStored the refresh token in 1Password item '{OP_ITEM}' "
+        f"(field '{REFRESH_FIELD}'). You can now use scripts/gws-secure."
+    )
+
+
+if __name__ == "__main__":
+    main()
