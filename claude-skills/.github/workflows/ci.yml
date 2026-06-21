@@ -25,19 +25,33 @@ jobs:
       - run: python3 scripts/check-readme-skills.py
 
   shellcheck:
-    name: Shellcheck skill scripts
+    name: Shellcheck shell scripts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run shellcheck
         run: |
           shopt -s globstar nullglob
-          scripts=( .claude/skills/**/*.sh )
+          # gws-secure has no .sh extension; gws-secure-bootstrap is Python and
+          # is intentionally excluded.
+          scripts=(
+            .claude/skills/**/*.sh
+            scripts/gws-secure
+            scripts/tests/gws-secure-smoke.sh
+          )
           if [ ${#scripts[@]} -eq 0 ]; then
             echo "No shell scripts to check."
             exit 0
           fi
           shellcheck "${scripts[@]}"
+
+  gws-secure-smoke:
+    name: gws-secure smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run smoke test
+        run: bash scripts/tests/gws-secure-smoke.sh
 
   spotify-sheets-image:
     name: Build spotify-sheets image
@@ -114,11 +128,13 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
       # pdf2zh 1.9.11 hard-pins several transitive deps (pdfminer-six==20250416,
-      # pillow 11.3.0, gradio 5.35.0) that carry published CVEs. Our usage runs
-      # in a --read-only, --cap-drop=ALL, --network=bridge container and never
-      # launches the Gradio web UI, so the CVEs below are accepted under our
-      # threat model until pdf2zh publishes a release that bumps these pins.
-      # Revisit on every pdf2zh bump.
+      # pillow 11.3.0, gradio 5.35.0, and the gradio web stack: aiohttp,
+      # starlette, python-multipart, urllib3, idna, cryptography, msgpack) that
+      # carry published CVEs. Our usage runs in a --read-only, --cap-drop=ALL,
+      # --network=bridge container and never launches the Gradio web UI, so the
+      # CVEs below are accepted under our threat model. Bumping them directly is
+      # not possible while pdf2zh pins them, so they stand until pdf2zh publishes
+      # a release that bumps these pins. Revisit on every pdf2zh bump.
       - name: Audit lockfile
         working-directory: .claude/skills/pdf2zh
         run: |
@@ -131,4 +147,35 @@ jobs:
             --ignore-vuln CVE-2026-25990 \
             --ignore-vuln CVE-2026-40192 \
             --ignore-vuln CVE-2025-70559 \
-            --ignore-vuln CVE-2025-64512
+            --ignore-vuln CVE-2025-64512 \
+            --ignore-vuln CVE-2026-47265 \
+            --ignore-vuln CVE-2026-34993 \
+            --ignore-vuln CVE-2026-50269 \
+            --ignore-vuln CVE-2026-54273 \
+            --ignore-vuln CVE-2026-54274 \
+            --ignore-vuln CVE-2026-54275 \
+            --ignore-vuln CVE-2026-54276 \
+            --ignore-vuln CVE-2026-54277 \
+            --ignore-vuln CVE-2026-54278 \
+            --ignore-vuln CVE-2026-54279 \
+            --ignore-vuln CVE-2026-54280 \
+            --ignore-vuln GHSA-537c-gmf6-5ccf \
+            --ignore-vuln PYSEC-2026-211 \
+            --ignore-vuln PYSEC-2026-165 \
+            --ignore-vuln CVE-2026-42309 \
+            --ignore-vuln CVE-2026-42310 \
+            --ignore-vuln CVE-2026-42311 \
+            --ignore-vuln PYSEC-2026-161 \
+            --ignore-vuln CVE-2026-48817 \
+            --ignore-vuln CVE-2026-48818 \
+            --ignore-vuln CVE-2026-54282 \
+            --ignore-vuln CVE-2026-54283 \
+            --ignore-vuln PYSEC-2026-215 \
+            --ignore-vuln GHSA-6v7p-g79w-8964 \
+            --ignore-vuln CVE-2026-53537 \
+            --ignore-vuln CVE-2026-53538 \
+            --ignore-vuln CVE-2026-53539 \
+            --ignore-vuln CVE-2026-53540 \
+            --ignore-vuln CVE-2026-42561 \
+            --ignore-vuln PYSEC-2026-142 \
+            --ignore-vuln PYSEC-2026-141

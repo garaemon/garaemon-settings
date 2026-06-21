@@ -58,6 +58,27 @@ Trivial host-side coreutils that do not touch credentials or the network
 etc.) may stay on the host — wrapping every one of them in Docker has no
 security benefit and makes skills unreadable. When in doubt, isolate.
 
+### Documented exception: `gws-secure` runs on the host
+
+`scripts/gws-secure` is a deliberate, documented exception to the Docker
+rule above: it reaches the network and shells out to the third-party `gws`
+CLI, yet it runs directly on the host. The exception is justified because
+the wrapper's security model is orthogonal to (and arguably stronger than)
+container isolation:
+
+- The OAuth client and refresh token live in 1Password, not on disk. Each
+  call mints a short-lived access token in memory and passes it to `gws`
+  through `GOOGLE_WORKSPACE_CLI_TOKEN`; `gws` persists no credential, only
+  the non-secret API discovery schema cache.
+- `op` (1Password CLI) authentication is host-bound (biometric / session),
+  so the credential source cannot be relocated into a container without
+  punching the host's `op` session through to it — which would weaken, not
+  strengthen, isolation.
+
+Treat this as a one-off, not a precedent: any new credential- or
+network-touching skill still defaults to the Docker pattern unless it can
+make an equally strong, written argument here.
+
 ### Skill layout
 
 ```text
