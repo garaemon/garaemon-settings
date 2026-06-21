@@ -14,6 +14,7 @@ smartphones or desktop via Claude Code's `/remote-control`.
 - [pdf2zh](.claude/skills/pdf2zh/SKILL.md) — Translate a PDF to Japanese via the `pdf2zh` (PDFMathTranslate) CLI using Gemini. Runs in a hardened Docker container with a read-only Gemini API key file mount.
 - [artist-live-digest](.claude/skills/artist-live-digest/SKILL.md) — Produce a Japanese digest of upcoming live concerts in a configured city (default: Los Angeles) for the user's followed Spotify artists. Delegates the artist list to `spotify-sheets`, enriches via web search within a configurable day window, and dedupes against a persistent history file. Ships a Friday-morning systemd timer that posts via `slack-post`.
 - [morning-brief](.claude/skills/morning-brief/SKILL.md) — Produce a Japanese morning brief of today's Google Calendar events (across all calendars) and today's unread inbox mail, triaged and rendered directly in the chat so the user engages with it rather than receiving a hands-off digest. Reads Calendar and Gmail via the `gws-secure` wrapper; Slack posting is opt-in.
+- [daily-digest](.claude/skills/daily-digest/SKILL.md) — Write a Japanese summary of the user's GitHub activity for a day (pull requests and issues they touched, commits they authored, grouped by repository) into their org-roam daily note as a Claude-generated, unreviewed subtree, then commit and push the org repo after the user confirms. Reads activity with `gh search`.
 
 ## Tools
 
