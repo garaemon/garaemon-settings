@@ -5,14 +5,17 @@ description: |
   Google Calendar and Gmail: today's events across all calendars plus
   today's unread inbox mail, triaged and rendered directly in the chat
   so the user reads and engages with it (this is not a hands-off digest
-  that gets posted somewhere and forgotten). Calendar and Gmail are read
-  through the `gws-secure` wrapper (token-less, 1Password-backed). By
+  that gets posted somewhere and forgotten). It also surfaces the GitHub
+  items needing the user's attention today — PRs awaiting their review,
+  their own open PRs, and recently-active issues assigned to them.
+  Calendar and Gmail are read through the `gws-secure` wrapper
+  (token-less, 1Password-backed); GitHub is read with `gh search`. By
   default the brief is shown in-chat only; posting to Slack is opt-in.
   Trigger when the user asks for a morning brief or what their day looks
   like, with phrases like "今日の予定", "今日のブリーフ", "朝のブリーフ",
   "今日なにある", "今日のメールと予定", "ブリーフ", "morning brief",
   "what's on today", "today's brief".
-allowed-tools: Bash(gws-secure calendar:*), Bash(gws-secure gmail:*), Bash(jq:*), Bash(date:*), Bash(base64:*), Bash(tr:*), Bash(mkdir:*), Bash(mktemp:*), Bash(rm:*), Bash($CLAUDE_PLUGIN_ROOT/skills/slack-post/run.sh:*)
+allowed-tools: Bash(gws-secure calendar:*), Bash(gws-secure gmail:*), Bash(gh search:*), Bash(gh api:*), Bash(jq:*), Bash(date:*), Bash(base64:*), Bash(tr:*), Bash(mkdir:*), Bash(mktemp:*), Bash(rm:*), Bash($CLAUDE_PLUGIN_ROOT/skills/slack-post/run.sh:*)
 ---
 
 # Morning Brief Skill
@@ -20,14 +23,16 @@ allowed-tools: Bash(gws-secure calendar:*), Bash(gws-secure gmail:*), Bash(jq:*)
 Give the user a fast, scannable Japanese picture of their day from their
 own Calendar and Gmail, rendered in the chat response. The brief leads with
 today's schedule, then triages today's unread inbox mail (surfacing what
-needs action and compressing the rest), and ends by offering to drill into
-any item. It does not auto-post anywhere by default — the user is meant to
-read it here and engage. This deliberately avoids the hands-off
-"summarize-and-post" shape, which the user found does not stick.
+needs action and compressing the rest), then lists the GitHub items waiting
+on the user, and ends by offering to drill into any item. It does not
+auto-post anywhere by default — the user is meant to read it here and
+engage. This deliberately avoids the hands-off "summarize-and-post" shape,
+which the user found does not stick.
 
 Calendar and Gmail are read through the `gws-secure` wrapper, which mints a
 short-lived access token from 1Password on each call and never writes an
-OAuth token to disk — see [Security note](#security-note).
+OAuth token to disk — see [Security note](#security-note). GitHub is read
+with the authenticated `gh` CLI.
 
 ## Prerequisites
 
@@ -38,6 +43,9 @@ OAuth token to disk — see [Security note](#security-note).
 - `op` (1Password CLI) is signed in. If a `gws-secure` call fails because
   1Password cannot be read, stop and tell the user to run `op signin`
   themselves — never trigger an interactive login from this skill.
+- `gh` (GitHub CLI) is authenticated (`gh auth status` succeeds) for the
+  GitHub section. If it is not, skip that section and note it in one line;
+  do not fail the whole brief.
 - `jq` is available (ships with the host).
 
 ## Workflow
@@ -98,7 +106,7 @@ gws-secure gmail users messages list \
 ```
 
 The response lists message ids only. If there are none, say so in one
-Japanese line and skip to Step 5 with the calendar-only brief.
+Japanese line and continue to the GitHub section, then render.
 
 For each id, fetch the message and read its headers and snippet. Cache the
 large JSON to a file (do not read it into the response) and extract only the
@@ -162,7 +170,44 @@ in 📌 rather than dropping it.
 Lead with 要対応 individually, then 🎫 with deadlines, then 📌. Collapse the
 ads to the one-line count.
 
-### Step 5: Render the brief in the chat (Japanese)
+### Step 5: Fetch the GitHub items waiting on the user
+
+Surface what needs the user's attention now, not their whole backlog.
+Resolve the login once and use a 30-day recency window to drop stale items:
+
+```bash
+USER_LOGIN="$(gh api user --jq .login)"
+SINCE="$(date -v-30d +%Y-%m-%d 2>/dev/null || date -d '30 days ago' +%Y-%m-%d)"
+
+# PRs awaiting the user's review (direct asks).
+gh search prs --review-requested="$USER_LOGIN" --state=open \
+  --json number,title,repository,url --limit 50
+
+# The user's own open PRs, recently active.
+gh search prs --author="$USER_LOGIN" --state=open --updated=">$SINCE" \
+  --json number,title,repository,updatedAt,url --limit 50
+
+# Issues assigned to the user, recently active. gh search issues also returns
+# PRs, so drop entries where isPullRequest is true.
+gh search issues --assignee="$USER_LOGIN" --state=open --updated=">$SINCE" \
+  --json number,title,repository,updatedAt,isPullRequest,url --limit 50
+```
+
+Noise rules — the raw lists are long and full of bulk or stale items:
+
+- **Review requests**: group entries with identical titles into one line
+  with a count (a `Update .clang-format` batch across many repos becomes
+  `8x Update .clang-format`), so a mass rollout does not flood the brief.
+- **Own open PRs**: sort by `updatedAt` descending, show the few most recent,
+  and give the total as a count.
+- **Assigned issues**: the 30-day window already drops years-old
+  assignments; if none remain, omit the line.
+- `date -v-30d` is the macOS form; `date -d '30 days ago'` is the Linux
+  fallback.
+- If `gh` is not authenticated, skip this section and note it in one line —
+  never block the calendar/mail brief on GitHub.
+
+### Step 6: Render the brief in the chat (Japanese)
 
 Render directly in the chat response. The brief shows the user's real
 calendar and mail content — this is their own data shown back to them, so
@@ -189,8 +234,16 @@ schedule first, then triaged mail, then an engagement prompt.
 
 （広告・販促 K 通は除外）
 
+🐙 **GitHub（対応待ち）**
+**🔍 レビュー依頼**
+- owner/repo #123 タイトル（同一タイトルはまとめて「8x タイトル」）
+**🔀 自分の open PR（直近 P 件 / 全 Q 件）**
+- owner/repo #45 タイトル
+**📋 assigned issue（直近更新）**
+- owner/repo #6 タイトル
+
 ——
-気になるものある？ 詳細を開く・返信を下書き（送信前に確認）・Slackに流す、などできるよ。
+気になるものある？ 詳細を開く・返信を下書き（送信前に確認）・PR/issue を開く・Slackに流す、などできるよ。
 ```
 
 Rules for the render:
@@ -200,11 +253,15 @@ Rules for the render:
 - Mail order: 要対応 first (individually), then 🎫 チケット・締切 (each with
   its deadline/window), then 📌 通知. Drop ads entirely and show only the
   trailing dropped-count line.
-- Skip any mail bucket that is empty (do not print an empty heading).
+- GitHub order: 🔍 レビュー依頼 (grouped) first, then 🔀 自分の open PR
+  (recent few + total count), then 📋 assigned issue (recent only).
+- Skip any bucket that is empty (do not print an empty heading). If the whole
+  GitHub section is empty, drop it.
 - End with a short engagement line offering next actions (expand an item,
-  draft a reply, post to Slack) — do not perform any of them unprompted.
+  draft a reply, open a PR/issue, post to Slack) — do not perform any of
+  them unprompted.
 
-### Step 6 (opt-in): Post to Slack
+### Step 7 (opt-in): Post to Slack
 
 Only if the user explicitly asks to send the brief to Slack, post the same
 rendered markdown via the `slack-post` skill. Write the body to a temp file
@@ -212,7 +269,7 @@ and pass it with `--text-file ... --markdown`:
 
 ```bash
 BRIEF_FILE="$(mktemp /tmp/morning-brief.XXXXXX.md)"
-# Write the exact markdown rendered in Step 5 into "$BRIEF_FILE".
+# Write the exact markdown rendered in Step 6 into "$BRIEF_FILE".
 "$CLAUDE_PLUGIN_ROOT/skills/slack-post/run.sh" post \
   --text-file "$BRIEF_FILE" --markdown
 rm -f "$BRIEF_FILE"
@@ -222,8 +279,9 @@ Default behaviour is in-chat only. Never post to Slack without being asked.
 
 ## Output rules
 
-- The chat brief is in Japanese and shows the user's real calendar/mail
-  content (their own data, shown to them) — do not redact it.
+- The chat brief is in Japanese and shows the user's real calendar, mail,
+  and GitHub content (their own data, shown to them) — do not redact it.
+  GitHub items may reference private repositories; that is fine in-chat.
 - Files stay generic and English: this SKILL.md, and any cached JSON under
   the cache dir, must not be committed and must not hardcode real names,
   addresses, or mailbox ids. Keep PII out of anything that lands in the
@@ -239,14 +297,21 @@ Default behaviour is in-chat only. Never post to Slack without being asked.
 - Calendar fetch fails but mail succeeds (or vice versa): render the half
   that worked and note the failure in one Japanese line.
 - A single message fails to fetch or parse: skip it, note it, and continue.
-- No events and no unread mail: reply that there is nothing for today in one
-  Japanese line.
+- `gh` not authenticated or a `gh search` call fails: skip the GitHub
+  section, note it in one line, and still render calendar and mail.
+- No events, no unread mail, and no GitHub items: reply that there is nothing
+  for today in one Japanese line.
 
 ## Out of scope
 
 - Sending mail, replying, or modifying calendar events. Drafting a reply is
   offered as a follow-up but always runs through a separate confirmed flow,
   not this skill.
+- Acting on GitHub: the brief lists PRs and issues read-only. Reviewing,
+  commenting, or merging is not done here.
+- The user's full GitHub backlog. The GitHub section is scoped to items
+  needing attention now (review requests, recent own PRs, recently-active
+  assigned issues), not every open item.
 - A daily org-roam summary written to `daily/`. That is a separate skill;
   this one only briefs the user in the chat (and optionally Slack).
 - Newsletters / article summarization (that was `tldr-digest`, dropped).
@@ -257,7 +322,8 @@ Calendar and Gmail are read through `gws-secure` (see
 [`scripts/README.md`](../../../scripts/README.md)), which runs Google's
 official `gws` CLI on the host but keeps the OAuth client and refresh token
 in 1Password and mints a short-lived access token in memory on each call.
-No OAuth token is written to disk. This skill only reads the user's own
-Calendar and Gmail; it never modifies them. An opt-in Slack post (Step 6)
+No OAuth token is written to disk. GitHub is read with the authenticated
+`gh` CLI. This skill only reads the user's own Calendar, Gmail, and GitHub;
+it never modifies them or acts on a PR/issue. An opt-in Slack post (Step 7)
 runs through the `slack-post` skill, which executes inside a hardened Docker
 container with the bot token mounted read-only.
