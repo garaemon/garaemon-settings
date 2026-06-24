@@ -1,26 +1,30 @@
 ---
-name: daily-digest
+name: daily-wrapup
 description: |
-  Write a Japanese daily summary of the user's GitHub activity for a given
-  day (default: today) into their org-roam daily note, then commit and push
-  the org repository (asking the user to confirm before the commit). The
-  summary covers pull requests and issues the user touched that day and the
-  commits they authored, grouped by repository and synthesized into a short
-  narrative. Activity is read with `gh search`; the note is written to
-  `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org` and tagged as Claude-generated
-  and unreviewed.
-  Trigger when the user asks to record or summarize what they did today, or
-  for a daily log/standup, with phrases like "日次まとめ", "今日のまとめ",
-  "今日やったことまとめて", "日報", "デイリーまとめ", "daily digest",
+  Wrap up the user's day: write a Japanese end-of-day summary of their
+  GitHub activity for a given day (default: today) into their org-roam daily
+  note, then commit and push the org repository (asking the user to confirm
+  before the commit). This is the evening counterpart to the morning-brief
+  skill — morning-brief plans the day ahead, daily-wrapup records what
+  actually got done. The summary covers pull requests and issues the user
+  touched that day and the commits they authored, grouped by repository and
+  synthesized into a short narrative. Activity is read with `gh search`; the
+  note is written to `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org` and tagged as
+  Claude-generated and unreviewed.
+  Trigger when the user asks to wrap up or record what they did today, or
+  for a daily log/standup at end of day, with phrases like "今日のまとめ",
+  "今日のラップアップ", "一日のまとめ", "今日やったことまとめて", "日報",
+  "日次まとめ", "今日の締め", "daily wrapup", "wrap up my day",
   "today's summary", "今日の活動まとめて".
 allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash(jq:*), Bash(date:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*)
 ---
 
-# Daily Digest Skill
+# Daily Wrapup Skill
 
-Summarize the user's GitHub activity for a day and append it to their
-org-roam daily note as a Claude-generated, unreviewed subtree, then commit
-and push the org repository — but only after the user confirms the commit.
+Wrap up the user's day by summarizing their GitHub activity and appending it
+to their org-roam daily note as a Claude-generated, unreviewed subtree, then
+commit and push the org repository — but only after the user confirms the
+commit. This is the end-of-day counterpart to the `morning-brief` skill.
 
 The daily note lives in a private repository (the user's org), so the note
 itself is written in Japanese and may contain real names and titles. This
@@ -107,7 +111,7 @@ The note is an org-roam daily file. Two cases:
   * <DAY Dow HH:MM> GitHub activity                                :claude:
   :PROPERTIES:
   :STATUS:   unreviewed
-  :GENERATED_BY: claude-code/daily-digest
+  :GENERATED_BY: claude-code/daily-wrapup
   :END:
 
   ** <owner/repo>
@@ -151,7 +155,7 @@ the branch in the prompt so the user can catch it; if they want it on
 On confirmation, commit in English and push the current branch:
 
 ```bash
-git -C "$ORG_DIR" commit -m "Add daily digest for $DAY"
+git -C "$ORG_DIR" commit -m "Add daily wrapup for $DAY"
 git -C "$ORG_DIR" push || git -C "$ORG_DIR" push -u origin HEAD
 ```
 
