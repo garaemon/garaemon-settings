@@ -128,5 +128,22 @@
       (should (equal "RIGHT" (alist-get 'side c)))
       (should (equal "body" (alist-get 'body c))))))
 
+;;;; API host resolution (github.com and GitHub Enterprise)
+
+(ert-deftest review-model-resolve-host-should-return-github-apihost ()
+  (should (equal "api.github.com"
+                 (my-forge-ediff-review-model-resolve-host "api.github.com"))))
+
+(ert-deftest review-model-resolve-host-should-return-enterprise-apihost ()
+  (should (equal "ghe.example.com/api/v3"
+                 (my-forge-ediff-review-model-resolve-host
+                  "ghe.example.com/api/v3"))))
+
+(ert-deftest review-model-resolve-host-should-return-nil-when-nil ()
+  (should-not (my-forge-ediff-review-model-resolve-host nil)))
+
+(ert-deftest review-model-resolve-host-should-return-nil-when-empty ()
+  (should-not (my-forge-ediff-review-model-resolve-host "")))
+
 (provide 'my-forge-ediff-review-model-test)
 ;;; my-forge-ediff-review-model-test.el ends here
