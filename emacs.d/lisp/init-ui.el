@@ -364,32 +364,40 @@ CONDITION is a regexp string matching buffer names.")
            (window-parameters . ((no-delete-other-windows . t))))))
     (magit-status)))
 
-;;; Magit left side window: expand on focus, shrink on blur
+;;; Left side windows: expand on focus, shrink on blur
 ;;
-;; A magit buffer shown in a left side window is too narrow for everyday
-;; reading, but a permanently wide side window steals horizontal space from
-;; the main editing area. The block below resolves this by watching
-;; `window-selection-change-functions' and resizing any left-side magit
-;; window to `my-magit-side-window-focused-width' while it has focus, and
-;; back to `my-magit-side-window-unfocused-width' as soon as focus moves
-;; away.
+;; A magit buffer (or the forge ediff review file-list sidebar) shown in a
+;; left side window is too narrow for everyday reading, but a permanently
+;; wide side window steals horizontal space from the main editing area. The
+;; block below resolves this by watching `window-selection-change-functions'
+;; and resizing such a window to `my-magit-side-window-focused-width' while
+;; it has focus, and back to `my-magit-side-window-unfocused-width' as soon
+;; as focus moves away.  Resizing the review sidebar on every focus also
+;; re-asserts its width after ediff transiently shrinks it on navigation.
 
 (defcustom my-magit-side-window-focused-width 80
-  "Width in columns for a magit left side window while it has focus."
+  "Width in columns for a focus-resize left side window while it has focus.
+Applies to magit buffers and the review file-list sidebar."
   :type 'integer
   :group 'magit)
 
 (defcustom my-magit-side-window-unfocused-width 30
-  "Width in columns for a magit left side window while it does not have focus."
+  "Width in columns for a focus-resize left side window without focus.
+Applies to magit buffers and the review file-list sidebar."
   :type 'integer
   :group 'magit)
 
 (defun my-magit-left-side-window-p (window)
-  "Return non-nil when WINDOW is a left side window showing a magit buffer."
+  "Return non-nil when WINDOW is a left side window that should focus-resize.
+Covers magit buffers and the forge ediff review file-list sidebar
+\(`*forge-review-files*'), so both widen while selected and shrink back on
+blur.  The sidebar is matched by buffer name to avoid loading the review
+feature just to know its mode."
   (and (window-live-p window)
        (eq (window-parameter window 'window-side) 'left)
-       (with-current-buffer (window-buffer window)
-         (derived-mode-p 'magit-mode))))
+       (let ((buffer (window-buffer window)))
+         (or (with-current-buffer buffer (derived-mode-p 'magit-mode))
+             (equal (buffer-name buffer) "*forge-review-files*")))))
 
 (defun my-magit-resize-window-to (window target-width)
   "Resize WINDOW horizontally to TARGET-WIDTH columns."
@@ -401,10 +409,10 @@ CONDITION is a regexp string matching buffer names.")
         (window-resize window width-delta t t)))))
 
 (defun my-magit-adjust-side-window-on-focus (&optional frame)
-  "Widen the focused magit left side window in FRAME and narrow the others.
-Hooked into `window-selection-change-functions' so a magit side window is
-expanded only while it is selected, and shrunk back as soon as focus moves
-away."
+  "Widen the focused focus-resize left side window in FRAME, narrow the others.
+Hooked into `window-selection-change-functions' so such a side window (a
+magit buffer or the review file-list sidebar) is expanded only while it is
+selected, and shrunk back as soon as focus moves away."
   (let ((selected-window-in-frame (frame-selected-window frame)))
     (dolist (frame-window (window-list frame))
       (when (my-magit-left-side-window-p frame-window)
