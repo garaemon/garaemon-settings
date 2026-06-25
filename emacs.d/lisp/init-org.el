@@ -384,6 +384,18 @@ fully configured, not stripped down."))
          )
   )
 
+;; Create the *org-scratch* buffer at startup so a throwaway org buffer is
+;; always available. Based on
+;; https://qiita.com/KaitoMuraoka/items/d86acdd50f2229a3bf92
+(defun my-create-org-scratch-buffer ()
+  "Create the *org-scratch* buffer in `org-mode'."
+  (let ((buf (get-buffer-create "*org-scratch*")))
+    (with-current-buffer buf
+      (unless (derived-mode-p 'org-mode)
+        (org-mode)))))
+
+(add-hook 'emacs-startup-hook #'my-create-org-scratch-buffer)
+
 (use-package org-ai :ensure t :after org
   ;; C-c C-c (=org-ai-complete-block) to get AI response.
   :bind
