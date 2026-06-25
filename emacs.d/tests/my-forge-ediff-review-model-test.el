@@ -128,6 +128,113 @@
       (should (equal "RIGHT" (alist-get 'side c)))
       (should (equal "body" (alist-get 'body c))))))
 
+;;;; Existing review thread parsing (GitHub GraphQL response)
+
+(defun my-forge-ediff-review-model-test--threads-response (thread-nodes)
+  "Wrap THREAD-NODES in the reviewThreads GraphQL response envelope."
+  `((data
+     (repository
+      (pullRequest
+       (reviewThreads
+        (nodes . ,thread-nodes)))))))
+
+(defun my-forge-ediff-review-model-test--comment (body author)
+  "Build one review comment node carrying BODY and AUTHOR login.
+GitHub exposes `path'/`line'/`diffSide' on the thread, so a comment node
+holds only the body and author."
+  `((body . ,body) (author (login . ,author))))
+
+(defun my-forge-ediff-review-model-test--thread (resolved location comment-nodes)
+  "Build one reviewThread node with RESOLVED, LOCATION and COMMENT-NODES.
+LOCATION is an alist providing the thread-level `path', `line',
+`originalLine' and `diffSide' fields."
+  `((isResolved . ,resolved)
+    ,@location
+    (comments (nodes . ,comment-nodes))))
+
+(ert-deftest review-model-should-parse-a-review-comment-into-an-entry ()
+  (let* ((response
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             '((path . "src/a.el") (line . 12) (originalLine . 9)
+               (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment
+                      "looks off" "octocat"))))))
+         (entries (my-forge-ediff-review-model-parse-review-threads response))
+         (entry (car entries)))
+    (should (= 1 (length entries)))
+    (should (equal "src/a.el" (plist-get entry :path)))
+    (should (= 12 (plist-get entry :line)))
+    (should (equal "RIGHT" (plist-get entry :side)))
+    (should (equal "looks off" (plist-get entry :body)))
+    (should (equal "octocat" (plist-get entry :author)))
+    (should-not (plist-get entry :resolved))))
+
+(ert-deftest review-model-should-fall-back-to-original-line-when-line-null ()
+  (let* ((response
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             '((path . "a.el") (line) (originalLine . 7) (diffSide . "LEFT"))
+             (vector (my-forge-ediff-review-model-test--comment "x" "u"))))))
+         (entry (car (my-forge-ediff-review-model-parse-review-threads
+                      response))))
+    (should (= 7 (plist-get entry :line)))))
+
+(ert-deftest review-model-should-mark-entry-resolved ()
+  (let* ((response
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             t
+             '((path . "a.el") (line . 1) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment "done" "u"))))))
+         (entry (car (my-forge-ediff-review-model-parse-review-threads
+                      response))))
+    (should (plist-get entry :resolved))))
+
+(ert-deftest review-model-should-skip-thread-without-line ()
+  (let* ((response
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             '((path . "a.el") (line) (originalLine) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment
+                      "outdated" "u"))))))
+         (entries (my-forge-ediff-review-model-parse-review-threads
+                   response)))
+    (should (null entries))))
+
+(ert-deftest review-model-should-return-empty-for-no-threads ()
+  (should (null (my-forge-ediff-review-model-parse-review-threads
+                 (my-forge-ediff-review-model-test--threads-response
+                  (vector))))))
+
+(ert-deftest review-model-should-parse-ghub-async-callback-root ()
+  ;; `ghub-graphql' hands its async callback the root cons `(data . PAYLOAD)'
+  ;; rather than the fully wrapped `((data . PAYLOAD))' alist, so the parser
+  ;; must accept both or existing comments silently never overlay.
+  (let* ((wrapped
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             '((path . "a.el") (line . 3) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment "hi" "me"))))))
+         (async-root (car wrapped))
+         (entries (my-forge-ediff-review-model-parse-review-threads
+                   async-root))
+         (entry (car entries)))
+    (should (eq 'data (car-safe async-root)))
+    (should (= 1 (length entries)))
+    (should (equal "a.el" (plist-get entry :path)))
+    (should (= 3 (plist-get entry :line)))
+    (should (equal "RIGHT" (plist-get entry :side)))))
+
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
 (ert-deftest review-model-resolve-host-should-return-github-apihost ()

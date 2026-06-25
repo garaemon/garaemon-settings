@@ -44,15 +44,19 @@
 
 (require 'cl-lib)
 (require 'ghub)
+;; ghub 5.0 moved `ghub-graphql' into `ghub-legacy', which is not autoloaded.
+(require 'ghub-legacy nil t)
 (require 'my-magit-ediff)
 (require 'my-forge-ediff-review-model)
 
 (defvar my-forge-ediff-review--session nil
   "Plist for the active review session, or nil.
 Keys: :owner :repo :num :head-rev :base-rev :host :comments :memos
-:reviewed.  Each comment and memo is a plist with :path :line :side
-:body; memos stay local and are never submitted.  :reviewed is a list of
-repository-relative file paths the user has flagged as done.")
+:reviewed :existing.  Each comment and memo is a plist with :path :line
+:side :body; memos stay local and are never submitted.  :reviewed is a
+list of repository-relative file paths the user has flagged as done.
+:existing holds review comments already posted to the PR on GitHub,
+fetched once at session start and shown read-only as overlays.")
 
 ;;;; Ediff control & navigation
 
@@ -131,11 +135,13 @@ launches multi-file ediff between PR base and head."
                   :host (my-forge-ediff-review--resolve-host repo)
                   :comments nil
                   :memos nil
-                  :reviewed nil))
+                  :reviewed nil
+                  :existing nil))
       (message
        "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
        (oref pullreq number))
       (my-forge-ediff-review--install-sidebar-hooks)
+      (my-forge-ediff-review--fetch-existing-threads)
       (my-magit-ediff-all-compare diff-base head-rev))))
 
 (defun my-forge-ediff-review--resolve-host (repo)
@@ -153,6 +159,51 @@ forges resolve to nil so ghub falls back to its default host."
   (unless my-forge-ediff-review--session
     (user-error "No active forge ediff review session")))
 
+;;;; Existing review comments (fetched from GitHub)
+
+(defconst my-forge-ediff-review--threads-query
+  "query($owner:String!,$repo:String!,$number:Int!){
+     repository(owner:$owner,name:$repo){
+       pullRequest(number:$number){
+         reviewThreads(first:100){
+           nodes{
+             isResolved path line originalLine diffSide
+             comments(first:100){
+               nodes{ body author{login} }
+             }
+           }
+         }
+       }
+     }
+   }"
+  "GraphQL query fetching a PR's review threads and their inline comments.")
+
+(defun my-forge-ediff-review--fetch-existing-threads ()
+  "Fetch the PR's existing review comments and overlay them when they arrive.
+Runs asynchronously; failures are reported but never abort the review."
+  (let ((s my-forge-ediff-review--session))
+    (when (fboundp 'ghub-graphql)
+      (ghub-graphql
+       my-forge-ediff-review--threads-query
+       `((owner . ,(plist-get s :owner))
+         (repo . ,(plist-get s :repo))
+         (number . ,(plist-get s :num)))
+       :auth 'forge
+       :host (plist-get s :host)
+       :callback #'my-forge-ediff-review--on-threads-fetched
+       :errorback (lambda (err &rest _)
+                    (message "Could not fetch existing review comments: %S"
+                             err))))))
+
+(defun my-forge-ediff-review--on-threads-fetched (response &rest _)
+  "Store parsed RESPONSE into the session and refresh overlays."
+  (when my-forge-ediff-review--session
+    (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                    response)))
+      (setf (plist-get my-forge-ediff-review--session :existing) entries)
+      (my-forge-ediff-review--refresh-all-buffers)
+      (message "Loaded %d existing review comment(s)." (length entries)))))
+
 ;;;; Overlays in ediff buffers
 
 (defface my-forge-ediff-review-comment-face
@@ -165,6 +216,12 @@ forges resolve to nil so ghub falls back to its default host."
   '((((background light)) :background "#ddf4ff" :foreground "#24292f")
     (((background dark))  :background "#002a3a" :foreground "#ffffff"))
   "Face for inline memos, which stay local and are never submitted."
+  :group 'my-forge-ediff-review)
+
+(defface my-forge-ediff-review-existing-comment-face
+  '((((background light)) :background "#eaeef2" :foreground "#57606a")
+    (((background dark))  :background "#21262d" :foreground "#8b949e"))
+  "Face for existing review comments already posted to the PR on GitHub."
   :group 'my-forge-ediff-review)
 
 (defun my-forge-ediff-review--side-for-rev (rev)
@@ -218,12 +275,29 @@ end-of-line so it does not shift `display-line-numbers-mode' or
            (rev  my-magit-ediff--buf-rev)
            (side (my-forge-ediff-review--side-for-rev rev)))
       (when side
+        (my-forge-ediff-review--put-existing-overlays
+         (plist-get my-forge-ediff-review--session :existing) file side)
         (my-forge-ediff-review--put-side-overlays
          (plist-get my-forge-ediff-review--session :comments)
          file side "|" 'my-forge-ediff-review-comment-face)
         (my-forge-ediff-review--put-side-overlays
          (plist-get my-forge-ediff-review--session :memos)
          file side "memo" 'my-forge-ediff-review-memo-face)))))
+
+(defun my-forge-ediff-review--put-existing-overlays (entries file side)
+  "Overlay existing review comments in ENTRIES matching FILE and SIDE.
+Each comment is labelled with its author and a resolved marker so it is
+clearly distinguished from the reviewer's own pending comments."
+  (dolist (entry (my-forge-ediff-review-model-entries-for-side
+                  entries file side))
+    (my-forge-ediff-review--put-overlay
+     (current-buffer)
+     (plist-get entry :line)
+     (format "%s%s:"
+             (or (plist-get entry :author) "reviewer")
+             (if (plist-get entry :resolved) " (resolved)" ""))
+     (plist-get entry :body)
+     'my-forge-ediff-review-existing-comment-face)))
 
 (defun my-forge-ediff-review--put-side-overlays (entries file side label face)
   "Overlay each of ENTRIES matching FILE and SIDE with LABEL and FACE."
