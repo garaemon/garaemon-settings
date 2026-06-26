@@ -19,7 +19,7 @@ description: |
   "今日のラップアップ", "一日のまとめ", "今日やったことまとめて", "日報",
   "日次まとめ", "今日の締め", "daily wrapup", "wrap up my day",
   "today's summary", "今日の活動まとめて".
-allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash(gws-secure calendar:*), Bash(jq:*), Bash(date:*), Bash(sed:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*), Bash(emacsclient:*)
+allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh:*), Bash(jq:*), Bash(date:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*), Bash(emacsclient:*)
 ---
 
 # Daily Wrapup Skill
@@ -28,7 +28,9 @@ Wrap up the user's day by summarizing their GitHub activity and today's
 events from their own Google Calendar, appending the result to their
 org-roam daily note as a Claude-generated, unreviewed subtree, then commit
 and push the org repository — but only after the user confirms the commit.
-This is the end-of-day counterpart to the `morning-brief` skill.
+This is the end-of-day counterpart to the `morning-brief` skill. The two
+sources are gathered and summarized in parallel by two subagents (calendar
+and GitHub), each returning a finished org section.
 
 The daily note lives in a private repository (the user's org), so the note
 itself is written in Japanese and may contain real names and titles. This
@@ -40,16 +42,18 @@ SKILL.md stays generic and English, and never hardcodes a username or path
 
 - `gh` (GitHub CLI) is authenticated (`gh auth status` succeeds). The search
   covers private repositories the authenticated user can see.
-- `gws-secure` is on `PATH` and bootstrapped (1Password-backed; see
+- The calendar section runs `fetch-calendar.sh` (in this skill directory),
+  which reads the calendar through `gws-secure`. That requires `gws-secure`
+  on `PATH` and bootstrapped (1Password-backed; see
   [`scripts/README.md`](../../../scripts/README.md)) and `op` (1Password CLI)
-  is signed in. This is needed only for the calendar section. If a
-  `gws-secure` call fails, skip the calendar section and note it in one
-  line — never trigger an interactive login from this skill, and never fail
-  the whole wrap-up because the calendar could not be read.
+  signed in. If the script exits non-zero, skip the calendar section and note
+  it in one line — never trigger an interactive login from this skill, and
+  never fail the whole wrap-up because the calendar could not be read.
 - `ORG_DIR` points at the user's org repository (the one that contains
   `org-roam/daily/`). If it is unset, default to `$HOME/org` and, if that is
   not a git work tree, stop and ask the user to export `ORG_DIR`.
-- `git`, `jq`, `date`, `sed`, and `uuidgen` are available on the host.
+- `git`, `jq`, `date`, and `uuidgen` are available on the host. The script
+  additionally uses `sed` (host coreutil).
 
 ## Workflow
 
@@ -67,58 +71,38 @@ mkdir -p "$DAILY_DIR"
 Confirm `ORG_DIR` is a git work tree (`git -C "$ORG_DIR" rev-parse` succeeds);
 if not, stop and ask the user to set `ORG_DIR`.
 
-### Step 2: Gather today's calendar events (own calendar only)
+### Step 2: Summarize calendar and GitHub in parallel (subagents)
 
-Read the events on the user's **own** calendar for the local day. Use the
-primary calendar id: it is the user's main personal calendar, and events
-imported or subscribed from other calendars live under different calendar
-ids, so `primary` excludes them — which is what the user wants.
+Gather and summarize the two sources concurrently. Spawn two subagents with
+the Agent tool **in a single message** so they run in parallel; each one
+gathers its own source and returns a finished, Japanese, org-formatted
+section, so the raw API JSON never enters the main context. Pass the resolved
+`$DAY` (and `$USER_LOGIN` for GitHub) into each prompt verbatim.
 
-Do **not** use the `+agenda --today` helper here: it is a rolling
-next-24-hours-from-now window, so run in the evening it misses events that
-already happened earlier today and leaks tomorrow's. Query `events list`
-with an explicit full-local-day window instead:
+**Calendar subagent.** Tell it to:
 
-```bash
-OFFSET="$(date +%z | sed 's/\(..\)$/:\1/')"          # -0700 -> -07:00
-TOMORROW="$(date -v+1d -j -f %Y-%m-%d "$DAY" +%Y-%m-%d 2>/dev/null \
-  || date -d "$DAY +1 day" +%Y-%m-%d)"
-TIME_MIN="${DAY}T00:00:00${OFFSET}"
-TIME_MAX="${TOMORROW}T00:00:00${OFFSET}"
+- Run the calendar fetch script. It reads the user's own primary calendar for
+  the day and prints one event per line as `start|end|summary|location`; it
+  excludes imported and subscribed calendars, cancelled events, and events
+  the user declined (see the script header for the rationale):
 
-gws-secure calendar events list \
-  --params "{\"calendarId\":\"primary\",\"timeMin\":\"$TIME_MIN\",\"timeMax\":\"$TIME_MAX\",\"singleEvents\":true,\"orderBy\":\"startTime\",\"maxResults\":50}" \
-  --format json \
-  | jq -r '.items[]
-      | select(.status != "cancelled")
-      | select([.attendees[]? | select(.self == true) | .responseStatus]
-               | (length == 0 or .[0] != "declined"))
-      | "\(.start.dateTime // .start.date)|\(.end.dateTime // .end.date)|\(.summary // "(no title)")|\(.location // "")"'
-```
+  ```bash
+  "$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh" "$DAY"
+  ```
 
-Notes:
+- Format each line as an org bullet for a `** 予定` section: a timed event
+  (the `start` field contains a `T`) as `- HH:MM–HH:MM <summary>`, appending
+  `@<location>` (preceded by a space) when the location is non-empty; an
+  all-day event (no `T`) as `- 終日: <summary>`. Keep chronological order,
+  one bullet per event.
+- Return **only** those bullet lines. If the script printed nothing, return
+  the single token `NO_EVENTS`. If the script exited non-zero (e.g. a
+  gws-secure auth failure), return the single token `CALENDAR_UNAVAILABLE`.
+  Never invent events.
 
-- `calendarId=primary` scopes the read to the user's own calendar; this is
-  deliberate — the user does not want imported or subscribed calendars in
-  the wrap-up.
-- The full-day `timeMin`/`timeMax` window captures events that already
-  happened earlier today, which a wrap-up needs.
-- Drop `status == "cancelled"` events and events the user themselves declined
-  (`responseStatus == "declined"`), since a wrap-up records what actually
-  happened.
-- A timed event's `start.dateTime` is RFC3339 (contains a `T`); an all-day
-  event has `start.date`, a bare `YYYY-MM-DD`, with `end.date` the next day.
-- An empty calendar is not an error: note it and move on. A calendar-only or
-  GitHub-only day is still worth recording.
-- If `gws-secure` fails (1Password locked, network, revoked grant), skip the
-  calendar section, record the GitHub activity alone, and note in one line
-  that the calendar could not be read. Do not trigger an interactive login.
-
-### Step 3: Gather the day's GitHub activity
-
-Use `gh search`, which returns reliable titles and states (the
-`users/<login>/events` API ships stripped payloads — no PR titles or commit
-messages — so do not use it here).
+**GitHub subagent.** Tell it to run these three queries (`gh search` returns
+reliable titles and states; the `users/<login>/events` API ships stripped
+payloads, so do not use it):
 
 ```bash
 # Pull requests the user touched that day (opened, merged, commented).
@@ -135,34 +119,22 @@ gh search commits --author="$USER_LOGIN" --committer-date="$DAY" \
   --json repository,sha,commit --limit 100
 ```
 
-Notes:
+Then group by repository and return org subtrees — one `*** owner/repo`
+heading per repository with `-` bullets beneath it: lead with the PRs (title
+and state, i.e. merged / open / closed) and issues, then fold in the notable
+commit subjects. Synthesize, do not dump; drop the wall of
+`Merge pull request #N …` commits, since the PR list already covers them. If
+all three queries are empty, return the single token `NO_ACTIVITY`.
 
-- A day with no GitHub activity is not an error. If all three are empty and
-  the calendar (Step 2) is also empty, tell the user there is nothing to
-  record for that day and stop (do not write or commit an empty note). If
-  only the calendar has entries, still record those.
-- Commit search returns merge commits (`Merge pull request #N …`) alongside
-  real commits; the PR list already captures the PR-level view, so prefer
-  the PR titles for the narrative and use commit subjects as supporting
-  detail. Do not list a long wall of merge commits.
+Wait for both subagents before continuing.
 
-### Step 4: Synthesize a short Japanese summary
+### Step 3: Write the daily org note
 
-Produce two parts, both in Japanese:
-
-- **Calendar**: list today's events from Step 2 in chronological order, one
-  line per event. Format a timed event as `HH:MM–HH:MM <summary>` and append
-  `@<location>` (preceded by a space) when a location is present; format an
-  all-day event as `終日: <summary>`. Do not invent attendees or details the
-  API did not return.
-- **GitHub**: group the activity by repository. For each repository, lead
-  with the PRs (title + state: merged / open / closed) and the issues, then
-  fold in the notable commit subjects. Write a brief synthesis, not a raw
-  dump — a few bullet lines per repository describing what actually changed.
-
-Keep the whole thing scannable.
-
-### Step 5: Write the daily org note
+Combine the two subagent results. If the calendar returned `NO_EVENTS` or
+`CALENDAR_UNAVAILABLE` **and** GitHub returned `NO_ACTIVITY`, there is nothing
+to record — tell the user and stop without writing or committing. When the
+calendar came back `CALENDAR_UNAVAILABLE`, note that to the user in one line
+but still write the GitHub section.
 
 The note is an org-roam daily file. Two cases:
 
@@ -204,14 +176,14 @@ Provenance rules (from the project plan):
   `autogenerated`, not `auto-generated`).
 - Put `:STATUS: unreviewed` in the subtree's property drawer. Review happens
   by editing this tag in org (or by the user telling the skill they reviewed
-  it — see Step 6), not through a git PR.
+  it — see Step 4), not through a git PR.
 - Generate a fresh `:ID:` with `uuidgen` only when creating a new file;
   never invent or reuse an id for an existing node.
 
 Write the file with the editor tools (not a shell heredoc) so the Japanese
 body is handled cleanly.
 
-### Step 6: Confirm, then commit and push the org repo
+### Step 4: Confirm, then commit and push the org repo
 
 Stage only the daily file — never `git add .`:
 
@@ -244,7 +216,7 @@ git -C "$ORG_DIR" push || git -C "$ORG_DIR" push -u origin HEAD
 If the user declines, leave the file written but uncommitted and stop. Do
 not commit without an explicit yes.
 
-### Step 7: Open the note in Emacs (best-effort, host-side)
+### Step 5: Open the note in Emacs (best-effort, host-side)
 
 Once the daily file has been written — regardless of whether it was
 committed — open it in the user's running Emacs so they can review the
@@ -282,10 +254,11 @@ fi
 ## Error handling
 
 - `gh` not authenticated: stop and tell the user to run `gh auth login`.
-- `gws-secure` / 1Password / calendar fetch fails: skip the calendar section,
-  record the GitHub activity alone, and note in one line that the calendar
-  could not be read. Do not trigger an interactive login, and do not fail the
-  whole wrap-up over a calendar error.
+- `fetch-calendar.sh` exits non-zero (gws-secure / 1Password / network), so
+  the calendar subagent returns `CALENDAR_UNAVAILABLE`: skip the calendar
+  section, record the GitHub activity alone, and note in one line that the
+  calendar could not be read. Do not trigger an interactive login, and do not
+  fail the whole wrap-up over a calendar error.
 - `ORG_DIR` not a git work tree: stop and ask the user to export `ORG_DIR`.
 - No calendar events and no GitHub activity for the day: say so and stop
   without writing or committing.
