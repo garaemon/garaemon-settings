@@ -167,9 +167,10 @@ forges resolve to nil so ghub falls back to its default host."
        pullRequest(number:$number){
          reviewThreads(first:100){
            nodes{
+             id
              isResolved path line originalLine diffSide
              comments(first:100){
-               nodes{ body author{login} }
+               nodes{ databaseId body author{login} }
              }
            }
          }
@@ -334,6 +335,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
     (let ((map (make-composed-keymap nil (current-local-map))))
       (define-key map (kbd "RET") #'my-forge-ediff-review-add-comment)
       (define-key map (kbd "m") #'my-forge-ediff-review-add-memo)
+      (define-key map (kbd "r") #'my-forge-ediff-review-reply-to-comment)
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
@@ -501,6 +503,81 @@ and side; an empty BODY removes it."
     (quit-window)
     (kill-buffer buf))
   (message "Editing cancelled."))
+
+;;;; Replying to existing review threads
+
+(defvar my-forge-ediff-review--reply-target nil
+  "Buffer-local entry plist of the existing comment being replied to.")
+
+(defun my-forge-ediff-review--existing-at-point ()
+  "Return the first existing review comment entry on the line at point, or nil."
+  (let ((ctx (my-forge-ediff-review--current-context)))
+    (and ctx
+         (my-forge-ediff-review-model-find-entry
+          (plist-get my-forge-ediff-review--session :existing)
+          (plist-get ctx :path)
+          (plist-get ctx :line)
+          (plist-get ctx :side)))))
+
+(defun my-forge-ediff-review-reply-to-comment ()
+  "Reply to the existing review thread on the line at point.
+The reply is posted immediately to GitHub; it is not part of the batch
+of pending comments collected for a new review."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let ((entry (my-forge-ediff-review--existing-at-point)))
+    (unless entry
+      (user-error "No existing review comment on this line to reply to"))
+    (unless (plist-get entry :reply-to-id)
+      (user-error "This review comment cannot be replied to (no comment id)"))
+    (my-forge-ediff-review--open-reply-editor entry)))
+
+(defun my-forge-ediff-review--open-reply-editor (entry)
+  "Pop up a markdown editor to reply to the thread described by ENTRY."
+  (let ((buf (generate-new-buffer "*forge-review-reply*")))
+    (with-current-buffer buf
+      (when (fboundp 'markdown-mode)
+        (markdown-mode))
+      (insert (format
+               "<!-- Reply to %s at %s:%d (%s) — C-c C-c to send, \
+C-c C-k to cancel.  HTML comments are stripped. -->\n\n"
+               (or (plist-get entry :author) "reviewer")
+               (plist-get entry :path)
+               (plist-get entry :line)
+               (plist-get entry :side)))
+      (setq-local my-forge-ediff-review--reply-target entry)
+      (local-set-key (kbd "C-c C-c") #'my-forge-ediff-review--send-reply)
+      (local-set-key (kbd "C-c C-k") #'my-forge-ediff-review--cancel-entry)
+      (goto-char (point-max)))
+    (pop-to-buffer buf)))
+
+(defun my-forge-ediff-review--send-reply ()
+  "POST the reply in the current editor buffer, then refresh existing threads."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let* ((entry my-forge-ediff-review--reply-target)
+         (reply-to-id (plist-get entry :reply-to-id))
+         (body (string-trim
+                (my-forge-ediff-review--strip-html-comments
+                 (buffer-string))))
+         (s my-forge-ediff-review--session))
+    (when (string-empty-p body)
+      (user-error "Reply body is empty"))
+    (ghub-post
+     (format "/repos/%s/%s/pulls/%s/comments/%s/replies"
+             (plist-get s :owner) (plist-get s :repo)
+             (plist-get s :num) reply-to-id)
+     `((body . ,body))
+     :auth 'forge
+     :host (plist-get s :host)
+     :callback (lambda (_value &rest _)
+                 (message "Reply sent.")
+                 (my-forge-ediff-review--fetch-existing-threads))
+     :errorback (lambda (err &rest _)
+                  (message "Reply failed: %S" err)))
+    (let ((buf (current-buffer)))
+      (quit-window)
+      (kill-buffer buf))))
 
 ;;;; Listing / discarding
 
