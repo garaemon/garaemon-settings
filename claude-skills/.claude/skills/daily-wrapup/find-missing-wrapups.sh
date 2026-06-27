@@ -40,10 +40,12 @@ if [[ ! -d "$daily_dir" ]]; then
   exit 1
 fi
 
-# The provenance line daily-wrapup writes into every note's property drawer. A
-# file missing this marker has no wrap-up subtree, so the day counts as
-# forgotten even when the file exists for other reasons.
-readonly wrapup_marker='GENERATED_BY: claude-code/daily-wrapup'
+# The provenance line a wrap-up writes into the note's property drawer. Match
+# both the current daily-wrapup marker and the legacy daily-digest one — the
+# skill was renamed (daily-digest -> daily-wrapup) and pre-rename notes are
+# wrap-ups too, so already-wrapped days must not be re-flagged. A file with
+# neither marker has no wrap-up subtree.
+readonly wrapup_marker='GENERATED_BY: claude-code/daily-(wrapup|digest)'
 
 # BSD (macOS) date first, GNU date as the fallback — mirrors fetch-calendar.sh.
 shift_day() {
@@ -55,7 +57,7 @@ shift_day() {
 for (( offset = lookback; offset >= 1; offset-- )); do
   day="$(shift_day "$offset")"
   daily_file="$daily_dir/$day.org"
-  if [[ ! -f "$daily_file" ]] || ! grep -qF "$wrapup_marker" "$daily_file"; then
+  if [[ ! -f "$daily_file" ]] || ! grep -qE "$wrapup_marker" "$daily_file"; then
     echo "$day"
   fi
 done

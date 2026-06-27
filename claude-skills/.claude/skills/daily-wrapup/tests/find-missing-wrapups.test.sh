@@ -51,14 +51,36 @@ write_plain_note() {
 EOF
 }
 
+# A note from the legacy daily-digest skill (renamed to daily-wrapup). Its
+# provenance marker differs but the day is already wrapped, so it must not be
+# flagged as forgotten.
+write_legacy_digest_note() {
+  local day="$1"
+  cat >"$daily_dir/$day.org" <<EOF
+:PROPERTIES:
+:ID:       TESTID
+:END:
+#+title: $day
+* <$day> GitHub activity :claude:
+:PROPERTIES:
+:STATUS:   reviewed
+:GENERATED_BY: claude-code/daily-digest
+:END:
+** garaemon/example
+- did some things
+EOF
+}
+
 # Arrange: yesterday is wrapped; 2 days ago is a plain note (no wrap-up);
-# 3 days ago is absent entirely; 4..7 days ago are all wrapped.
+# 3 days ago is absent entirely; 4 days ago carries a legacy daily-digest note
+# (already wrapped); 5..7 days ago are wrapped by daily-wrapup.
 yesterday="$(shift_day 1)"
 two_days_ago="$(shift_day 2)"
 three_days_ago="$(shift_day 3)"
 write_wrapup_note "$yesterday"
 write_plain_note "$two_days_ago"
-for offset in 4 5 6 7; do
+write_legacy_digest_note "$(shift_day 4)"
+for offset in 5 6 7; do
   write_wrapup_note "$(shift_day "$offset")"
 done
 

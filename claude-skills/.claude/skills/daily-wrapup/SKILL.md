@@ -92,8 +92,11 @@ when every recent day is already wrapped:
 "$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/find-missing-wrapups.sh"
 ```
 
-A day counts as missing when its daily file is absent, or exists but lacks the
-`:GENERATED_BY: claude-code/daily-wrapup` marker. A day on which nothing
+A day counts as missing when its daily file is absent, or exists but carries
+no wrap-up provenance marker — neither `:GENERATED_BY: claude-code/daily-wrapup`
+nor the legacy `:GENERATED_BY: claude-code/daily-digest` (the skill's former
+name), so days already wrapped by the predecessor are not re-flagged. A day on
+which nothing
 happened is also reported here — the detector cannot tell "forgotten" from
 "nothing to record" — but wrapping it is harmless: Step 4 writes nothing and
 moves on when both sources are empty.
