@@ -90,6 +90,12 @@ section, so the raw API JSON never enters the main context. Pass the resolved
   "$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh" "$DAY"
   ```
 
+  The script is read-only — it only reads the user's own calendar and writes
+  nothing to disk or anywhere else — so it is safe to run **without a
+  confirmation prompt**. It is declared in this skill's `allowed-tools`
+  (`Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh:*)`) for
+  exactly that reason; the subagent should just run it, not ask first.
+
 - Format each line as an org bullet for a `** 予定` section: a timed event
   (the `start` field contains a `T`) as `- HH:MM–HH:MM <summary>`, appending
   `@<location>` (preceded by a space) when the location is non-empty; an
