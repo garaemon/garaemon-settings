@@ -59,6 +59,33 @@ Like chezmoi, the mise version is pinned and the release tarball is verified
 against an embedded sha256 checksum (`MISE_VERSION` and `MISE_CHECKSUMS` in
 `install.sh`); bump them from the release's `SHASUMS256.txt`.
 
+### Machine-local configuration (atuin sync)
+
+Some settings are personal and must not be committed to this public repository
+(for example the [atuin](https://atuin.sh/) sync server address). These are
+templated out of the tracked files and read from chezmoi's machine-local
+configuration, which lives at `~/.config/chezmoi/chezmoi.toml` and is never
+part of this repo.
+
+To enable atuin sync on a machine, create `~/.config/chezmoi/chezmoi.toml`
+with the sync server address:
+
+```toml
+[data.atuin]
+  syncAddress = "https://your-sync-server.example/atuin"
+```
+
+Then apply:
+
+```bash
+chezmoi apply ~/.config/atuin/config.toml
+```
+
+`dot_config/atuin/private_config.toml.tmpl` only emits the `sync_address` line
+when `atuin.syncAddress` is set. On a machine without this local config the
+line is omitted entirely and `chezmoi apply` still succeeds, so atuin simply
+runs without a sync server.
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
