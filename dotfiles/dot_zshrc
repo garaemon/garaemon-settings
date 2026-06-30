@@ -380,6 +380,13 @@ if (( $+commands[uvx] )); then
   eval "$(uvx --generate-shell-completion zsh)"
 fi
 
+# atuin
+# Initialize atuin after the peco history search above so that atuin's Ctrl-R
+# binding takes precedence over peco_history_search.
+if (( $+commands[atuin] )); then
+  eval "$(atuin init zsh)"
+fi
+
 # hook for vterm
 vterm_printf(){
   if [ -n "$TMUX" ] && { [ "${TERM%%-*}" = "tmux" ] || [ "${TERM%%-*}" = "screen" ]; }; then
