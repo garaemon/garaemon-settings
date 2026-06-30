@@ -25,5 +25,6 @@ python = "3.12"
 rclone = "latest"
 ripgrep = "latest"
 starship = "1.24.2"
+teleport-community = "latest"
 
 [env]
