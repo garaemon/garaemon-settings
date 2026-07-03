@@ -29,6 +29,10 @@ Exceptions:
 
 Do not add trailing spaces.
 
+## Shell Scripts
+
+When creating a new shell script (`*.sh` or `*.bash`), read `~/.claude/rules/shell-script.md` first and follow it.
+
 ## Comments
 
 ### Principle
