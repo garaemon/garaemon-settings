@@ -16,12 +16,18 @@ description: |
   `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org` and tagged as Claude-generated
   and unreviewed. After writing the note, if an Emacs server is reachable,
   the file is opened in the user's running Emacs for review.
+  The skill also detects forgotten wrap-ups: before writing, it scans the
+  past week (at most seven days, today excluded) for daily notes that have no
+  wrap-up subtree and offers to backfill each missing day.
   Trigger when the user asks to wrap up or record what they did today, or
   for a daily log/standup at end of day, with phrases like "今日のまとめ",
   "今日のラップアップ", "一日のまとめ", "今日やったことまとめて", "日報",
   "日次まとめ", "今日の締め", "daily wrapup", "wrap up my day",
-  "today's summary", "今日の活動まとめて".
-allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-shell-history.sh:*), Bash(jq:*), Bash(date:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*), Bash(emacsclient:*)
+  "today's summary", "今日の活動まとめて". Also trigger when the user wants
+  to catch up on days they forgot, with phrases like "やり忘れた日",
+  "まとめ忘れた日", "抜けてる日", "先週分のまとめ", "まとめてない日",
+  "backfill", "catch up on my wrapups".
+allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-shell-history.sh:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/find-missing-wrapups.sh:*), Bash(jq:*), Bash(date:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*), Bash(emacsclient:*)
 ---
 
 # Daily Wrapup Skill
@@ -56,7 +62,7 @@ SKILL.md stays generic and English, and never hardcodes a username or path
   `org-roam/daily/`). If it is unset, default to `$HOME/org` and, if that is
   not a git work tree, stop and ask the user to export `ORG_DIR`.
 - `git`, `jq`, `date`, and `uuidgen` are available on the host. The scripts
-  additionally use `sed` and `tr` (host coreutils).
+  additionally use `sed`, `tr`, and `grep` (host coreutils).
 - The shell-history section runs `fetch-shell-history.sh` (in this skill
   directory). It first runs `atuin sync` to pull the day's commands from the
   atuin server, then reads the day's history with `atuin`. `atuin` must be
@@ -65,6 +71,10 @@ SKILL.md stays generic and English, and never hardcodes a username or path
   atuin's history database and sync/encryption keys are host-bound (they live
   under the user's home directory), so — like `gh`, `git`, and `gws-secure` —
   atuin runs on the host, not in a container.
+- The forgotten-day detection runs `find-missing-wrapups.sh` (in this skill
+  directory). It reads only local org files under `$DAILY_DIR`, needs no
+  network or credentials, and therefore runs on the host rather than in a
+  container.
 
 ## Workflow
 
@@ -82,7 +92,41 @@ mkdir -p "$DAILY_DIR"
 Confirm `ORG_DIR` is a git work tree (`git -C "$ORG_DIR" rev-parse` succeeds);
 if not, stop and ask the user to set `ORG_DIR`.
 
-### Step 2: Summarize calendar, GitHub, and shell history in parallel (subagents)
+### Step 2: Detect forgotten wrap-ups in the past week
+
+Run the detection script to find recent days with no wrap-up note. It scans
+the past seven days ending yesterday (today is excluded — the day is not over
+yet) and prints each missing `YYYY-MM-DD`, oldest first; it prints nothing
+when every recent day is already wrapped:
+
+```bash
+"$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/find-missing-wrapups.sh"
+```
+
+A day counts as missing when its daily file is absent, or exists but carries
+no wrap-up provenance marker — neither `:GENERATED_BY: claude-code/daily-wrapup`
+nor the legacy `:GENERATED_BY: claude-code/daily-digest` (the skill's former
+name), so days already wrapped by the predecessor are not re-flagged. A day on
+which nothing
+happened is also reported here — the detector cannot tell "forgotten" from
+"nothing to record" — but wrapping it is harmless: Step 4 writes nothing and
+moves on when all sources are empty.
+
+Use the result to decide which days to process:
+
+- **Backfill request** — the user asked to catch up on days they forgot (or
+  this is an unattended run): set the day list to every date the script
+  printed and process them oldest first.
+- **Normal wrap-up** — a specific day (default today): process that day as
+  usual. If the script also printed other missing days, mention them in one
+  line and ask whether to backfill those too; add the days the user accepts to
+  the list.
+
+Run Steps 3–6 for each day in the list, passing that day as `$DAY`. When the
+list ends up empty (nothing requested and nothing missing), there is nothing
+to do — say so and stop.
+
+### Step 3: Summarize calendar, GitHub, and shell history in parallel (subagents)
 
 Gather and summarize the three sources concurrently. Spawn three subagents
 with the Agent tool **in a single message** so they run in parallel; each one
@@ -161,7 +205,7 @@ all three queries are empty, return the single token `NO_ACTIVITY`.
 
 Wait for all three subagents before continuing.
 
-### Step 3: Write the daily org note
+### Step 4: Write the daily org note
 
 Combine the three subagent results. Only when the calendar returned
 `NO_EVENTS`/`CALENDAR_UNAVAILABLE`, GitHub returned `NO_ACTIVITY`, **and** the
@@ -215,14 +259,14 @@ Provenance rules (from the project plan):
   `autogenerated`, not `auto-generated`).
 - Put `:STATUS: unreviewed` in the subtree's property drawer. Review happens
   by editing this tag in org (or by the user telling the skill they reviewed
-  it — see Step 4), not through a git PR.
+  it — see Step 5), not through a git PR.
 - Generate a fresh `:ID:` with `uuidgen` only when creating a new file;
   never invent or reuse an id for an existing node.
 
 Write the file with the editor tools (not a shell heredoc) so the Japanese
 body is handled cleanly.
 
-### Step 4: Confirm, then commit and push the org repo
+### Step 5: Confirm, then commit and push the org repo
 
 Stage only the daily file — never `git add .`:
 
@@ -255,7 +299,13 @@ git -C "$ORG_DIR" push || git -C "$ORG_DIR" push -u origin HEAD
 If the user declines, leave the file written but uncommitted and stop. Do
 not commit without an explicit yes.
 
-### Step 5: Open the note in Emacs (best-effort, host-side)
+When a backfill wrote notes for several days at once, do not ask once per
+day. Stage every written daily file, show one combined confirmation that
+lists the days, and on a single yes commit each day as its own
+`Add daily wrapup for $DAY` commit before pushing — so the org history keeps
+one commit per day even though the user approved the set together.
+
+### Step 6: Open the note in Emacs (best-effort, host-side)
 
 Once the daily file has been written — regardless of whether it was
 committed — open it in the user's running Emacs so they can review the
@@ -304,6 +354,9 @@ fi
   and note in one line that the history could not be read. An `atuin sync`
   failure alone is not fatal — the script warns and summarizes the local
   history instead.
+- `find-missing-wrapups.sh` exits non-zero (missing daily directory, bad
+  lookback argument): skip the forgotten-day detection and proceed with the
+  requested day's wrap-up; the detection is a nudge, not a hard dependency.
 - No calendar events, no GitHub activity, and no shell history for the day:
   say so and stop without writing or committing.
 - `git push` fails (no upstream, rejected): report the error and leave the
