@@ -127,56 +127,95 @@ jobs:
           python-version: '3.12'
       - name: Install pip-audit
         run: pip install pip-audit
-      # pdf2zh 1.9.11 hard-pins several transitive deps (pdfminer-six==20250416,
-      # pillow 11.3.0, gradio 5.35.0, and the gradio web stack: aiohttp,
-      # starlette, python-multipart, urllib3, idna, cryptography, msgpack) that
-      # carry published CVEs. Our usage runs in a --read-only, --cap-drop=ALL,
-      # --network=bridge container and never launches the Gradio web UI, so the
-      # CVEs below are accepted under our threat model. Bumping them directly is
-      # not possible while pdf2zh pins them, so they stand until pdf2zh publishes
-      # a release that bumps these pins. Revisit on every pdf2zh bump.
+      # pdf2zh 1.9.11 hard-pins many transitive deps that carry published
+      # advisories, and the pins cannot be bumped until upstream does. We run
+      # pdf2zh only as a batch CLI (see skills/pdf2zh/run.sh): a positional PDF
+      # plus `-s gemini:<model>`, never `pdf2zh -i`, inside a container started
+      # with --read-only (only an ephemeral /tmp tmpfs is writable), --cap-drop
+      # ALL, --security-opt no-new-privileges, --network bridge, --memory 2g
+      # --cpus 1.0, as non-root, with the input PDF mounted read-only and the
+      # output directory as the sole writable host mount. Each group below adds
+      # an assessment of why the advisories are not exploitable (or are
+      # acceptably contained) under that usage. Revisit on every pdf2zh bump.
       - name: Audit lockfile
         working-directory: .claude/skills/pdf2zh
         run: |
+          ignore=(
+            # gradio — the whole Gradio web server is never started (CLI-only
+            # invocation), so every advisory that needs an attacker to reach the
+            # running UI/server is unreachable dead code in our usage.
+            CVE-2026-28414       # gradio: absolute path traversal on Windows (Python 3.13+)
+            CVE-2026-27167       # gradio: mocked OAuth login leaks creds via hardcoded session secret
+            CVE-2026-28416       # gradio: SSRF via crafted proxy_url in gr.load() (we never call gr.load)
+            CVE-2026-28415       # gradio: open redirect in OAuth flow
+            PYSEC-2026-211       # gradio: weak hash in audio cache key handler
+            CVE-2026-48545       # gradio: cookie injection vulnerability
+
+            # starlette / python-multipart / msgpack — same reason: only
+            # exercised while serving HTTP through the Gradio web stack, which we
+            # never launch. There is no inbound request path to reach them.
+            PYSEC-2026-161       # starlette: missing Host header validation poisons request.url.path
+            CVE-2026-48817       # starlette: arbitrary HTTP method dispatch via getattr
+            CVE-2026-48818       # starlette: StaticFiles UNC SSRF / NTLM theft on Windows
+            CVE-2026-54282       # starlette: unvalidated request path poisons request.url.hostname
+            CVE-2026-54283       # starlette: form limits ignored for urlencoded bodies (DoS)
+            CVE-2026-53537       # python-multipart: Content-Disposition param smuggling (RFC 2231/5987)
+            CVE-2026-53538       # python-multipart: param smuggling via semicolon querystring separator
+            CVE-2026-53539       # python-multipart: quadratic-time querystring parsing (CPU DoS)
+            CVE-2026-53540       # python-multipart: negative Content-Length buffers whole body (DoS)
+            CVE-2026-42561       # python-multipart: unbounded multipart part headers (DoS)
+            GHSA-6v7p-g79w-8964  # msgpack: use-after-free reusing Unpacker after error (web-serialization path only)
+
+            # aiohttp — server-side advisories need the never-started web server;
+            # client-side ones need an attacker-controlled redirect target, but
+            # pdf2zh's only outbound calls go to the trusted Gemini API endpoint
+            # (input is a local PDF path, never a URL we follow).
+            CVE-2026-47265       # aiohttp: cross-origin redirect leaks per-request cookies
+            CVE-2026-34993       # aiohttp: deserialization of untrusted data
+            CVE-2026-50269       # aiohttp: CRLF injection in multipart headers
+            CVE-2026-54273       # aiohttp: unbounded HTTP/1 pipelined request queue (DoS)
+            CVE-2026-54274       # aiohttp: incomplete websocket frames bypass memory limits
+            CVE-2026-54275       # aiohttp: TLS hostname override ignored on reused HTTPS connections
+            CVE-2026-54276       # aiohttp: DigestAuth credentials leaked on cross-origin redirect
+            CVE-2026-54277       # aiohttp: C parser bypasses max_line_size on fragmented lines
+            CVE-2026-54278       # aiohttp: unread compressed bodies bypass client_max_size (DoS)
+            CVE-2026-54279       # aiohttp: host-only cookies become domain cookies after persistence
+            CVE-2026-54280       # aiohttp: resource leak on mid-body disconnect
+
+            # urllib3 / cryptography / idna — reachable only through outbound
+            # HTTPS, and pdf2zh only ever connects to the trusted Gemini
+            # endpoint, so there is no malicious redirect, TLS peer, or hostname
+            # to trigger the header leak, OpenSSL OOB read, or idna encode bypass.
+            PYSEC-2026-142       # urllib3: decompression bomb via partial read / drain_conn (DoS)
+            PYSEC-2026-141       # urllib3: sensitive headers forwarded on proxied cross-origin redirect
+            GHSA-537c-gmf6-5ccf  # cryptography: bundled OpenSSL out-of-bounds read in wheels
+            PYSEC-2026-215       # idna: crafted idna.encode() input bypasses CVE-2024-3651 fix
+
+            # pdfminer.six — the pickle/RCE bugs fire only if an attacker can
+            # plant a malicious CMap .pickle on disk for pdfminer to load; they
+            # are NOT reachable from data inside the PDF. The read-only rootfs
+            # (package dir immutable) plus a fresh per-run /tmp tmpfs leave no
+            # writable path to poison, so a malicious input PDF cannot trigger them.
+            CVE-2025-70559       # pdfminer.six: insecure pickle deserialization in CMap loader
+            CVE-2025-64512       # pdfminer.six: arbitrary code execution via crafted PDF CMap pickle
+
+            # pillow — the one genuinely reachable surface: pdf2zh decodes images
+            # embedded in the input PDF, so a crafted image can hit these. Blast
+            # radius is contained: non-root, --cap-drop ALL, no-new-privileges,
+            # read-only rootfs, input mounted :ro, and the --memory/--cpus caps
+            # bound the DoS variants; a crash dies with the throwaway container.
+            # Several also need niche formats (FITS/PSD) rare in real PDFs.
+            # Residual risk accepted until pdf2zh unpins pillow.
+            CVE-2026-25990       # pillow: out-of-bounds write loading PSD images
+            CVE-2026-40192       # pillow: FITS GZIP decompression bomb (DoS)
+            PYSEC-2026-165       # pillow: integer overflow in font glyph advance (CVE-2026-42308)
+            CVE-2026-42309       # pillow: heap buffer overflow with nested list coordinates
+            CVE-2026-42310       # pillow: PDF parsing trailer infinite loop (DoS)
+            CVE-2026-42311       # pillow: out-of-bounds write via invalid PSD tile extents
+          )
+          args=()
+          for vuln in "${ignore[@]}"; do
+            args+=(--ignore-vuln "$vuln")
+          done
           pip-audit --require-hashes -r requirements.txt \
-            --vulnerability-service osv \
-            --ignore-vuln CVE-2026-28414 \
-            --ignore-vuln CVE-2026-27167 \
-            --ignore-vuln CVE-2026-28416 \
-            --ignore-vuln CVE-2026-28415 \
-            --ignore-vuln CVE-2026-25990 \
-            --ignore-vuln CVE-2026-40192 \
-            --ignore-vuln CVE-2025-70559 \
-            --ignore-vuln CVE-2025-64512 \
-            --ignore-vuln CVE-2026-47265 \
-            --ignore-vuln CVE-2026-34993 \
-            --ignore-vuln CVE-2026-50269 \
-            --ignore-vuln CVE-2026-54273 \
-            --ignore-vuln CVE-2026-54274 \
-            --ignore-vuln CVE-2026-54275 \
-            --ignore-vuln CVE-2026-54276 \
-            --ignore-vuln CVE-2026-54277 \
-            --ignore-vuln CVE-2026-54278 \
-            --ignore-vuln CVE-2026-54279 \
-            --ignore-vuln CVE-2026-54280 \
-            --ignore-vuln GHSA-537c-gmf6-5ccf \
-            --ignore-vuln PYSEC-2026-211 \
-            --ignore-vuln PYSEC-2026-165 \
-            --ignore-vuln CVE-2026-42309 \
-            --ignore-vuln CVE-2026-42310 \
-            --ignore-vuln CVE-2026-42311 \
-            --ignore-vuln PYSEC-2026-161 \
-            --ignore-vuln CVE-2026-48817 \
-            --ignore-vuln CVE-2026-48818 \
-            --ignore-vuln CVE-2026-54282 \
-            --ignore-vuln CVE-2026-54283 \
-            --ignore-vuln PYSEC-2026-215 \
-            --ignore-vuln GHSA-6v7p-g79w-8964 \
-            --ignore-vuln CVE-2026-53537 \
-            --ignore-vuln CVE-2026-53538 \
-            --ignore-vuln CVE-2026-53539 \
-            --ignore-vuln CVE-2026-53540 \
-            --ignore-vuln CVE-2026-42561 \
-            --ignore-vuln PYSEC-2026-142 \
-            --ignore-vuln PYSEC-2026-141 \
-            --ignore-vuln CVE-2026-48545
+            --vulnerability-service osv "${args[@]}"
