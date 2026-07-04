@@ -138,45 +138,56 @@ jobs:
       - name: Audit lockfile
         working-directory: .claude/skills/pdf2zh
         run: |
+          # Each ignored advisory is annotated below with the affected package
+          # and a one-line description of the vulnerability. All are transitive
+          # deps that pdf2zh 1.9.11 hard-pins; see the block comment above for
+          # why they are accepted under our container threat model. Revisit this
+          # list on every pdf2zh bump.
+          ignore=(
+            CVE-2026-28414       # gradio: absolute path traversal on Windows (Python 3.13+)
+            CVE-2026-27167       # gradio: mocked OAuth login leaks creds via hardcoded session secret
+            CVE-2026-28416       # gradio: SSRF via crafted proxy_url in gr.load()
+            CVE-2026-28415       # gradio: open redirect in OAuth flow
+            PYSEC-2026-211       # gradio: weak hash in audio cache key handler
+            CVE-2026-48545       # gradio: cookie injection vulnerability
+            CVE-2026-25990       # pillow: out-of-bounds write loading PSD images
+            CVE-2026-40192       # pillow: FITS GZIP decompression bomb (DoS)
+            PYSEC-2026-165       # pillow: integer overflow in font glyph advance (CVE-2026-42308)
+            CVE-2026-42309       # pillow: heap buffer overflow with nested list coordinates
+            CVE-2026-42310       # pillow: PDF parsing trailer infinite loop (DoS)
+            CVE-2026-42311       # pillow: out-of-bounds write via invalid PSD tile extents
+            CVE-2025-70559       # pdfminer.six: insecure pickle deserialization in CMap loader
+            CVE-2025-64512       # pdfminer.six: arbitrary code execution via crafted PDF CMap pickle
+            CVE-2026-47265       # aiohttp: cross-origin redirect leaks per-request cookies
+            CVE-2026-34993       # aiohttp: deserialization of untrusted data
+            CVE-2026-50269       # aiohttp: CRLF injection in multipart headers
+            CVE-2026-54273       # aiohttp: unbounded HTTP/1 pipelined request queue (DoS)
+            CVE-2026-54274       # aiohttp: incomplete websocket frames bypass memory limits
+            CVE-2026-54275       # aiohttp: TLS hostname override ignored on reused HTTPS connections
+            CVE-2026-54276       # aiohttp: DigestAuth credentials leaked on cross-origin redirect
+            CVE-2026-54277       # aiohttp: C parser bypasses max_line_size on fragmented lines
+            CVE-2026-54278       # aiohttp: unread compressed bodies bypass client_max_size (DoS)
+            CVE-2026-54279       # aiohttp: host-only cookies become domain cookies after persistence
+            CVE-2026-54280       # aiohttp: resource leak on mid-body disconnect
+            PYSEC-2026-161       # starlette: missing Host header validation poisons request.url.path
+            CVE-2026-48817       # starlette: arbitrary HTTP method dispatch via getattr
+            CVE-2026-48818       # starlette: StaticFiles UNC SSRF / NTLM theft on Windows
+            CVE-2026-54282       # starlette: unvalidated request path poisons request.url.hostname
+            CVE-2026-54283       # starlette: form limits ignored for urlencoded bodies (DoS)
+            CVE-2026-53537       # python-multipart: Content-Disposition param smuggling (RFC 2231/5987)
+            CVE-2026-53538       # python-multipart: param smuggling via semicolon querystring separator
+            CVE-2026-53539       # python-multipart: quadratic-time querystring parsing (CPU DoS)
+            CVE-2026-53540       # python-multipart: negative Content-Length buffers whole body (DoS)
+            CVE-2026-42561       # python-multipart: unbounded multipart part headers (DoS)
+            PYSEC-2026-142       # urllib3: decompression bomb via partial read / drain_conn (DoS)
+            PYSEC-2026-141       # urllib3: sensitive headers forwarded on proxied cross-origin redirect
+            GHSA-537c-gmf6-5ccf  # cryptography: bundled OpenSSL out-of-bounds read in wheels
+            PYSEC-2026-215       # idna: crafted idna.encode() input bypasses CVE-2024-3651 fix
+            GHSA-6v7p-g79w-8964  # msgpack: use-after-free segfault reusing Unpacker after error
+          )
+          args=()
+          for vuln in "${ignore[@]}"; do
+            args+=(--ignore-vuln "$vuln")
+          done
           pip-audit --require-hashes -r requirements.txt \
-            --vulnerability-service osv \
-            --ignore-vuln CVE-2026-28414 \
-            --ignore-vuln CVE-2026-27167 \
-            --ignore-vuln CVE-2026-28416 \
-            --ignore-vuln CVE-2026-28415 \
-            --ignore-vuln CVE-2026-25990 \
-            --ignore-vuln CVE-2026-40192 \
-            --ignore-vuln CVE-2025-70559 \
-            --ignore-vuln CVE-2025-64512 \
-            --ignore-vuln CVE-2026-47265 \
-            --ignore-vuln CVE-2026-34993 \
-            --ignore-vuln CVE-2026-50269 \
-            --ignore-vuln CVE-2026-54273 \
-            --ignore-vuln CVE-2026-54274 \
-            --ignore-vuln CVE-2026-54275 \
-            --ignore-vuln CVE-2026-54276 \
-            --ignore-vuln CVE-2026-54277 \
-            --ignore-vuln CVE-2026-54278 \
-            --ignore-vuln CVE-2026-54279 \
-            --ignore-vuln CVE-2026-54280 \
-            --ignore-vuln GHSA-537c-gmf6-5ccf \
-            --ignore-vuln PYSEC-2026-211 \
-            --ignore-vuln PYSEC-2026-165 \
-            --ignore-vuln CVE-2026-42309 \
-            --ignore-vuln CVE-2026-42310 \
-            --ignore-vuln CVE-2026-42311 \
-            --ignore-vuln PYSEC-2026-161 \
-            --ignore-vuln CVE-2026-48817 \
-            --ignore-vuln CVE-2026-48818 \
-            --ignore-vuln CVE-2026-54282 \
-            --ignore-vuln CVE-2026-54283 \
-            --ignore-vuln PYSEC-2026-215 \
-            --ignore-vuln GHSA-6v7p-g79w-8964 \
-            --ignore-vuln CVE-2026-53537 \
-            --ignore-vuln CVE-2026-53538 \
-            --ignore-vuln CVE-2026-53539 \
-            --ignore-vuln CVE-2026-53540 \
-            --ignore-vuln CVE-2026-42561 \
-            --ignore-vuln PYSEC-2026-142 \
-            --ignore-vuln PYSEC-2026-141 \
-            --ignore-vuln CVE-2026-48545
+            --vulnerability-service osv "${args[@]}"
