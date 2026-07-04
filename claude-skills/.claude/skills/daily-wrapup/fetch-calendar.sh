@@ -19,8 +19,27 @@
 # failure); prints nothing and exits 0 when the day has no events.
 set -euo pipefail
 
+usage() {
+  echo "Usage: fetch-calendar.sh [YYYY-MM-DD]   (default: today)"
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+esac
+
 day="${1:-$(date +%Y-%m-%d)}"
 readonly day
+# Reject anything that is not a YYYY-MM-DD date up front. Without this, a
+# leading-dash argument (e.g. -h) would flow into the date calls below and be
+# swallowed as a date(1) option, producing a confusing "illegal option" error.
+if [[ ! "$day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+  echo "fetch-calendar.sh: invalid date '$day' (expected YYYY-MM-DD)" >&2
+  usage >&2
+  exit 2
+fi
 readonly gws="${GWS_SECURE_BIN:-gws-secure}"
 readonly calendar_id="primary"
 
