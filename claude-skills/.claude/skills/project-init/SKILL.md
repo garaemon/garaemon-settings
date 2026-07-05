@@ -137,10 +137,17 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
 
 ## Notes
 
-- The Claude Code hook lives in the scaffolded project's `.claude/settings.json`
-  as a `SessionStart` hook that best-effort installs dependencies (`uv sync`,
-  `npm install`, `go mod download`) so a fresh clone or web session is ready to
-  run. It is guarded to no-op when the toolchain is absent.
+- The scaffolded project's `.claude/settings.json` wires up two Claude Code
+  hooks:
+  - A `SessionStart` hook that best-effort installs dependencies (`uv sync`,
+    `npm install`, `go mod download`) so a fresh clone or web session is ready
+    to run.
+  - A `PostToolUse` hook (matching `Edit|Write|MultiEdit`) that runs
+    `.claude/hooks/format.sh` to format the file Claude just edited — every
+    time an edit finishes. It dispatches by extension: the language's own
+    formatter (`ruff format` / `prettier` / `gofmt`) plus `shfmt` for any
+    `.sh`/`.bash` file. Both hooks are guarded to no-op (exit 0) when the
+    relevant tool is absent, so editing is never blocked.
 - Security tooling is on by default. The pre-commit config runs
   `detect-private-key` plus [gitleaks](https://github.com/gitleaks/gitleaks) to
   block hard-coded tokens, keys, and passwords, and each CI workflow has a
