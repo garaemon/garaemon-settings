@@ -138,11 +138,13 @@
        (reviewThreads
         (nodes . ,thread-nodes)))))))
 
-(defun my-forge-ediff-review-model-test--comment (body author)
-  "Build one review comment node carrying BODY and AUTHOR login.
+(defun my-forge-ediff-review-model-test--comment (body author &optional created-at)
+  "Build one review comment node carrying BODY, AUTHOR login and CREATED-AT.
 GitHub exposes `path'/`line'/`diffSide' on the thread, so a comment node
-holds only the body and author."
-  `((body . ,body) (author (login . ,author))))
+holds only the body, author and (when given) the ISO8601 `createdAt'."
+  `((body . ,body)
+    ,@(when created-at `((createdAt . ,created-at)))
+    (author (login . ,author))))
 
 (defun my-forge-ediff-review-model-test--thread (resolved location comment-nodes)
   "Build one reviewThread node with RESOLVED, LOCATION and COMMENT-NODES.
@@ -257,6 +259,96 @@ LOCATION is an alist providing the thread-level `path', `line',
     (should (equal "THREAD_kw1" (plist-get (car entries) :thread-id)))
     (should (= 555 (plist-get (car entries) :reply-to-id)))
     (should (= 555 (plist-get (cadr entries) :reply-to-id)))))
+
+(ert-deftest review-model-should-parse-comment-created-at ()
+  (let* ((response
+          (my-forge-ediff-review-model-test--threads-response
+           (vector
+            (my-forge-ediff-review-model-test--thread
+             :json-false
+             '((path . "a.el") (line . 3) (diffSide . "RIGHT"))
+             (vector (my-forge-ediff-review-model-test--comment
+                      "hi" "octocat" "2026-01-15T10:30:00Z"))))))
+         (entry (car (my-forge-ediff-review-model-parse-review-threads
+                      response))))
+    (should (equal "2026-01-15T10:30:00Z" (plist-get entry :created-at)))))
+
+;;;; Timestamp formatting
+
+(ert-deftest review-model-format-time-should-format-iso ()
+  ;; Pin the zone so the local rendering is deterministic under any TZ.
+  (let ((process-environment (cons "TZ=UTC" process-environment)))
+    (should (equal "2026-01-15 10:30"
+                   (my-forge-ediff-review-model-format-time
+                    "2026-01-15T10:30:00Z")))))
+
+(ert-deftest review-model-format-time-should-be-empty-for-nil-or-blank ()
+  (should (equal "" (my-forge-ediff-review-model-format-time nil)))
+  (should (equal "" (my-forge-ediff-review-model-format-time ""))))
+
+;;;; Card text padding and wrapping
+
+(ert-deftest review-model-pad-should-fill-to-width ()
+  (should (equal "ab   " (my-forge-ediff-review-model--pad "ab" 5)))
+  (should (= 5 (string-width (my-forge-ediff-review-model--pad "ab" 5)))))
+
+(ert-deftest review-model-pad-should-not-shrink-long-strings ()
+  (should (equal "abcdef" (my-forge-ediff-review-model--pad "abcdef" 3))))
+
+(ert-deftest review-model-pad-should-count-wide-glyphs-as-two ()
+  ;; A full-width character occupies two columns, so only one pad space
+  ;; is needed to reach width 4.
+  (should (= 4 (string-width (my-forge-ediff-review-model--pad "あ" 4)))))
+
+(ert-deftest review-model-wrap-should-not-exceed-width ()
+  (let ((lines (my-forge-ediff-review-model--wrap-text
+                "the quick brown fox jumps over the lazy dog" 12)))
+    (dolist (l lines)
+      (should (<= (string-width l) 12)))))
+
+(ert-deftest review-model-wrap-should-keep-blank-paragraph-lines ()
+  (let ((lines (my-forge-ediff-review-model--wrap-text "a\n\nb" 20)))
+    (should (member "" lines))))
+
+(ert-deftest review-model-wrap-should-emit-overlong-word-alone ()
+  (let ((lines (my-forge-ediff-review-model--wrap-text
+                "short verylongwordthatexceeds end" 8)))
+    (should (member "verylongwordthatexceeds" lines))))
+
+;;;; Card rendering
+
+(ert-deftest review-model-card-should-be-a-rectangle ()
+  ;; Every visual line must share the same display width so the background
+  ;; face paints a clean rectangle (the annotate.el invariant).
+  (let* ((card (my-forge-ediff-review-model-format-card
+                "◈" "octocat  2026-01-15 10:30 (resolved)"
+                "line one\n\ntwo two two" 40))
+         (widths (mapcar #'string-width (split-string card "\n"))))
+    (should (= 1 (length (delete-dups (copy-sequence widths)))))))
+
+(ert-deftest review-model-card-should-contain-glyph-and-header ()
+  (let ((card (my-forge-ediff-review-model-format-card
+               "◈" "octocat" "body" 40)))
+    (should (string-match-p "◈" card))
+    (should (string-match-p "octocat" card))))
+
+(ert-deftest review-model-card-should-render-borders-even-when-empty ()
+  (let ((card (my-forge-ediff-review-model-format-card "◈" "octocat" "" 40)))
+    (should (string-prefix-p "╭" card))
+    (should (string-suffix-p "╯" (car (last (split-string card "\n")))))))
+
+(ert-deftest review-model-card-line-count-should-match-body ()
+  ;; 3 chrome lines (top, header, separator) + N body lines + 1 bottom.
+  (let* ((card (my-forge-ediff-review-model-format-card
+                "◈" "h" "a\nb\nc" 40))
+         (lines (split-string card "\n")))
+    (should (= (+ 3 3 1) (length lines)))))
+
+(ert-deftest review-model-card-collapsed-should-be-one-line ()
+  (let ((card (my-forge-ediff-review-model-format-card
+               "✎" "Comment" "first line\nsecond line" 40 t)))
+    (should-not (string-match-p "\n" card))
+    (should (string-match-p "first line" card))))
 
 ;;;; API host resolution (github.com and GitHub Enterprise)
 

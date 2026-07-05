@@ -170,7 +170,7 @@ forges resolve to nil so ghub falls back to its default host."
              id
              isResolved path line originalLine diffSide
              comments(first:100){
-               nodes{ databaseId body author{login} }
+               nodes{ databaseId body createdAt author{login} }
              }
            }
          }
@@ -207,6 +207,18 @@ Runs asynchronously; failures are reported but never abort the review."
 
 ;;;; Overlays in ediff buffers
 
+(defcustom my-forge-ediff-review-card-width 72
+  "Inner content width, in columns, of an inline review comment card.
+Bodies are word-wrapped to this width; the card grows wider only when a
+header (author and timestamp) does not fit."
+  :type 'integer
+  :group 'my-forge-ediff-review)
+
+(defvar my-forge-ediff-review--cards-collapsed nil
+  "When non-nil, inline comment cards render as one-line summaries.
+Shared across every ediff revision buffer of the session so
+`my-forge-ediff-review-toggle-cards' folds or unfolds them all at once.")
+
 (defface my-forge-ediff-review-comment-face
   '((((background light)) :background "#fff8c5" :foreground "#24292f")
     (((background dark))  :background "#3a3a00" :foreground "#ffffff"))
@@ -232,34 +244,30 @@ Runs asynchronously; failures are reported but never abort the review."
      ((equal rev (plist-get s :base-rev)) "LEFT")
      ((equal rev (plist-get s :head-rev)) "RIGHT"))))
 
-(defun my-forge-ediff-review--format-overlay-body (label body)
-  "Indent every line of BODY for inline overlay display under LABEL."
-  (mapconcat (lambda (l) (concat "    " label " " l))
-             (split-string body "\n")
-             "\n"))
-
-(defun my-forge-ediff-review--put-overlay (buf line label body face)
-  "Append BODY as a highlighted after-string overlay below LINE in BUF.
-LABEL prefixes each body line (e.g. \"|\" for comments, \"memo\" for
-memos) and FACE highlights the text.  The source line is left untouched;
-only the appended text is highlighted.  The overlay is anchored at
-end-of-line so it does not shift `display-line-numbers-mode' or
-`nlinum-mode' counts."
+(defun my-forge-ediff-review--put-overlay (buf line glyph header body face)
+  "Show BODY as a boxed annotation card below LINE in BUF.
+GLYPH marks the entry kind, HEADER titles the card (author + timestamp
+for existing comments, or a kind label for comments and memos) and FACE
+paints the whole card.  The source line is untouched: the card is an
+overlay `after-string' on a zero-width overlay anchored at end-of-line,
+so it never shifts `display-line-numbers-mode' or `nlinum-mode' counts.
+When `my-forge-ediff-review--cards-collapsed' is non-nil the card is a
+one-line summary instead of the full box."
   (with-current-buffer buf
     (save-excursion
       (goto-char (point-min))
       (forward-line (1- line))
       (let* ((eol (line-end-position))
-             (ov (make-overlay eol eol nil t nil)))
+             (ov (make-overlay eol eol nil t nil))
+             (card (my-forge-ediff-review-model-format-card
+                    glyph header body my-forge-ediff-review-card-width
+                    my-forge-ediff-review--cards-collapsed)))
         (overlay-put ov 'my-forge-ediff-review t)
         (overlay-put ov 'priority 100)
+        ;; Leave the leading newline unpropertized so no highlighted strip
+        ;; bleeds to the window edge before the box; the card owns the face.
         (overlay-put ov 'after-string
-                     (propertize
-                      (concat
-                       "\n"
-                       (my-forge-ediff-review--format-overlay-body
-                        label body))
-                      'face face))))))
+                     (concat "\n" (propertize card 'face face)))))))
 
 (defun my-forge-ediff-review--clear-overlays (&optional buf)
   "Remove all review overlays from BUF (defaults to current buffer)."
@@ -280,34 +288,41 @@ end-of-line so it does not shift `display-line-numbers-mode' or
          (plist-get my-forge-ediff-review--session :existing) file side)
         (my-forge-ediff-review--put-side-overlays
          (plist-get my-forge-ediff-review--session :comments)
-         file side "|" 'my-forge-ediff-review-comment-face)
+         file side "✎" "Comment" 'my-forge-ediff-review-comment-face)
         (my-forge-ediff-review--put-side-overlays
          (plist-get my-forge-ediff-review--session :memos)
-         file side "memo" 'my-forge-ediff-review-memo-face)))))
+         file side "▤" "Memo" 'my-forge-ediff-review-memo-face)))))
 
 (defun my-forge-ediff-review--put-existing-overlays (entries file side)
   "Overlay existing review comments in ENTRIES matching FILE and SIDE.
-Each comment is labelled with its author and a resolved marker so it is
-clearly distinguished from the reviewer's own pending comments."
+Each card header carries the author, the comment's posting time and a
+resolved marker so it is clearly distinguished from the reviewer's own
+pending comments."
   (dolist (entry (my-forge-ediff-review-model-entries-for-side
                   entries file side))
-    (my-forge-ediff-review--put-overlay
-     (current-buffer)
-     (plist-get entry :line)
-     (format "%s%s:"
-             (or (plist-get entry :author) "reviewer")
-             (if (plist-get entry :resolved) " (resolved)" ""))
-     (plist-get entry :body)
-     'my-forge-ediff-review-existing-comment-face)))
+    (let* ((author (or (plist-get entry :author) "reviewer"))
+           (time (my-forge-ediff-review-model-format-time
+                  (plist-get entry :created-at)))
+           (resolved (if (plist-get entry :resolved) " (resolved)" ""))
+           (header (concat author
+                           (if (string-empty-p time) "" (concat "  " time))
+                           resolved)))
+      (my-forge-ediff-review--put-overlay
+       (current-buffer)
+       (plist-get entry :line)
+       "◈" header
+       (plist-get entry :body)
+       'my-forge-ediff-review-existing-comment-face))))
 
-(defun my-forge-ediff-review--put-side-overlays (entries file side label face)
-  "Overlay each of ENTRIES matching FILE and SIDE with LABEL and FACE."
+(defun my-forge-ediff-review--put-side-overlays (entries file side glyph header face)
+  "Overlay each of ENTRIES matching FILE and SIDE as a GLYPH/HEADER card.
+FACE paints the card."
   (dolist (entry (my-forge-ediff-review-model-entries-for-side
                   entries file side))
     (my-forge-ediff-review--put-overlay
      (current-buffer)
      (plist-get entry :line)
-     label
+     glyph header
      (plist-get entry :body)
      face)))
 
@@ -318,6 +333,17 @@ clearly distinguished from the reviewer's own pending comments."
       (with-current-buffer buf
         (my-forge-ediff-review--reapply-overlays))))
   (my-forge-ediff-review--refresh-sidebar))
+
+(defun my-forge-ediff-review-toggle-cards ()
+  "Fold or unfold every inline comment card in the review.
+Folded cards shrink to a one-line summary so a diff dense with comments
+stays readable; unfolding restores the full boxed body."
+  (interactive)
+  (setq my-forge-ediff-review--cards-collapsed
+        (not my-forge-ediff-review--cards-collapsed))
+  (my-forge-ediff-review--refresh-all-buffers)
+  (message "Review comment cards %s"
+           (if my-forge-ediff-review--cards-collapsed "folded" "unfolded")))
 
 (defvar-local my-forge-ediff-review--keys-installed nil
   "Non-nil once review navigation keys are installed in this buffer.
@@ -337,6 +363,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "m") #'my-forge-ediff-review-add-memo)
       (define-key map (kbd "r") #'my-forge-ediff-review-reply-to-comment)
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
+      (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
