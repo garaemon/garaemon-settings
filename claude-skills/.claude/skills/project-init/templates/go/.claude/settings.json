@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v go >/dev/null 2>&1 && go mod download >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -33,6 +33,7 @@ their own beyond `gh`/`git`), used in any repository.
 - [create-pr](.claude/skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
 - [fix-agent-todo](.claude/skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
 - [improve-english](.claude/skills/improve-english/SKILL.md) — Improve English in changes bound for a PR: fix spelling in identifiers, smooth comment grammar, and translate Japanese comments into English, scoped to the diff against `origin/main`.
+- [project-init](.claude/skills/project-init/SKILL.md) — Scaffold a new project from a language-specific template (Python, TypeScript/Node, Go), wiring up linters, formatters, git pre-commit hooks, a Claude Code `SessionStart` hook, and a GitHub Actions CI workflow so the project is lint-clean and CI-green from the first commit. New languages are added by dropping a directory under `templates/`.
 
 ## Installation
 

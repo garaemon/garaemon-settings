@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v uv >/dev/null 2>&1 && uv sync --dev >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
