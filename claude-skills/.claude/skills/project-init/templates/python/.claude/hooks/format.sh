@@ -35,7 +35,7 @@ case "$file" in
   ;;
 *.sh | *.bash)
   if have shfmt; then
-    shfmt -w -- "$file" >/dev/null 2>&1 || true
+    shfmt -i 2 -w -- "$file" >/dev/null 2>&1 || true
   fi
   ;;
 esac
