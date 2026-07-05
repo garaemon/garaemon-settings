@@ -106,12 +106,14 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
    - `git init` if not already a git repository.
    - Generate the lockfile / fetch deps for the language. This is what makes CI
      reproducible, since the CI workflows use locked installs:
-     - Python: `uv sync --dev` (creates `uv.lock`; note `.gitignore` ignores it
-       by default — if the project should commit the lock, tell the user to
-       remove that line).
+     - Python: `uv sync --dev` (creates `uv.lock` — commit it; the CI `audit`
+       job installs `--frozen` against it).
      - Node: `npm install` (creates `package-lock.json`, required by
-       `npm ci` in CI).
+       `npm ci` in CI and the audit job).
      - Go: `go mod tidy` (creates `go.sum`).
+
+   Commit the lockfile — it is what makes both the build and the CI
+   dependency audit reproducible.
    - Install the git hooks: `pre-commit install`. If `pre-commit` is not on the
      PATH, tell the user how to get it (`pipx install pre-commit` or
      `uv tool install pre-commit`) and continue without failing.
@@ -139,6 +141,13 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
   as a `SessionStart` hook that best-effort installs dependencies (`uv sync`,
   `npm install`, `go mod download`) so a fresh clone or web session is ready to
   run. It is guarded to no-op when the toolchain is absent.
+- Security tooling is on by default. The pre-commit config runs
+  `detect-private-key` plus [gitleaks](https://github.com/gitleaks/gitleaks) to
+  block hard-coded tokens, keys, and passwords, and each CI workflow has a
+  separate `audit` job that scans locked dependencies for known
+  vulnerabilities (`pip-audit` / `npm audit --audit-level=high` /
+  `govulncheck`). This mirrors the DevSecOps posture in this repo's own
+  `CLAUDE.md`: lock dependencies and audit them in CI.
 - The templates pin linter/hook versions (e.g. `pre-commit` hook `rev`s). When
   they drift, bump them in `templates/<lang>/` — that is the single source of
   truth for every future project.

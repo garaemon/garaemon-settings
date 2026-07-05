@@ -16,9 +16,6 @@ venv/
 .mypy_cache/
 .pyright/
 
-# uv
-uv.lock
-
 # Environment / secrets
 .env
 
