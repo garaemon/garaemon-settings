@@ -81,3 +81,7 @@ jobs:
               https://github.com/${{ matrix.repo }}/releases/tag/v${{ steps.bump.outputs.version }}
           add-paths: install.sh
           delete-branch: true
+          # Request review from the repository owner. PRs are authored by
+          # github-actions[bot], so the owner is never the author and the
+          # self-review restriction does not apply.
+          reviewers: ${{ github.repository_owner }}
