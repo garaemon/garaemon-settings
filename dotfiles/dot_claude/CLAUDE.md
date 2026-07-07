@@ -57,6 +57,21 @@ Document all exported/public functions and types with doc comments (e.g., JSDoc,
 
 Standalone comments must be full sentences. Inline comments (end of line) should be short fragments.
 
+When a comment contains multiple related sentences, prefer a list over a run-on paragraph. See [Technical Writing](#technical-writing).
+
+## Technical Writing
+
+### Lists
+
+When writing multiple related items in technical documents (README, design docs, PR descriptions, doc comments) or in code comments, prefer a bulleted or numbered list over a run-on paragraph so readers can scan the content easily. This follows Google's [Technical Writing](https://developers.google.com/tech-writing/one/lists-and-tables) guidance.
+
+- Use a bulleted list when the order of items does not matter.
+- Use a numbered list when the order matters, such as steps or ranked items.
+- Introduce each list with a sentence that says what the list represents, and end that sentence with a colon.
+- Keep list items parallel in grammar, capitalization, and punctuation.
+- Start each item of a numbered list with an imperative verb, such as "Download", "Configure", or "Start".
+- Avoid embedded (run-in) lists inside a sentence; break them out into a real list.
+
 ## Development Workflow
 
 ### Approach
