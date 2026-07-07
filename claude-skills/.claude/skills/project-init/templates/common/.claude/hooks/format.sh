@@ -68,8 +68,11 @@ case "$file" in
   fi
   ;;
 *.sh | *.bash)
+  # No -i flag on purpose: shfmt reads indentation from the project's
+  # .editorconfig (indent_size = 2) when given no formatting flags, so the
+  # style stays defined in one place. Passing -i would disable that lookup.
   if have shfmt; then
-    run shfmt -i 2 -w -- "$file"
+    run shfmt -w -- "$file"
   fi
   ;;
 esac

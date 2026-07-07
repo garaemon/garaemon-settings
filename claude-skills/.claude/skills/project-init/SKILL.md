@@ -152,10 +152,12 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
     `.claude/hooks/format.sh` to format the file Claude just edited — every time
     an edit finishes. It dispatches by extension: `ruff` (fix + format) for
     `.py`, `prettier` for JS/TS/JSON/CSS/Markdown/YAML, `gofmt` for `.go`, and
-    `shfmt -i 2` for `.sh`/`.bash`. It prefers project-local tools (the uv
-    virtualenv's `ruff`, `node_modules/.bin/prettier`) over global installs so
-    the project's pinned versions win. Both hooks are guarded to no-op (exit 0)
-    when the relevant tool is absent, so editing is never blocked.
+    `shfmt` for `.sh`/`.bash` (with no `-i` flag, so shfmt takes the indent
+    width from the project's `.editorconfig`). It prefers project-local tools
+    (the uv virtualenv's `ruff`, `node_modules/.bin/prettier`) over global
+    installs so the project's pinned versions win. Both hooks are guarded to
+    no-op (exit 0) when the relevant tool is absent, so editing is never
+    blocked.
 - Security tooling is on by default. The pre-commit config runs
   `detect-private-key` plus [gitleaks](https://github.com/gitleaks/gitleaks) to
   block hard-coded tokens, keys, and passwords, and each CI workflow has a
