@@ -61,16 +61,14 @@ When a comment contains multiple related sentences, prefer a list over a run-on 
 
 ## Technical Writing
 
-### Lists
+Follow Google's [Technical Writing](https://developers.google.com/tech-writing) style in all prose: README, design docs, PR descriptions, commit messages, doc comments, and code comments. Always apply these core rules:
 
-When writing multiple related items in technical documents (README, design docs, PR descriptions, doc comments) or in code comments, prefer a bulleted or numbered list over a run-on paragraph so readers can scan the content easily. This follows Google's [Technical Writing](https://developers.google.com/tech-writing/one/lists-and-tables) guidance.
+- Express one idea per sentence, and keep sentences short.
+- Prefer active voice and strong verbs over passive voice.
+- Replace a run-on paragraph of related items with a bulleted or numbered list.
+- Introduce each list with a sentence that ends in a colon, and keep items parallel.
 
-- Use a bulleted list when the order of items does not matter.
-- Use a numbered list when the order matters, such as steps or ranked items.
-- Introduce each list with a sentence that says what the list represents, and end that sentence with a colon.
-- Keep list items parallel in grammar, capitalization, and punctuation.
-- Start each item of a numbered list with an imperative verb, such as "Download", "Configure", or "Start".
-- Avoid embedded (run-in) lists inside a sentence; break them out into a real list.
+For the full checklist (word choice, pronouns, paragraphs, lists and tables, audience), load the `technical-writing` skill.
 
 ## Development Workflow
 
