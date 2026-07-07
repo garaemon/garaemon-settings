@@ -8,13 +8,15 @@
 # blocked.
 set -euo pipefail
 
+have() { command -v "$1" >/dev/null 2>&1; }
+
 payload="$(cat)"
 
 # Pull the edited file path out of the hook JSON (jq preferred, python3 fallback).
 file=""
-if command -v jq >/dev/null 2>&1; then
+if have jq; then
   file="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty')"
-elif command -v python3 >/dev/null 2>&1; then
+elif have python3; then
   file="$(printf '%s' "$payload" |
     python3 -c 'import sys, json; print(json.load(sys.stdin).get("tool_input", {}).get("file_path", ""))' 2>/dev/null || true)"
 fi
@@ -23,13 +25,16 @@ if [ -z "$file" ] || [ ! -f "$file" ]; then
   exit 0
 fi
 
-have() { command -v "$1" >/dev/null 2>&1; }
-
 case "$file" in
 *.py)
+  # Apply safe lint fixes (import sorting, unused imports, ...) then format.
+  # --fix-only applies fixes without reporting leftover violations and exits 0,
+  # so a save-time lint issue never turns the hook into noise.
   if have ruff; then
+    ruff check --fix-only -- "$file" >/dev/null 2>&1 || true
     ruff format -- "$file" >/dev/null 2>&1 || true
   elif have uv; then
+    uv run --quiet ruff check --fix-only -- "$file" >/dev/null 2>&1 || true
     uv run --quiet ruff format -- "$file" >/dev/null 2>&1 || true
   fi
   ;;
