@@ -16,6 +16,7 @@ jobs:
           globs: |
             **/*.md
             !REVIEW.md
+            !**/templates/**
 
   readme-skills-link:
     name: README links all skills

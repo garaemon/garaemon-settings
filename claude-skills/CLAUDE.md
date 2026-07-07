@@ -12,10 +12,14 @@ creating a pull request and fix any failures.
 
 Run markdownlint-cli2 over all tracked Markdown files. The `REVIEW.md`
 artifact produced by the code-review skill is explicitly excluded because
-it is a local work product that is not committed:
+it is a local work product that is not committed. Skill template files
+under any `templates/` directory (e.g. `project-init`'s per-language
+scaffolds) are also excluded: they intentionally contain placeholders like
+`__PROJECT_DESCRIPTION__` that are only valid once substituted into a
+generated project, so linting them in place is meaningless:
 
 ```bash
-npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md"
+npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" "!**/templates/**"
 ```
 
 Configuration lives in `.markdownlint.json`. It keeps the default rule set
@@ -40,7 +44,7 @@ the `## Skills` section of `README.md` that links to its `SKILL.md`.
 ### Run both checks together
 
 ```bash
-npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" && python3 scripts/check-readme-skills.py
+npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" "!**/templates/**" && python3 scripts/check-readme-skills.py
 ```
 
 ## Run skill scripts inside Docker
