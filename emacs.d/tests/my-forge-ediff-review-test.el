@@ -95,5 +95,38 @@
       (should (= 1 (length memos)))
       (should (equal "m2" (plist-get (car memos) :body))))))
 
+(ert-deftest my-forge-ediff-review-dims-diff-faces-when-session-active ()
+  "Softening remaps every diff face to a background-only spec locally."
+  (skip-unless my-forge-ediff-review-test--available)
+  (with-temp-buffer
+    (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
+      (let ((my-forge-ediff-review-dim-diff-faces t))
+        (my-forge-ediff-review--dim-diff-faces)
+        (should (local-variable-p 'face-remapping-alist))
+        (dolist (pair my-forge-ediff-review--dim-diff-faces)
+          ;; The face is remapped and the remap only touches the
+          ;; background, leaving the font-lock foreground intact.
+          (should (assq (car pair) face-remapping-alist))
+          (should (plist-get (cdr pair) :background))
+          (should-not (plist-get (cdr pair) :foreground)))))))
+
+(ert-deftest my-forge-ediff-review-does-not-dim-when-disabled ()
+  "No remap happens when softening is turned off."
+  (skip-unless my-forge-ediff-review-test--available)
+  (with-temp-buffer
+    (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
+      (let ((my-forge-ediff-review-dim-diff-faces nil))
+        (my-forge-ediff-review--dim-diff-faces)
+        (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
+
+(ert-deftest my-forge-ediff-review-does-not-dim-without-session ()
+  "No remap happens outside an active review session."
+  (skip-unless my-forge-ediff-review-test--available)
+  (with-temp-buffer
+    (my-forge-ediff-review-test--with-session nil
+      (let ((my-forge-ediff-review-dim-diff-faces t))
+        (my-forge-ediff-review--dim-diff-faces)
+        (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here

@@ -223,6 +223,51 @@ Runs asynchronously; failures are reported but never abort the review."
   "Face for existing review comments already posted to the PR on GitHub."
   :group 'my-forge-ediff-review)
 
+(defcustom my-forge-ediff-review-dim-diff-faces t
+  "When non-nil, soften ediff's diff highlight faces in review buffers.
+Ediff's default `ediff-current-diff-*' and `ediff-fine-diff-*' faces
+paint an opaque background and override the foreground, which hides the
+buffer's own syntax highlighting.  While a review session is active
+those faces are remapped, buffer-locally, to a background-only spec so
+the font-lock foreground stays visible and code remains readable.  The
+remap is scoped to the ediff revision buffers, so ediff used outside a
+review keeps its normal, stronger highlighting."
+  :type 'boolean
+  :group 'my-forge-ediff-review)
+
+(defconst my-forge-ediff-review--dim-diff-faces
+  '((ediff-current-diff-A        . (:background "#3d2529"))
+    (ediff-current-diff-B        . (:background "#1f3325"))
+    (ediff-current-diff-C        . (:background "#2f2f1c"))
+    (ediff-current-diff-Ancestor . (:background "#2f2f1c"))
+    (ediff-fine-diff-A           . (:background "#5a2c33"))
+    (ediff-fine-diff-B           . (:background "#2c4a35"))
+    (ediff-fine-diff-C           . (:background "#4a4a24"))
+    (ediff-fine-diff-Ancestor    . (:background "#4a4a24"))
+    (ediff-even-diff-A           . (:background "#0f333d"))
+    (ediff-even-diff-B           . (:background "#0f333d"))
+    (ediff-even-diff-C           . (:background "#0f333d"))
+    (ediff-even-diff-Ancestor    . (:background "#0f333d"))
+    (ediff-odd-diff-A            . (:background "#0f333d"))
+    (ediff-odd-diff-B            . (:background "#0f333d"))
+    (ediff-odd-diff-C            . (:background "#0f333d"))
+    (ediff-odd-diff-Ancestor     . (:background "#0f333d")))
+  "Alist mapping ediff diff faces to their softened remap spec.
+Each spec sets only a background, so the buffer's font-lock foreground —
+its syntax highlighting — shows through the diff highlight.  Tuned for
+the solarized-dark background used in this configuration.")
+
+(defun my-forge-ediff-review--dim-diff-faces ()
+  "Buffer-locally soften ediff's diff faces in the current revision buffer.
+Uses `face-remap-set-base' so each face keeps only a subtle background,
+which lets syntax highlighting remain visible underneath the diff
+highlight.  No-op unless a review session is active and
+`my-forge-ediff-review-dim-diff-faces' is non-nil."
+  (when (and my-forge-ediff-review-dim-diff-faces
+             my-forge-ediff-review--session)
+    (dolist (pair my-forge-ediff-review--dim-diff-faces)
+      (face-remap-set-base (car pair) (cdr pair)))))
+
 (defun my-forge-ediff-review--side-for-rev (rev)
   "Return \"LEFT\" / \"RIGHT\" for REV in the current session, or nil."
   (let ((s my-forge-ediff-review--session))
@@ -346,6 +391,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
   "Apply overlays and install nav/comment keys in the current revision buffer."
   (my-forge-ediff-review--reapply-overlays)
   (my-forge-ediff-review--setup-revision-keys)
+  (my-forge-ediff-review--dim-diff-faces)
   (my-forge-ediff-review--refresh-sidebar))
 
 ;; Hook so that comments persist and review keys exist when ediff
