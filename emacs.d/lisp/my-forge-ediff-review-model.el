@@ -16,6 +16,8 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'seq)
+(require 'iso8601)
 
 ;;;; Reviewed flag
 
@@ -80,6 +82,110 @@ appended only when non-zero."
             (my-forge-ediff-review-model--counts-suffix
              comment-count memo-count))))
 
+;;;; Inline comment card formatting
+
+;; Comment bodies are rendered as a box-drawn "card" placed below the
+;; source line.  Every visual line is padded to the same display width so
+;; a single background face paints a clean rectangle rather than ragged
+;; text (the trick borrowed from annotate.el).  These helpers are pure
+;; strings-in/strings-out so they can be unit-tested without ediff.
+
+(defun my-forge-ediff-review-model--pad (str width)
+  "Right-pad STR with spaces to WIDTH display columns.
+Width is measured with `string-width', so a wide glyph counts as two
+columns.  STR is returned unchanged when already at least WIDTH wide."
+  (let ((w (string-width str)))
+    (if (>= w width)
+        str
+      (concat str (make-string (- width w) ?\s)))))
+
+(defun my-forge-ediff-review-model--wrap-text (text width)
+  "Word-wrap TEXT to WIDTH columns, returning a list of lines.
+Newlines already in TEXT are kept as hard breaks so blank lines between
+markdown paragraphs survive.  A single word wider than WIDTH is emitted
+on its own line rather than split."
+  (let (out)
+    (dolist (para (split-string (or text "") "\n"))
+      (if (string-empty-p para)
+          (push "" out)
+        (let ((cur "") (col 0))
+          (dolist (word (split-string para "[ \t]+" t))
+            (let ((wl (string-width word)))
+              (cond
+               ((string-empty-p cur) (setq cur word col wl))
+               ((<= (+ col 1 wl) width)
+                (setq cur (concat cur " " word) col (+ col 1 wl)))
+               (t (push cur out) (setq cur word col wl)))))
+          (push cur out))))
+    (nreverse out)))
+
+(defun my-forge-ediff-review-model--card-summary (glyph header body)
+  "Return a one-line summary string for a collapsed card.
+Combines GLYPH, HEADER and the first non-empty line of BODY.  When BODY
+carries more than that one line, a trailing ellipsis marks the hidden
+content so the fold reads as intentional rather than a lost body."
+  (let* ((lines (seq-remove #'string-empty-p
+                            (split-string (or body "") "\n")))
+         (first (car lines))
+         (more (> (length lines) 1)))
+    (concat glyph " " header
+            (if (and first (not (string-empty-p first)))
+                (concat ": " first)
+              "")
+            (if more " …" ""))))
+
+(defun my-forge-ediff-review-model-format-card
+    (glyph header body width &optional collapsed)
+  "Return a box-drawn annotation card string for HEADER and BODY.
+GLYPH is a short per-kind marker shown in the header and WIDTH is the
+inner content width in columns.  Every returned line is padded to the
+same display width so a single background face paints a clean rectangle;
+the string has no leading or trailing newline.  When COLLAPSED is
+non-nil a single compact summary line is returned instead of the full
+box, so line-number safety is unchanged either way."
+  (if collapsed
+      ;; A right-pointing triangle reads as "expandable/folded" so a
+      ;; one-line summary is not mistaken for a broken multi-line body.
+      (concat "▸ "
+              (my-forge-ediff-review-model--pad
+               (truncate-string-to-width
+                (my-forge-ediff-review-model--card-summary glyph header body)
+                (1+ width) nil nil "…")
+               (1+ width))
+              " ")
+    (let* ((header-line (concat glyph " " header))
+           (text (if (string-empty-p (string-trim (or body "")))
+                     " "
+                   body))
+           (lines (or (my-forge-ediff-review-model--wrap-text text width)
+                      '("")))
+           ;; Grow the box to the widest line so the header (author +
+           ;; timestamp) is never clipped and every row stays rectangular.
+           (inner (apply #'max width
+                         (mapcar #'string-width (cons header-line lines))))
+           (rule (make-string (+ inner 2) ?─)))
+      (mapconcat
+       #'identity
+       (append
+        (list (concat "╭" rule "╮")
+              (concat "│ " (my-forge-ediff-review-model--pad header-line inner)
+                      " │")
+              (concat "├" rule "┤"))
+        (mapcar (lambda (l)
+                  (concat "│ " (my-forge-ediff-review-model--pad l inner)
+                          " │"))
+                lines)
+        (list (concat "╰" rule "╯")))
+       "\n"))))
+
+(defun my-forge-ediff-review-model-format-time (iso)
+  "Return a short local-time string for GitHub ISO8601 timestamp ISO.
+ISO looks like \"2026-01-15T10:30:00Z\".  A nil or empty ISO yields the
+empty string so callers can omit the time without extra whitespace."
+  (if (and (stringp iso) (not (string-empty-p iso)))
+      (format-time-string "%Y-%m-%d %H:%M" (encode-time (iso8601-parse iso)))
+    ""))
+
 ;;;; GitHub review payload
 
 (defun my-forge-ediff-review-model-payload-comments (comments)
@@ -118,9 +224,10 @@ alist `((data . PAYLOAD))'.  Both resolve to PAYLOAD here."
 
 (defun my-forge-ediff-review-model-parse-review-threads (response)
   "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
-Each entry is a plist (:path :line :side :body :author :resolved
-:thread-id :reply-to-id) where :side is \"LEFT\"/\"RIGHT\" and :resolved
-reflects the thread.  :thread-id and :reply-to-id identify the thread and
+Each entry is a plist (:path :line :side :body :author :created-at
+:resolved :thread-id :reply-to-id) where :side is \"LEFT\"/\"RIGHT\" and
+:resolved reflects the thread.  :created-at is the comment's ISO8601
+timestamp.  :thread-id and :reply-to-id identify the thread and
 its first comment so replies can be posted to it.  GitHub
 exposes `path', `line', `originalLine' and `diffSide' on the thread, not
 on `PullRequestReviewComment', so the location is read from the thread
@@ -146,9 +253,11 @@ entries keep their thread/comment order."
         (when (and path line side)
           (dolist (comment comments)
             (let ((body (alist-get 'body comment))
-                  (author (alist-get 'login (alist-get 'author comment))))
+                  (author (alist-get 'login (alist-get 'author comment)))
+                  (created-at (alist-get 'createdAt comment)))
               (push (list :path path :line line :side side :body body
-                          :author author :resolved resolved
+                          :author author :created-at created-at
+                          :resolved resolved
                           :thread-id thread-id :reply-to-id reply-to-id)
                     entries))))))))
 
