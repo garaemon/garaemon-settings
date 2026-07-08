@@ -58,6 +58,13 @@ list of repository-relative file paths the user has flagged as done.
 :existing holds review comments already posted to the PR on GitHub,
 fetched once at session start and shown read-only as overlays.")
 
+(defvar my-forge-ediff-review--cards-collapsed nil
+  "When non-nil, inline comment cards render as one-line summaries.
+Shared across every ediff revision buffer of the session so
+`my-forge-ediff-review-toggle-cards' folds or unfolds them all at once.
+Reset to nil when a session starts so an earlier fold never carries
+over into a new review.")
+
 ;;;; Ediff control & navigation
 
 ;; NOTE: `ediff-window-setup-function' is set to `ediff-setup-windows-plain'
@@ -137,6 +144,10 @@ launches multi-file ediff between PR base and head."
                   :memos nil
                   :reviewed nil
                   :existing nil))
+      ;; Start every review with cards unfolded; the fold flag is global,
+      ;; so without this a stray `c' in an earlier review would leave this
+      ;; one showing only one-line summaries.
+      (setq my-forge-ediff-review--cards-collapsed nil)
       (message
        "Review session for PR #%s started. C-c M c to comment, C-c M C to submit."
        (oref pullreq number))
@@ -213,11 +224,6 @@ Bodies are word-wrapped to this width; the card grows wider only when a
 header (author and timestamp) does not fit."
   :type 'integer
   :group 'my-forge-ediff-review)
-
-(defvar my-forge-ediff-review--cards-collapsed nil
-  "When non-nil, inline comment cards render as one-line summaries.
-Shared across every ediff revision buffer of the session so
-`my-forge-ediff-review-toggle-cards' folds or unfolds them all at once.")
 
 (defface my-forge-ediff-review-comment-face
   '((((background light)) :background "#fff8c5" :foreground "#24292f")

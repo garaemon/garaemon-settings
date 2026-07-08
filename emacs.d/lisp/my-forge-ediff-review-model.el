@@ -121,13 +121,18 @@ on its own line rather than split."
 
 (defun my-forge-ediff-review-model--card-summary (glyph header body)
   "Return a one-line summary string for a collapsed card.
-Combines GLYPH, HEADER and the first non-empty line of BODY."
-  (let ((first (seq-find (lambda (l) (not (string-empty-p l)))
-                         (split-string (or body "") "\n"))))
+Combines GLYPH, HEADER and the first non-empty line of BODY.  When BODY
+carries more than that one line, a trailing ellipsis marks the hidden
+content so the fold reads as intentional rather than a lost body."
+  (let* ((lines (seq-remove #'string-empty-p
+                            (split-string (or body "") "\n")))
+         (first (car lines))
+         (more (> (length lines) 1)))
     (concat glyph " " header
             (if (and first (not (string-empty-p first)))
                 (concat ": " first)
-              ""))))
+              "")
+            (if more " …" ""))))
 
 (defun my-forge-ediff-review-model-format-card
     (glyph header body width &optional collapsed)
@@ -139,7 +144,9 @@ the string has no leading or trailing newline.  When COLLAPSED is
 non-nil a single compact summary line is returned instead of the full
 box, so line-number safety is unchanged either way."
   (if collapsed
-      (concat "▎ "
+      ;; A right-pointing triangle reads as "expandable/folded" so a
+      ;; one-line summary is not mistaken for a broken multi-line body.
+      (concat "▸ "
               (my-forge-ediff-review-model--pad
                (truncate-string-to-width
                 (my-forge-ediff-review-model--card-summary glyph header body)

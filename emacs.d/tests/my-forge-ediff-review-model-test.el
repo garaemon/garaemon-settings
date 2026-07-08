@@ -348,7 +348,18 @@ LOCATION is an alist providing the thread-level `path', `line',
   (let ((card (my-forge-ediff-review-model-format-card
                "✎" "Comment" "first line\nsecond line" 40 t)))
     (should-not (string-match-p "\n" card))
-    (should (string-match-p "first line" card))))
+    (should (string-match-p "first line" card))
+    ;; A fold affordance marks it as collapsed, not broken.
+    (should (string-match-p "▸" card))))
+
+(ert-deftest review-model-collapsed-summary-should-mark-hidden-lines ()
+  ;; A multi-line body gets a trailing ellipsis; a single-line body does not.
+  (should (string-suffix-p
+           "…" (my-forge-ediff-review-model--card-summary
+                "✎" "Comment" "one\ntwo")))
+  (should-not (string-suffix-p
+               "…" (my-forge-ediff-review-model--card-summary
+                    "✎" "Comment" "only one line"))))
 
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
