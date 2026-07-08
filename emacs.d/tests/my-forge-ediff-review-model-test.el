@@ -361,6 +361,71 @@ LOCATION is an alist providing the thread-level `path', `line',
                "…" (my-forge-ediff-review-model--card-summary
                     "✎" "Comment" "only one line"))))
 
+;;;; Card rendering (golden — exact input/output)
+
+;; These pin the full rendered layout byte-for-byte so any change to the
+;; box drawing, padding, wrapping or fold summary is caught, not just its
+;; prefix.  Regenerate with scripts if the layout is intentionally changed.
+
+(ert-deftest review-model-card-golden-expanded-single-line-body ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "✎" "Comment" "hi there" 10 nil)
+           "╭────────────╮
+│ ✎ Comment  │
+├────────────┤
+│ hi there   │
+╰────────────╯")))
+
+(ert-deftest review-model-card-golden-expanded-body-wraps-to-width ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "✎" "Comment" "the quick brown fox jumps" 10 nil)
+           "╭────────────╮
+│ ✎ Comment  │
+├────────────┤
+│ the quick  │
+│ brown fox  │
+│ jumps      │
+╰────────────╯")))
+
+(ert-deftest review-model-card-golden-expanded-preserves-blank-paragraph-line ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "◈" "octocat" "para one\n\npara two" 12 nil)
+           "╭──────────────╮
+│ ◈ octocat    │
+├──────────────┤
+│ para one     │
+│              │
+│ para two     │
+╰──────────────╯")))
+
+(ert-deftest review-model-card-golden-expanded-grows-when-header-wider-than-width ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "◈" "verylongauthor 2026-01-15 10:30" "hi" 8 nil)
+           "╭───────────────────────────────────╮
+│ ◈ verylongauthor 2026-01-15 10:30 │
+├───────────────────────────────────┤
+│ hi                                │
+╰───────────────────────────────────╯")))
+
+(ert-deftest review-model-card-golden-expanded-empty-body ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "✎" "Comment" "" 10 nil)
+           "╭────────────╮
+│ ✎ Comment  │
+├────────────┤
+│            │
+╰────────────╯")))
+
+(ert-deftest review-model-card-golden-collapsed-multi-line ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "✎" "Comment" "first line\nsecond" 20 t)
+           "▸ ✎ Comment: first lin… ")))
+
+(ert-deftest review-model-card-golden-collapsed-single-line ()
+  (should (equal
+           (my-forge-ediff-review-model-format-card "▤" "Memo" "just one" 20 t)
+           "▸ ▤ Memo: just one      ")))
+
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
 (ert-deftest review-model-resolve-host-should-return-github-apihost ()
