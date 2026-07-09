@@ -10,7 +10,7 @@
 ;;   All review state lives in one global plist,
 ;;   `my-forge-ediff-review--session' (nil when no review is active):
 ;;
-;;     (:owner "..." :repo "..." :num N
+;;     (:owner "..." :repo "..." :num N :title "..." :body "..."
 ;;      :base-rev "<sha>" :head-rev "<sha>" :host nil
 ;;      :comments (COMMENT ...))
 ;;
@@ -49,12 +49,14 @@
 
 (defvar my-forge-ediff-review--session nil
   "Plist for the active review session, or nil.
-Keys: :owner :repo :num :head-rev :base-rev :host :comments :memos
-:reviewed :existing.  Each comment and memo is a plist with :path :line
-:side :body; memos stay local and are never submitted.  :reviewed is a
-list of repository-relative file paths the user has flagged as done.
-:existing holds review comments already posted to the PR on GitHub,
-fetched once at session start and shown read-only as overlays.")
+Keys: :owner :repo :num :title :body :head-rev :base-rev :host
+:comments :memos :reviewed :existing.  :title and :body are the PR's
+title and description, read from forge's local database so they can be
+shown while reviewing.  Each comment and memo is a plist with :path
+:line :side :body; memos stay local and are never submitted.  :reviewed
+is a list of repository-relative file paths the user has flagged as
+done.  :existing holds review comments already posted to the PR on
+GitHub, fetched once at session start and shown read-only as overlays.")
 
 (defvar my-forge-ediff-review--cards-collapsed nil
   "When non-nil, inline comment cards render as one-line summaries.
@@ -135,6 +137,8 @@ launches multi-file ediff between PR base and head."
             (list :owner (oref repo owner)
                   :repo (oref repo name)
                   :num (oref pullreq number)
+                  :title (oref pullreq title)
+                  :body (oref pullreq body)
                   :head-rev head-rev
                   :base-rev diff-base
                   :host (my-forge-ediff-review--resolve-host repo)
@@ -167,6 +171,34 @@ forges resolve to nil so ghub falls back to its default host."
   "Signal an error if no review session is active."
   (unless my-forge-ediff-review--session
     (user-error "No active forge ediff review session")))
+
+;;;; PR description
+
+(defconst my-forge-ediff-review--description-buffer-name
+  "*forge-review-description*"
+  "Name of the read-only buffer showing the PR title and description.")
+
+(defun my-forge-ediff-review-show-description ()
+  "Show the PR's title and description in a read-only markdown buffer.
+Available from the revision buffers and the sidebar on `D'; the buffer
+closes with `q' (via `view-mode')."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let ((s my-forge-ediff-review--session)
+        (buf (get-buffer-create
+              my-forge-ediff-review--description-buffer-name)))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (my-forge-ediff-review-model-format-description
+                 (plist-get s :num)
+                 (plist-get s :title)
+                 (plist-get s :body))))
+      (when (fboundp 'markdown-mode)
+        (markdown-mode))
+      (view-mode 1)
+      (goto-char (point-min)))
+    (pop-to-buffer buf)))
 
 ;;;; Existing review comments (fetched from GitHub)
 
@@ -413,6 +445,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "r") #'my-forge-ediff-review-reply-to-comment)
       (define-key map (kbd "R") #'my-forge-ediff-review-toggle-resolved)
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
+      (define-key map (kbd "D") #'my-forge-ediff-review-show-description)
       (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
@@ -881,6 +914,7 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
     (define-key map (kbd "RET") #'my-forge-ediff-review-sidebar-open)
     (define-key map (kbd "<mouse-1>") #'my-forge-ediff-review-sidebar-open)
     (define-key map (kbd "d") #'my-forge-ediff-review-sidebar-toggle-reviewed)
+    (define-key map (kbd "D") #'my-forge-ediff-review-show-description)
     (define-key map (kbd "g") #'my-forge-ediff-review-sidebar-refresh)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)
@@ -925,11 +959,17 @@ CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
             (index 0))
         (erase-buffer)
         (insert (propertize
-                 (format "PR #%s  reviewed %d/%d\n\n"
+                 (format "PR #%s  reviewed %d/%d\n"
                          (plist-get my-forge-ediff-review--session :num)
                          (length reviewed)
                          (length my-magit-ediff--files))
                  'face 'bold))
+        (let ((title (plist-get my-forge-ediff-review--session :title)))
+          (when (and title (not (string-empty-p title)))
+            ;; The sidebar side window is 38 columns wide; truncate so a
+            ;; long title never wraps and pushes the file list down.
+            (insert (truncate-string-to-width title 36 nil nil "…") "\n")))
+        (insert (propertize "D: description\n\n" 'face 'shadow))
         (dolist (file my-magit-ediff--files)
           (my-forge-ediff-review--insert-sidebar-file
            file (= index current)

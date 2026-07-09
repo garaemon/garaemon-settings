@@ -273,6 +273,33 @@ LOCATION is an alist providing the thread-level `path', `line',
                       response))))
     (should (equal "2026-01-15T10:30:00Z" (plist-get entry :created-at)))))
 
+;;;; PR description formatting
+
+(ert-deftest review-model-format-description-should-include-title-and-body ()
+  (let ((text (my-forge-ediff-review-model-format-description
+               42 "Add feature" "This PR adds a feature.\n\nDetails here.")))
+    (should (string-match-p "# PR #42: Add feature" text))
+    (should (string-match-p "This PR adds a feature\\." text))
+    (should (string-match-p "Details here\\." text))))
+
+(ert-deftest review-model-format-description-should-placeholder-nil-body ()
+  (should (string-match-p "(no description)"
+                          (my-forge-ediff-review-model-format-description
+                           1 "Title" nil))))
+
+(ert-deftest review-model-format-description-should-placeholder-blank-body ()
+  (should (string-match-p "(no description)"
+                          (my-forge-ediff-review-model-format-description
+                           1 "Title" "  \n \t ")))
+  (should (string-match-p "(no description)"
+                          (my-forge-ediff-review-model-format-description
+                           1 "Title" ""))))
+
+(ert-deftest review-model-format-description-should-tolerate-nil-title ()
+  (should (string-match-p "# PR #7: "
+                          (my-forge-ediff-review-model-format-description
+                           7 nil "body"))))
+
 ;;;; Timestamp formatting
 
 (ert-deftest review-model-format-time-should-format-iso ()

@@ -178,6 +178,20 @@ box, so line-number safety is unchanged either way."
         (list (concat "╰" rule "╯")))
        "\n"))))
 
+;;;; PR description formatting
+
+(defun my-forge-ediff-review-model-format-description (num title body)
+  "Return the markdown text describing PR NUM titled TITLE with BODY.
+Shown in the read-only description buffer.  A nil or blank BODY renders
+as \"(no description)\" so the buffer never looks broken or truncated."
+  (format "# PR #%s: %s\n\n%s\n"
+          num
+          (or title "")
+          (if (and (stringp body)
+                   (not (string-empty-p (string-trim body))))
+              body
+            "(no description)")))
+
 (defun my-forge-ediff-review-model-format-time (iso)
   "Return a short local-time string for GitHub ISO8601 timestamp ISO.
 ISO looks like \"2026-01-15T10:30:00Z\".  A nil or empty ISO yields the
