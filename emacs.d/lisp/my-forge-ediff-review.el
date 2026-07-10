@@ -966,11 +966,9 @@ CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
                  'face 'bold))
         (let ((title (plist-get my-forge-ediff-review--session :title)))
           (when (and title (not (string-empty-p title)))
-            ;; Show the whole title.  The sidebar sets `truncate-lines',
-            ;; so a long title would be clipped at the window edge; wrap
-            ;; it to the side-window width instead so nothing is hidden.
-            (dolist (line (my-forge-ediff-review-model--wrap-text title 36))
-              (insert (propertize line 'face 'bold) "\n"))))
+            ;; One line; the sidebar's `truncate-lines' clips a long title
+            ;; at the window edge, which is fine here.
+            (insert (propertize title 'face 'bold) "\n")))
         (insert (propertize "D: description\n\n" 'face 'shadow))
         (dolist (file my-magit-ediff--files)
           (my-forge-ediff-review--insert-sidebar-file
