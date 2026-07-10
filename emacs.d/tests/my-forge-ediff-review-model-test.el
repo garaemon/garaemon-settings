@@ -115,6 +115,29 @@
     (should-not (string-match-p "0c" line))
     (should-not (string-match-p "0m" line))))
 
+;;;; Commit history
+
+(ert-deftest review-model-parse-commit-line-should-split-on-nul ()
+  (let ((commit (my-forge-ediff-review-model-parse-commit-line
+                 "abc1234\0Fix the frobnicator")))
+    (should (equal "abc1234" (plist-get commit :hash)))
+    (should (equal "Fix the frobnicator" (plist-get commit :subject)))))
+
+(ert-deftest review-model-parse-commit-line-should-reject-line-without-nul ()
+  (should-not (my-forge-ediff-review-model-parse-commit-line "not a commit"))
+  (should-not (my-forge-ediff-review-model-parse-commit-line nil)))
+
+(ert-deftest review-model-format-commit-line-should-show-hash-and-subject ()
+  (let ((line (my-forge-ediff-review-model-format-commit-line
+               "abc1234" "Fix the frobnicator")))
+    (should (string-match-p "abc1234" line))
+    (should (string-match-p "Fix the frobnicator" line))))
+
+(ert-deftest review-model-format-commit-line-should-align-with-file-lines ()
+  ;; Same two-column indent as a non-current file line's pointer gutter.
+  (should (string-prefix-p "  " (my-forge-ediff-review-model-format-commit-line
+                                 "abc1234" "subject"))))
+
 ;;;; GitHub review payload (memos must never reach this)
 
 (ert-deftest review-model-payload-should-build-comment-vector ()

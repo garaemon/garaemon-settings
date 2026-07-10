@@ -50,13 +50,15 @@
 (defvar my-forge-ediff-review--session nil
   "Plist for the active review session, or nil.
 Keys: :owner :repo :num :title :body :head-rev :base-rev :host
-:comments :memos :reviewed :existing.  :title and :body are the PR's
-title and description, read from forge's local database so they can be
-shown while reviewing.  Each comment and memo is a plist with :path
+:comments :memos :reviewed :existing :commits.  :title and :body are the
+PR's title and description, read from forge's local database so they can
+be shown while reviewing.  Each comment and memo is a plist with :path
 :line :side :body; memos stay local and are never submitted.  :reviewed
 is a list of repository-relative file paths the user has flagged as
 done.  :existing holds review comments already posted to the PR on
-GitHub, fetched once at session start and shown read-only as overlays.")
+GitHub, fetched once at session start and shown read-only as overlays.
+:commits is the PR's commit history, oldest first, read once from local
+git at session start; each commit is a plist (:hash :subject).")
 
 (defvar my-forge-ediff-review--cards-collapsed nil
   "When non-nil, inline comment cards render as one-line summaries.
@@ -108,6 +110,16 @@ on the base branch after the PR forked, inflating the file list with
 unrelated changes.  Fall back to BASE-REV when no merge-base is found."
   (or (magit-git-string "merge-base" base-rev head-rev) base-rev))
 
+(defun my-forge-ediff-review--pr-commits (base head)
+  "Return the commits of BASE..HEAD as plists (:hash :subject), oldest first.
+Read from local git, whose objects were already verified fetched by
+`my-forge-ediff-review-start'.  Oldest-first matches the commit list on
+GitHub's PR page."
+  (delq nil
+        (mapcar #'my-forge-ediff-review-model-parse-commit-line
+                (magit-git-lines "log" "--reverse" "--format=%h%x00%s"
+                                 (concat base ".." head)))))
+
 (defun my-forge-ediff-review-start (pullreq)
   "Start an ediff-based review session for forge PULLREQ.
 Verifies that the PR commits are fetched, records the session, and
@@ -145,7 +157,9 @@ launches multi-file ediff between PR base and head."
                   :comments nil
                   :memos nil
                   :reviewed nil
-                  :existing nil))
+                  :existing nil
+                  :commits (my-forge-ediff-review--pr-commits
+                            diff-base head-rev)))
       ;; Start every review with cards unfolded; the fold flag is global,
       ;; so without this a stray `c' in an earlier review would leave this
       ;; one showing only one-line summaries.
@@ -946,6 +960,30 @@ CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
     (when current-p
       (put-text-property start (point) 'face 'highlight))))
 
+(defun my-forge-ediff-review--insert-sidebar-commit (commit)
+  "Insert one sidebar line for COMMIT carrying its hash as a text property.
+COMMIT is a plist (:hash :subject) from
+`my-forge-ediff-review--pr-commits'.  The hash property lets RET show
+the commit via `magit-show-commit'."
+  (let ((start (point)))
+    (insert (my-forge-ediff-review-model-format-commit-line
+             (plist-get commit :hash) (plist-get commit :subject))
+            "\n")
+    (put-text-property start (point) 'my-forge-ediff-review-commit
+                       (plist-get commit :hash))
+    (put-text-property start (point) 'face 'shadow)))
+
+(defun my-forge-ediff-review--insert-sidebar-commits ()
+  "Insert the session's commit history section into the sidebar.
+Nothing is inserted when the session carries no commits, so the sidebar
+looks unchanged for a PR whose range is empty."
+  (let ((commits (plist-get my-forge-ediff-review--session :commits)))
+    (when commits
+      (insert (propertize (format "\nCommits (%d)\n" (length commits))
+                          'face 'bold))
+      (dolist (commit commits)
+        (my-forge-ediff-review--insert-sidebar-commit commit)))))
+
 (defun my-forge-ediff-review--render-sidebar ()
   "Rebuild the sidebar buffer from session and engine state."
   (let ((buffer (get-buffer-create my-forge-ediff-review--sidebar-name))
@@ -975,6 +1013,7 @@ CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
            file (= index current)
            (my-forge-ediff-review-model-reviewed-p reviewed file))
           (setq index (1+ index)))
+        (my-forge-ediff-review--insert-sidebar-commits)
         (goto-char (point-min))
         (forward-line (1- saved-line))))))
 
@@ -1002,12 +1041,17 @@ own window reconfiguration."
       (user-error "No file on this line")))
 
 (defun my-forge-ediff-review-sidebar-open ()
-  "Open ediff for the file on the current sidebar line."
+  "Open the entry on the current sidebar line.
+A file line starts (or jumps to) its ediff; a commit line shows the
+commit in a `magit-show-commit' buffer."
   (interactive)
-  (let* ((file (my-forge-ediff-review--sidebar-file-at-point))
-         (index (seq-position my-magit-ediff--files file #'string=)))
-    (when index
-      (my-magit-ediff-goto-index index))))
+  (let ((commit (get-text-property (point) 'my-forge-ediff-review-commit)))
+    (if commit
+        (magit-show-commit commit)
+      (let* ((file (my-forge-ediff-review--sidebar-file-at-point))
+             (index (seq-position my-magit-ediff--files file #'string=)))
+        (when index
+          (my-magit-ediff-goto-index index))))))
 
 (defun my-forge-ediff-review-sidebar-toggle-reviewed ()
   "Toggle the reviewed flag for the file on the current sidebar line."
