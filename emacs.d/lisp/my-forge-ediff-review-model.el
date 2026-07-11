@@ -82,6 +82,28 @@ appended only when non-zero."
             (my-forge-ediff-review-model--counts-suffix
              comment-count memo-count))))
 
+;;;; Commit history
+
+(defun my-forge-ediff-review-model-parse-commit-line (line)
+  "Parse one NUL-separated `git log' LINE into a commit plist.
+LINE comes from `git log --format=%h%x00%s' and looks like
+\"abc1234\\0Subject text\".  Returns (:hash HASH :subject SUBJECT), or
+nil when LINE carries no NUL separator so malformed output is dropped
+instead of rendering a broken sidebar row."
+  (when (and (stringp line) (string-match-p "\0" line))
+    (let* ((parts (split-string line "\0"))
+           (hash (car parts))
+           (subject (mapconcat #'identity (cdr parts) "\0")))
+      (list :hash hash :subject subject))))
+
+(defun my-forge-ediff-review-model-format-commit-line (hash subject)
+  "Return the sidebar text line for the commit HASH titled SUBJECT.
+Indented to line up with the file lines built by
+`my-forge-ediff-review-model-format-file-line'.  A long SUBJECT is not
+truncated here; the sidebar's `truncate-lines' clips it at the window
+edge, matching how the PR title is shown."
+  (format "  %s %s" (or hash "") (or subject "")))
+
 ;;;; Inline comment card formatting
 
 ;; Comment bodies are rendered as a box-drawn "card" placed below the
