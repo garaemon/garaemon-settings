@@ -119,6 +119,68 @@ function git-worktree-select() {
   cd "$target_dir" || return
 }
 
+# Create a git worktree for an open pull request and cd into it.
+# Usage:
+#   git-worktree-from-pr        # Pick a PR interactively with peco
+#   git-worktree-from-pr 123    # Use PR #123 directly
+# The worktree is created under <main-repo-root>/.worktrees/pr-<number>.
+# `gh pr checkout` runs inside the new worktree, so branch tracking is set up
+# correctly even for PRs from forks.
+function git-worktree-from-pr() {
+  if ! command -v gh &> /dev/null; then
+    echo "Error: 'gh' command not found." >&2
+    return 1
+  fi
+  if ! git rev-parse --git-dir &> /dev/null; then
+    echo "Error: Not a git repository." >&2
+    return 1
+  fi
+
+  local pr_number="$1"
+  if [ -z "$pr_number" ]; then
+    if ! command -v peco &> /dev/null; then
+      echo "Error: 'peco' command not found." >&2
+      return 1
+    fi
+
+    local pr_list
+    pr_list=$(gh pr list --limit 100 --json number,headRefName,title \
+      --jq '.[] | "#\(.number)\t\(.headRefName)\t\(.title)"')
+    if [ -z "$pr_list" ]; then
+      echo "No open pull requests found." >&2
+      return 1
+    fi
+
+    local selected
+    selected=$(echo "$pr_list" | peco --prompt "PR>")
+    if [ -z "$selected" ]; then
+      echo "No PR selected." >&2
+      return 1
+    fi
+
+    pr_number=$(echo "$selected" | cut -f1 | tr -d '#')
+  fi
+
+  # Resolve the main repository root so this also works when invoked from
+  # inside another worktree.
+  local common_dir
+  common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
+  local main_repo_root
+  main_repo_root=$(dirname "$common_dir")
+  local worktree_dir="${main_repo_root}/.worktrees/pr-${pr_number}"
+
+  if [ -d "$worktree_dir" ]; then
+    echo "Worktree directory already exists: ${worktree_dir}"
+    cd "$worktree_dir" || return
+    return 0
+  fi
+
+  # Create a detached worktree first, then let gh check out the PR branch.
+  git worktree add --detach "$worktree_dir" || return
+  cd "$worktree_dir" || return
+  gh pr checkout "$pr_number"
+}
+
 function git-branch-for-pr() {
   CURRENT_BRANCH_NAME=$(git branch --show-current)
   ORIGINAL_BRANCH=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
