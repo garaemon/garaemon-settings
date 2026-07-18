@@ -151,6 +151,7 @@ jobs:
             CVE-2026-28415       # gradio: open redirect in OAuth flow
             PYSEC-2026-211       # gradio: weak hash in audio cache key handler
             CVE-2026-48545       # gradio: cookie injection vulnerability
+            PYSEC-2026-2179      # gradio: FileExplorer path traversal (CVE-2026-49119); fix 6.16.0 blocked by pdf2zh pin gradio<5.36
 
             # starlette / python-multipart / msgpack — same reason: only
             # exercised while serving HTTP through the Gradio web stack, which we
@@ -199,20 +200,30 @@ jobs:
             # writable path to poison, so a malicious input PDF cannot trigger them.
             CVE-2025-70559       # pdfminer.six: insecure pickle deserialization in CMap loader
             CVE-2025-64512       # pdfminer.six: arbitrary code execution via crafted PDF CMap pickle
+            PYSEC-2026-2389      # babeldoc: same CMap pickle bug in its vendored pdfminer copy (CVE-2026-54071); fix 0.6.3 blocked by pdf2zh pin babeldoc<0.3.0
 
             # pillow — the one genuinely reachable surface: pdf2zh decodes images
             # embedded in the input PDF, so a crafted image can hit these. Blast
             # radius is contained: non-root, --cap-drop ALL, no-new-privileges,
             # read-only rootfs, input mounted :ro, and the --memory/--cpus caps
             # bound the DoS variants; a crash dies with the throwaway container.
-            # Several also need niche formats (FITS/PSD) rare in real PDFs.
-            # Residual risk accepted until pdf2zh unpins pillow.
+            # Several also need niche formats (FITS/PSD/PCF/BDF/GD) rare in real
+            # PDFs, or APIs pdf2zh never calls (font compile, image .show(),
+            # ImageCms transforms). The fix release 12.3.0 is unreachable while
+            # gradio pins pillow<12.0; residual risk accepted until that pin moves.
             CVE-2026-25990       # pillow: out-of-bounds write loading PSD images
             CVE-2026-40192       # pillow: FITS GZIP decompression bomb (DoS)
             PYSEC-2026-165       # pillow: integer overflow in font glyph advance (CVE-2026-42308)
             CVE-2026-42309       # pillow: heap buffer overflow with nested list coordinates
             CVE-2026-42310       # pillow: PDF parsing trailer infinite loop (DoS)
             CVE-2026-42311       # pillow: out-of-bounds write via invalid PSD tile extents
+            PYSEC-2026-2253      # pillow: PCF font glyph dimension OOB read (CVE-2026-54059)
+            PYSEC-2026-2254      # pillow: FontFile.compile() combined-bitmap overflow (CVE-2026-54060)
+            PYSEC-2026-2255      # pillow: BDF font BBX dimension OOB read (CVE-2026-55379)
+            PYSEC-2026-2256      # pillow: GD header dimensions heap overflow (CVE-2026-55380)
+            PYSEC-2026-2257      # pillow: WindowsViewer .show() shell injection, Windows-only (CVE-2026-55798)
+            PYSEC-2026-3451      # pillow: coordinate APIs near-INT_MAX heap OOB write (CVE-2026-59199)
+            PYSEC-2026-3453      # pillow: ImageCms transform heap corruption (CVE-2026-59205)
           )
           args=()
           for vuln in "${ignore[@]}"; do
