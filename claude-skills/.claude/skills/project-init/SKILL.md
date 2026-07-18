@@ -39,9 +39,9 @@ under `templates/`, plus a shared `common/` directory:
 $CLAUDE_PLUGIN_ROOT/skills/project-init/templates/
 ├── common/     # language-agnostic files: .editorconfig, README skeleton, and
 │               # the shared .claude/hooks/format.sh formatter hook
-├── python/     # ruff, pyright, pytest, uv, pre-commit, CI, SessionStart hook
-├── node/       # eslint, prettier, tsc, vitest, pre-commit, CI, SessionStart hook
-└── go/         # golangci-lint, gofmt, go test, pre-commit, CI, SessionStart hook
+├── python/     # ruff, pyright, pytest, uv, pre-commit, CI, dependabot, SessionStart hook
+├── node/       # eslint, prettier, tsc, vitest, pre-commit, CI, dependabot, SessionStart hook
+└── go/         # golangci-lint, gofmt, go test, pre-commit, CI, dependabot, SessionStart hook
 ```
 
 The PostToolUse formatter hook (`.claude/hooks/format.sh`) is a single shared
@@ -165,6 +165,15 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
   vulnerabilities (`pip-audit` / `npm audit --audit-level=high` /
   `govulncheck`). This mirrors the DevSecOps posture in this repo's own
   `CLAUDE.md`: lock dependencies and audit them in CI.
+- Dependabot is enabled by default. Each language template ships a
+  `.github/dependabot.yml` that opens weekly update PRs for two ecosystems:
+  the language's own dependencies (`uv` for Python, `npm` for Node, `gomod`
+  for Go) and `github-actions` (so the actions pinned in the CI workflow —
+  `checkout`, `setup-uv`, `setup-node`, `setup-go`, ... — stay current).
+  Updates are grouped per ecosystem into a single PR to keep the noise low.
+  Dependabot activates automatically once the repository is pushed to GitHub;
+  no extra setup step is needed. Once its PRs land, the `audit` job above runs
+  against the bumped lockfile, so the two features reinforce each other.
 - The templates pin linter/hook versions (e.g. `pre-commit` hook `rev`s). When
   they drift, bump them in `templates/<lang>/` — that is the single source of
   truth for every future project.
