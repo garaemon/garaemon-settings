@@ -37,8 +37,9 @@ under `templates/`, plus a shared `common/` directory:
 
 ```text
 $CLAUDE_PLUGIN_ROOT/skills/project-init/templates/
-├── common/     # language-agnostic files: .editorconfig, README skeleton, and
-│               # the shared .claude/hooks/format.sh formatter hook
+├── common/     # language-agnostic files: .editorconfig, README skeleton, the
+│               # shared .claude/hooks/format.sh formatter hook, and the
+│               # .github/CODEOWNERS reviewer-routing file
 ├── python/     # ruff, pyright, pytest, uv, pre-commit, CI, dependabot, SessionStart hook
 ├── node/       # eslint, prettier, tsc, vitest, pre-commit, CI, dependabot, SessionStart hook
 └── go/         # golangci-lint, gofmt, go test, pre-commit, CI, dependabot, SessionStart hook
@@ -68,6 +69,10 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
 5. **Module path (Go only)** — e.g. `github.com/<user>/<project>`. Used for
    `__MODULE_PATH__` in `go.mod`. Default to
    `github.com/<git user or "example">/<project name>` and confirm.
+6. **Repository owner** — the GitHub user or org that will own the repo, used
+   for `__REPO_OWNER__` in `.github/CODEOWNERS` (this is who gets auto-requested
+   as reviewer, including on Dependabot PRs). Default to the git user / GitHub
+   handle (for Go, reuse the owner segment of the module path) and confirm.
 
 ## Workflow
 
@@ -91,6 +96,8 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
    - `__PROJECT_NAME__` → project name
    - `__PROJECT_DESCRIPTION__` → description (or a short default)
    - `__MODULE_PATH__` → Go module path (Go only)
+   - `__REPO_OWNER__` → GitHub owner handle, without the leading `@`
+     (`.github/CODEOWNERS`)
 
    Do this in place, e.g. per placeholder:
 
@@ -174,6 +181,14 @@ Before scaffolding, establish these. Ask only for what you cannot infer.
   Dependabot activates automatically once the repository is pushed to GitHub;
   no extra setup step is needed. Once its PRs land, the `audit` job above runs
   against the bumped lockfile, so the two features reinforce each other.
+- The repository owner is auto-requested as reviewer via `.github/CODEOWNERS`
+  (`* @__REPO_OWNER__`), which covers Dependabot's update PRs. Dependabot's own
+  `reviewers:` config key was removed by GitHub in August 2025, so CODEOWNERS is
+  the supported mechanism. Note this applies to *all* PRs, not only Dependabot's;
+  the generated `CODEOWNERS` explains how to narrow the patterns if that is too
+  broad. Because the owner handle must be baked in, `__REPO_OWNER__` is one of
+  the placeholders substituted during scaffolding — leaving it unsubstituted
+  would produce an invalid CODEOWNERS entry.
 - The templates pin linter/hook versions (e.g. `pre-commit` hook `rev`s). When
   they drift, bump them in `templates/<lang>/` — that is the single source of
   truth for every future project.

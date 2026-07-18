@@ -1,0 +1,11 @@
+# Code owners for this repository.
+#
+# GitHub automatically requests a review from the matching owner on every
+# pull request, including the automated dependency-update PRs opened by
+# Dependabot. This is the supported way to have Dependabot PRs reviewed by
+# the repository owner: Dependabot's own `reviewers:` config option was
+# removed by GitHub in August 2025 and is now ignored.
+#
+# Note: CODEOWNERS applies to *all* pull requests, not only Dependabot's.
+# Adjust the patterns below if you want finer-grained ownership.
+* @__REPO_OWNER__
