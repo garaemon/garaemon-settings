@@ -102,6 +102,12 @@ Add YYYY.MM.DD- prefix to the branch name.
 
 Do not use `git add .`. Specify files to add to git explicitly always.
 
+### Commit Granularity
+
+- Think about commit units at the hunk level, not the file level.
+- When one file contains changes for different purposes, split them into separate commits with `git add -p` (or `git apply --cached` with a partial patch).
+- Group hunks by purpose: one logical change per commit (e.g., a refactor and a feature change must not share a commit even if they touch the same file).
+
 ### Commit and PR Language
 
 Use English for commit messages and pull request descriptions.
