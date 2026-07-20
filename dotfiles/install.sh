@@ -61,13 +61,13 @@ declare -rA CHEZMOI_CHECKSUMS=(
 #   3. Update each entry in MISE_CHECKSUMS with the matching sha256 from the
 #      release's SHASUMS256.txt. Note the platform keys use mise's naming
 #      (linux-x64, macos-arm64, ...), not chezmoi's.
-readonly MISE_VERSION="2026.7.0"
+readonly MISE_VERSION="2026.7.5"
 
 declare -rA MISE_CHECKSUMS=(
-    [linux-x64]="a3ff8f55b61504e7d7556d7b0cac4413e0c85ef7279545d2c2c3f49bd2cf8472"  # pragma: allowlist secret
-    [linux-arm64]="fcbba22dfd6bfaf94912fdba3e1f034c89841cda7a895fd2b7402cef3d7ae214"  # pragma: allowlist secret
-    [macos-x64]="c33f2974806db45d5a2b0ab480d0750c54328c6fe87be5cf915106d46e55b9f0"  # pragma: allowlist secret
-    [macos-arm64]="23efe18046d12b95895d17b2bf0101a0efb9bf174767c57b6e2c8d019b964252"  # pragma: allowlist secret
+    [linux-x64]="be92da3afb180dc71b3ce6fcaaaf2f393812c9c50e9a64c9cb6706cf28edb486"  # pragma: allowlist secret
+    [linux-arm64]="9020f7453931a6873d60cf204d5935ebd08633b25f675b0820cd06862b4b6450"  # pragma: allowlist secret
+    [macos-x64]="48cc4ae352bd903d5069e9967ebba18dfb0bbd46aa325a82a353b07329ebf57d"  # pragma: allowlist secret
+    [macos-arm64]="ae0c21532774eda198b23a22a7ffbe684f482c074a976a13e0f664af8255e2ae"  # pragma: allowlist secret
 )
 
 # Minimal set of tools installed by --tools (or --tools=minimal): the
