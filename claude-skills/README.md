@@ -28,8 +28,8 @@ Claude app on smartphones or desktop via Claude Code's `/remote-control`.
 These are general-purpose coding-workflow skills (no network or credentials of
 their own beyond `gh`/`git`), used in any repository.
 
-- [code-review](.claude/skills/code-review/SKILL.md) — Review changes on the current branch against the auto-detected default branch, producing a structured `REVIEW.md` and posting inline review comments on specific file lines via the GitHub API.
-- [code-review-loop](.claude/skills/code-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `code-review` skill via a subagent, fix every reported issue, then re-review until no findings remain (up to 5 iterations).
+- [branch-review](.claude/skills/branch-review/SKILL.md) — Review changes on the current branch against the auto-detected default branch, producing a structured `REVIEW.md` and posting inline review comments on specific file lines via the GitHub API.
+- [branch-review-loop](.claude/skills/branch-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `branch-review` skill via a subagent, fix every reported issue, then re-review until no findings remain (up to 5 iterations).
 - [create-pr](.claude/skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
 - [fix-agent-todo](.claude/skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
 - [improve-english](.claude/skills/improve-english/SKILL.md) — Improve English in changes bound for a PR: fix spelling in identifiers, smooth comment grammar, and translate Japanese comments into English, scoped to the diff against `origin/main`.
