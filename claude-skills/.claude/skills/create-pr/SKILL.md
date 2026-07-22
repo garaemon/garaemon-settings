@@ -17,11 +17,12 @@ Automate the end-to-end process of creating a GitHub pull request from local cha
 1. Assess the current state (branch, staged/unstaged changes, commits)
 2. Create a branch if on the default branch
 3. Run improve-english skill to fix English quality in the changes
-4. Stage and commit changes
-5. Determine push target (fork vs origin)
-6. Check diff size and split into multiple PRs if needed
-7. Run tests and linters
-8. Push and create the PR
+4. Check documentation consistency with the code changes
+5. Stage and commit changes
+6. Determine push target (fork vs origin)
+7. Check diff size and split into multiple PRs if needed
+8. Run tests and linters
+9. Push and create the PR
 
 ## Step 1: Assess Current State
 
@@ -58,14 +59,42 @@ identifiers, improve comment English, and translate any Japanese comments. Show 
 proposed changes to the user and ask for confirmation before applying. This step
 catches English issues early so the PR is clean from the start.
 
-## Step 4: Stage and Commit
+## Step 4: Check Documentation Consistency
+
+Before committing, verify that the code changes do not contradict any documentation
+in the repository. Documentation that silently drifts from the code is worse than no
+documentation, so treat a found inconsistency as a blocker, not a nice-to-have.
+
+1. Collect the changed files and the diff content (`git diff` / `git diff --cached`
+   against the merge base with the default branch).
+2. Find documentation that may reference the changed code:
+   - `README.md` (root and in changed directories), `CLAUDE.md`, `CONTRIBUTING.md`
+   - Everything under `docs/` and any other tracked `*.md` files
+   - Grep the docs for identifiers touched by the diff: renamed/removed functions,
+     classes, CLI commands and flags, environment variables, config keys, file
+     paths, API endpoints, and default values.
+3. Compare what the docs claim against what the code now does. Typical
+   inconsistencies to catch:
+   - Usage examples or sample commands that no longer work
+   - Option/flag/env-var names or defaults that changed
+   - Described behavior, workflow steps, or directory layouts that changed
+   - Docs referencing files that were moved or deleted
+4. If inconsistencies are found, show the user a short list of
+   `doc file -> what is stale -> proposed fix` and, with their approval, update the
+   documentation in the same branch so the docs land in the same PR as the code.
+5. If the docs are fine, state that explicitly and move on.
+
+Skip files that are intentionally template-like (e.g. anything under a `templates/`
+directory) — placeholders there are expected to look "wrong".
+
+## Step 5: Stage and Commit
 
 Never use `git add .` or `git add -A`. Always specify files explicitly.
 
 Review the changes and group them logically. Write commit messages in English that focus on
 the "why" behind the changes, not just what changed.
 
-## Step 5: Determine Push Target
+## Step 6: Determine Push Target
 
 Check the GitHub repository owner to decide where to push:
 
@@ -82,7 +111,7 @@ git push -u <remote> <branch>
 
 If a fork doesn't exist yet, create one with `gh repo fork --remote-name fork` and push to it.
 
-## Step 6: Check Diff Size and Split if Needed
+## Step 7: Check Diff Size and Split if Needed
 
 This is important: PRs should be small and focused, ideally around 100 lines of diff.
 
@@ -105,7 +134,7 @@ If the diff exceeds ~100 lines, split it into multiple PRs by functionality:
 
 Ask the user before splitting. They may prefer a single larger PR in some cases.
 
-## Step 7: Run Tests and Linters
+## Step 8: Run Tests and Linters
 
 Before creating the PR, always run tests and linters. Find the right commands by checking:
 
@@ -115,7 +144,7 @@ Before creating the PR, always run tests and linters. Find the right commands by
 
 If tests or linters fail, fix the issues before proceeding. Do not skip this step.
 
-## Step 8: Create the PR
+## Step 9: Create the PR
 
 Write the PR description in English. Focus on the "why" — background, motivation, and the
 problem being solved. If the "why" isn't clear from the code or commits, ask the user.
@@ -156,6 +185,8 @@ After creating the PR, display the PR URL to the user.
 - Always use English for commit messages and PR descriptions
 - Never use `git add .` -- specify files explicitly
 - Always run tests/linters before creating the PR
+- Always check markdown documentation for inconsistencies with the code changes,
+  and fix stale docs in the same PR
 - Always set upstream when pushing (`git push -u`)
 - Keep PRs small (~100 lines); split larger changes with user approval
 - Focus PR descriptions on the "why", ask the user if the motivation is unclear
