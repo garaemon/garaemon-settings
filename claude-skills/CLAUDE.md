@@ -11,7 +11,7 @@ creating a pull request and fix any failures.
 ### Markdown lint
 
 Run markdownlint-cli2 over all tracked Markdown files. The `REVIEW.md`
-artifact produced by the code-review skill is explicitly excluded because
+artifact produced by the branch-review skill is explicitly excluded because
 it is a local work product that is not committed. Skill template files
 under any `templates/` directory (e.g. `project-init`'s per-language
 scaffolds) are also excluded: they intentionally contain placeholders like

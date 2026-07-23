@@ -1,11 +1,11 @@
 ---
-name: code-review
+name: branch-review
 description: |
   Review code changes on the current branch against the default branch (auto-detected;
   supports main, master, etc.), producing a structured REVIEW.md and posting inline
   review comments on specific file lines via GitHub API.
   Use this skill whenever the user wants a code review, says things like "review",
-  "code review", "/code-review", "レビューして", "コードレビュー", "PRレビュー",
+  "code review", "/branch-review", "レビューして", "コードレビュー", "PRレビュー",
   "変更をチェックして", or asks to check code quality before merging. Also trigger
   when the user asks to review a specific PR by number.
 ---
