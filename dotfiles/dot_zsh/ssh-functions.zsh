@@ -45,6 +45,27 @@ else
   }
 fi
 
+# op-ssh runs ssh using the 1Password SSH agent, regardless of the global
+# SSH_AUTH_SOCK. It resolves the 1Password agent socket per OS and overrides
+# SSH_AUTH_SOCK for the single invocation.
+function op-ssh() {
+  local sock
+  case "$(uname)" in
+    Darwin)
+      sock="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+      ;;
+    *)
+      sock="$HOME/.1password/agent.sock"
+      ;;
+  esac
+  if [[ ! -S "$sock" ]]; then
+    echo "op-ssh: 1Password SSH agent socket not found at: $sock" >&2
+    echo "op-ssh: Make sure 1Password is running and its SSH agent is enabled." >&2
+    return 1
+  fi
+  SSH_AUTH_SOCK="$sock" ssh "$@"
+}
+
 function ssh-remove-host() {
     local TARGET="$1"
     local KNOWN_HOSTS_FILE="${HOME}/.ssh/known_hosts"
