@@ -1,20 +1,30 @@
 ;;; my-vterm-toggle.el --- vterm toggle aware of claude-code-ide and frames -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; A vterm-toggle dispatch that fixes two shortcomings of the stock
+;; A vterm-toggle dispatch that fixes shortcomings of the stock
 ;; `vterm-toggle' command for this setup:
 ;;
 ;; 1. claude-code-ide sessions run inside vterm buffers, so the stock
 ;;    toggle happily lands on (or hides) a Claude session.  The
-;;    predicates here identify those buffers so the toggle skips them.
+;;    predicates here identify those buffers; init-prog.el registers
+;;    them in `vterm-toggle-togglable-buffer-functions' so vterm-toggle
+;;    skips them everywhere.
 ;;
-;; 2. `vterm-toggle--get-window' only inspects the selected frame.  When
-;;    the vterm buffer is visible on another frame, the stock dispatch
-;;    falls through to `vterm-toggle-show', whose `pop-to-buffer' path
-;;    can select the other frame's window without transferring input
-;;    focus; a follow-up toggle then deletes that window.  The dispatch
-;;    here detects a vterm window on another visible frame and moves
-;;    input focus to it instead.
+;; 2. The stock dispatch hides the vterm whenever a vterm window is
+;;    visible on the selected frame, even when focus is on another
+;;    window, and it never looks at other frames at all.  The dispatch
+;;    here implements a three-state machine instead:
+;;    - focus on the vterm: hide it
+;;    - vterm visible elsewhere (another window or another frame):
+;;      move input focus to it
+;;    - vterm not visible: show it
+;;
+;; 3. `vterm-toggle-hide' with the `delete-window' hide method calls
+;;    `delete-window' whenever `window-deletable-p' is non-nil, but that
+;;    predicate returns the symbol `frame' for a frame's sole ordinary
+;;    window, and `delete-window' then signals "Attempt to delete
+;;    minibuffer or sole ordinary window".  The hide path here deletes
+;;    the frame in that case.
 
 ;;; Code:
 
@@ -28,7 +38,6 @@
 (declare-function claude-code-ide--session-buffer-p "claude-code-ide")
 
 (defvar vterm-buffer-name)
-(defvar vterm-toggle-hide-method)
 (defvar vterm-toggle-fullscreen-p)
 (defvar claude-code-ide--processes)
 
@@ -56,35 +65,49 @@ renamed via `vterm-buffer-name-string', so also consult
                      (vterm-toggle-togglable-buffer-p (window-buffer window))))
               (window-list-1 nil nil 'visible)))
 
+(defun my-vterm-toggle--hide-focused-vterm ()
+  "Hide the vterm window that holds input focus.
+When the vterm is the sole ordinary window of its frame,
+`window-deletable-p' returns the symbol `frame' and `vterm-toggle-hide'
+would signal an error from `delete-window'; delete the frame instead.
+On the last visible frame `window-deletable-p' returns nil and
+`vterm-toggle-hide' safely falls back to burying the buffer."
+  (if (eq (window-deletable-p) 'frame)
+      (delete-frame)
+    (vterm-toggle-hide)))
+
 (defun my-vterm-toggle (&optional args)
-  "Vterm toggle that ignores claude-code-ide session buffers.
-When the vterm is visible on another frame and the selected frame has
-no vterm window, move input focus to that frame instead of hiding or
-re-showing the buffer.  When the user is currently inside a
-claude-code-ide buffer, do not hide it; instead pop up another vterm
-\(or spawn a new one) so the claude-code-ide window stays out of the
-way.  Optional argument ARGS is passed through as the prefix argument."
+  "Toggle the vterm as a three-state dispatch.
+Hide the vterm when focus is already on it, move focus to a visible
+vterm window (on this or another frame) otherwise, and show the vterm
+when it is not visible anywhere.  claude-code-ide session buffers are
+not togglable, so the toggle never hides or lands on them.  With
+prefix argument ARGS other than 1 inside a vterm, spawn a new vterm;
+with prefix argument 4 while no vterm is visible, toggle
+`vterm-toggle-fullscreen-p' for this show."
   (interactive "P")
-  (let ((other-frame-window (and (not (vterm-toggle--get-window))
-                                 (my-vterm-toggle--get-other-frame-window))))
+  (let* ((focused-on-vterm (vterm-toggle-togglable-buffer-p (current-buffer)))
+         (current-frame-window (and (not focused-on-vterm)
+                                    (vterm-toggle--get-window)))
+         (other-frame-window (and (not focused-on-vterm)
+                                  (not current-frame-window)
+                                  (my-vterm-toggle--get-other-frame-window))))
     (cond
+     (focused-on-vterm
+      (if (equal (prefix-numeric-value args) 1)
+          (my-vterm-toggle--hide-focused-vterm)
+        (vterm vterm-buffer-name)))
+     (current-frame-window
+      (select-window current-frame-window))
      (other-frame-window
       (select-frame-set-input-focus (window-frame other-frame-window))
       (select-window other-frame-window))
-     ((my-vterm-toggle-claude-code-ide-buffer-p (current-buffer))
-      (vterm-toggle-show))
-     ((or (derived-mode-p 'vterm-mode)
-          (and (vterm-toggle--get-window)
-               vterm-toggle-hide-method))
-      (if (equal (prefix-numeric-value args) 1)
-          (vterm-toggle-hide)
-        (vterm vterm-buffer-name)))
-     ((equal (prefix-numeric-value args) 1)
-      (vterm-toggle-show))
      ((equal (prefix-numeric-value args) 4)
       (let ((vterm-toggle-fullscreen-p
              (not vterm-toggle-fullscreen-p)))
-        (vterm-toggle-show))))))
+        (vterm-toggle-show)))
+     (t
+      (vterm-toggle-show)))))
 
 (provide 'my-vterm-toggle)
 ;;; my-vterm-toggle.el ends here
