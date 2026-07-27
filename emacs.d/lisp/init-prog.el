@@ -1122,17 +1122,11 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 
 ;; Export EDITOR in terminal buffers so commands like `git commit' launched
 ;; inside the shell open their editor buffer in this Emacs (via emacsclient)
-;; instead of spawning a nested editor.  Skipped in claude-code-ide session
-;; buffers because Claude runs its own CLI there and does not need emacsclient.
-(defun my/with-editor-export-editor-maybe ()
-  (unless (and (fboundp 'claude-code-ide--session-buffer-p)
-               (claude-code-ide--session-buffer-p (current-buffer)))
-    (with-editor-export-editor)))
-
+;; instead of spawning a nested editor.
 (use-package with-editor
-  :hook ((shell-mode . my/with-editor-export-editor-maybe)
-         (eshell-mode . my/with-editor-export-editor-maybe)
-         (vterm-mode . my/with-editor-export-editor-maybe)))
+  :hook ((shell-mode . with-editor-export-editor)
+         (eshell-mode . with-editor-export-editor)
+         (vterm-mode . with-editor-export-editor)))
 
 (use-package yasnippet :ensure t
   :config
@@ -1270,14 +1264,10 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 (use-package vterm-toggle :ensure t
   :after (vterm)
   :config
-  ;; The toggle dispatch and the claude-code-ide predicates live in
-  ;; lisp/my-vterm-toggle.el so that tests/my-vterm-toggle-test.el can load
-  ;; them without pulling in the whole init.
+  ;; The toggle dispatch lives in lisp/my-vterm-toggle.el so that
+  ;; tests/my-vterm-toggle-test.el can load it without pulling in the whole
+  ;; init.
   (require 'my-vterm-toggle)
-  ;; Hide claude-code-ide session buffers from vterm-toggle so that pressing
-  ;; the toggle key never lands on them.
-  (add-to-list 'vterm-toggle-togglable-buffer-functions
-               #'my-vterm-toggle-non-claude-code-ide-buffer-p)
   :bind
   ("\C-c t" . 'my-vterm-toggle)
   ;; ("\C-c t" . 'vterm-toggle)
@@ -1448,20 +1438,6 @@ The source buffer is added as gptel context for full file awareness."
                         (window-width . 0.4)))))
 
   )
-
-;; Claude Code IDE integration.
-;; Runs the Claude Code CLI inside a vterm buffer and exposes Emacs
-;; functionality to Claude via the Model Context Protocol (MCP).
-;; Requires the `claude` CLI to be on PATH.
-(use-package claude-code-ide
-  :ensure nil
-  :vc (:url "https://github.com/manzaltu/claude-code-ide.el" :rev :newest)
-  :after vterm
-  :bind ("C-c C-a" . claude-code-ide-menu)
-  :custom
-  (claude-code-ide-terminal-backend 'vterm)
-  :config
-  (claude-code-ide-emacs-tools-setup))
 
 ;; agent-shell: chat with ACP-compatible coding agents (Claude, Gemini)
 ;; in a comint-based shell buffer. Talks to agents over the Agent Client

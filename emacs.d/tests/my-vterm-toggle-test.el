@@ -162,23 +162,6 @@ BODY can inspect the recorded action symbols in the variable `calls'
     (my-vterm-toggle)
     (should (equal calls '(show)))))
 
-;;; claude-code-ide buffers are not togglable, so from a claude buffer
-;;; the dispatch behaves as if focus were on a normal buffer.
-
-(ert-deftest my-vterm-toggle-should-show-from-claude-buffer-without-visible-vterm ()
-  (my-vterm-toggle-test--with-stubs
-      ()
-    (my-vterm-toggle)
-    (should (equal calls '(show)))))
-
-(ert-deftest my-vterm-toggle-should-focus-other-frame-vterm-from-claude-buffer ()
-  (my-vterm-toggle-test--with-stubs
-      (:other-frame-window stub-window)
-    (my-vterm-toggle)
-    (should (equal calls
-                   '((select-window . stub-window)
-                     (focus-frame . stub-frame))))))
-
 ;;; Helper: other-frame window lookup.
 
 (ert-deftest my-vterm-toggle-get-other-frame-window-should-skip-selected-frame ()
