@@ -2,48 +2,9 @@
 # -*- coding: utf-8 -*-
 # SSH and MOSH related functions
 
-function ssh-with-copy-id() {
-  command ssh -o "PasswordAuthentication=no" $1 exit
-  if [ $? != "0" ]; then
-    echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $1
-  fi
-  command ssh -o "PasswordAuthentication=no" $@
-}
-
-function mosh-with-copy-id() {
-  command ssh -o "PasswordAuthentication=no" $1 exit
-  if [ $? != "0" ]; then
-    echo "Failed to ssh w/o password. Copy id_rsa.pub to the machine."
-    ssh-copy-id $1
-  fi
-  command mosh --ssh='ssh -o "PasswordAuthentication=no"' $@
-}
-
 # This MOSH_ESCAPE_KEY setting does not work but it can ignore C-^ escape key
 # of mosh.
 export MOSH_ESCAPE_KEY="~"
-
-# Change title before mosh for iTerm
-# Please uncheck all the check box in Preference > Appearance > Window & Tab Titles
-OS=$(uname)
-if [ "$OS" = "Darwin" ]; then
-  function mosh() {
-    echo -ne "\033]0;$@\007"
-    mosh-with-copy-id $@
-  }
-  function ssh() {
-    echo -ne "\033]0;$@\007"
-    ssh-with-copy-id $@
-  }
-else
-  function mosh() {
-    mosh-with-copy-id $@
-  }
-  function ssh() {
-    ssh-with-copy-id $@
-  }
-fi
 
 # op-ssh runs ssh using the 1Password SSH agent, regardless of the global
 # SSH_AUTH_SOCK. It resolves the 1Password agent socket per OS and overrides
