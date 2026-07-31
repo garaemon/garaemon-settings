@@ -33,12 +33,44 @@ function git-branch-remove-all-remote-exec() {
   fi
 }
 
+# Create a git worktree under <main-repo-root>/.worktrees and cd into it.
+# Usage:
+#   git-worktree-add-with-branch foo   # Create .worktrees/foo on branch YYYY.MM.DD-foo
+# The branch name gets a date prefix to follow the branch naming convention.
+# If the branch already exists, it is checked out instead of being recreated.
 function git-worktree-add-with-branch() {
-  local directory=$1
-  local branch_suffix=$(basename ${directory})
+  local name="$1"
+  if [ -z "$name" ]; then
+    echo "Usage: git-worktree-add-with-branch <name>" >&2
+    return 1
+  fi
+  if ! git rev-parse --git-dir &> /dev/null; then
+    echo "Error: Not a git repository." >&2
+    return 1
+  fi
+
+  # Resolve the main repository root so this also works when invoked from
+  # inside another worktree.
+  local common_dir
+  common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
+  local main_repo_root
+  main_repo_root=$(dirname "$common_dir")
+  local worktree_dir="${main_repo_root}/.worktrees/${name}"
   local date_prefix=$(date +%Y.%m.%d)
-  git worktree add "${directory}" -B "${date_prefix}-${branch_suffix}"
-  cd "${directory}" || return
+  local branch_name="${date_prefix}-${name}"
+
+  if [ -d "$worktree_dir" ]; then
+    echo "Worktree directory already exists: ${worktree_dir}"
+    cd "$worktree_dir" || return
+    return 0
+  fi
+
+  if git show-ref --verify --quiet "refs/heads/${branch_name}"; then
+    git worktree add "$worktree_dir" "$branch_name" || return
+  else
+    git worktree add "$worktree_dir" -b "$branch_name" || return
+  fi
+  cd "$worktree_dir" || return
 }
 
 # Clean up the current worktree: remove the directory, the worktree entry, and exit the shell.
