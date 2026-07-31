@@ -1,17 +1,22 @@
 """Tests for the git-worktree-add-with-branch zsh function.
 
 The function lives in dot_zsh/git-functions.zsh. It takes a name, creates a
-worktree at <main-repo-root>/.worktrees/<name> on a branch named <name>, and
-cds into it. We test it end-to-end by sourcing the file in zsh inside a temp
-git repo.
+worktree at <main-repo-root>/.worktrees/<name> on a branch named
+YYYY.MM.DD-<name>, and cds into it. We test it end-to-end by sourcing the
+file in zsh inside a temp git repo.
 """
 
 import os
 import shlex
 import subprocess
+from datetime import date
 from pathlib import Path
 
 import pytest
+
+
+def build_expected_branch_name(name):
+    return f"{date.today().strftime('%Y.%m.%d')}-{name}"
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -60,13 +65,13 @@ class TestGitWorktreeAddWithBranch:
         assert result.returncode == 0, result.stdout + result.stderr
         assert (repo / ".worktrees" / "foo").is_dir()
 
-    def test_should_create_branch_named_after_argument(self, repo):
+    def test_should_create_branch_with_date_prefix(self, repo):
         result = run_function(repo, "foo")
         assert result.returncode == 0, result.stdout + result.stderr
         branch = run_git(
             repo / ".worktrees" / "foo", "branch", "--show-current"
         ).stdout.strip()
-        assert branch == "foo"
+        assert branch == build_expected_branch_name("foo")
 
     def test_should_end_up_in_worktree_directory(self, repo):
         result = run_function(repo, "foo")
@@ -94,13 +99,14 @@ class TestGitWorktreeAddWithBranch:
         assert Path(final_pwd).resolve() == expected_dir.resolve()
 
     def test_should_check_out_existing_branch(self, repo):
-        run_git(repo, "branch", "foo")
+        expected_branch = build_expected_branch_name("foo")
+        run_git(repo, "branch", expected_branch)
         result = run_function(repo, "foo")
         assert result.returncode == 0, result.stdout + result.stderr
         branch = run_git(
             repo / ".worktrees" / "foo", "branch", "--show-current"
         ).stdout.strip()
-        assert branch == "foo"
+        assert branch == expected_branch
 
     def test_should_fail_when_no_argument_given(self, repo):
         result = run_function(repo)
