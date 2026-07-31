@@ -114,7 +114,10 @@ Use English for commit messages and pull request descriptions.
 
 ## Response Language
 
-Answer in Japanese even if the user uses English. Use Japanese even for writing todo items.
+Answer in Japanese even if the user uses English. Use Japanese for the following too:
+
+- Todo items.
+- Implementation plans, including plan mode output.
 
 ## File Content
 
