@@ -211,14 +211,14 @@
               ("\C-ce" . 'run-python-and-switch-to-shell)
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'rich-compile-run-menu)
+              ("\C-c\C-r" . 'projectile-run-task)
          :map python-ts-mode-map
               ("\C-x\C-E" . 'python-shell-send-region-or-statement)
               ("\C-cE" . 'run-python-and-switch-to-shell)
               ("\C-ce" . 'run-python-and-switch-to-shell)
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'rich-compile-run-menu)
+              ("\C-c\C-r" . 'projectile-run-task)
               )
   :hook ((python-mode . (lambda () (setq-local comment-inline-offset 2))))
   )
@@ -1687,9 +1687,68 @@ The source buffer is added as gptel context for full file awareness."
   :hook (prog-mode . annotate-mode)
   )
 
-(use-package rich-compile
-  :ensure nil
-  :bind (("C-c C-r" . rich-compile-run-menu))
+;; projectile handles project root detection, project type detection,
+;; per-type compile/test/run commands, and task discovery (npm scripts,
+;; Makefile, justfile, etc.). These used to be reimplemented by hand in
+;; lisp/rich-compile.el; that module is gone now that projectile covers it.
+;;
+;; The prefix is projectile's traditional "C-c p". "C-x p" is left alone -
+;; this config deliberately unbinds project.el's "C-x p" and repurposes it
+;; for other-window backwards (see the `project' block above).
+;; `projectile-keymap-prefix' is read once when `projectile-mode-map' is
+;; built, too early for :custom, so it's bound with :bind-keymap instead.
+(use-package projectile
+  :ensure t
+  :demand t
+  :custom
+  ;; So a build and a test run, or two different projects' builds, don't
+  ;; overwrite each other's *compilation* buffer.
+  (projectile-compilation-buffer-scope t)
+  :bind-keymap ("C-c p" . projectile-command-map)
+  ;; C-c C-r has meant "what can I run here?" since the rich-compile days.
+  ;; `projectile-run-task' is projectile's equivalent, listing npm scripts,
+  ;; Makefile targets, justfile recipes, and the catkin commands registered
+  ;; below.
+  :bind (("C-c C-r" . projectile-run-task))
+  :config
+  (projectile-mode +1)
+
+  ;; A catkin workspace is one git repository holding many ROS packages,
+  ;; and "catkin build --this" means "the package default-directory is
+  ;; in", so the project root has to be the package directory, not the
+  ;; repository. `projectile-root-bottom-up' returns the closest ancestor
+  ;; containing any marker, so adding package.xml makes a ROS package win
+  ;; over the enclosing .git without affecting any other repository.
+  ;; Escape hatch: drop an empty .projectile at the workspace root and
+  ;; `projectile-root-marked', which runs first, treats the whole
+  ;; workspace as one project again.
+  (add-to-list 'projectile-project-root-files-bottom-up "package.xml")
+
+  ;; projectile has no notion of ROS/catkin (no built-in type looks for
+  ;; package.xml). A registered type is consed onto the front of
+  ;; `projectile-project-types' and detection returns the first match, so
+  ;; registering it here makes it win over the built-in CMake type.
+  ;; :run is deliberately left unset - a ROS node is started by name, not
+  ;; by package. :tasks is a projectile 3.1+ keyword, and
+  ;; `projectile-register-project-type' is a cl-defun without
+  ;; &allow-other-keys, so passing it to an older projectile would signal;
+  ;; guard on the variable instead.
+  (apply #'projectile-register-project-type
+         'ros-catkin '("package.xml")
+         (append
+          (list :project-file "package.xml"
+                :compile "catkin build --this"
+                :test "catkin run_tests --this --no-deps"
+                :test-prefix "test_"
+                :src-dir "src/"
+                :test-dir "test/")
+          (when (boundp 'projectile-tasks)
+            ;; The --no-deps build has no lifecycle phase of its own, so
+            ;; list all three as tasks to make them reachable from C-c C-r.
+            (list :tasks
+                  '(("catkin:build"             . "catkin build --this")
+                    ("catkin:build-no-deps"     . "catkin build --this --no-deps")
+                    ("catkin:run-tests-no-deps" . "catkin run_tests --this --no-deps"))))))
   )
 
 (use-package auth-source-1password

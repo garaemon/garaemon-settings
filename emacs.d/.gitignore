@@ -36,6 +36,7 @@ elpy/
 company-statistics-cache.el
 
 projectile-bookmarks.eld
+projectile.cache
 .persistent-scratch
 history
 ellama-sessions/
