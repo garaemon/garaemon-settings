@@ -68,7 +68,7 @@
  '(package-selected-packages
    '(aidermacs all-the-icons anzu auth-source-1password auto-highlight-symbol backup-each-save
                base16-theme blamer bm browse-at-remote buffer-move buttercup calfw cape casual
-               clang-format cmake-mode coffee-mode corfu diff-hl docker dockerfile-mode elpy
+               clang-format cmake-mode coffee-mode corfu cov diff-hl docker dockerfile-mode elpy
                embark-consult euslisp-mode expreg fill-column-indicator flycheck forge gcmh gist
                git-auto-commit-mode go-mode google-c-style google-this gptel graphviz-dot-mode hiwin
                hyde imenus jinja2-mode jinx json-mode lsp-sourcekit lsp-ui lua-mode marginalia
