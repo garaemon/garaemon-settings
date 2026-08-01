@@ -135,6 +135,9 @@
               (when diff-hl-mode
                 (run-with-idle-timer 0.3 nil #'diff-hl-update)))))
 
+(use-package dired-icon :ensure t
+  :hook (dired-mode-hook . dired-icon-mode))
+
 (use-package hl-line
   ;; It is difficult to disable hl-line mode for specific modes if we use (global-hl-line-mode).
   ;; For example, (setq-local global-hl-line-mode nil) does not work for vterm mode if we launch
