@@ -264,6 +264,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
    )
   )
 
+;;; Jump to visible text
+
+(use-package avy
+  :ensure t
+  :bind (("C-c j" . 'avy-goto-char-timer)
+         ("C-c J" . 'avy-goto-line))
+  :custom
+  ;; Shorter than the 0.5s default so candidates appear while still typing.
+  (avy-timeout-seconds 0.3))
+
 ;;; Region expansion
 
 (use-package expreg
