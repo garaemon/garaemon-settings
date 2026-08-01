@@ -211,14 +211,14 @@
               ("\C-ce" . 'run-python-and-switch-to-shell)
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'rich-compile-run-menu)
+              ("\C-c\C-r" . 'projectile-run-task)
          :map python-ts-mode-map
               ("\C-x\C-E" . 'python-shell-send-region-or-statement)
               ("\C-cE" . 'run-python-and-switch-to-shell)
               ("\C-ce" . 'run-python-and-switch-to-shell)
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'rich-compile-run-menu)
+              ("\C-c\C-r" . 'projectile-run-task)
               )
   :hook ((python-mode . (lambda () (setq-local comment-inline-offset 2))))
   )
@@ -1687,9 +1687,65 @@ The source buffer is added as gptel context for full file awareness."
   :hook (prog-mode . annotate-mode)
   )
 
-(use-package rich-compile
-  :ensure nil
-  :bind (("C-c C-r" . rich-compile-run-menu))
+;; projectile: プロジェクトルート、プロジェクト型、型ごとの compile/test/run、
+;; および npm scripts / Makefile / justfile などのタスク検出を担う。これらは
+;; もともと lisp/rich-compile.el が自前で実装していたもので、projectile に
+;; 一本化して削除した。
+;;
+;; prefix は projectile 伝統の "C-c p"。"C-x p" は使わない — この設定は
+;; project.el の "C-x p" を潰して other-window の逆回しに割り当てている
+;; (上の project ブロック参照)。`projectile-keymap-prefix' は
+;; `projectile-mode-map' の構築時に一度だけ読まれ :custom では間に合わない
+;; ので、:bind-keymap で張る。
+(use-package projectile
+  :ensure t
+  :demand t
+  :custom
+  ;; ビルドとテスト、別プロジェクトのビルドが 1 つの *compilation* を
+  ;; 奪い合わないようにする。
+  (projectile-compilation-buffer-scope t)
+  :bind-keymap ("C-c p" . projectile-command-map)
+  ;; rich-compile 時代から C-c C-r は「ここで走らせられるものの一覧」。
+  ;; projectile では `projectile-run-task' がその役割で、npm scripts /
+  ;; Makefile ターゲット / justfile / 下で登録する catkin コマンドが並ぶ。
+  :bind (("C-c C-r" . projectile-run-task))
+  :config
+  (projectile-mode +1)
+
+  ;; catkin ワークスペースは 1 つの git リポジトリに多数の ROS パッケージが
+  ;; 入る形で、"catkin build --this" は「default-directory が属するパッケージ」
+  ;; を意味する。したがってリポジトリではなくパッケージディレクトリがルートで
+  ;; なければならない。`projectile-root-bottom-up' は「マーカーを含む最も近い
+  ;; 祖先」を返すので、package.xml を足すと ROS パッケージが上位の .git に勝ち、
+  ;; 他のリポジトリには影響しない。
+  ;; 逃げ道: ワークスペース直下に空の .projectile を置くと、先に走る
+  ;; `projectile-root-marked' がワークスペース全体を 1 プロジェクトに戻す。
+  (add-to-list 'projectile-project-root-files-bottom-up "package.xml")
+
+  ;; projectile は ROS/catkin を知らない (組み込み型に package.xml は無い)。
+  ;; 登録された型は `projectile-project-types' の先頭に cons され、検出は
+  ;; 最初に一致した型を返すので、ここで登録すれば組み込みの CMake 型より
+  ;; 優先される。
+  ;; :run は意図的に未設定 — ROS ノードはパッケージ単位ではなく名前で起動する。
+  ;; :tasks は projectile 3.1 以降のキーワードで、
+  ;; `projectile-register-project-type' は &allow-other-keys を持たない
+  ;; cl-defun なので、古い projectile に渡すとエラーになる。変数の有無で判定する。
+  (apply #'projectile-register-project-type
+         'ros-catkin '("package.xml")
+         (append
+          (list :project-file "package.xml"
+                :compile "catkin build --this"
+                :test "catkin run_tests --this --no-deps"
+                :test-prefix "test_"
+                :src-dir "src/"
+                :test-dir "test/")
+          (when (boundp 'projectile-tasks)
+            ;; --no-deps ビルドは対応するライフサイクルフェーズを持たないので、
+            ;; 3 つとも task として並べて C-c C-r から届くようにする。
+            (list :tasks
+                  '(("catkin:build"             . "catkin build --this")
+                    ("catkin:build-no-deps"     . "catkin build --this --no-deps")
+                    ("catkin:run-tests-no-deps" . "catkin run_tests --this --no-deps"))))))
   )
 
 (use-package auth-source-1password

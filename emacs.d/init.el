@@ -74,7 +74,8 @@
                hyde imenus jinja2-mode jinx json-mode lsp-sourcekit lsp-ui lua-mode marginalia
                minuet modern-cpp-font-lock multi-vterm multiple-cursors nix-mode nlinum ob-mermaid
                orderless org-ai org-download org-excalidraw org-faces org-modern org-roam outshine
-               persistent-scratch php-mode powerline protobuf-mode puppet-mode py-yapf qml-mode
+               persistent-scratch php-mode powerline projectile protobuf-mode puppet-mode py-yapf
+               qml-mode
                rainbow-delimiters recentf-ext rust-mode slack smart-cursor-color smart-mode-line
                smartrep solarized-theme sqlite3 sr-speedbar string-inflection swift-mode swiper
                switch-buffer-functions switch-window sx systemd terraform-mode thingopt total-lines
