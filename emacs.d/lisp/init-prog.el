@@ -1687,49 +1687,52 @@ The source buffer is added as gptel context for full file awareness."
   :hook (prog-mode . annotate-mode)
   )
 
-;; projectile: プロジェクトルート、プロジェクト型、型ごとの compile/test/run、
-;; および npm scripts / Makefile / justfile などのタスク検出を担う。これらは
-;; もともと lisp/rich-compile.el が自前で実装していたもので、projectile に
-;; 一本化して削除した。
+;; projectile handles project root detection, project type detection,
+;; per-type compile/test/run commands, and task discovery (npm scripts,
+;; Makefile, justfile, etc.). These used to be reimplemented by hand in
+;; lisp/rich-compile.el; that module is gone now that projectile covers it.
 ;;
-;; prefix は projectile 伝統の "C-c p"。"C-x p" は使わない — この設定は
-;; project.el の "C-x p" を潰して other-window の逆回しに割り当てている
-;; (上の project ブロック参照)。`projectile-keymap-prefix' は
-;; `projectile-mode-map' の構築時に一度だけ読まれ :custom では間に合わない
-;; ので、:bind-keymap で張る。
+;; The prefix is projectile's traditional "C-c p". "C-x p" is left alone -
+;; this config deliberately unbinds project.el's "C-x p" and repurposes it
+;; for other-window backwards (see the `project' block above).
+;; `projectile-keymap-prefix' is read once when `projectile-mode-map' is
+;; built, too early for :custom, so it's bound with :bind-keymap instead.
 (use-package projectile
   :ensure t
   :demand t
   :custom
-  ;; ビルドとテスト、別プロジェクトのビルドが 1 つの *compilation* を
-  ;; 奪い合わないようにする。
+  ;; So a build and a test run, or two different projects' builds, don't
+  ;; overwrite each other's *compilation* buffer.
   (projectile-compilation-buffer-scope t)
   :bind-keymap ("C-c p" . projectile-command-map)
-  ;; rich-compile 時代から C-c C-r は「ここで走らせられるものの一覧」。
-  ;; projectile では `projectile-run-task' がその役割で、npm scripts /
-  ;; Makefile ターゲット / justfile / 下で登録する catkin コマンドが並ぶ。
+  ;; C-c C-r has meant "what can I run here?" since the rich-compile days.
+  ;; `projectile-run-task' is projectile's equivalent, listing npm scripts,
+  ;; Makefile targets, justfile recipes, and the catkin commands registered
+  ;; below.
   :bind (("C-c C-r" . projectile-run-task))
   :config
   (projectile-mode +1)
 
-  ;; catkin ワークスペースは 1 つの git リポジトリに多数の ROS パッケージが
-  ;; 入る形で、"catkin build --this" は「default-directory が属するパッケージ」
-  ;; を意味する。したがってリポジトリではなくパッケージディレクトリがルートで
-  ;; なければならない。`projectile-root-bottom-up' は「マーカーを含む最も近い
-  ;; 祖先」を返すので、package.xml を足すと ROS パッケージが上位の .git に勝ち、
-  ;; 他のリポジトリには影響しない。
-  ;; 逃げ道: ワークスペース直下に空の .projectile を置くと、先に走る
-  ;; `projectile-root-marked' がワークスペース全体を 1 プロジェクトに戻す。
+  ;; A catkin workspace is one git repository holding many ROS packages,
+  ;; and "catkin build --this" means "the package default-directory is
+  ;; in", so the project root has to be the package directory, not the
+  ;; repository. `projectile-root-bottom-up' returns the closest ancestor
+  ;; containing any marker, so adding package.xml makes a ROS package win
+  ;; over the enclosing .git without affecting any other repository.
+  ;; Escape hatch: drop an empty .projectile at the workspace root and
+  ;; `projectile-root-marked', which runs first, treats the whole
+  ;; workspace as one project again.
   (add-to-list 'projectile-project-root-files-bottom-up "package.xml")
 
-  ;; projectile は ROS/catkin を知らない (組み込み型に package.xml は無い)。
-  ;; 登録された型は `projectile-project-types' の先頭に cons され、検出は
-  ;; 最初に一致した型を返すので、ここで登録すれば組み込みの CMake 型より
-  ;; 優先される。
-  ;; :run は意図的に未設定 — ROS ノードはパッケージ単位ではなく名前で起動する。
-  ;; :tasks は projectile 3.1 以降のキーワードで、
-  ;; `projectile-register-project-type' は &allow-other-keys を持たない
-  ;; cl-defun なので、古い projectile に渡すとエラーになる。変数の有無で判定する。
+  ;; projectile has no notion of ROS/catkin (no built-in type looks for
+  ;; package.xml). A registered type is consed onto the front of
+  ;; `projectile-project-types' and detection returns the first match, so
+  ;; registering it here makes it win over the built-in CMake type.
+  ;; :run is deliberately left unset - a ROS node is started by name, not
+  ;; by package. :tasks is a projectile 3.1+ keyword, and
+  ;; `projectile-register-project-type' is a cl-defun without
+  ;; &allow-other-keys, so passing it to an older projectile would signal;
+  ;; guard on the variable instead.
   (apply #'projectile-register-project-type
          'ros-catkin '("package.xml")
          (append
@@ -1740,8 +1743,8 @@ The source buffer is added as gptel context for full file awareness."
                 :src-dir "src/"
                 :test-dir "test/")
           (when (boundp 'projectile-tasks)
-            ;; --no-deps ビルドは対応するライフサイクルフェーズを持たないので、
-            ;; 3 つとも task として並べて C-c C-r から届くようにする。
+            ;; The --no-deps build has no lifecycle phase of its own, so
+            ;; list all three as tasks to make them reachable from C-c C-r.
             (list :tasks
                   '(("catkin:build"             . "catkin build --this")
                     ("catkin:build-no-deps"     . "catkin build --this --no-deps")
