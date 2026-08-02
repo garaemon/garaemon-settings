@@ -321,10 +321,14 @@ keep their alignment; turn it on for a buffer that is mostly long prose."
          ("C-c w" . 'my-org-toggle-line-wrap)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
-                       ;; No `visual-line-mode' here: `org-startup-truncated'
-                       ;; already leaves `truncate-lines' on, which is what
-                       ;; keeps wide tables readable.  `C-c w' turns wrapping
-                       ;; on for the odd prose-heavy buffer.
+                       ;; Do not wrap -- folding a wide table row in the
+                       ;; middle destroys its column alignment.  `C-c w'
+                       ;; turns wrapping on for the odd prose-heavy buffer.
+                       ;; `org-startup-truncated' is supposed to cover this,
+                       ;; but it is read in the body of `org-mode' and so
+                       ;; loses to anything that runs later; setting it from
+                       ;; the hook is what actually sticks.
+                       (setq-local truncate-lines t)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
