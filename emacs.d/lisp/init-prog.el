@@ -1183,6 +1183,10 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
   :demand t
   :bind (("C-c f" . 'apheleia-format-buffer))
   :config
+  ;; Format Python with ruff. The apheleia default is black, which is not
+  ;; installed, and a missing formatter makes every save pop up an error buffer.
+  (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
+  (setf (alist-get 'python-ts-mode apheleia-mode-alist) 'ruff)
   (apheleia-global-mode +1)
   )
 
