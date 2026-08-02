@@ -286,6 +286,48 @@ Date format is YYYY-MM-DD.")
     (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
     )
 
+  ;; Line wrapping and tables do not mix: a row wider than the window gets
+  ;; folded in the middle, so the columns are unreadable even once the font
+  ;; gets the full-width/half-width ratio right (see `my-font-candidates' in
+  ;; init-ui.el).  Emacs has no per-line `truncate-lines', so wrapping is
+  ;; switched off for the whole buffer while point sits inside a table and
+  ;; restored on the way out.
+  ;; For tables that are permanently too wide, Org's own column shrinking is
+  ;; the complementary answer and needs no code at all: `C-c TAB'
+  ;; (`org-table-toggle-column-width'), `| <10> | <30> |' width cookies in
+  ;; the first row, or `#+STARTUP: shrink'.
+  (defvar-local my-org-auto-inhibit-table-wrap t
+    "When non-nil, disable line wrapping while point is inside an Org table.
+Set to nil by `my-org-toggle-line-wrap' so a manual choice sticks.")
+
+  (defun my-org-table-inhibit-wrap ()
+    "Turn wrapping off inside Org tables and back on outside them."
+    (when (and my-org-auto-inhibit-table-wrap
+               (derived-mode-p 'org-mode))
+      (let ((in-table (org-at-table-p)))
+        (cond ((and in-table (not truncate-lines))
+               ;; Disable first: `visual-line-mode' restores the saved
+               ;; `truncate-lines' on the way out, which would undo this.
+               (visual-line-mode -1)
+               (setq-local truncate-lines t))
+              ((and (not in-table) truncate-lines)
+               (setq-local truncate-lines nil)
+               (visual-line-mode 1))))))
+
+  (defun my-org-toggle-line-wrap ()
+    "Toggle line wrapping in the current buffer, and stop auto-toggling.
+Without disabling `my-org-auto-inhibit-table-wrap', the in-table switching
+done by `my-org-table-inhibit-wrap' would undo this on the next command."
+    (interactive)
+    (setq-local my-org-auto-inhibit-table-wrap nil)
+    (if visual-line-mode
+        (progn (visual-line-mode -1)
+               (setq-local truncate-lines t))
+      (setq-local truncate-lines nil)
+      (visual-line-mode 1))
+    (message "Line wrapping %s (automatic in-table switching disabled)"
+             (if visual-line-mode "on" "off")))
+
   :bind (("C-c c" . 'org-capture)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
@@ -293,10 +335,15 @@ Date format is YYYY-MM-DD.")
          :map org-mode-map
          ("M-e" . 'my-org-mode-wrap-inline-code)
          ("C-c /" . 'consult-org-agenda)
+         ("C-c w" . 'my-org-toggle-line-wrap)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
                        ;; To wrap texts
                        (visual-line-mode)
+                       ;; ... except inside tables, where wrapping destroys
+                       ;; the column alignment.
+                       (add-hook 'post-command-hook
+                                 #'my-org-table-inhibit-wrap nil t)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory

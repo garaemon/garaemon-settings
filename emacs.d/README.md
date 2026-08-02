@@ -33,6 +33,28 @@ Configuration is split into focused modules in the `lisp/` directory:
 
 Each module is loaded via `(require 'init-*)` in `init.el`.
 
+## Fonts
+
+`init-ui.el` picks the default face from `my-font-candidates`, taking the first
+family that is actually installed. The head of that list is deliberately made up
+of Japanese-capable monospace families whose full-width glyphs are exactly twice
+as wide as the half-width ones. Org needs that 1:2 ratio: `org-table-align` pads
+cells by `string-width`, which counts a full-width character as two columns, so
+any other ratio makes the `|` separators of a table containing Japanese drift
+apart row by row.
+
+Nothing is installed automatically — if none of the preferred families are
+present the configuration falls back to Monaco and tries to repair the ratio via
+`face-font-rescale-alist`, which pixel rounding can only get so close. To get it
+exact, install one of them, e.g. on macOS:
+
+```sh
+brew install --cask font-hackgen-nerd
+```
+
+Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
+full-width/half-width ratio, which should be `2.000`.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.
