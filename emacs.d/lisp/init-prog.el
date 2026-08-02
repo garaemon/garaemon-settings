@@ -501,11 +501,6 @@
   ;; direct-async process.
   (add-to-list 'lsp-disabled-clients 'yamlls-tramp)
   (add-to-list 'lsp-disabled-clients 'sh-tramp)
-  (defun my-lsp-format (s e)
-    (interactive "r")
-    (if (region-active-p)
-        (lsp-format-region s e)
-      (lsp-format-buffer)))
   (if (not (display-graphic-p))
       ;; header-line for LSP mode is hard to see in emacs -nw environment.
       ;; https://emacs.stackexchange.com/questions/77279/how-can-i-find-the-face-of-the-items-in-the-headeline-in-lsp-mode
@@ -541,7 +536,6 @@
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
   :bind (
-         ("C-c f" . 'my-lsp-format)
          ("M-." . 'lsp-find-definition)
          )
   )
@@ -1179,6 +1173,17 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 
   (add-hook 'compilation-filter-hook
             #'endless/colorize-compilation)
+  )
+
+;; apheleia runs an external formatter asynchronously on save. It applies the
+;; result as a diff, so point and window scroll position never jump.
+;; `:demand' is required because `:bind' alone would defer loading until the
+;; first `C-c f', leaving `apheleia-global-mode' off until then.
+(use-package apheleia :ensure t
+  :demand t
+  :bind (("C-c f" . 'apheleia-format-buffer))
+  :config
+  (apheleia-global-mode +1)
   )
 
 (use-package clang-format :ensure t
