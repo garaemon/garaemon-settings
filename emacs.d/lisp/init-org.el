@@ -86,6 +86,23 @@
 
   (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
   (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
+
+  (defun my-org-continue-checkbox-item ()
+    "Continue a checkbox list with a new unchecked checkbox item.
+Intended for `org-metareturn-hook'.  When point is in a list item that
+already has a checkbox, `org-meta-return' (M-RET) otherwise inserts a
+new item without one.  Insert a new item with an empty \"[ ]\" checkbox
+instead and return non-nil so `org-meta-return' stops.  Return nil when
+point is not in a checkbox item, so the normal dispatch proceeds."
+    (let ((item-start (and (not current-prefix-arg) (org-in-item-p))))
+      (when (and item-start
+                 (save-excursion
+                   (goto-char item-start)
+                   (org-at-item-checkbox-p)))
+        (org-insert-item t)
+        t)))
+
+  (add-hook 'org-metareturn-hook #'my-org-continue-checkbox-item)
   ;; org-babel
   (org-babel-do-load-languages 'org-babel-load-languages
                                '((plantuml . t)
