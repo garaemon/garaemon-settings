@@ -88,79 +88,79 @@ BODY can inspect the recorded action symbols in the variable `calls'
 
 (ert-deftest my-vterm-toggle-should-hide-when-focused-on-vterm ()
   (my-vterm-toggle-test--with-stubs
-      (:focused-on-vterm t :current-frame-window stub-window :window-deletable t)
-    (my-vterm-toggle)
-    (should (equal calls '(hide)))))
+   (:focused-on-vterm t :current-frame-window stub-window :window-deletable t)
+   (my-vterm-toggle)
+   (should (equal calls '(hide)))))
 
 (ert-deftest my-vterm-toggle-should-delete-frame-when-vterm-is-sole-window ()
   ;; `window-deletable-p' returns the symbol `frame' for a frame's sole
   ;; window; `vterm-toggle-hide' would signal an error there.
   (my-vterm-toggle-test--with-stubs
-      (:focused-on-vterm t :current-frame-window stub-window :window-deletable frame)
-    (my-vterm-toggle)
-    (should (equal calls '(delete-frame)))))
+   (:focused-on-vterm t :current-frame-window stub-window :window-deletable frame)
+   (my-vterm-toggle)
+   (should (equal calls '(delete-frame)))))
 
 (ert-deftest my-vterm-toggle-should-fall-back-to-hide-on-last-frame ()
   ;; Sole window on the last visible frame: `window-deletable-p' is nil,
   ;; so defer to `vterm-toggle-hide' which buries the buffer.
   (my-vterm-toggle-test--with-stubs
-      (:focused-on-vterm t :current-frame-window stub-window :window-deletable nil)
-    (my-vterm-toggle)
-    (should (equal calls '(hide)))))
+   (:focused-on-vterm t :current-frame-window stub-window :window-deletable nil)
+   (my-vterm-toggle)
+   (should (equal calls '(hide)))))
 
 (ert-deftest my-vterm-toggle-should-spawn-new-vterm-with-prefix-in-vterm ()
   (my-vterm-toggle-test--with-stubs
-      (:focused-on-vterm t :current-frame-window stub-window :window-deletable t)
-    (my-vterm-toggle '(4))
-    (should (equal calls '(new-vterm)))))
+   (:focused-on-vterm t :current-frame-window stub-window :window-deletable t)
+   (my-vterm-toggle '(4))
+   (should (equal calls '(new-vterm)))))
 
 ;;; State 2: vterm visible but focus elsewhere -> focus it.
 
 (ert-deftest my-vterm-toggle-should-focus-vterm-window-on-current-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:current-frame-window stub-window)
-    (my-vterm-toggle)
-    (should (equal calls '((select-window . stub-window))))))
+   (:current-frame-window stub-window)
+   (my-vterm-toggle)
+   (should (equal calls '((select-window . stub-window))))))
 
 (ert-deftest my-vterm-toggle-should-not-hide-unfocused-vterm-on-current-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:current-frame-window stub-window)
-    (my-vterm-toggle)
-    (should-not (memq 'hide calls))))
+   (:current-frame-window stub-window)
+   (my-vterm-toggle)
+   (should-not (memq 'hide calls))))
 
 (ert-deftest my-vterm-toggle-should-focus-frame-showing-vterm-on-other-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:other-frame-window stub-window)
-    (my-vterm-toggle)
-    (should (equal calls
-                   '((select-window . stub-window)
-                     (focus-frame . stub-frame))))))
+   (:other-frame-window stub-window)
+   (my-vterm-toggle)
+   (should (equal calls
+                  '((select-window . stub-window)
+                    (focus-frame . stub-frame))))))
 
 (ert-deftest my-vterm-toggle-should-not-hide-vterm-shown-on-other-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:other-frame-window stub-window)
-    (my-vterm-toggle)
-    (should-not (memq 'hide calls))))
+   (:other-frame-window stub-window)
+   (my-vterm-toggle)
+   (should-not (memq 'hide calls))))
 
 (ert-deftest my-vterm-toggle-should-not-reshow-vterm-shown-on-other-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:other-frame-window stub-window)
-    (my-vterm-toggle)
-    (should-not (memq 'show calls))))
+   (:other-frame-window stub-window)
+   (my-vterm-toggle)
+   (should-not (memq 'show calls))))
 
 (ert-deftest my-vterm-toggle-should-prefer-current-frame-window-over-other-frame ()
   (my-vterm-toggle-test--with-stubs
-      (:current-frame-window stub-window :other-frame-window other-window)
-    (my-vterm-toggle)
-    (should (equal calls '((select-window . stub-window))))))
+   (:current-frame-window stub-window :other-frame-window other-window)
+   (my-vterm-toggle)
+   (should (equal calls '((select-window . stub-window))))))
 
 ;;; State 3: vterm not visible anywhere -> show.
 
 (ert-deftest my-vterm-toggle-should-show-when-vterm-not-visible-anywhere ()
   (my-vterm-toggle-test--with-stubs
-      ()
-    (my-vterm-toggle)
-    (should (equal calls '(show)))))
+   ()
+   (my-vterm-toggle)
+   (should (equal calls '(show)))))
 
 ;;; Helper: other-frame window lookup.
 

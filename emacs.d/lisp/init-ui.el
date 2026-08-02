@@ -218,19 +218,19 @@ it from being deleted by `delete-other-windows` (C-x 1)."
   :custom
   ;; Highlight edited regions when emacs modifies buffers by regions
   (pulsar-pulse-region-functions
-    '(yank
-      yank-pop
-      append-next-kill
-      undo
-      undo-redo
-      backward-kill-word
-      kill-word
-      ;; vundo
-      vundo-backward
-      vundo-forward
-      vundo-step-back
-      vundo-step-forward
-      ))
+   '(yank
+     yank-pop
+     append-next-kill
+     undo
+     undo-redo
+     backward-kill-word
+     kill-word
+     ;; vundo
+     vundo-backward
+     vundo-forward
+     vundo-step-back
+     vundo-step-forward
+     ))
   :config
   ;; Pulsar runs `pulsar-resolve-function-aliases' every time
   ;; `pulsar-mode' is enabled in a new buffer, and each invocation walks

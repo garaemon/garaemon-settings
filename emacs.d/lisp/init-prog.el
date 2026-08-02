@@ -168,8 +168,8 @@
   ;; C-x p to switch buffer with inverse manner.
   ;; I have to define the keybind after removing the keybind of "C-x p" of project mode.
   (global-set-key "\C-xp" (lambda ()
-                          (interactive)
-                          (other-window -1)))
+                            (interactive)
+                            (other-window -1)))
 
   )
 
@@ -212,7 +212,7 @@
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
               ("\C-c\C-r" . 'projectile-run-task)
-         :map python-ts-mode-map
+              :map python-ts-mode-map
               ("\C-x\C-E" . 'python-shell-send-region-or-statement)
               ("\C-cE" . 'run-python-and-switch-to-shell)
               ("\C-ce" . 'run-python-and-switch-to-shell)
@@ -567,13 +567,13 @@
   :ensure t
   :bind
   (:map minuet-active-mode-map
-   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
-   ("<M-return>" . #'minuet-accept-suggestion) ;; accept whole completion
-   ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
-   ;; Accept the first line of completion, or N lines with a numeric-prefix:
-   ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
-   ("M-a" . #'minuet-accept-suggestion-line)
-   ("M-e" . #'minuet-dismiss-suggestion))
+        ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
+        ("<M-return>" . #'minuet-accept-suggestion) ;; accept whole completion
+        ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
+        ;; Accept the first line of completion, or N lines with a numeric-prefix:
+        ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+        ("M-a" . #'minuet-accept-suggestion-line)
+        ("M-e" . #'minuet-dismiss-suggestion))
   :hook (prog-mode . minuet-auto-suggestion-mode)
   :custom
   (minuet-provider 'openai-fim-compatible)
@@ -771,9 +771,9 @@ commit buffer being set up."
   :custom
   (gptel-magit-model 'gemma3:4b)
   (gptel-magit-backend (gptel-make-ollama "Ollama (gemmma3:4b)"
-    :host "localhost:11434"
-    :stream t
-    :models '(gemma3:4b)))
+                         :host "localhost:11434"
+                         :stream t
+                         :models '(gemma3:4b)))
   (gptel-magit-commit-prompt
    "You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
 You reply the commit message only.
@@ -836,15 +836,15 @@ Only truncate the title line to `git-commit-summary-max-length'."
 Invokes CALLBACK with the generated message when done."
     (let ((diff (magit-git-output "diff" "--cached")))
       (gptel-magit--request diff
-        :system gptel-magit-commit-prompt
-        :context nil
-        :callback (lambda (response info)
-                    (if (not (stringp response))
-                        (let ((status (plist-get info :status)))
-                          (message "gptel-magit: Failed to generate commit message. \
+                            :system gptel-magit-commit-prompt
+                            :context nil
+                            :callback (lambda (response info)
+                                        (if (not (stringp response))
+                                            (let ((status (plist-get info :status)))
+                                              (message "gptel-magit: Failed to generate commit message. \
 Is Ollama running? (ollama serve) Status: %s" status))
-                      (let ((msg (gptel-magit--format-commit-message response)))
-                        (funcall callback msg)))))))
+                                          (let ((msg (gptel-magit--format-commit-message response)))
+                                            (funcall callback msg)))))))
   :hook (magit-mode . gptel-magit-install))
 
 (use-package forge
@@ -984,9 +984,9 @@ collect inline comments via `my-forge-ediff-review-add-comment'."
            (pullreq (or (forge-get-pullreq :branch branch)
                         (let* ((repo (forge-get-repository :tracked))
                                (rows (forge-sql [:select [number]
-                                                 :from pullreq
-                                                 :where (and (= repository $s1)
-                                                             (= head-ref $s2))]
+                                                         :from pullreq
+                                                         :where (and (= repository $s1)
+                                                                     (= head-ref $s2))]
                                                 (oref repo id)
                                                 branch)))
                           (when rows
@@ -1235,7 +1235,7 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
   (vterm-buffer-name-string  "*vterm: %s*")
   ;; Remove C-h from the original vterm-keymap-exceptions
   (vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
-                                  "C-k"))
+                             "C-k"))
   (vterm-always-compile-module t)
   :config
 
@@ -1335,7 +1335,7 @@ You have to follow the following orders:
       (if gptel-buffer
           (switch-to-buffer gptel-buffer)
         (call-interactively 'gptel)
-      )))
+        )))
 
   (defun my-gptel-archive-and-reset ()
     "Archives the current gptel buffer to ~/.gptel/sessions/ and clears/resets its content."

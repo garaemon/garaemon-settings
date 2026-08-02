@@ -48,8 +48,8 @@
                         (review-model-test--entry "a.el" 11 "RIGHT" "no")
                         (review-model-test--entry "a.el" 10 "LEFT" "no"))))
     (should (eq target
-               (my-forge-ediff-review-model-find-entry
-                entries "a.el" 10 "RIGHT")))))
+                (my-forge-ediff-review-model-find-entry
+                 entries "a.el" 10 "RIGHT")))))
 
 (ert-deftest review-model-find-entry-should-return-nil-when-absent ()
   (should-not (my-forge-ediff-review-model-find-entry
