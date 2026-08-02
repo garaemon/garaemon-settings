@@ -54,7 +54,7 @@
               (define-key objc-mode-map "\C-cc"    'uncomment-region)
               (setq compile-command
                     "xcodebuild -project ../*.xcodeproj -configuration Debug -sdk iphonesimulator5.0 ")
-                    ;;"xcodebuild -project ../*.xcodeproj -configuration Debug -sdk iphonesimulator4.3 ")
+              ;;"xcodebuild -project ../*.xcodeproj -configuration Debug -sdk iphonesimulator4.3 ")
               (setq compilation-scroll-output t)))
 
 (defun doc ()

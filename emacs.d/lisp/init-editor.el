@@ -235,8 +235,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (embark-prompter #'embark-completing-read-prompter)
   ;; Do not show *Embark Actions*
   (embark-indicators '(embark-minimal-indicator
-                            embark-highlight-indicator
-                            embark-isearch-highlight-indicator))
+                       embark-highlight-indicator
+                       embark-isearch-highlight-indicator))
   :bind (("C-." . embark-act)
          :map minibuffer-local-map
          ("C-c C-c" . embark-collect)

@@ -240,16 +240,16 @@ Runs asynchronously; failures are reported but never abort the review."
   (let ((s my-forge-ediff-review--session))
     (when (fboundp 'ghub-query)
       (ghub-query
-       my-forge-ediff-review--threads-query
-       `((owner . ,(plist-get s :owner))
-         (repo . ,(plist-get s :repo))
-         (number . ,(plist-get s :num)))
-       :auth 'forge
-       :host (plist-get s :host)
-       :callback #'my-forge-ediff-review--on-threads-fetched
-       :errorback (lambda (err &rest _)
-                    (message "Could not fetch existing review comments: %S"
-                             err))))))
+        my-forge-ediff-review--threads-query
+        `((owner . ,(plist-get s :owner))
+          (repo . ,(plist-get s :repo))
+          (number . ,(plist-get s :num)))
+        :auth 'forge
+        :host (plist-get s :host)
+        :callback #'my-forge-ediff-review--on-threads-fetched
+        :errorback (lambda (err &rest _)
+                     (message "Could not fetch existing review comments: %S"
+                              err))))))
 
 (defun my-forge-ediff-review--on-threads-fetched (response &rest _)
   "Store parsed RESPONSE into the session and refresh overlays."
@@ -602,7 +602,7 @@ HTML comments are stripped. -->\n\n"
     (message "%s saved (%d pending)."
              (my-forge-ediff-review--kind-label kind)
              (length (plist-get my-forge-ediff-review--session
-                                 (my-forge-ediff-review--kind-key kind))))))
+                                (my-forge-ediff-review--kind-key kind))))))
 
 (defun my-forge-ediff-review--store-entry (ctx kind body)
   "Store an entry of KIND with BODY at CTX into the session.
@@ -736,17 +736,17 @@ C-c C-k to cancel.  HTML comments are stripped. -->\n\n"
 Refreshes the inline overlays once GitHub confirms the change."
   (let ((s my-forge-ediff-review--session))
     (ghub-query
-     (if resolve
-         my-forge-ediff-review--resolve-mutation
-       my-forge-ediff-review--unresolve-mutation)
-     `((threadId . ,thread-id))
-     :auth 'forge
-     :host (plist-get s :host)
-     :callback (lambda (_value &rest _)
-                 (message "Thread %s." (if resolve "resolved" "unresolved"))
-                 (my-forge-ediff-review--fetch-existing-threads))
-     :errorback (lambda (err &rest _)
-                  (message "Could not update thread: %S" err)))))
+      (if resolve
+          my-forge-ediff-review--resolve-mutation
+        my-forge-ediff-review--unresolve-mutation)
+      `((threadId . ,thread-id))
+      :auth 'forge
+      :host (plist-get s :host)
+      :callback (lambda (_value &rest _)
+                  (message "Thread %s." (if resolve "resolved" "unresolved"))
+                  (my-forge-ediff-review--fetch-existing-threads))
+      :errorback (lambda (err &rest _)
+                   (message "Could not update thread: %S" err)))))
 
 ;;;; Listing / discarding
 

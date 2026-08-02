@@ -168,8 +168,8 @@
   ;; C-x p to switch buffer with inverse manner.
   ;; I have to define the keybind after removing the keybind of "C-x p" of project mode.
   (global-set-key "\C-xp" (lambda ()
-                          (interactive)
-                          (other-window -1)))
+                            (interactive)
+                            (other-window -1)))
 
   )
 
@@ -212,7 +212,7 @@
               ("\C-c <right>" . 'python-indent-shift-right)
               ("\C-c <left>" . 'python-indent-shift-left)
               ("\C-c\C-r" . 'projectile-run-task)
-         :map python-ts-mode-map
+              :map python-ts-mode-map
               ("\C-x\C-E" . 'python-shell-send-region-or-statement)
               ("\C-cE" . 'run-python-and-switch-to-shell)
               ("\C-ce" . 'run-python-and-switch-to-shell)
@@ -501,11 +501,6 @@
   ;; direct-async process.
   (add-to-list 'lsp-disabled-clients 'yamlls-tramp)
   (add-to-list 'lsp-disabled-clients 'sh-tramp)
-  (defun my-lsp-format (s e)
-    (interactive "r")
-    (if (region-active-p)
-        (lsp-format-region s e)
-      (lsp-format-buffer)))
   (if (not (display-graphic-p))
       ;; header-line for LSP mode is hard to see in emacs -nw environment.
       ;; https://emacs.stackexchange.com/questions/77279/how-can-i-find-the-face-of-the-items-in-the-headeline-in-lsp-mode
@@ -541,7 +536,6 @@
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
   :bind (
-         ("C-c f" . 'my-lsp-format)
          ("M-." . 'lsp-find-definition)
          )
   )
@@ -573,13 +567,13 @@
   :ensure t
   :bind
   (:map minuet-active-mode-map
-   ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
-   ("<M-return>" . #'minuet-accept-suggestion) ;; accept whole completion
-   ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
-   ;; Accept the first line of completion, or N lines with a numeric-prefix:
-   ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
-   ("M-a" . #'minuet-accept-suggestion-line)
-   ("M-e" . #'minuet-dismiss-suggestion))
+        ("TAB" . #'minuet-accept-suggestion) ;; accept whole completion
+        ("<M-return>" . #'minuet-accept-suggestion) ;; accept whole completion
+        ("M-A" . #'minuet-accept-suggestion) ;; accept whole completion
+        ;; Accept the first line of completion, or N lines with a numeric-prefix:
+        ;; e.g. C-u 2 M-a will accepts 2 lines of completion.
+        ("M-a" . #'minuet-accept-suggestion-line)
+        ("M-e" . #'minuet-dismiss-suggestion))
   :hook (prog-mode . minuet-auto-suggestion-mode)
   :custom
   (minuet-provider 'openai-fim-compatible)
@@ -777,9 +771,9 @@ commit buffer being set up."
   :custom
   (gptel-magit-model 'gemma3:4b)
   (gptel-magit-backend (gptel-make-ollama "Ollama (gemmma3:4b)"
-    :host "localhost:11434"
-    :stream t
-    :models '(gemma3:4b)))
+                         :host "localhost:11434"
+                         :stream t
+                         :models '(gemma3:4b)))
   (gptel-magit-commit-prompt
    "You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
 You reply the commit message only.
@@ -842,15 +836,15 @@ Only truncate the title line to `git-commit-summary-max-length'."
 Invokes CALLBACK with the generated message when done."
     (let ((diff (magit-git-output "diff" "--cached")))
       (gptel-magit--request diff
-        :system gptel-magit-commit-prompt
-        :context nil
-        :callback (lambda (response info)
-                    (if (not (stringp response))
-                        (let ((status (plist-get info :status)))
-                          (message "gptel-magit: Failed to generate commit message. \
+                            :system gptel-magit-commit-prompt
+                            :context nil
+                            :callback (lambda (response info)
+                                        (if (not (stringp response))
+                                            (let ((status (plist-get info :status)))
+                                              (message "gptel-magit: Failed to generate commit message. \
 Is Ollama running? (ollama serve) Status: %s" status))
-                      (let ((msg (gptel-magit--format-commit-message response)))
-                        (funcall callback msg)))))))
+                                          (let ((msg (gptel-magit--format-commit-message response)))
+                                            (funcall callback msg)))))))
   :hook (magit-mode . gptel-magit-install))
 
 (use-package forge
@@ -990,9 +984,9 @@ collect inline comments via `my-forge-ediff-review-add-comment'."
            (pullreq (or (forge-get-pullreq :branch branch)
                         (let* ((repo (forge-get-repository :tracked))
                                (rows (forge-sql [:select [number]
-                                                 :from pullreq
-                                                 :where (and (= repository $s1)
-                                                             (= head-ref $s2))]
+                                                         :from pullreq
+                                                         :where (and (= repository $s1)
+                                                                     (= head-ref $s2))]
                                                 (oref repo id)
                                                 branch)))
                           (when rows
@@ -1181,6 +1175,52 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
             #'endless/colorize-compilation)
   )
 
+;; apheleia runs an external formatter asynchronously on save. It applies the
+;; result as a diff, so point and window scroll position never jump.
+;; `:demand' is required because `:bind' alone would defer loading until the
+;; first `C-c f', leaving `apheleia-global-mode' off until then.
+;;
+;; `apheleia-mode-alist' maps about 100 major modes to a formatter out of the
+;; box. The entries this configuration is likely to hit, `-ts-mode' variants
+;; included:
+;;
+;;   emacs-lisp, lisp                     lisp-indent (indent-region, built-in)
+;;   c, c++, objc                         clang-format
+;;   python                               ruff (set below; the default is black)
+;;   go                                   gofmt
+;;   rust                                 rustfmt
+;;   bash                                 shfmt
+;;   js, ts, tsx, json, yaml, css, html   prettier
+;;   ruby                                 prettier
+;;   lua                                  stylua
+;;   cmake                                cmake-format
+;;   terraform                            tofu fmt
+;;   toml                                 taplo
+;;   dockerfile                           dprint
+;;   nix                                  nixfmt
+;;   java                                 google-java-format
+;;   php                                  phpcs
+;;   latex                                latexindent
+;;   sql                                  pg_format
+;;
+;; Only lisp-indent runs in-process. Every other entry shells out, and apheleia
+;; skips the buffer silently when `executable-find' cannot locate the command.
+;; An uninstalled formatter therefore costs nothing beyond leaving the buffer
+;; unformatted. prettier is looked up in the project's node_modules before PATH,
+;; so TypeScript and the other prettier-backed modes only get formatted inside a
+;; project that carries prettier itself. Run `M-x describe-variable RET
+;; apheleia-mode-alist' for the full table.
+(use-package apheleia :ensure t
+  :demand t
+  :bind (("C-c f" . 'apheleia-format-buffer))
+  :config
+  ;; Format Python with ruff. The apheleia default is black, which is not
+  ;; installed here, so Python buffers would otherwise stay unformatted.
+  (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
+  (setf (alist-get 'python-ts-mode apheleia-mode-alist) 'ruff)
+  (apheleia-global-mode +1)
+  )
+
 (use-package clang-format :ensure t
   ;; :bind (:map c-mode-base-map
   ;;             ("C-c f" . 'clang-format-buffer))
@@ -1230,7 +1270,7 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
   (vterm-buffer-name-string  "*vterm: %s*")
   ;; Remove C-h from the original vterm-keymap-exceptions
   (vterm-keymap-exceptions '("C-c" "C-x" "C-u" "C-g" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"
-                                  "C-k"))
+                             "C-k"))
   (vterm-always-compile-module t)
   :config
 
@@ -1330,7 +1370,7 @@ You have to follow the following orders:
       (if gptel-buffer
           (switch-to-buffer gptel-buffer)
         (call-interactively 'gptel)
-      )))
+        )))
 
   (defun my-gptel-archive-and-reset ()
     "Archives the current gptel buffer to ~/.gptel/sessions/ and clears/resets its content."

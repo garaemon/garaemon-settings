@@ -43,90 +43,90 @@
   "Re-saving a comment on the same line replaces it instead of appending."
   (skip-unless my-forge-ediff-review-test--available)
   (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
-    (my-forge-ediff-review--store-entry
-     my-forge-ediff-review-test--ctx 'comment "first")
-    (my-forge-ediff-review--store-entry
-     my-forge-ediff-review-test--ctx 'comment "second")
-    (let ((comments (plist-get my-forge-ediff-review--session :comments)))
-      (should (= 1 (length comments)))
-      (should (equal "second" (plist-get (car comments) :body))))))
+                                            (my-forge-ediff-review--store-entry
+                                             my-forge-ediff-review-test--ctx 'comment "first")
+                                            (my-forge-ediff-review--store-entry
+                                             my-forge-ediff-review-test--ctx 'comment "second")
+                                            (let ((comments (plist-get my-forge-ediff-review--session :comments)))
+                                              (should (= 1 (length comments)))
+                                              (should (equal "second" (plist-get (car comments) :body))))))
 
 (ert-deftest my-forge-ediff-review-keeps-comments-on-different-lines ()
   "Comments on distinct lines coexist."
   (skip-unless my-forge-ediff-review-test--available)
   (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
-    (my-forge-ediff-review--store-entry
-     '(:path "a.el" :line 10 :side "RIGHT") 'comment "ten")
-    (my-forge-ediff-review--store-entry
-     '(:path "a.el" :line 20 :side "RIGHT") 'comment "twenty")
-    (should (= 2 (length (plist-get my-forge-ediff-review--session :comments))))))
+                                            (my-forge-ediff-review--store-entry
+                                             '(:path "a.el" :line 10 :side "RIGHT") 'comment "ten")
+                                            (my-forge-ediff-review--store-entry
+                                             '(:path "a.el" :line 20 :side "RIGHT") 'comment "twenty")
+                                            (should (= 2 (length (plist-get my-forge-ediff-review--session :comments))))))
 
 (ert-deftest my-forge-ediff-review-removes-comment-saved-empty ()
   "Saving an empty body removes the existing comment on that line."
   (skip-unless my-forge-ediff-review-test--available)
   (my-forge-ediff-review-test--with-session
-      (list :comments (list (append my-forge-ediff-review-test--ctx
-                                    (list :body "old")))
-            :memos nil)
-    (my-forge-ediff-review--store-entry
-     my-forge-ediff-review-test--ctx 'comment "")
-    (should (null (plist-get my-forge-ediff-review--session :comments)))))
+   (list :comments (list (append my-forge-ediff-review-test--ctx
+                                 (list :body "old")))
+         :memos nil)
+   (my-forge-ediff-review--store-entry
+    my-forge-ediff-review-test--ctx 'comment "")
+   (should (null (plist-get my-forge-ediff-review--session :comments)))))
 
 (ert-deftest my-forge-ediff-review-prefills-existing-comment-body ()
   "Reopening the editor on a commented line returns its body for prefill."
   (skip-unless my-forge-ediff-review-test--available)
   (my-forge-ediff-review-test--with-session
-      (list :comments (list (append my-forge-ediff-review-test--ctx
-                                    (list :body "draft")))
-            :memos nil)
-    (should (equal "draft"
-                   (my-forge-ediff-review--existing-entry-body
-                    my-forge-ediff-review-test--ctx 'comment)))))
+   (list :comments (list (append my-forge-ediff-review-test--ctx
+                                 (list :body "draft")))
+         :memos nil)
+   (should (equal "draft"
+                  (my-forge-ediff-review--existing-entry-body
+                   my-forge-ediff-review-test--ctx 'comment)))))
 
 (ert-deftest my-forge-ediff-review-still-replaces-existing-memo ()
   "Memo behaviour is unchanged: one editable memo per line."
   (skip-unless my-forge-ediff-review-test--available)
   (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
-    (my-forge-ediff-review--store-entry
-     my-forge-ediff-review-test--ctx 'memo "m1")
-    (my-forge-ediff-review--store-entry
-     my-forge-ediff-review-test--ctx 'memo "m2")
-    (let ((memos (plist-get my-forge-ediff-review--session :memos)))
-      (should (= 1 (length memos)))
-      (should (equal "m2" (plist-get (car memos) :body))))))
+                                            (my-forge-ediff-review--store-entry
+                                             my-forge-ediff-review-test--ctx 'memo "m1")
+                                            (my-forge-ediff-review--store-entry
+                                             my-forge-ediff-review-test--ctx 'memo "m2")
+                                            (let ((memos (plist-get my-forge-ediff-review--session :memos)))
+                                              (should (= 1 (length memos)))
+                                              (should (equal "m2" (plist-get (car memos) :body))))))
 
 (ert-deftest my-forge-ediff-review-dims-diff-faces-when-session-active ()
   "Softening remaps every diff face to a background-only spec locally."
   (skip-unless my-forge-ediff-review-test--available)
   (with-temp-buffer
     (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
-      (let ((my-forge-ediff-review-dim-diff-faces t))
-        (my-forge-ediff-review--dim-diff-faces)
-        (should (local-variable-p 'face-remapping-alist))
-        (dolist (pair my-forge-ediff-review--dim-diff-faces)
-          ;; The face is remapped and the remap only touches the
-          ;; background, leaving the font-lock foreground intact.
-          (should (assq (car pair) face-remapping-alist))
-          (should (plist-get (cdr pair) :background))
-          (should-not (plist-get (cdr pair) :foreground)))))))
+                                              (let ((my-forge-ediff-review-dim-diff-faces t))
+                                                (my-forge-ediff-review--dim-diff-faces)
+                                                (should (local-variable-p 'face-remapping-alist))
+                                                (dolist (pair my-forge-ediff-review--dim-diff-faces)
+                                                  ;; The face is remapped and the remap only touches the
+                                                  ;; background, leaving the font-lock foreground intact.
+                                                  (should (assq (car pair) face-remapping-alist))
+                                                  (should (plist-get (cdr pair) :background))
+                                                  (should-not (plist-get (cdr pair) :foreground)))))))
 
 (ert-deftest my-forge-ediff-review-does-not-dim-when-disabled ()
   "No remap happens when softening is turned off."
   (skip-unless my-forge-ediff-review-test--available)
   (with-temp-buffer
     (my-forge-ediff-review-test--with-session (list :comments nil :memos nil)
-      (let ((my-forge-ediff-review-dim-diff-faces nil))
-        (my-forge-ediff-review--dim-diff-faces)
-        (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
+                                              (let ((my-forge-ediff-review-dim-diff-faces nil))
+                                                (my-forge-ediff-review--dim-diff-faces)
+                                                (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
 
 (ert-deftest my-forge-ediff-review-does-not-dim-without-session ()
   "No remap happens outside an active review session."
   (skip-unless my-forge-ediff-review-test--available)
   (with-temp-buffer
     (my-forge-ediff-review-test--with-session nil
-      (let ((my-forge-ediff-review-dim-diff-faces t))
-        (my-forge-ediff-review--dim-diff-faces)
-        (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
+                                              (let ((my-forge-ediff-review-dim-diff-faces t))
+                                                (my-forge-ediff-review--dim-diff-faces)
+                                                (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
 
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here
