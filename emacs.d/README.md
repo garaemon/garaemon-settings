@@ -36,21 +36,28 @@ Each module is loaded via `(require 'init-*)` in `init.el`.
 ## Fonts
 
 `init-ui.el` picks the default face from `my-font-candidates`, taking the first
-family that is actually installed. The head of that list is deliberately made up
-of Japanese-capable monospace families whose full-width glyphs are exactly twice
-as wide as the half-width ones. Org needs that 1:2 ratio: `org-table-align` pads
-cells by `string-width`, which counts a full-width character as two columns, so
-any other ratio makes the `|` separators of a table containing Japanese drift
-apart row by row.
+family that is actually installed. Monaco heads the list.
 
-Nothing is installed automatically — if none of the preferred families are
-present the configuration falls back to Monaco and tries to repair the ratio via
-`face-font-rescale-alist`, which pixel rounding can only get so close. To get it
-exact, install one of them, e.g. on macOS:
+Monaco carries no Japanese glyphs, so Japanese falls back to another family
+whose advance width has nothing to do with Monaco's. That breaks Org tables:
+`org-table-align` pads cells by `string-width`, which counts a full-width
+character as two columns, so at any ratio other than 1:2 the `|` separators of a
+table containing Japanese drift apart row by row.
 
-```sh
-brew install --cask font-hackgen-nerd
-```
+`my-tune-cjk-font` fixes this by pinning the Japanese family (Hiragino Sans and
+friends, see `my-cjk-fallback-font-candidates`) to an explicit pixel size of
+twice `frame-char-width` — a full-width glyph advances by its em box, so that
+size makes it occupy exactly two columns. It runs at startup and again after
+every `text-scale+` / `text-scale-` / `text-scale0`, since the pinned size is
+absolute and cannot follow the ASCII font by itself.
+
+The trade-off of keeping Monaco: Monaco advances only about 0.6 em, so twice
+that is ~1.2 em and the Japanese font ends up visibly larger than the ASCII one.
+Lines containing Japanese are therefore taller than pure-ASCII lines. Families
+further down `my-font-candidates` (HackGen, UDEV Gothic, PlemolJP, Cica, …) ship
+Japanese glyphs at exactly twice the half-width advance and need no tuning at
+all, at the cost of not being Monaco; installing one and moving it to the front
+of the list is all it takes to switch.
 
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.

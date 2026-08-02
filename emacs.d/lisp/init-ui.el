@@ -12,12 +12,17 @@
   "Default face height in 1/10 pt.  Set per-display in the platform blocks.")
 
 (defvar my-font-candidates
-  '(;; Japanese-capable monospace families whose full-width glyphs are
-    ;; exactly twice as wide as the half-width ones.  This ratio is what
-    ;; makes Org tables containing Japanese line up: `org-table-align' pads
+  '(;; Monaco first -- it is simply the most readable of the lot.  It has no
+    ;; Japanese glyphs, so Japanese falls back to another family whose
+    ;; advance width has nothing to do with Monaco's; `my-tune-cjk-font'
+    ;; below fixes that up.  Org needs the fix because `org-table-align' pads
     ;; cells by `string-width', which counts a full-width character as two
-    ;; columns.  If the rendered ratio is anything other than 1:2, the `|'
-    ;; separators drift further apart on every row.
+    ;; columns: at any ratio other than 1:2 the `|' separators of a table
+    ;; containing Japanese drift further apart on every row.
+    "Monaco"
+    "Monaco Nerd Font Mono"
+    ;; Fallbacks for machines without Monaco.  These ship Japanese glyphs at
+    ;; exactly twice the half-width advance already, so they need no tuning.
     "HackGen Console NF"
     "HackGen35 Console NF"
     "HackGen"
@@ -26,20 +31,15 @@
     "PlemolJP Console NF"
     "PlemolJP"
     "Cica"
-    "Ricty Diminished"
-    ;; Fallbacks.  These are ASCII-only, so Japanese falls back to whatever
-    ;; the system picks (Hiragino on macOS) at an unrelated advance width;
-    ;; `my-tune-cjk-font' repairs the ratio as best it can in that case.
-    "Monaco Nerd Font Mono"
-    "Monaco")
+    "Ricty Diminished")
   "Font families for the default face, most preferred first.
 The first family that is actually installed wins, so an entry that is not
 present on this machine simply falls through to the next one.")
 
 (defvar my-cjk-fallback-font-candidates
-  '("HackGen" "UDEV Gothic" "PlemolJP" "Cica" "Ricty Diminished"
-    "Hiragino Sans" "Hiragino Kaku Gothic ProN"
-    "Noto Sans Mono CJK JP" "Noto Sans CJK JP" "IPAGothic")
+  '("Hiragino Sans" "Hiragino Kaku Gothic ProN"
+    "Noto Sans Mono CJK JP" "Noto Sans CJK JP" "IPAGothic"
+    "HackGen" "UDEV Gothic" "PlemolJP" "Cica" "Ricty Diminished")
   "Japanese families to pin when the default face font has no CJK glyphs.")
 
 (defun my-first-available-font (candidates)
@@ -69,50 +69,57 @@ Use this to verify the font setup instead of eyeballing a table."
       (message "Full/half width ratio is %.3f -- Org tables with Japanese line up."
                ratio))
      (t
-      (message "Full/half width ratio is %.3f (want 2.000) -- Org tables with Japanese will drift. Install e.g. %s"
-               ratio (car my-font-candidates))))))
+      (message "Full/half width ratio is %.3f (want 2.000) -- Org tables with Japanese will drift. Try M-x my-tune-cjk-font"
+               ratio)))))
 
-(defun my--set-font-rescale (family factor)
-  "Rescale FAMILY by FACTOR via `face-font-rescale-alist'.
-The alist is keyed by a regexp matched against the full font name, so the
-quoted family name is used as a substring pattern."
-  (let ((key (regexp-quote family)))
-    (setq face-font-rescale-alist
-          (cons (cons key factor)
-                (assoc-delete-all key face-font-rescale-alist)))))
+(defun my--set-cjk-font (family size)
+  "Render the CJK charsets with FAMILY at SIZE pixels."
+  (dolist (charset '(japanese-jisx0208 japanese-jisx0212
+                     katakana-jisx0201 kana han cjk-misc))
+    ;; ADD nil replaces the charset's entry outright, so re-running this
+    ;; (after `text-scale+', say) does not pile up stale sizes behind it.
+    (set-fontset-font t charset (font-spec :family family :size size)))
+  (clear-face-cache))
 
 (defun my-tune-cjk-font ()
-  "Correct the CJK/ASCII width ratio to 1:2 when the current font misses it.
-No-op when the ratio is already right, which is the case for every family
-at the head of `my-font-candidates'.  Otherwise the default family has no
-Japanese glyphs, Emacs is falling back to some other family whose advance
-width has no relation to the ASCII one, and this pins that fallback and
-scales it until a full-width character occupies two columns.  The scaling
-is only as exact as integer pixel rounding allows; installing a 1:2 family
-is the real fix."
+  "Make full-width characters render exactly twice as wide as half-width ones.
+A no-op for the 1:2 families listed in `my-font-candidates'.  It is Monaco
+-- the preferred family -- that needs this: Monaco carries no Japanese
+glyphs, so Japanese falls back to a family whose advance width has nothing
+to do with Monaco's, and Org tables containing Japanese drift apart.
+
+A full-width glyph advances by its em box, so pinning the fallback family
+to twice `frame-char-width' pixels makes it occupy exactly two columns.
+Rounding inside the font can miss by a pixel, hence the small search around
+that nominal size.
+
+Note the cost of keeping Monaco: Monaco advances only ~0.6 em, so twice
+that is ~1.2 em and the Japanese font ends up visibly larger than the ASCII
+one -- lines containing Japanese are taller than pure-ASCII lines.
+
+The pinned size is absolute, so this has to run again whenever the default
+face height changes; `text-scale+' and friends below do that."
   (interactive)
   (let ((ratio (my-cjk-font-width-ratio)))
-    (when (and ratio (> (abs (- ratio 2.0)) 0.02))
-      (let ((family (my-first-available-font my-cjk-fallback-font-candidates)))
+    (when (and ratio (> (abs (- ratio 2.0)) 0.001))
+      (let* ((family (my-first-available-font my-cjk-fallback-font-candidates))
+             (nominal (* 2 (frame-char-width))))
         (when family
-          (dolist (charset '(japanese-jisx0208 japanese-jisx0212
-                             katakana-jisx0201 kana han cjk-misc))
-            (set-fontset-font t charset (font-spec :family family) nil 'prepend))
-          ;; Measure with a neutral scale first, then apply the correction
-          ;; the measurement asks for.
-          (my--set-font-rescale family 1.0)
-          (clear-face-cache)
-          (let ((measured (my-cjk-font-width-ratio)))
-            (when (and measured (> measured 0))
-              (my--set-font-rescale family (/ 2.0 measured))
-              (clear-face-cache)))
-          ;; Pixel rounding can leave a residual error that no rescaling
-          ;; factor removes.  Say so once rather than letting the tables
-          ;; silently stay crooked.
-          (let ((final (my-cjk-font-width-ratio)))
-            (when (and final (> (abs (- final 2.0)) 0.02))
-              (message "Full/half width ratio is %.3f after rescaling %s; install e.g. %s (M-x my-check-cjk-font-ratio)"
-                       final family (car my-font-candidates)))))))))
+          (unless (catch 'aligned
+                    (dolist (size (list nominal (1- nominal) (1+ nominal)
+                                        (- nominal 2) (+ nominal 2)))
+                      (when (> size 0)
+                        (my--set-cjk-font family size)
+                        (let ((measured (my-cjk-font-width-ratio)))
+                          (when (and measured
+                                     (< (abs (- measured 2.0)) 0.001))
+                            (throw 'aligned t)))))
+                    nil)
+            ;; Nothing landed exactly.  Keep the nominal size, which is the
+            ;; closest, and say so rather than leaving tables quietly crooked.
+            (my--set-cjk-font family nominal)
+            (message "Could not align %s to twice the ASCII width (M-x my-check-cjk-font-ratio)"
+                     family)))))))
 
 (defun my-apply-default-font (family)
   "Apply FAMILY to the default face and seed `default-frame-alist'."
@@ -165,20 +172,26 @@ is the real fix."
   (my-setup-fonts))
 
 ;;; Text scale functions
+;; `my-tune-cjk-font' pins the Japanese font to an absolute pixel size, which
+;; cannot follow the ASCII font on its own -- re-run it after every change to
+;; the default face height or Org tables go crooked again at the new size.
 (defun text-scale+ ()
   "Increase the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height (+ (face-attribute 'default :height) 10)))
+  (set-face-attribute 'default nil :height (+ (face-attribute 'default :height) 10))
+  (my-tune-cjk-font))
 
 (defun text-scale- ()
   "Decrease the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height (- (face-attribute 'default :height) 10)))
+  (set-face-attribute 'default nil :height (- (face-attribute 'default :height) 10))
+  (my-tune-cjk-font))
 
 (defun text-scale0 ()
   "Reset the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height my-default-face-height))
+  (set-face-attribute 'default nil :height my-default-face-height)
+  (my-tune-cjk-font))
 
 (global-set-key "\M-+" 'text-scale+)
 (global-set-key "\M--" 'text-scale-)
