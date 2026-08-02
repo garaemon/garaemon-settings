@@ -1179,12 +1179,43 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 ;; result as a diff, so point and window scroll position never jump.
 ;; `:demand' is required because `:bind' alone would defer loading until the
 ;; first `C-c f', leaving `apheleia-global-mode' off until then.
+;;
+;; `apheleia-mode-alist' maps about 100 major modes to a formatter out of the
+;; box. The entries this configuration is likely to hit, `-ts-mode' variants
+;; included:
+;;
+;;   emacs-lisp, lisp                     lisp-indent (indent-region, built-in)
+;;   c, c++, objc                         clang-format
+;;   python                               ruff (set below; the default is black)
+;;   go                                   gofmt
+;;   rust                                 rustfmt
+;;   bash                                 shfmt
+;;   js, ts, tsx, json, yaml, css, html   prettier
+;;   ruby                                 prettier
+;;   lua                                  stylua
+;;   cmake                                cmake-format
+;;   terraform                            tofu fmt
+;;   toml                                 taplo
+;;   dockerfile                           dprint
+;;   nix                                  nixfmt
+;;   java                                 google-java-format
+;;   php                                  phpcs
+;;   latex                                latexindent
+;;   sql                                  pg_format
+;;
+;; Only lisp-indent runs in-process. Every other entry shells out, and apheleia
+;; skips the buffer silently when `executable-find' cannot locate the command.
+;; An uninstalled formatter therefore costs nothing beyond leaving the buffer
+;; unformatted. prettier is looked up in the project's node_modules before PATH,
+;; so TypeScript and the other prettier-backed modes only get formatted inside a
+;; project that carries prettier itself. Run `M-x describe-variable RET
+;; apheleia-mode-alist' for the full table.
 (use-package apheleia :ensure t
   :demand t
   :bind (("C-c f" . 'apheleia-format-buffer))
   :config
   ;; Format Python with ruff. The apheleia default is black, which is not
-  ;; installed, and a missing formatter makes every save pop up an error buffer.
+  ;; installed here, so Python buffers would otherwise stay unformatted.
   (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
   (setf (alist-get 'python-ts-mode apheleia-mode-alist) 'ruff)
   (apheleia-global-mode +1)
