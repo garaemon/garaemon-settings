@@ -23,8 +23,14 @@
   :custom
   (org-startup-indented t)
   ;; Org's default, made explicit because it is load-bearing here: wrapping a
-  ;; table row wider than the window folds it in the middle and destroys the
-  ;; column alignment.  See `my-org-toggle-line-wrap'.
+  ;; table row wider than the window folds it in the middle, which destroys
+  ;; the column alignment the font setup works to preserve (see
+  ;; `my-font-candidates' in init-ui.el).  Emacs has no per-line
+  ;; `truncate-lines', so this is all-or-nothing per buffer -- long prose runs
+  ;; off the right edge instead of wrapping.  For a table too wide to scroll
+  ;; around comfortably, Org's own column shrinking is the complementary
+  ;; answer: `C-c TAB' (`org-table-toggle-column-width'), `| <10> | <30> |'
+  ;; width cookies in the first row, or `#+STARTUP: shrink'.
   (org-startup-truncated t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
@@ -290,27 +296,6 @@ Date format is YYYY-MM-DD.")
     (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
     )
 
-  ;; Line wrapping and tables do not mix: a row wider than the window gets
-  ;; folded in the middle, which destroys the column alignment the font setup
-  ;; works to preserve (see `my-font-candidates' in init-ui.el).  Emacs has no
-  ;; per-line `truncate-lines', so this is all-or-nothing per buffer -- Org
-  ;; buffers do not wrap, and long prose runs off the right edge instead.
-  ;; For a table too wide to scroll around comfortably, Org's own column
-  ;; shrinking is the complementary answer and needs no code at all: `C-c TAB'
-  ;; (`org-table-toggle-column-width'), `| <10> | <30> |' width cookies in
-  ;; the first row, or `#+STARTUP: shrink'.
-  (defun my-org-toggle-line-wrap ()
-    "Toggle line wrapping in the current buffer.
-Off by default in Org (see `org-startup-truncated') so that wide tables
-keep their alignment; turn it on for a buffer that is mostly long prose."
-    (interactive)
-    (if visual-line-mode
-        (progn (visual-line-mode -1)
-               (setq-local truncate-lines t))
-      (setq-local truncate-lines nil)
-      (visual-line-mode 1))
-    (message "Line wrapping %s" (if visual-line-mode "on" "off")))
-
   :bind (("C-c c" . 'org-capture)
          ("C-M-c" . 'org/note-right-now)
          ("C-c /" . 'consult-org-agenda)
@@ -318,17 +303,8 @@ keep their alignment; turn it on for a buffer that is mostly long prose."
          :map org-mode-map
          ("M-e" . 'my-org-mode-wrap-inline-code)
          ("C-c /" . 'consult-org-agenda)
-         ("C-c w" . 'my-org-toggle-line-wrap)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
-                       ;; Do not wrap -- folding a wide table row in the
-                       ;; middle destroys its column alignment.  `C-c w'
-                       ;; turns wrapping on for the odd prose-heavy buffer.
-                       ;; `org-startup-truncated' is supposed to cover this,
-                       ;; but it is read in the body of `org-mode' and so
-                       ;; loses to anything that runs later; setting it from
-                       ;; the hook is what actually sticks.
-                       (setq-local truncate-lines t)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
