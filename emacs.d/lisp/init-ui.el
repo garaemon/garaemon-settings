@@ -6,8 +6,145 @@
 ;;; Code:
 
 ;;; GUI settings
+(require 'seq)
+
 (defvar my-default-face-height 100
   "Default face height in 1/10 pt.  Set per-display in the platform blocks.")
+
+(defvar my-font-candidates
+  '(;; Monaco first -- it is simply the most readable of the lot.  It has no
+    ;; Japanese glyphs, so Japanese falls back to another family whose
+    ;; advance width has nothing to do with Monaco's; `my-tune-cjk-font'
+    ;; below fixes that up.  Org needs the fix because `org-table-align' pads
+    ;; cells by `string-width', which counts a full-width character as two
+    ;; columns: at any ratio other than 1:2 the `|' separators of a table
+    ;; containing Japanese drift further apart on every row.
+    "Monaco"
+    "Monaco Nerd Font Mono"
+    ;; Fallbacks for machines without Monaco.  These ship Japanese glyphs at
+    ;; exactly twice the half-width advance already, so they need no tuning.
+    "HackGen Console NF"
+    "HackGen35 Console NF"
+    "HackGen"
+    "UDEV Gothic NF"
+    "UDEV Gothic"
+    "PlemolJP Console NF"
+    "PlemolJP"
+    "Cica"
+    "Ricty Diminished")
+  "Font families for the default face, most preferred first.
+The first family that is actually installed wins, so an entry that is not
+present on this machine simply falls through to the next one.")
+
+(defvar my-cjk-fallback-font-candidates
+  '("Hiragino Sans" "Hiragino Kaku Gothic ProN"
+    "Noto Sans Mono CJK JP" "Noto Sans CJK JP" "IPAGothic"
+    "HackGen" "UDEV Gothic" "PlemolJP" "Cica" "Ricty Diminished")
+  "Japanese families to pin when the default face font has no CJK glyphs.")
+
+(defun my-first-available-font (candidates)
+  "Return the first family in CANDIDATES that is installed, or nil."
+  (seq-find (lambda (family) (find-font (font-spec :family family))) candidates))
+
+(defun my-cjk-font-width-ratio ()
+  "Return rendered width of a full-width char divided by a half-width one.
+Return nil when the width cannot be measured (non-graphical display).  A
+value of 2.0 is what Org tables with Japanese text need; see
+`my-font-candidates'."
+  (when (and (display-graphic-p) (fboundp 'string-pixel-width))
+    (let ((half (string-pixel-width "aa"))
+          (full (string-pixel-width "ああ")))
+      (when (> half 0)
+        (/ (float full) half)))))
+
+(defun my-check-cjk-font-ratio ()
+  "Report whether full-width chars render at exactly twice the half-width.
+Use this to verify the font setup instead of eyeballing a table."
+  (interactive)
+  (let ((ratio (my-cjk-font-width-ratio)))
+    (cond
+     ((null ratio)
+      (message "Cannot measure glyph widths on this display."))
+     ((< (abs (- ratio 2.0)) 0.02)
+      (message "Full/half width ratio is %.3f -- Org tables with Japanese line up."
+               ratio))
+     (t
+      (message "Full/half width ratio is %.3f (want 2.000) -- Org tables with Japanese will drift. Try M-x my-tune-cjk-font"
+               ratio)))))
+
+(defun my--set-cjk-font (family size)
+  "Render the CJK charsets with FAMILY at SIZE pixels."
+  (dolist (charset '(japanese-jisx0208 japanese-jisx0212
+                     katakana-jisx0201 kana han cjk-misc))
+    ;; ADD nil replaces the charset's entry outright, so re-running this
+    ;; (after `text-scale+', say) does not pile up stale sizes behind it.
+    (set-fontset-font t charset (font-spec :family family :size size)))
+  (clear-face-cache))
+
+(defun my-tune-cjk-font ()
+  "Make full-width characters render exactly twice as wide as half-width ones.
+A no-op for the 1:2 families listed in `my-font-candidates'.  It is Monaco
+-- the preferred family -- that needs this: Monaco carries no Japanese
+glyphs, so Japanese falls back to a family whose advance width has nothing
+to do with Monaco's, and Org tables containing Japanese drift apart.
+
+A full-width glyph advances by its em box, so pinning the fallback family
+to twice `frame-char-width' pixels makes it occupy exactly two columns.
+Rounding inside the font can miss by a pixel, hence the small search around
+that nominal size.
+
+Note the cost of keeping Monaco: Monaco advances only ~0.6 em, so twice
+that is ~1.2 em and the Japanese font ends up visibly larger than the ASCII
+one -- lines containing Japanese are taller than pure-ASCII lines.
+
+The pinned size is absolute, so this has to run again whenever the default
+face height changes; `text-scale+' and friends below do that."
+  (interactive)
+  (let ((ratio (my-cjk-font-width-ratio)))
+    (when (and ratio (> (abs (- ratio 2.0)) 0.001))
+      (let* ((family (my-first-available-font my-cjk-fallback-font-candidates))
+             (nominal (* 2 (frame-char-width))))
+        (when family
+          (unless (catch 'aligned
+                    (dolist (size (list nominal (1- nominal) (1+ nominal)
+                                        (- nominal 2) (+ nominal 2)))
+                      (when (> size 0)
+                        (my--set-cjk-font family size)
+                        (let ((measured (my-cjk-font-width-ratio)))
+                          (when (and measured
+                                     (< (abs (- measured 2.0)) 0.001))
+                            (throw 'aligned t)))))
+                    nil)
+            ;; Nothing landed exactly.  Keep the nominal size, which is the
+            ;; closest, and say so rather than leaving tables quietly crooked.
+            (my--set-cjk-font family nominal)
+            (message "Could not align %s to twice the ASCII width (M-x my-check-cjk-font-ratio)"
+                     family)))))))
+
+(defun my-apply-default-font (family)
+  "Apply FAMILY to the default face and seed `default-frame-alist'."
+  ;; Set the default face's family/height explicitly rather than only
+  ;; the frame `font' parameter via `set-frame-font'.  With just the
+  ;; frame parameter, the default face's `:family' stays unspecified, so
+  ;; `(face-attribute 'default :font)' is unstable: creating a child
+  ;; frame (e.g. vertico-posframe on the first `C-x b') re-resolves it to
+  ;; the macOS default proportional font (Helvetica), which then leaks
+  ;; into normal buffers like dired.  An explicit family keeps it put.
+  (set-face-attribute 'default nil :family family :height my-default-face-height)
+  ;; NOTE: seed `default-frame-alist' with a plain font string rather than
+  ;; calling `set-frame-font' here -- re-applying the font on the running
+  ;; frame at startup reintroduces the very fallback this guards against.
+  (setf (alist-get 'font default-frame-alist)
+        (format "%s-%d" family (/ my-default-face-height 10))))
+
+(defun my-setup-fonts ()
+  "Pick the best installed family from `my-font-candidates' and apply it."
+  (let ((family (my-first-available-font my-font-candidates)))
+    (when family
+      (my-apply-default-font family)))
+  ;; Defer the width check until the initial frame is fully set up --
+  ;; `string-pixel-width' needs a live window to measure against.
+  (add-hook 'window-setup-hook #'my-tune-cjk-font))
 
 (when-darwin
  (when (display-graphic-p)
@@ -15,19 +152,6 @@
    (if (> (x-display-pixel-width) 1440)
        (setq my-default-face-height 120)
      (setq my-default-face-height 100))
-   ;; Set the default face's family/height explicitly rather than only
-   ;; the frame `font' parameter via `set-frame-font'.  With just the
-   ;; frame parameter, the default face's `:family' stays unspecified, so
-   ;; `(face-attribute 'default :font)' is unstable: creating a child
-   ;; frame (e.g. vertico-posframe on the first `C-x b') re-resolves it to
-   ;; the macOS default proportional font (Helvetica), which then leaks
-   ;; into normal buffers like dired.  An explicit family keeps it Monaco.
-   ;; NOTE: seed `default-frame-alist' with a plain font string rather than
-   ;; calling `set-frame-font' here -- re-applying the font on the running
-   ;; frame at startup reintroduces the very fallback this guards against.
-   (set-face-attribute 'default nil :family "Monaco" :height my-default-face-height)
-   (add-to-list 'default-frame-alist
-                (cons 'font (format "Monaco-%d" (/ my-default-face-height 10))))
    (setq ns-command-modifier (quote meta))
    (setq ns-alternate-modifier (quote super))
    ;; Do not pass control key to mac OS X
@@ -39,35 +163,35 @@
    (define-key global-map [?¥] [?\\])
    ))
 
-(when (eq system-type 'gnu/linux)
-  (set-face-attribute 'default nil
-                      :height my-default-face-height)
-  ;; TODO: mirror the darwin block here -- set `:family' on the default
-  ;; face and seed `default-frame-alist' so posframe child frames do not
-  ;; re-resolve to a proportional fallback.  Left as-is for now since this
-  ;; path is untested on the current (macOS) machine.
-  (let ((font "Monaco Nerd Font Mono"))
-    (if (find-font (font-spec :name font))
-        (set-frame-font font 12)))
-  ;; special key as meta
-  ;; (setq x-super-keysym 'meta)
-  )
+;; On GNU/Linux, to use the special key as meta:
+;; (setq x-super-keysym 'meta)
+
+;; Must run after the platform blocks above, which set
+;; `my-default-face-height'.
+(when (display-graphic-p)
+  (my-setup-fonts))
 
 ;;; Text scale functions
+;; `my-tune-cjk-font' pins the Japanese font to an absolute pixel size, which
+;; cannot follow the ASCII font on its own -- re-run it after every change to
+;; the default face height or Org tables go crooked again at the new size.
 (defun text-scale+ ()
   "Increase the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height (+ (face-attribute 'default :height) 10)))
+  (set-face-attribute 'default nil :height (+ (face-attribute 'default :height) 10))
+  (my-tune-cjk-font))
 
 (defun text-scale- ()
   "Decrease the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height (- (face-attribute 'default :height) 10)))
+  (set-face-attribute 'default nil :height (- (face-attribute 'default :height) 10))
+  (my-tune-cjk-font))
 
 (defun text-scale0 ()
   "Reset the size of text of CURRENT-BUFFER."
   (interactive)
-  (set-face-attribute 'default nil :height my-default-face-height))
+  (set-face-attribute 'default nil :height my-default-face-height)
+  (my-tune-cjk-font))
 
 (global-set-key "\M-+" 'text-scale+)
 (global-set-key "\M--" 'text-scale-)

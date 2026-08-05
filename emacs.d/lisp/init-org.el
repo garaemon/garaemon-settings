@@ -22,6 +22,16 @@
     (setq org-directory (expand-file-name "~/ghq/github.com/garaemon/org/")))
   :custom
   (org-startup-indented t)
+  ;; Org's default, made explicit because it is load-bearing here: wrapping a
+  ;; table row wider than the window folds it in the middle, which destroys
+  ;; the column alignment the font setup works to preserve (see
+  ;; `my-font-candidates' in init-ui.el).  Emacs has no per-line
+  ;; `truncate-lines', so this is all-or-nothing per buffer -- long prose runs
+  ;; off the right edge instead of wrapping.  For a table too wide to scroll
+  ;; around comfortably, Org's own column shrinking is the complementary
+  ;; answer: `C-c TAB' (`org-table-toggle-column-width'), `| <10> | <30> |'
+  ;; width cookies in the first row, or `#+STARTUP: shrink'.
+  (org-startup-truncated t)
   (org-hide-emphasis-markers t)
   (org-startup-with-latex-preview nil)
   (org-link-file-path-type 'relative)
@@ -295,8 +305,6 @@ Date format is YYYY-MM-DD.")
          ("C-c /" . 'consult-org-agenda)
          ("C-c s" . 'org-store-link))
   :hook ((org-mode . (lambda ()
-                       ;; To wrap texts
-                       (visual-line-mode)
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
                                   (string-prefix-p org-directory
