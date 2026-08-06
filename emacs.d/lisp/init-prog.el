@@ -1487,8 +1487,11 @@ The source buffer is added as gptel context for full file awareness."
 ;;   npm install -g @google/gemini-cli                     ; for Gemini
 (use-package agent-shell
   :ensure t
+  ;; `C-c C-q' is org's own binding for `org-set-tags-command' (wrapped as
+  ;; `org-set-tags-command-quick' in init-org.el), so Gemini goes on `C-c Q'
+  ;; -- the shifted sibling of Claude's `C-c q'.
   :bind (("C-c q" . agent-shell-anthropic-start-claude-code)
-         ("C-c C-q" . agent-shell-google-start-gemini))
+         ("C-c Q" . agent-shell-google-start-gemini))
   :custom
   ;; Reuse the local Claude/Gemini CLI logins instead of storing API keys.
   (agent-shell-anthropic-authentication
