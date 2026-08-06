@@ -353,7 +353,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (setq backup-each-save-size-limit 5000000)
   ;; backup all the files
   (setq backup-each-save-filter-function 'identity)
-  :init (add-hook 'after-save #'backup-each-save)
+  :init (add-hook 'after-save-hook #'backup-each-save)
   )
 
 ;;; Buffer management
