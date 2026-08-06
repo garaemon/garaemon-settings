@@ -1,4 +1,4 @@
-# emacs.d [![Build Status](https://github.com/garaemon/emacs.d/actions/workflows/test.yml/badge.svg)](https://github.com/garaemon/emacs.d/actions?query=workflow%3Alint)
+# emacs.d [![Build Status](https://github.com/garaemon/emacs.d/actions/workflows/test.yml/badge.svg)](https://github.com/garaemon/emacs.d/actions/workflows/test.yml)
 
 my private emacs setting
 
@@ -27,7 +27,12 @@ Configuration is split into focused modules in the `lisp/` directory:
 - **init-basic.el**: Basic Emacs settings and behaviors
 - **init-ui.el**: UI and appearance configuration
 - **init-editor.el**: Editor behaviors and key bindings
-- **init-prog.el**: Programming mode configurations
+- **init-prog.el**: Shared development tooling (shell environment, snippets,
+  formatters, terminals, project navigation)
+- **init-lang.el**: Per-language major modes, indentation and tree-sitter setup
+- **init-lsp.el**: lsp-mode, lsp-ui, lsp-sourcekit and flycheck
+- **init-git.el**: magit, forge and the git review/commit helpers
+- **init-ai.el**: minuet, gptel and agent-shell
 - **init-org.el**: Org-mode specific settings
 - **init-utils.el**: Utility functions and helper tools
 

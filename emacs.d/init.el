@@ -46,7 +46,13 @@
 (require 'init-basic)
 (require 'init-ui)
 (require 'init-editor)
+;; init-prog comes before the modules split out of it: it configures
+;; exec-path-from-shell, and everything below expects the shell PATH.
 (require 'init-prog)
+(require 'init-lang)
+(require 'init-lsp)
+(require 'init-git)
+(require 'init-ai)
 (require 'init-org)
 (require 'init-utils)
 
@@ -66,21 +72,18 @@
  ;; If there is more than one, they won't work right.
  '(minuet-auto-suggestion-block-predicates '(minuet-evil-not-insert-state-p my-not-eolp) nil nil "Customized with use-package minuet")
  '(package-selected-packages
-   '(aidermacs all-the-icons anzu apheleia auth-source-1password auto-highlight-symbol backup-each-save
-               base16-theme blamer bm browse-at-remote buffer-move buttercup calfw cape casual
-               clang-format cmake-mode coffee-mode corfu diff-hl docker dockerfile-mode elpy
-               embark-consult euslisp-mode expreg fill-column-indicator flycheck forge gcmh gist
-               git-auto-commit-mode go-mode google-c-style google-this gptel graphviz-dot-mode hiwin
-               hyde imenus jinja2-mode jinx json-mode lsp-sourcekit lsp-ui lua-mode marginalia
-               minuet modern-cpp-font-lock multi-vterm multiple-cursors nix-mode nlinum ob-mermaid
-               orderless org-ai org-download org-excalidraw org-faces org-modern org-roam outshine
-               persistent-scratch php-mode powerline projectile protobuf-mode puppet-mode py-yapf
-               qml-mode rainbow-delimiters recentf-ext rust-mode slack smart-cursor-color
-               smart-mode-line smartrep solarized-theme sqlite3 sr-speedbar string-inflection
-               swift-mode swiper switch-buffer-functions switch-window sx systemd terraform-mode
-               thingopt total-lines transpose-frame treemacs-magit treesit-auto trr tsx-mode
-               typescript-mode udev-mode undo-tree vertico-posframe volatile-highlights vterm-toggle
-               vundo window-purpose yaml-mode yasnippet-capf yatemplate))
+   '(all-the-icons anzu apheleia auth-source-1password auto-highlight-symbol backup-each-save
+               base16-theme bm browse-at-remote buffer-move calfw cape clang-format cmake-mode
+               coffee-mode corfu diff-hl docker dockerfile-mode elpy embark-consult expreg
+               fill-column-indicator flycheck forge gist go-mode google-c-style google-this gptel
+               graphviz-dot-mode imenus jinja2-mode jinx json-mode lsp-sourcekit lsp-ui lua-mode
+               marginalia minuet modern-cpp-font-lock multi-vterm multiple-cursors nix-mode
+               ob-mermaid orderless org-ai org-download org-excalidraw org-modern org-roam outshine
+               php-mode projectile protobuf-mode puppet-mode py-yapf qml-mode recentf-ext rust-mode
+               smartrep solarized-theme sqlite3 string-inflection swift-mode swiper switch-window
+               systemd terraform-mode thingopt treemacs-magit treesit-auto tsx-mode typescript-mode
+               udev-mode undo-tree vertico-posframe vterm-toggle vundo yaml-mode yasnippet-capf
+               yatemplate))
  '(package-vc-selected-packages
    '((org-excalidraw :url "https://github.com/4honor/org-excalidraw.git"))))
 (custom-set-faces
