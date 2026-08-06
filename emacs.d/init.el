@@ -46,7 +46,13 @@
 (require 'init-basic)
 (require 'init-ui)
 (require 'init-editor)
+;; init-prog comes before the modules split out of it: it configures
+;; exec-path-from-shell, and everything below expects the shell PATH.
 (require 'init-prog)
+(require 'init-lang)
+(require 'init-lsp)
+(require 'init-git)
+(require 'init-ai)
 (require 'init-org)
 (require 'init-utils)
 
