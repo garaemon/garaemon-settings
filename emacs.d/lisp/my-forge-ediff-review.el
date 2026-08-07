@@ -12,7 +12,7 @@
 ;;
 ;;     (:owner "..." :repo "..." :num N :title "..." :body "..."
 ;;      :base-rev "<sha>" :head-rev "<sha>" :host nil
-;;      :comments (COMMENT ...))
+;;      :comments (COMMENT ...) :conversation (POST ...))
 ;;
 ;;   Each pending comment is itself a plist:
 ;;
@@ -39,6 +39,10 @@
 ;;   3. `my-forge-ediff-review-list-comments' shows pending comments.
 ;;   4. `my-forge-ediff-review-submit' POSTs them all as one review via
 ;;      ghub against /repos/<owner>/<repo>/pulls/<num>/reviews.
+;;   5. `my-forge-ediff-review-show-conversation' shows the PR description
+;;      followed by its discussion comments -- GitHub's Conversation tab.
+;;      It opens from forge's local database and refreshes over GraphQL,
+;;      so it is readable offline and current when online.
 
 ;;; Code:
 
@@ -50,7 +54,8 @@
 (defvar my-forge-ediff-review--session nil
   "Plist for the active review session, or nil.
 Keys: :owner :repo :num :title :body :head-rev :base-rev :host
-:comments :memos :reviewed :existing :commits.  :title and :body are the
+:comments :memos :reviewed :existing :commits :conversation
+:pr-node-id.  :title and :body are the
 PR's title and description, read from forge's local database so they can
 be shown while reviewing.  Each comment and memo is a plist with :path
 :line :side :body; memos stay local and are never submitted.  :reviewed
@@ -58,7 +63,12 @@ is a list of repository-relative file paths the user has flagged as
 done.  :existing holds review comments already posted to the PR on
 GitHub, fetched once at session start and shown read-only as overlays.
 :commits is the PR's commit history, oldest first, read once from local
-git at session start; each commit is a plist (:hash :subject).")
+git at session start; each commit is a plist (:hash :subject).
+:conversation holds the PR-level discussion comments, seeded from
+forge's local database at session start and refreshed from GitHub when
+the conversation buffer is opened; each is a plist (:id :author :body
+:created-at :url).  :pr-node-id is the PR's GraphQL node id, learned
+from that same fetch and needed by GraphQL mutations.")
 
 (defvar my-forge-ediff-review--cards-collapsed nil
   "When non-nil, inline comment cards render as one-line summaries.
@@ -159,7 +169,10 @@ launches multi-file ediff between PR base and head."
                   :reviewed nil
                   :existing nil
                   :commits (my-forge-ediff-review--pr-commits
-                            diff-base head-rev)))
+                            diff-base head-rev)
+                  :conversation (my-forge-ediff-review--posts-from-forge
+                                 pullreq)
+                  :pr-node-id nil))
       ;; Start every review with cards unfolded; the fold flag is global,
       ;; so without this a stray `c' in an earlier review would leave this
       ;; one showing only one-line summaries.
@@ -186,33 +199,137 @@ forges resolve to nil so ghub falls back to its default host."
   (unless my-forge-ediff-review--session
     (user-error "No active forge ediff review session")))
 
-;;;; PR description
+;;;; PR conversation (description and discussion comments)
 
-(defconst my-forge-ediff-review--description-buffer-name
-  "*forge-review-description*"
-  "Name of the read-only buffer showing the PR title and description.")
+(defconst my-forge-ediff-review--conversation-buffer-name
+  "*forge-review-conversation*"
+  "Name of the read-only buffer showing the PR description and comments.")
 
-(defun my-forge-ediff-review-show-description ()
-  "Show the PR's title and description in a read-only markdown buffer.
-Available from the revision buffers and the sidebar on `D'; the buffer
-closes with `q' (via `view-mode')."
-  (interactive)
-  (my-forge-ediff-review--ensure-session)
+(defvar my-forge-ediff-review-conversation-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") #'my-forge-ediff-review-show-conversation)
+    (define-key map (kbd "q") #'quit-window)
+    map)
+  "Keys composed over the conversation buffer's major mode.")
+
+(defvar-local my-forge-ediff-review--conversation-ready nil
+  "Non-nil once the conversation buffer's mode and keys are installed.
+Guards the one-time setup so that refreshing does not compose another
+copy of the keymap over the previous one on every `g'.")
+
+(defun my-forge-ediff-review--posts-from-forge (pullreq)
+  "Return PULLREQ's conversation comments from forge's local database.
+Forge already caches the PR-level discussion as `forge-pullreq-post'
+objects, so seeding from it lets the conversation buffer show something
+the moment it opens instead of waiting on the network -- and keeps it
+readable with no network at all.  The plists match the shape produced by
+`my-forge-ediff-review-model-parse-conversation', so the GraphQL refresh
+can replace them wholesale.  Any failure, such as a forge too old to
+carry the slot, yields nil and leaves the buffer to that refresh."
+  (ignore-errors
+    (mapcar (lambda (post)
+              (list :id (oref post id)
+                    :author (or (oref post author) "unknown")
+                    :body (oref post body)
+                    :created-at (oref post created)
+                    :url nil))
+            (oref pullreq posts))))
+
+(defconst my-forge-ediff-review--conversation-query
+  "query($owner:String!,$repo:String!,$number:Int!){
+     repository(owner:$owner,name:$repo){
+       pullRequest(number:$number){
+         id
+         comments(first:100){
+           nodes{ id databaseId body createdAt author{login} url }
+         }
+       }
+     }
+   }"
+  "GraphQL query fetching a PR's conversation comments and its node id.
+Only the first 100 comments come back; following the cursor past that is
+a separate roadmap item, so a very long discussion is silently short.")
+
+(defun my-forge-ediff-review--fetch-conversation ()
+  "Fetch the PR's conversation comments and refresh the buffer when they land.
+Runs asynchronously; a failure is reported but changes nothing, leaving
+whatever forge's local database seeded on screen."
+  (let* ((s my-forge-ediff-review--session)
+         (num (plist-get s :num)))
+    (when (fboundp 'ghub-query)
+      (ghub-query
+        my-forge-ediff-review--conversation-query
+        `((owner . ,(plist-get s :owner))
+          (repo . ,(plist-get s :repo))
+          (number . ,num))
+        :auth 'forge
+        :host (plist-get s :host)
+        :callback (lambda (response &rest _)
+                    (my-forge-ediff-review--on-conversation-fetched
+                     response num))
+        :errorback (lambda (err &rest _)
+                     (message "Could not fetch PR comments: %S" err))))))
+
+(defun my-forge-ediff-review--on-conversation-fetched (response num)
+  "Store conversation RESPONSE for PR NUM and redraw the buffer.
+NUM is the pull request the request was issued for.  A reply can outlive
+its session -- the reviewer quits and starts on a different PR while it
+is still in flight -- and without this check one PR's discussion would
+appear under another PR's title."
+  (when (and my-forge-ediff-review--session
+             (equal num (plist-get my-forge-ediff-review--session :num)))
+    (setf (plist-get my-forge-ediff-review--session :conversation)
+          (my-forge-ediff-review-model-parse-conversation response))
+    (setf (plist-get my-forge-ediff-review--session :pr-node-id)
+          (my-forge-ediff-review-model-parse-pr-node-id response))
+    ;; Redraw only if the buffer is around; never display it, since this
+    ;; runs asynchronously and stealing the window mid-review is rude.
+    (when (get-buffer my-forge-ediff-review--conversation-buffer-name)
+      (my-forge-ediff-review--render-conversation))))
+
+(defun my-forge-ediff-review--render-conversation ()
+  "Fill the conversation buffer from the session and return it.
+Does not display the buffer: an asynchronous refresh calls this too.
+Point is preserved so that refresh does not pull a reader back to the
+top of a discussion they are part-way through."
   (let ((s my-forge-ediff-review--session)
         (buf (get-buffer-create
-              my-forge-ediff-review--description-buffer-name)))
+              my-forge-ediff-review--conversation-buffer-name)))
     (with-current-buffer buf
-      (let ((inhibit-read-only t))
+      (unless my-forge-ediff-review--conversation-ready
+        (when (fboundp 'markdown-mode)
+          (markdown-mode))
+        ;; Compose over the major mode rather than calling `local-set-key',
+        ;; which would bind `g' in every markdown buffer by mutating the
+        ;; keymap they all share.
+        (use-local-map
+         (make-composed-keymap my-forge-ediff-review-conversation-mode-map
+                               (current-local-map)))
+        (setq-local my-forge-ediff-review--conversation-ready t))
+      (let ((inhibit-read-only t)
+            (pos (point)))
         (erase-buffer)
-        (insert (my-forge-ediff-review-model-format-description
+        (insert (my-forge-ediff-review-model-format-conversation
                  (plist-get s :num)
                  (plist-get s :title)
-                 (plist-get s :body))))
-      (when (fboundp 'markdown-mode)
-        (markdown-mode))
-      (view-mode 1)
-      (goto-char (point-min)))
-    (pop-to-buffer buf)))
+                 (plist-get s :body)
+                 (plist-get s :conversation)))
+        (goto-char (min pos (point-max))))
+      (setq buffer-read-only t))
+    buf))
+
+(defun my-forge-ediff-review-show-conversation ()
+  "Show the PR's description and discussion comments in a markdown buffer.
+Available from the revision buffers and the sidebar on `D'.  The buffer
+opens at once with the comments forge already cached locally and is
+refreshed from GitHub in the background; `g' refetches, `q' buries it."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (pop-to-buffer (my-forge-ediff-review--render-conversation))
+  (my-forge-ediff-review--fetch-conversation))
+
+(define-obsolete-function-alias 'my-forge-ediff-review-show-description
+  #'my-forge-ediff-review-show-conversation "2026-08-07")
 
 ;;;; Existing review comments (fetched from GitHub)
 
@@ -459,7 +576,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "r") #'my-forge-ediff-review-reply-to-comment)
       (define-key map (kbd "R") #'my-forge-ediff-review-toggle-resolved)
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
-      (define-key map (kbd "D") #'my-forge-ediff-review-show-description)
+      (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
       (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
@@ -928,7 +1045,7 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
     (define-key map (kbd "RET") #'my-forge-ediff-review-sidebar-open)
     (define-key map (kbd "<mouse-1>") #'my-forge-ediff-review-sidebar-open)
     (define-key map (kbd "d") #'my-forge-ediff-review-sidebar-toggle-reviewed)
-    (define-key map (kbd "D") #'my-forge-ediff-review-show-description)
+    (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
     (define-key map (kbd "g") #'my-forge-ediff-review-sidebar-refresh)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)

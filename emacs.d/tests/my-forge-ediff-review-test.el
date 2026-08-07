@@ -128,5 +128,98 @@
                                                 (my-forge-ediff-review--dim-diff-faces)
                                                 (should-not (assq 'ediff-current-diff-A face-remapping-alist))))))
 
+;;;; Conversation buffer
+
+(defmacro my-forge-ediff-review-test--with-conversation (session &rest body)
+  "Run BODY with SESSION active and the conversation buffer killed after.
+The buffer is global and named, so leaving it behind would leak its mode
+and point into the next test."
+  (declare (indent 1))
+  `(let ((my-forge-ediff-review--session ,session))
+     (unwind-protect
+         (progn ,@body)
+       (let ((buf (get-buffer
+                   my-forge-ediff-review--conversation-buffer-name)))
+         (when (buffer-live-p buf)
+           (kill-buffer buf))))))
+
+(defun my-forge-ediff-review-test--conversation-session (&optional comments)
+  "Return a minimal session plist carrying COMMENTS as the conversation."
+  (list :num 42 :title "A title" :body "A body."
+        :conversation comments :pr-node-id nil))
+
+(ert-deftest my-forge-ediff-review-conversation-renders-description-and-comments ()
+  "The buffer shows the PR body first, then each comment."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-conversation
+      (my-forge-ediff-review-test--conversation-session
+       (list (list :author "alice" :body "Looks good.")))
+    (with-current-buffer (my-forge-ediff-review--render-conversation)
+      (should (string-prefix-p "# PR #42: A title" (buffer-string)))
+      (should (string-match-p "### alice" (buffer-string)))
+      (should (string-match-p "Looks good\\." (buffer-string))))))
+
+(ert-deftest my-forge-ediff-review-conversation-buffer-is-read-only ()
+  "The buffer must not be editable, and `g'/`q' must reach our commands."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-conversation
+      (my-forge-ediff-review-test--conversation-session)
+    (with-current-buffer (my-forge-ediff-review--render-conversation)
+      (should buffer-read-only)
+      (should (eq (key-binding (kbd "g"))
+                  #'my-forge-ediff-review-show-conversation))
+      (should (eq (key-binding (kbd "q")) #'quit-window)))))
+
+(ert-deftest my-forge-ediff-review-conversation-refresh-keeps-point ()
+  "A background refresh must not yank the reader back to the top."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-conversation
+      (my-forge-ediff-review-test--conversation-session
+       (list (list :author "alice" :body "Looks good.")))
+    (with-current-buffer (my-forge-ediff-review--render-conversation)
+      (goto-char (point-max))
+      (let ((before (point)))
+        (my-forge-ediff-review--render-conversation)
+        (should (= before (point)))))))
+
+(ert-deftest my-forge-ediff-review-conversation-stores-fetched-comments ()
+  "A response for the session's own PR replaces the seed and keeps the id."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-conversation
+      (my-forge-ediff-review-test--conversation-session
+       (list (list :author "seed" :body "from forge")))
+    (my-forge-ediff-review--on-conversation-fetched
+     '((data (repository
+              (pullRequest
+               (id . "PR_kwABC")
+               (comments (nodes . (((body . "from api")
+                                    (author (login . "bob"))))))))))
+     42)
+    (let ((posts (plist-get my-forge-ediff-review--session :conversation)))
+      (should (= 1 (length posts)))
+      (should (equal "from api" (plist-get (car posts) :body))))
+    (should (equal "PR_kwABC"
+                   (plist-get my-forge-ediff-review--session :pr-node-id)))))
+
+(ert-deftest my-forge-ediff-review-conversation-ignores-other-pr-response ()
+  "A reply that outlives its session must not land under another PR."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-conversation
+      (my-forge-ediff-review-test--conversation-session
+       (list (list :author "seed" :body "from forge")))
+    (my-forge-ediff-review--on-conversation-fetched
+     '((data (repository
+              (pullRequest
+               (id . "PR_other")
+               (comments (nodes . (((body . "wrong PR")
+                                    (author (login . "eve"))))))))))
+     99)
+    (should (equal "from forge"
+                   (plist-get
+                    (car (plist-get my-forge-ediff-review--session
+                                    :conversation))
+                    :body)))
+    (should-not (plist-get my-forge-ediff-review--session :pr-node-id))))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here
