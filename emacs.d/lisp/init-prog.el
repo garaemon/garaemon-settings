@@ -48,9 +48,7 @@
   :config
   (setq yas-snippet-dirs '("~/.emacs.d/snippets"
                            "~/.emacs.d/yasnippet-snippets/snippets"))
-  (setq yas-trigger-key "Enter")
   (yas-global-mode 1)
-  ;;(custom-set-variables '(yas-trigger-key "TAB"))
 
   ;; insert new snippet
   (define-key yas-minor-mode-map (kbd "C-x i i") 'yas-insert-snippet)
