@@ -26,9 +26,9 @@ Returns non-nil if FILE is found in any of the directories in DIRS."
 ;;; File and buffer management
 
 (defun open-setting-file ()
-  "Open this file."
+  "Open the Emacs init file."
   (interactive)
-  (find-file "~/.emacs./lisp/garaemon-dot-emacs.el"))
+  (find-file (expand-file-name "init.el" user-emacs-directory)))
 
 (defun save-all ()
   "Save all buffers without y-or-n asking."
