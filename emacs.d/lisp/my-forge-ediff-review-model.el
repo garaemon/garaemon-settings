@@ -292,6 +292,31 @@ reader, so the result is normalized to a list."
 Handles the `:json-false' / nil falsey conventions of the JSON readers."
   (and value (not (eq value :json-false))))
 
+(defun my-forge-ediff-review-model-connection (response path)
+  "Return the GraphQL connection at PATH within RESPONSE\='s data.
+PATH is the list of alist keys leading from `data\=' down to a paginated
+field, such as (repository pullRequest comments).  Returns nil when any
+step is missing, so a partial or errored response yields no nodes rather
+than signalling."
+  (let ((node (my-forge-ediff-review-model--response-data response)))
+    (dolist (key path node)
+      (setq node (alist-get key node)))))
+
+(defun my-forge-ediff-review-model-connection-nodes (connection)
+  "Return CONNECTION\='s `nodes\=' as a list.
+GraphQL arrays decode as either lists or vectors depending on the JSON
+reader, so the result is normalized to a list."
+  (append (alist-get 'nodes connection) nil))
+
+(defun my-forge-ediff-review-model-next-cursor (connection)
+  "Return CONNECTION\='s `endCursor\=' when another page exists, else nil.
+A connection fetched without `pageInfo\=' therefore reads as complete,
+which is the safe answer: it stops the caller rather than looping."
+  (let ((page (alist-get 'pageInfo connection)))
+    (and page
+         (my-forge-ediff-review-model--truthy-p (alist-get 'hasNextPage page))
+         (alist-get 'endCursor page))))
+
 (defun my-forge-ediff-review-model--response-data (response)
   "Return the `data' payload of a GraphQL RESPONSE regardless of wrapping.
 `ghub-graphql' hands its async callback the root cons `(data . PAYLOAD)'
@@ -313,11 +338,17 @@ on `PullRequestReviewComment', so the location is read from the thread
 and only the body/author come from each comment.  A thread with no
 resolvable line (neither `line' nor `originalLine') is skipped, and
 entries keep their thread/comment order."
-  (let* ((data (my-forge-ediff-review-model--response-data response))
-         (pullreq (alist-get 'pullRequest (alist-get 'repository data)))
-         (threads (my-forge-ediff-review-model--graphql-nodes
-                   pullreq 'reviewThreads))
-         (entries nil))
+  (my-forge-ediff-review-model-parse-review-thread-nodes
+   (my-forge-ediff-review-model-connection-nodes
+    (my-forge-ediff-review-model-connection
+     response '(repository pullRequest reviewThreads)))))
+
+(defun my-forge-ediff-review-model-parse-review-thread-nodes (threads)
+  "Parse already-extracted reviewThread THREADS into overlay entries.
+Separate from `my-forge-ediff-review-model-parse-review-threads\=' so a
+caller that followed the connection\='s cursor across several pages can
+hand over one accumulated node list."
+  (let ((entries nil))
     (dolist (thread threads (nreverse entries))
       (let* ((resolved (my-forge-ediff-review-model--truthy-p
                         (alist-get 'isResolved thread)))
@@ -351,17 +382,25 @@ discussion -- and not the inline review comments handled by
 `my-forge-ediff-review-model-parse-review-threads'.  A comment whose
 author was deleted carries no `author' object, so :author falls back to
 \"unknown\" instead of rendering an empty byline."
-  (let* ((data (my-forge-ediff-review-model--response-data response))
-         (pullreq (alist-get 'pullRequest (alist-get 'repository data))))
-    (mapcar
-     (lambda (comment)
-       (list :id (alist-get 'id comment)
-             :author (or (alist-get 'login (alist-get 'author comment))
-                         "unknown")
-             :body (alist-get 'body comment)
-             :created-at (alist-get 'createdAt comment)
-             :url (alist-get 'url comment)))
-     (my-forge-ediff-review-model--graphql-nodes pullreq 'comments))))
+  (my-forge-ediff-review-model-parse-conversation-nodes
+   (my-forge-ediff-review-model-connection-nodes
+    (my-forge-ediff-review-model-connection
+     response '(repository pullRequest comments)))))
+
+(defun my-forge-ediff-review-model-parse-conversation-nodes (nodes)
+  "Parse already-extracted conversation comment NODES into plists.
+Separate from `my-forge-ediff-review-model-parse-conversation\=' so a
+caller that paged through the connection can hand over one accumulated
+node list."
+  (mapcar
+   (lambda (comment)
+     (list :id (alist-get 'id comment)
+           :author (or (alist-get 'login (alist-get 'author comment))
+                       "unknown")
+           :body (alist-get 'body comment)
+           :created-at (alist-get 'createdAt comment)
+           :url (alist-get 'url comment)))
+   nodes))
 
 (defun my-forge-ediff-review-model-parse-pr-node-id (response)
   "Return the pull request's GraphQL node id from RESPONSE, or nil.
