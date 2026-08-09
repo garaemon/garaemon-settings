@@ -382,8 +382,12 @@ alist `((data . PAYLOAD))'.  Both resolve to PAYLOAD here."
 (defun my-forge-ediff-review-model-parse-review-threads (response)
   "Parse a GitHub reviewThreads GraphQL RESPONSE into overlay entries.
 Each entry is a plist (:path :line :side :body :author :created-at
-:resolved :thread-id :reply-to-id) where :side is \"LEFT\"/\"RIGHT\" and
-:resolved reflects the thread.  :created-at is the comment's ISO8601
+:resolved :outdated :thread-id :reply-to-id) where :side is
+\"LEFT\"/\"RIGHT\" and :resolved reflects the thread.  :outdated marks a
+thread whose line no longer describes the current head: either GitHub
+said so, or it returned no current line at all and :line fell back to
+`originalLine', which counts positions in an older commit.
+:created-at is the comment's ISO8601
 timestamp.  :thread-id and :reply-to-id identify the thread and
 its first comment so replies can be posted to it.  GitHub
 exposes `path', `line', `originalLine' and `diffSide' on the thread, not
@@ -407,8 +411,14 @@ hand over one accumulated node list."
                         (alist-get 'isResolved thread)))
              (thread-id (alist-get 'id thread))
              (path (alist-get 'path thread))
-             (line (or (alist-get 'line thread)
-                       (alist-get 'originalLine thread)))
+             (current-line (alist-get 'line thread))
+             (line (or current-line (alist-get 'originalLine thread)))
+             ;; Either signal means the line cannot be trusted: GitHub
+             ;; says the thread is outdated, or it gave no current line
+             ;; at all and the fallback counts positions in an older head.
+             (outdated (or (my-forge-ediff-review-model--truthy-p
+                            (alist-get 'isOutdated thread))
+                           (null current-line)))
              (side (alist-get 'diffSide thread))
              (comments (my-forge-ediff-review-model--graphql-nodes
                         thread 'comments))
@@ -420,7 +430,7 @@ hand over one accumulated node list."
                   (created-at (alist-get 'createdAt comment)))
               (push (list :path path :line line :side side :body body
                           :author author :created-at created-at
-                          :resolved resolved
+                          :resolved resolved :outdated outdated
                           :reactions
                           (my-forge-ediff-review-model-parse-reactions comment)
                           :thread-id thread-id :reply-to-id reply-to-id)

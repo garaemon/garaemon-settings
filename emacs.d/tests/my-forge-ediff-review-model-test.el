@@ -481,6 +481,50 @@ LOCATION is an alist providing the thread-level `path', `line',
            (my-forge-ediff-review-model-format-card "▤" "Memo" "just one" 20 t)
            "▸ ▤ Memo: just one      ")))
 
+;;;; Outdated threads
+
+(ert-deftest review-model-thread-should-not-be-outdated-by-default ()
+  (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                  (my-forge-ediff-review-model-test--threads-response
+                   (list (my-forge-ediff-review-model-test--thread
+                          nil '((path . "a.el") (line . 12) (diffSide . "RIGHT"))
+                          (list (my-forge-ediff-review-model-test--comment
+                                 "body" "alice"))))))))
+    (should-not (plist-get (car entries) :outdated))))
+
+(ert-deftest review-model-thread-should-be-outdated-when-github-says-so ()
+  (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                  (my-forge-ediff-review-model-test--threads-response
+                   (list (my-forge-ediff-review-model-test--thread
+                          nil '((isOutdated . t) (path . "a.el") (line . 12)
+                                (diffSide . "RIGHT"))
+                          (list (my-forge-ediff-review-model-test--comment
+                                 "body" "alice"))))))))
+    (should (plist-get (car entries) :outdated))))
+
+(ert-deftest review-model-thread-should-be-outdated-when-line-fell-back ()
+  "No current line means :line came from an older head, trustworthy or not."
+  (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                  (my-forge-ediff-review-model-test--threads-response
+                   (list (my-forge-ediff-review-model-test--thread
+                          nil '((path . "a.el") (originalLine . 40)
+                                (diffSide . "RIGHT"))
+                          (list (my-forge-ediff-review-model-test--comment
+                                 "body" "alice"))))))))
+    (should (plist-get (car entries) :outdated))
+    (should (= 40 (plist-get (car entries) :line)))))
+
+(ert-deftest review-model-thread-should-treat-json-false-as-current ()
+  "A JSON false must not read as truth the way any non-nil value would."
+  (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                  (my-forge-ediff-review-model-test--threads-response
+                   (list (my-forge-ediff-review-model-test--thread
+                          nil '((isOutdated . :json-false) (path . "a.el")
+                                (line . 12) (diffSide . "RIGHT"))
+                          (list (my-forge-ediff-review-model-test--comment
+                                 "body" "alice"))))))))
+    (should-not (plist-get (car entries) :outdated))))
+
 ;;;; Reactions
 
 (defun review-model-test--reaction-groups (&rest pairs)
