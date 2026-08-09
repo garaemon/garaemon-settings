@@ -1129,7 +1129,7 @@ looks unchanged for a PR whose range is empty."
             ;; One line; the sidebar's `truncate-lines' clips a long title
             ;; at the window edge, which is fine here.
             (insert (propertize title 'face 'bold) "\n")))
-        (insert (propertize "D: description\n\n" 'face 'shadow))
+        (insert (propertize "D: conversation\n\n" 'face 'shadow))
         (dolist (file my-magit-ediff--files)
           (my-forge-ediff-review--insert-sidebar-file
            file (= index current)
