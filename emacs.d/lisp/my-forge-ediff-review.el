@@ -109,6 +109,11 @@ over into a new review.")
     (with-current-buffer ctrl
       (ediff-really-quit nil))))
 
+(defgroup my-forge-ediff-review nil
+  "Review GitHub pull requests from a side-by-side ediff."
+  :group 'tools
+  :prefix "my-forge-ediff-review-")
+
 ;;;; Session lifecycle
 
 (defun my-forge-ediff-review--diff-base (base-rev head-rev)
