@@ -481,6 +481,128 @@ LOCATION is an alist providing the thread-level `path', `line',
            (my-forge-ediff-review-model-format-card "▤" "Memo" "just one" 20 t)
            "▸ ▤ Memo: just one      ")))
 
+;;;; Submitted reviews and the merged timeline
+
+(defun review-model-test--review (author state &optional body submitted-at)
+  "Build one review node from AUTHOR, STATE, BODY and SUBMITTED-AT."
+  `((id . "PRR_1")
+    (state . ,state)
+    (body . ,(or body ""))
+    ,@(when submitted-at `((submittedAt . ,submitted-at)))
+    (author (login . ,author))))
+
+(ert-deftest review-model-reviews-should-drop-pending ()
+  "PENDING is the viewer's own unsubmitted draft; GitHub does not show it."
+  (let ((reviews (my-forge-ediff-review-model-parse-review-nodes
+                  (list (review-model-test--review "alice" "APPROVED")
+                        (review-model-test--review "me" "PENDING" "draft")))))
+    (should (= 1 (length reviews)))
+    (should (equal "alice" (plist-get (car reviews) :author)))))
+
+(ert-deftest review-model-reviews-should-carry-state-and-time ()
+  (let ((review (car (my-forge-ediff-review-model-parse-review-nodes
+                      (list (review-model-test--review
+                             "bob" "CHANGES_REQUESTED" "no"
+                             "2026-01-16T09:00:00Z"))))))
+    (should (equal "CHANGES_REQUESTED" (plist-get review :state)))
+    (should (equal "no" (plist-get review :body)))
+    (should (equal "2026-01-16T09:00:00Z" (plist-get review :created-at)))))
+
+(ert-deftest review-model-verdict-should-read-as-english ()
+  (should (equal "approved"
+                 (my-forge-ediff-review-model--review-verdict "APPROVED")))
+  (should (equal "requested changes"
+                 (my-forge-ediff-review-model--review-verdict
+                  "CHANGES_REQUESTED"))))
+
+(ert-deftest review-model-verdict-should-soften-an-unknown-state ()
+  "A state GitHub adds later still reads as English rather than shouting."
+  (should (equal "some new state"
+                 (my-forge-ediff-review-model--review-verdict
+                  "SOME_NEW_STATE"))))
+
+(ert-deftest review-model-decision-should-come-from-the-response ()
+  (should (equal "CHANGES_REQUESTED"
+                 (my-forge-ediff-review-model-parse-review-decision
+                  '((data (repository
+                           (pullRequest
+                            (reviewDecision . "CHANGES_REQUESTED")))))))))
+
+(ert-deftest review-model-decision-should-be-nil-when-absent ()
+  "A PR with no reviews has no decision, and null must not render as one."
+  (should-not (my-forge-ediff-review-model-parse-review-decision
+               '((data (repository (pullRequest (reviewDecision . nil)))))))
+  (should-not (my-forge-ediff-review-model-parse-review-decision
+               '((data (repository (pullRequest)))))))
+
+(ert-deftest review-model-timeline-should-order-by-time ()
+  "A review answering a later comment would be a non-sequitur out of order."
+  (let ((timeline (my-forge-ediff-review-model-merge-timeline
+                   (list (list :author "alice" :created-at "2026-01-15T00:00:00Z")
+                         (list :author "carol" :created-at "2026-01-17T00:00:00Z"))
+                   (list (list :author "bob" :created-at "2026-01-16T00:00:00Z")))))
+    (should (equal '("alice" "bob" "carol")
+                   (mapcar (lambda (e) (plist-get e :author)) timeline)))))
+
+(ert-deftest review-model-timeline-should-stamp-the-kind ()
+  (let ((timeline (my-forge-ediff-review-model-merge-timeline
+                   (list (list :author "alice" :created-at "2026-01-15T00:00:00Z"))
+                   (list (list :author "bob" :created-at "2026-01-16T00:00:00Z")))))
+    (should (equal '(comment review)
+                   (mapcar (lambda (e) (plist-get e :kind)) timeline)))))
+
+(ert-deftest review-model-timeline-should-put-undated-entries-last ()
+  "An entry with no timestamp is still something somebody said."
+  (let ((timeline (my-forge-ediff-review-model-merge-timeline
+                   (list (list :author "undated")
+                         (list :author "alice" :created-at "2026-01-15T00:00:00Z"))
+                   nil)))
+    (should (equal '("alice" "undated")
+                   (mapcar (lambda (e) (plist-get e :author)) timeline)))))
+
+(ert-deftest review-model-timeline-should-not-mutate-its-input ()
+  (let* ((comment (list :author "alice" :created-at "2026-01-15T00:00:00Z"))
+         (comments (list comment)))
+    (my-forge-ediff-review-model-merge-timeline comments nil)
+    (should-not (plist-get comment :kind))))
+
+(ert-deftest review-model-conversation-should-show-a-bodyless-approval ()
+  "An approval with no body is the common case and needs no empty section."
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "T" "B." nil
+               (list (list :author "bob" :state "APPROVED" :body "")))))
+    (should (string-match-p "^### bob approved$" text))))
+
+(ert-deftest review-model-conversation-should-show-a-review-body ()
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "T" "B." nil
+               (list (list :author "dave" :state "CHANGES_REQUESTED"
+                           :body "Please split this.")))))
+    (should (string-match-p "^### dave requested changes$" text))
+    (should (string-match-p "^Please split this\\.$" text))))
+
+(ert-deftest review-model-conversation-should-state-the-decision ()
+  (should (string-match-p
+           "^Review decision: changes requested$"
+           (my-forge-ediff-review-model-format-conversation
+            7 "T" "B." nil nil "CHANGES_REQUESTED"))))
+
+(ert-deftest review-model-conversation-should-omit-a-missing-decision ()
+  (should-not (string-match-p
+               "Review decision"
+               (my-forge-ediff-review-model-format-conversation
+                7 "T" "B." nil nil nil))))
+
+(ert-deftest review-model-conversation-should-count-comments-and-reviews ()
+  (should (string-match-p
+           "^## Conversation (3)$"
+           (my-forge-ediff-review-model-format-conversation
+            7 "T" "B."
+            (list (list :author "a" :body "x" :created-at "2026-01-15T00:00:00Z")
+                  (list :author "b" :body "y" :created-at "2026-01-17T00:00:00Z"))
+            (list (list :author "c" :state "APPROVED"
+                        :created-at "2026-01-16T00:00:00Z"))))))
+
 ;;;; Reactions
 
 (defun review-model-test--reaction-groups (&rest pairs)
@@ -718,7 +840,7 @@ LOCATION is an alist providing the thread-level `path', `line',
                 (list (list :author "alice" :body "Looks good."
                             :created-at "2026-01-15T10:30:00Z")))))
     (should (string-prefix-p "# PR #7: Title\n\nBody.\n" text))
-    (should (string-match-p "^## Comments (1)$" text))
+    (should (string-match-p "^## Conversation (1)$" text))
     (should (string-match-p "^### alice — 2026-01-15 10:30$" text))
     (should (string-match-p "^Looks good\\.$" text))))
 
@@ -733,7 +855,7 @@ LOCATION is an alist providing the thread-level `path', `line',
 (ert-deftest review-model-format-conversation-should-say-when-empty ()
   (let ((text (my-forge-ediff-review-model-format-conversation
                7 "Title" "Body." nil)))
-    (should (string-match-p "No comments yet\\." text))
+    (should (string-match-p "Nothing posted yet\\." text))
     (should-not (string-match-p "###" text))))
 
 (ert-deftest review-model-format-conversation-should-not-wrap-bodies ()

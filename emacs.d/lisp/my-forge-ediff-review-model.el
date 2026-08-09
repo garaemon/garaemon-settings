@@ -214,6 +214,81 @@ as \"(no description)\" so the buffer never looks broken or truncated."
               body
             "(no description)")))
 
+(defconst my-forge-ediff-review-model--review-verdicts
+  '(("APPROVED" . "approved")
+    ("CHANGES_REQUESTED" . "requested changes")
+    ("COMMENTED" . "commented")
+    ("DISMISSED" . "had a review dismissed"))
+  "GitHub pull request review states mapped to readable phrases.")
+
+(defun my-forge-ediff-review-model--present-p (value)
+  "Return VALUE as a non-empty string, or nil.
+GraphQL nulls reach here as nil or as the reader\='s null sentinel
+depending on which JSON parser ghub used, and an absent verdict must
+read the same either way."
+  (and (stringp value)
+       (not (string-empty-p value))
+       value))
+
+(defun my-forge-ediff-review-model--review-verdict (state)
+  "Return a readable phrase for a review STATE.
+An unknown state is lowercased with its underscores opened out, so a
+state GitHub adds later still reads as English rather than as shouting."
+  (let ((known (cdr (assoc (format "%s" state)
+                           my-forge-ediff-review-model--review-verdicts))))
+    (or known
+        (downcase (replace-regexp-in-string "_" " " (format "%s" state))))))
+
+(defun my-forge-ediff-review-model-parse-review-nodes (nodes)
+  "Parse submitted pull request review NODES into plists.
+Each entry is (:id :author :state :body :created-at :url :reactions).
+PENDING reviews are dropped: that state means the viewer\='s own
+unsubmitted draft, which GitHub does not show in the conversation
+either, and surfacing it would read as though it had been posted."
+  (delq nil
+        (mapcar
+         (lambda (review)
+           (let ((state (format "%s" (alist-get 'state review))))
+             (unless (equal state "PENDING")
+               (list :id (alist-get 'id review)
+                     :author (or (alist-get 'login (alist-get 'author review))
+                                 "unknown")
+                     :state state
+                     :body (alist-get 'body review)
+                     :created-at (alist-get 'submittedAt review)
+                     :url (alist-get 'url review)
+                     :reactions
+                     (my-forge-ediff-review-model-parse-reactions review)))))
+         nodes)))
+
+(defun my-forge-ediff-review-model-parse-review-decision (response)
+  "Return the PR\='s overall `reviewDecision\=' from RESPONSE, or nil."
+  (my-forge-ediff-review-model--present-p
+   (alist-get 'reviewDecision
+              (my-forge-ediff-review-model-connection
+               response '(repository pullRequest)))))
+
+(defun my-forge-ediff-review-model-merge-timeline (comments reviews)
+  "Return COMMENTS and REVIEWS as one list ordered by time, oldest first.
+Each entry gains a :kind of `comment\=' or `review\=' so the renderer can
+tell a posted verdict from an ordinary remark.  ISO8601 timestamps sort
+correctly as strings.  An entry with no timestamp sorts last rather than
+being dropped -- it is still something somebody said."
+  (let ((entries (append
+                  (mapcar (lambda (entry)
+                            (plist-put (copy-sequence entry) :kind 'comment))
+                          comments)
+                  (mapcar (lambda (entry)
+                            (plist-put (copy-sequence entry) :kind 'review))
+                          reviews))))
+    (sort entries
+          (lambda (a b)
+            (let ((ta (or (plist-get a :created-at) ""))
+                  (tb (or (plist-get b :created-at) "")))
+              (cond ((string-empty-p ta) nil)
+                    ((string-empty-p tb) t)
+                    (t (string< ta tb))))))))
+
 (defconst my-forge-ediff-review-model--reaction-emoji
   '(("THUMBS_UP" . "\N{THUMBS UP SIGN}")
     ("THUMBS_DOWN" . "\N{THUMBS DOWN SIGN}")
@@ -284,25 +359,74 @@ markdown the author wrote still renders."
                   ""
                 (concat "\n" reactions "\n"))))))
 
+(defun my-forge-ediff-review-model--format-review (review)
+  "Return the markdown section for one submitted REVIEW.
+The verdict is the point of a review, so it sits in the heading beside
+the author.  An approval with no body is the common case and renders as
+that heading alone rather than as a section with nothing under it."
+  (let ((author (or (plist-get review :author) "unknown"))
+        (verdict (my-forge-ediff-review-model--review-verdict
+                  (plist-get review :state)))
+        (time (my-forge-ediff-review-model-format-time
+               (plist-get review :created-at)))
+        (body (or (plist-get review :body) ""))
+        (reactions (my-forge-ediff-review-model-format-reactions
+                    (plist-get review :reactions))))
+    (concat "\n### " author " " verdict
+            (if (string-empty-p time) "" (concat " \u2014 " time))
+            "\n"
+            (if (string-empty-p (string-trim body))
+                ""
+              (concat "\n" (string-trim-right body) "\n"))
+            (if (string-empty-p reactions)
+                ""
+              (concat "\n" reactions "\n")))))
+
+(defun my-forge-ediff-review-model--format-timeline-entry (entry)
+  "Return the markdown section for one timeline ENTRY.
+Dispatches on the :kind that `my-forge-ediff-review-model-merge-timeline'
+stamped on it."
+  (if (eq (plist-get entry :kind) 'review)
+      (my-forge-ediff-review-model--format-review entry)
+    (my-forge-ediff-review-model--format-comment entry)))
+
+(defun my-forge-ediff-review-model--format-decision (decision)
+  "Return a line stating the PR's overall review DECISION, or empty.
+A PR with no reviews has no decision, and saying so would be noise."
+  (let ((decision (my-forge-ediff-review-model--present-p decision)))
+    (if decision
+        (format "\nReview decision: %s\n"
+                (downcase (replace-regexp-in-string "_" " " decision)))
+      "")))
+
 (defun my-forge-ediff-review-model-format-conversation
-    (num title body comments)
+    (num title body comments &optional reviews decision)
   "Return the markdown text of PR NUM's conversation, titled TITLE.
-BODY is the PR description and COMMENTS the list of plists from
-`my-forge-ediff-review-model-parse-conversation', oldest first.  The
-header reuses `my-forge-ediff-review-model-format-description' so the
-description buffer's opening is unchanged.  Comment bodies are laid out
-as plain markdown sections rather than the box-drawn cards used for
-inline overlays: a box would re-wrap the text to a fixed width and break
-the code blocks, lists and quotes people write in PR discussions."
-  (concat
-   (my-forge-ediff-review-model-format-description num title body)
-   "\n"
-   (if (null comments)
-       "## Comments\n\nNo comments yet.\n"
-     (concat
-      (format "## Comments (%d)\n" (length comments))
-      (mapconcat #'my-forge-ediff-review-model--format-comment comments "")))
-   (format "\n-- PR #%s \u00b7 g to refresh --\n" num)))
+BODY is the PR description, COMMENTS the plists from
+`my-forge-ediff-review-model-parse-conversation', REVIEWS those from
+`my-forge-ediff-review-model-parse-review-nodes', and DECISION the PR's
+overall `reviewDecision'.  Comments and reviews are interleaved by time,
+because a review answering a comment posted after it would read as a
+non-sequitur in any other order.
+
+The header reuses `my-forge-ediff-review-model-format-description' so
+the buffer's opening is unchanged.  Bodies are laid out as plain
+markdown sections rather than the box-drawn cards used for inline
+overlays: a box would re-wrap the text to a fixed width and break the
+code blocks, lists and quotes people write in PR discussions."
+  (let ((timeline (my-forge-ediff-review-model-merge-timeline
+                   comments reviews)))
+    (concat
+     (my-forge-ediff-review-model-format-description num title body)
+     (my-forge-ediff-review-model--format-decision decision)
+     "\n"
+     (if (null timeline)
+         "## Conversation\n\nNothing posted yet.\n"
+       (concat
+        (format "## Conversation (%d)\n" (length timeline))
+        (mapconcat #'my-forge-ediff-review-model--format-timeline-entry
+                   timeline "")))
+     (format "\n-- PR #%s \u00b7 g to refresh --\n" num))))
 
 (defun my-forge-ediff-review-model-format-time (iso)
   "Return a short local-time string for GitHub ISO8601 timestamp ISO.

@@ -55,7 +55,7 @@
   "Plist for the active review session, or nil.
 Keys: :owner :repo :num :title :body :head-rev :base-rev :host
 :comments :memos :reviewed :existing :commits :conversation
-:pr-node-id.  :title and :body are the
+:pr-node-id :reviews :review-decision.  :title and :body are the
 PR's title and description, read from forge's local database so they can
 be shown while reviewing.  Each comment and memo is a plist with :path
 :line :side :body; memos stay local and are never submitted.  :reviewed
@@ -68,7 +68,10 @@ git at session start; each commit is a plist (:hash :subject).
 forge's local database at session start and refreshed from GitHub when
 the conversation buffer is opened; each is a plist (:id :author :body
 :created-at :url).  :pr-node-id is the PR's GraphQL node id, learned
-from that same fetch and needed by GraphQL mutations.")
+from that same fetch and needed by GraphQL mutations.  :reviews holds
+the submitted reviews -- each an approval, a change request or a plain
+comment, as a plist (:author :state :body :created-at :url :reactions) --
+and :review-decision the PR's overall verdict.")
 
 (defvar my-forge-ediff-review--cards-collapsed nil
   "When non-nil, inline comment cards render as one-line summaries.
@@ -177,7 +180,9 @@ launches multi-file ediff between PR base and head."
                             diff-base head-rev)
                   :conversation (my-forge-ediff-review--posts-from-forge
                                  pullreq)
-                  :pr-node-id nil))
+                  :pr-node-id nil
+                  :reviews nil
+                  :review-decision nil))
       ;; Start every review with cards unfolded; the fold flag is global,
       ;; so without this a stray `c' in an earlier review would leave this
       ;; one showing only one-line summaries.
@@ -335,6 +340,56 @@ for the scalar node id beside the connection."
     (when (get-buffer my-forge-ediff-review--conversation-buffer-name)
       (my-forge-ediff-review--render-conversation))))
 
+(defconst my-forge-ediff-review--reviews-query
+  "query($owner:String!,$repo:String!,$number:Int!,$after:String){
+     repository(owner:$owner,name:$repo){
+       pullRequest(number:$number){
+         reviewDecision
+         reviews(first:100,after:$after){
+           pageInfo{ hasNextPage endCursor }
+           nodes{
+             id state body submittedAt author{login} url
+             reactionGroups{ content reactions{ totalCount } viewerHasReacted }
+           }
+         }
+       }
+     }
+   }"
+  "GraphQL query fetching a PR's submitted reviews and overall decision.
+Kept separate from the conversation query rather than folded into it:
+each connection carries its own cursor, and
+`my-forge-ediff-review--query-all-pages' follows one.  Sharing the query
+would mean either paging only one of the two connections or capping the
+other, which is the silent truncation that paging exists to prevent.")
+
+(defun my-forge-ediff-review--fetch-reviews ()
+  "Fetch the PR's submitted reviews and redraw the conversation buffer.
+Runs asynchronously; a failure leaves whatever was already shown."
+  (let* ((s my-forge-ediff-review--session)
+         (num (plist-get s :num)))
+    (my-forge-ediff-review--query-all-pages
+     my-forge-ediff-review--reviews-query
+     `((owner . ,(plist-get s :owner))
+       (repo . ,(plist-get s :repo))
+       (number . ,num))
+     '(repository pullRequest reviews)
+     (lambda (nodes response)
+       (my-forge-ediff-review--on-reviews-fetched nodes response num))
+     "Could not fetch PR reviews")))
+
+(defun my-forge-ediff-review--on-reviews-fetched (nodes response num)
+  "Store review NODES from RESPONSE for PR NUM and redraw the buffer.
+NUM guards against a request outliving its session, the same way the
+conversation and thread fetches do."
+  (when (and my-forge-ediff-review--session
+             (equal num (plist-get my-forge-ediff-review--session :num)))
+    (setf (plist-get my-forge-ediff-review--session :reviews)
+          (my-forge-ediff-review-model-parse-review-nodes nodes))
+    (setf (plist-get my-forge-ediff-review--session :review-decision)
+          (my-forge-ediff-review-model-parse-review-decision response))
+    (when (get-buffer my-forge-ediff-review--conversation-buffer-name)
+      (my-forge-ediff-review--render-conversation))))
+
 (defun my-forge-ediff-review--render-conversation ()
   "Fill the conversation buffer from the session and return it.
 Does not display the buffer: an asynchronous refresh calls this too.
@@ -361,7 +416,9 @@ top of a discussion they are part-way through."
                  (plist-get s :num)
                  (plist-get s :title)
                  (plist-get s :body)
-                 (plist-get s :conversation)))
+                 (plist-get s :conversation)
+                 (plist-get s :reviews)
+                 (plist-get s :review-decision)))
         (goto-char (min pos (point-max))))
       (setq buffer-read-only t))
     buf))
@@ -374,7 +431,8 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
   (interactive)
   (my-forge-ediff-review--ensure-session)
   (pop-to-buffer (my-forge-ediff-review--render-conversation))
-  (my-forge-ediff-review--fetch-conversation))
+  (my-forge-ediff-review--fetch-conversation)
+  (my-forge-ediff-review--fetch-reviews))
 
 (define-obsolete-function-alias 'my-forge-ediff-review-show-description
   #'my-forge-ediff-review-show-conversation "2026-08-07")
@@ -445,6 +503,7 @@ is redrawn immediately rather than waiting on the network."
   (my-forge-ediff-review--ensure-session)
   (my-forge-ediff-review--fetch-existing-threads)
   (my-forge-ediff-review--fetch-conversation)
+  (my-forge-ediff-review--fetch-reviews)
   (my-forge-ediff-review--refresh-sidebar)
   (message "Refreshing PR #%s from GitHub..."
            (plist-get my-forge-ediff-review--session :num)))
