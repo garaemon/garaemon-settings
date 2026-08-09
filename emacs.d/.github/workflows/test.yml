@@ -3,8 +3,9 @@ name: Test Emacs Lisp
 on:
   push:
     branches: [ main ]
+  # No branch filter: stacked pull requests target each other rather than
+  # main, and a filtered trigger would leave every one of them untested.
   pull_request:
-    branches: [ main ]
 
 jobs:
   test:
