@@ -288,7 +288,10 @@ carry the slot, yields nil and leaves the buffer to that refresh."
          id
          comments(first:100,after:$after){
            pageInfo{ hasNextPage endCursor }
-           nodes{ id databaseId body createdAt author{login} url }
+           nodes{
+             id databaseId body createdAt author{login} url
+             reactionGroups{ content reactions{ totalCount } viewerHasReacted }
+           }
          }
        }
      }
@@ -388,7 +391,10 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
              id
              isResolved path line originalLine diffSide
              comments(first:100){
-               nodes{ databaseId body createdAt author{login} }
+               nodes{
+                 databaseId body createdAt author{login}
+                 reactionGroups{ content reactions{ totalCount } viewerHasReacted }
+               }
              }
            }
          }
@@ -589,7 +595,8 @@ pending comments."
        (current-buffer)
        (plist-get entry :line)
        "◈" header
-       (plist-get entry :body)
+       (my-forge-ediff-review-model-append-reactions
+        (plist-get entry :body) (plist-get entry :reactions))
        'my-forge-ediff-review-existing-comment-face))))
 
 (defun my-forge-ediff-review--put-side-overlays (entries file side glyph header face)

@@ -481,6 +481,84 @@ LOCATION is an alist providing the thread-level `path', `line',
            (my-forge-ediff-review-model-format-card "▤" "Memo" "just one" 20 t)
            "▸ ▤ Memo: just one      ")))
 
+;;;; Reactions
+
+(defun review-model-test--reaction-groups (&rest pairs)
+  "Build a reactionGroups field from PAIRS of (CONTENT . COUNT)."
+  `((reactionGroups
+     . ,(mapcar (lambda (pair)
+                  `((content . ,(car pair))
+                    (reactions (totalCount . ,(cdr pair)))))
+                pairs))))
+
+(ert-deftest review-model-reactions-should-drop-empty-groups ()
+  "GitHub returns every content type on every comment, mostly at zero."
+  (should (equal (list (cons "\N{THUMBS UP SIGN}" 3))
+                 (my-forge-ediff-review-model-parse-reactions
+                  (review-model-test--reaction-groups
+                   '("THUMBS_UP" . 3) '("EYES" . 0) '("HEART" . 0))))))
+
+(ert-deftest review-model-reactions-should-keep-every-nonempty-group ()
+  (should (equal (list (cons "\N{THUMBS UP SIGN}" 3)
+                       (cons "\N{HEAVY BLACK HEART}" 1))
+                 (my-forge-ediff-review-model-parse-reactions
+                  (review-model-test--reaction-groups
+                   '("THUMBS_UP" . 3) '("HEART" . 1))))))
+
+(ert-deftest review-model-reactions-should-drop-unknown-content ()
+  "A reaction type GitHub adds later shows nothing rather than breaking."
+  (should-not (my-forge-ediff-review-model-parse-reactions
+               (review-model-test--reaction-groups '("BRAND_NEW" . 2)))))
+
+(ert-deftest review-model-reactions-should-be-empty-without-the-field ()
+  (should-not (my-forge-ediff-review-model-parse-reactions
+               '((body . "no reactions")))))
+
+(ert-deftest review-model-format-reactions-should-be-empty-for-none ()
+  (should (equal "" (my-forge-ediff-review-model-format-reactions nil))))
+
+(ert-deftest review-model-format-reactions-should-list-counts ()
+  (should (equal (concat "\N{THUMBS UP SIGN} 3  \N{ROCKET} 1")
+                 (my-forge-ediff-review-model-format-reactions
+                  (list (cons "\N{THUMBS UP SIGN}" 3)
+                        (cons "\N{ROCKET}" 1))))))
+
+(ert-deftest review-model-append-reactions-should-leave-body-alone ()
+  (should (equal "body" (my-forge-ediff-review-model-append-reactions
+                         "body" nil))))
+
+(ert-deftest review-model-append-reactions-should-add-a-line ()
+  (should (equal (concat "body\n\n\N{THUMBS UP SIGN} 2")
+                 (my-forge-ediff-review-model-append-reactions
+                  "body" (list (cons "\N{THUMBS UP SIGN}" 2))))))
+
+(ert-deftest review-model-card-should-stay-rectangular-with-emoji ()
+  "Emoji are two columns wide; the box must still paint as a rectangle."
+  (let* ((card (my-forge-ediff-review-model-format-card
+                "◈" "alice"
+                (my-forge-ediff-review-model-append-reactions
+                 "Looks good."
+                 (list (cons "\N{THUMBS UP SIGN}" 3)
+                       (cons "\N{HEAVY BLACK HEART}" 1)))
+                30 nil))
+         (widths (mapcar #'string-width (split-string card "\n"))))
+    (should (apply #'= widths))))
+
+(ert-deftest review-model-conversation-nodes-should-carry-reactions ()
+  (let ((posts (my-forge-ediff-review-model-parse-conversation-nodes
+                (list (append '((body . "hi") (author (login . "alice")))
+                              (review-model-test--reaction-groups
+                               '("HOORAY" . 2)))))))
+    (should (equal (list (cons "\N{PARTY POPPER}" 2))
+                   (plist-get (car posts) :reactions)))))
+
+(ert-deftest review-model-conversation-should-show-reactions ()
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "T" "B."
+               (list (list :author "alice" :body "hi"
+                           :reactions (list (cons "\N{THUMBS UP SIGN}" 3)))))))
+    (should (string-match-p "\N{THUMBS UP SIGN} 3" text))))
+
 ;;;; GraphQL connection walking and pagination
 
 (defun review-model-test--connection (nodes &optional has-next cursor)

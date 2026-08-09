@@ -214,6 +214,54 @@ as \"(no description)\" so the buffer never looks broken or truncated."
               body
             "(no description)")))
 
+(defconst my-forge-ediff-review-model--reaction-emoji
+  '(("THUMBS_UP" . "\N{THUMBS UP SIGN}")
+    ("THUMBS_DOWN" . "\N{THUMBS DOWN SIGN}")
+    ("LAUGH" . "\N{SMILING FACE WITH OPEN MOUTH AND SMILING EYES}")
+    ("HOORAY" . "\N{PARTY POPPER}")
+    ("CONFUSED" . "\N{CONFUSED FACE}")
+    ("HEART" . "\N{HEAVY BLACK HEART}")
+    ("ROCKET" . "\N{ROCKET}")
+    ("EYES" . "\N{EYES}"))
+  "GitHub reaction content names mapped to the emoji they stand for.")
+
+(defun my-forge-ediff-review-model-parse-reactions (comment)
+  "Return (EMOJI . COUNT) pairs for COMMENT\='s `reactionGroups\='.
+Groups with a zero count are dropped: GitHub returns every content type
+on every comment whether or not anyone used it, and rendering the empty
+ones would bury the reactions somebody actually left.  An unrecognized
+content name is dropped too, so a new reaction type added by GitHub
+shows nothing rather than breaking the line."
+  (delq nil
+        (mapcar
+         (lambda (group)
+           (let ((count (alist-get 'totalCount (alist-get 'reactions group)))
+                 (emoji (cdr (assoc (format "%s" (alist-get 'content group))
+                                    my-forge-ediff-review-model--reaction-emoji))))
+             (and (integerp count) (> count 0) emoji (cons emoji count))))
+         (append (alist-get 'reactionGroups comment) nil))))
+
+(defun my-forge-ediff-review-model-format-reactions (reactions)
+  "Return a one-line summary of REACTIONS, or the empty string when none.
+REACTIONS are the (EMOJI . COUNT) pairs from
+`my-forge-ediff-review-model-parse-reactions\='."
+  (if reactions
+      (mapconcat (lambda (reaction)
+                   (format "%s %d" (car reaction) (cdr reaction)))
+                 reactions "  ")
+    ""))
+
+(defun my-forge-ediff-review-model-append-reactions (body reactions)
+  "Return BODY with a REACTIONS summary appended, when there is one.
+Deliberately not folded into `my-forge-ediff-review-model-format-card\=':
+that function\='s output is pinned byte-for-byte by golden tests, and the
+reactions have no reason to change it.  They ride in as ordinary body
+text and wrap like any other line."
+  (let ((line (my-forge-ediff-review-model-format-reactions reactions)))
+    (if (string-empty-p line)
+        (or body "")
+      (concat (or body "") "\n\n" line))))
+
 (defun my-forge-ediff-review-model--format-comment (comment)
   "Return the markdown section for one conversation COMMENT.
 COMMENT is a plist (:author :body :created-at).  The body is emitted
@@ -229,7 +277,12 @@ markdown the author wrote still renders."
             (if (string-empty-p (string-trim body))
                 "(empty comment)"
               (string-trim-right body))
-            "\n")))
+            "\n"
+            (let ((reactions (my-forge-ediff-review-model-format-reactions
+                              (plist-get comment :reactions))))
+              (if (string-empty-p reactions)
+                  ""
+                (concat "\n" reactions "\n"))))))
 
 (defun my-forge-ediff-review-model-format-conversation
     (num title body comments)
@@ -368,6 +421,8 @@ hand over one accumulated node list."
               (push (list :path path :line line :side side :body body
                           :author author :created-at created-at
                           :resolved resolved
+                          :reactions
+                          (my-forge-ediff-review-model-parse-reactions comment)
                           :thread-id thread-id :reply-to-id reply-to-id)
                     entries))))))))
 
@@ -399,7 +454,8 @@ node list."
                        "unknown")
            :body (alist-get 'body comment)
            :created-at (alist-get 'createdAt comment)
-           :url (alist-get 'url comment)))
+           :url (alist-get 'url comment)
+           :reactions (my-forge-ediff-review-model-parse-reactions comment)))
    nodes))
 
 (defun my-forge-ediff-review-model-parse-pr-node-id (response)
