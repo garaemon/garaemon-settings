@@ -46,6 +46,7 @@
 
 ;;; Code:
 
+(require 'browse-url)
 (require 'cl-lib)
 (require 'ghub)
 (require 'my-magit-ediff)
@@ -254,6 +255,7 @@ worse than one that is visibly absent."
 (defvar my-forge-ediff-review-conversation-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "g") #'my-forge-ediff-review-show-conversation)
+    (define-key map (kbd "o") #'my-forge-ediff-review-open-at-github)
     (define-key map (kbd "q") #'quit-window)
     map)
   "Keys composed over the conversation buffer's major mode.")
@@ -393,7 +395,7 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
              diffSide
              comments(first:100){
                nodes{
-                 databaseId body createdAt author{login}
+                 databaseId body createdAt author{login} url
                  reactionGroups{ content reactions{ totalCount } viewerHasReacted }
                }
              }
@@ -436,6 +438,25 @@ another PR's files, at line numbers that mean nothing there."
       (setf (plist-get my-forge-ediff-review--session :existing) entries)
       (my-forge-ediff-review--refresh-all-buffers)
       (message "Loaded %d existing review comment(s)." (length entries)))))
+
+(defun my-forge-ediff-review-open-at-github ()
+  "Open the review thread at point at GitHub, or the PR page if there is none.
+The escape hatch for everything this buffer cannot show: rendered
+markdown, image diffs, and every action not implemented here.  Works
+from the sidebar and the conversation buffer too, where there is no line
+under point and the PR page is the right answer."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (let* ((s my-forge-ediff-review--session)
+         (entry (my-forge-ediff-review--existing-at-point))
+         (url (or (plist-get entry :url)
+                  (my-forge-ediff-review-model-pullreq-url
+                   (plist-get s :host)
+                   (plist-get s :owner)
+                   (plist-get s :repo)
+                   (plist-get s :num)))))
+    (message "Opening %s" url)
+    (browse-url url)))
 
 (defun my-forge-ediff-review-refresh ()
   "Refetch the PR's review threads and conversation from GitHub.
@@ -674,6 +695,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
       (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
       (define-key map (kbd "g") #'my-forge-ediff-review-refresh)
+      (define-key map (kbd "o") #'my-forge-ediff-review-open-at-github)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
@@ -1143,6 +1165,7 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
     (define-key map (kbd "d") #'my-forge-ediff-review-sidebar-toggle-reviewed)
     (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
     (define-key map (kbd "g") #'my-forge-ediff-review-refresh)
+    (define-key map (kbd "o") #'my-forge-ediff-review-open-at-github)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)
     (define-key map (kbd "q") #'my-forge-ediff-review-sidebar-quit)

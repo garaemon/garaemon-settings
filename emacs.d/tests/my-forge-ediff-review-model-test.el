@@ -670,6 +670,46 @@ LOCATION is an alist providing the thread-level `path', `line',
     (should (= 1 (length entries)))
     (should (equal "a.el" (plist-get (car entries) :path)))))
 
+;;;; Browser URLs
+
+(ert-deftest review-model-web-host-should-strip-the-api-prefix ()
+  (should (equal "github.com"
+                 (my-forge-ediff-review-model-web-host "api.github.com"))))
+
+(ert-deftest review-model-web-host-should-strip-an-api-path ()
+  (should (equal "ghe.example.com"
+                 (my-forge-ediff-review-model-web-host
+                  "ghe.example.com/api/v3"))))
+
+(ert-deftest review-model-web-host-should-default-without-a-host ()
+  "A nil apihost means ghub's default, which is github.com."
+  (should (equal "github.com" (my-forge-ediff-review-model-web-host nil)))
+  (should (equal "github.com" (my-forge-ediff-review-model-web-host ""))))
+
+(ert-deftest review-model-web-host-should-leave-a-plain-host-alone ()
+  (should (equal "ghe.example.com"
+                 (my-forge-ediff-review-model-web-host "ghe.example.com"))))
+
+(ert-deftest review-model-pullreq-url-should-point-at-the-pr ()
+  (should (equal "https://github.com/garaemon/emacs.d/pull/42"
+                 (my-forge-ediff-review-model-pullreq-url
+                  "api.github.com" "garaemon" "emacs.d" 42))))
+
+(ert-deftest review-model-pullreq-url-should-work-on-enterprise ()
+  (should (equal "https://ghe.example.com/org/repo/pull/7"
+                 (my-forge-ediff-review-model-pullreq-url
+                  "ghe.example.com/api/v3" "org" "repo" 7))))
+
+(ert-deftest review-model-thread-entries-should-carry-a-url ()
+  (let ((entries (my-forge-ediff-review-model-parse-review-threads
+                  (my-forge-ediff-review-model-test--threads-response
+                   (list (my-forge-ediff-review-model-test--thread
+                          nil '((path . "a.el") (line . 12) (diffSide . "RIGHT"))
+                          '(((body . "hi") (author (login . "alice"))
+                             (url . "https://github.com/o/r/pull/1#r1")))))))))
+    (should (equal "https://github.com/o/r/pull/1#r1"
+                   (plist-get (car entries) :url)))))
+
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
 (ert-deftest review-model-resolve-host-should-return-github-apihost ()
