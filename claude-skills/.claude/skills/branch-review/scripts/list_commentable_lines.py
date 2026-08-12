@@ -18,7 +18,7 @@ import argparse
 import json
 import sys
 
-from commands import run_command
+from commands import run_gh_command
 
 HUNK_PREFIX = "@@"
 
@@ -73,13 +73,13 @@ def collect_commentable_lines(patch):
 
 def find_pull_request_number():
     """Return the pull request number for the current branch."""
-    output = run_command(["gh", "pr", "view", "--json", "number"])
+    output = run_gh_command(["gh", "pr", "view", "--json", "number"])
     return json.loads(output)["number"]
 
 
 def find_repository():
     """Return the current repository as "owner/name"."""
-    output = run_command(["gh", "repo", "view", "--json", "nameWithOwner"])
+    output = run_gh_command(["gh", "repo", "view", "--json", "nameWithOwner"])
     return json.loads(output)["nameWithOwner"]
 
 
@@ -88,7 +88,7 @@ def fetch_pull_request_files(repository, pr_number):
 
     Uses newline-delimited JSON so pagination works across gh versions.
     """
-    output = run_command([
+    output = run_gh_command([
         "gh", "api", "--paginate",
         f"repos/{repository}/pulls/{pr_number}/files",
         "--jq", ".[]",

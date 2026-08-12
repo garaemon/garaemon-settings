@@ -58,13 +58,14 @@ skill is invoked.
 | `gather_diff.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |
-| `commands.py` | Shared command runner; not run directly |
+| `commands.py` | Shared git/`gh` runners; not run directly |
 
-**Do not run `git` or `gh` directly.** Base resolution and comment anchoring are
-both easy to get subtly wrong -- reviewing against the wrong base wastes the
-whole review, and one bad anchor makes GitHub reject every comment at once. The
-scripts encode those rules and check them. If a script cannot do what you need,
-say so rather than reaching for a raw command.
+**Do not run `git` or `gh` directly.** Base resolution, GitHub host selection and
+comment anchoring are all easy to get subtly wrong -- reviewing against the wrong
+base wastes the whole review, talking to the wrong host reports that the pull
+request does not exist, and one bad anchor makes GitHub reject every comment at
+once. The scripts encode those rules and check them. If a script cannot do what
+you need, say so rather than reaching for a raw command.
 
 ### Running them
 
@@ -92,6 +93,19 @@ Every script takes `--help`. Their unit tests run with:
 uv run --project <skill_dir> -m unittest discover \
   -s <skill_dir>/scripts -t <skill_dir>/scripts
 ```
+
+### GitHub Enterprise
+
+The scripts derive `GH_HOST` from the `origin` remote and pass it to every `gh`
+call, so a GitHub Enterprise checkout works with no setup. Both remote URL forms
+are understood: `git@github.example.com:owner/repo.git` and
+`https://github.example.com/owner/repo.git`.
+
+An inherited `GH_HOST` is deliberately overridden -- the repository under review
+decides which server to talk to, not the ambient environment. `gather_diff.py`
+prints the host it resolved as `github_host:` in its `review range` block; if
+that line names the wrong server, stop and tell the user rather than posting
+anything.
 
 ## Workflow
 

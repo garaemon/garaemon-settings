@@ -30,7 +30,7 @@ import argparse
 import json
 import sys
 
-from commands import run_command
+from commands import run_gh_command
 from list_commentable_lines import (
     build_commentable_index,
     fetch_pull_request_files,
@@ -83,7 +83,7 @@ def validate_anchors(findings, index):
 
 def submit_review(repository, pr_number, findings):
     """POST the review and return the created review object."""
-    output = run_command(
+    output = run_gh_command(
         [
             "gh", "api", "-X", "POST",
             f"repos/{repository}/pulls/{pr_number}/reviews",
@@ -96,7 +96,7 @@ def submit_review(repository, pr_number, findings):
 
 def count_posted_comments(repository, pr_number):
     """Return how many inline comments the pull request now carries."""
-    output = run_command([
+    output = run_gh_command([
         "gh", "api", "--paginate",
         f"repos/{repository}/pulls/{pr_number}/comments",
         "--jq", ".[].path",
