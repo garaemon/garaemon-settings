@@ -506,8 +506,9 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
          (eshell-mode . with-editor-export-editor)
          (vterm-mode . with-editor-export-editor)))
 
+;; `C-c b' now switches vterm buffers, so this moved to `C-c B'.
 (use-package browse-at-remote :ensure t
-  :bind (("C-c b" . 'echo-url-at-remote))
+  :bind (("C-c B" . 'echo-url-at-remote))
   :config
   (defun echo-url-at-remote ()
     (interactive)
