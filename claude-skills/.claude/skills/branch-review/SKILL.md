@@ -1,9 +1,10 @@
 ---
 name: branch-review
 description: |
-  Review code changes on the current branch against the default branch (auto-detected;
-  supports main, master, etc.), producing a structured REVIEW.md and posting inline
-  review comments on specific file lines via GitHub API.
+  Review code changes on the current branch against the branch they merge into
+  (the pull request's base branch when one is open, so stacked PRs review only their
+  own changes; the repository default branch otherwise), producing a structured
+  REVIEW.md and posting inline review comments on specific file lines via GitHub API.
   Use this skill whenever the user wants a code review, says things like "review",
   "code review", "/branch-review", "レビューして", "コードレビュー", "PRレビュー",
   "変更をチェックして", or asks to check code quality before merging. Also trigger
@@ -12,8 +13,9 @@ description: |
 
 # Code Review Skill
 
-Perform a systematic code review of the current branch's changes against main.
-This skill is language-agnostic and works with any programming language.
+Perform a systematic code review of the current branch's changes against the
+branch they merge into. This skill is language-agnostic and works with any
+programming language.
 
 ## Review Philosophy
 
@@ -45,57 +47,87 @@ case is handled or every abstraction is finalized. Instead, check that:
 Flag missing TODOs (incomplete code without any marker) but do not flag
 the presence of TODOs as a problem.
 
+## Scripts
+
+Gathering the diff goes through a script, in `scripts/` next to this file.
+`<skill_dir>` below is the skill's base directory, given to you when the skill is
+invoked.
+
+| Script | Use it for |
+| --- | --- |
+| `gather_diff.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `commands.py` | Shared command runner; not run directly |
+
+**Do not run `git` directly.** Resolving the base is easy to get subtly wrong,
+and reviewing against the wrong base wastes the entire review. The script encodes
+the rule and reports what it resolved. If it cannot do what you need, say so
+rather than reaching for a raw command.
+
+### Running them
+
+**Always run the scripts with `uv run --project <skill_dir>`**, never with a bare
+`python3`:
+
+```bash
+uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
+```
+
+`--project` is required, not decorative. Without it `uv` searches upward from the
+current directory for a `pyproject.toml` and would attach to **the repository
+being reviewed**, picking up that project's Python version and dependencies.
+Pointing it at the skill directory pins the interpreter to the one in `uv.lock`
+regardless of which repository the review runs in. The working directory still
+has to be inside the checkout under review -- `--project` changes dependency
+resolution, not `cwd`.
+
+The scripts are standard library only, so `uv` resolves them without a network
+fetch after the first run.
+
 ## Workflow
 
-### Step 0: Detect the default branch and fetch
+### Step 0-1: Gather the diff
 
-Detect the repository's default branch -- it may be `main`, `master`, or something
-else. Use the following command:
-
-```bash
-git remote show origin | sed -n 's/  HEAD branch: //p'
-```
-
-If this fails (e.g., no remote configured), fall back to checking which of `main` or
-`master` exists locally:
+Run the script. It resolves the range, fetches what it needs, and prints the
+range, the diff size, the changed files, the per-file stat, and the commits in
+one pass:
 
 ```bash
-git branch --list main master | head -1 | tr -d ' '
+uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
 ```
 
-Store the result as `DEFAULT_BRANCH` and use it in all subsequent commands instead of
-hardcoding `main`.
+Read its `review range` block and confirm the base is what you expect before
+going further. The base is **the branch these changes will actually merge
+into**, which is not always the repository default:
 
-Then fetch the latest state of the default branch from origin so the diff is up to date:
+| Situation | Base used |
+| --- | --- |
+| Pull request open for this branch | that PR's base branch |
+| No pull request yet | repository default branch |
+| Neither resolves | local `main` / `master` |
+
+This matters most for **stacked pull requests**, where the PR targets the branch
+below it rather than `main`. Diffing against `main` there pulls in every change
+from the PRs underneath and makes you review work that was already reviewed. If
+the resolved base looks wrong, override it:
 
 ```bash
-git fetch origin $DEFAULT_BRANCH
+uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py --base some-other-branch
 ```
 
-Use the merge-base (common ancestor) of `origin/$DEFAULT_BRANCH` and `HEAD` as the
-diff base. This ensures the review covers only the changes introduced on the current
-branch, not unrelated commits that landed on the default branch after branching.
+Everything is measured from the merge-base, so commits that landed on the base
+after this branch was cut are excluded.
 
-Compute the merge-base once and reuse it:
+Review the files listed under `files to review`. The script lists deleted files
+separately -- ignore those entirely.
 
-```bash
-MERGE_BASE=$(git merge-base origin/$DEFAULT_BRANCH HEAD)
-```
-
-### Step 1: Gather the diff
-
-```bash
-git diff --stat $MERGE_BASE..HEAD
-git diff --name-status $MERGE_BASE..HEAD
-git log --oneline $MERGE_BASE..HEAD
-```
-
-Identify all added and modified files. Ignore deleted files entirely.
+To see the actual hunks rather than the whole file, add `--patch` for the full
+diff or `--patch-for <path>` for one file. Prefer this over reading a file with
+the Read tool when you need to tell changed code from pre-existing code.
 
 ### Step 1.5: Check PR size
 
-If the diff has more than 200 lines of additions, flag this in Overall Comments
-and suggest splitting into smaller PRs. (Use `$MERGE_BASE` as the base.)
+`gather_diff.py` prints a `NOTE` when additions exceed 200. When it does, flag
+PR size in Overall Comments and suggest splitting into smaller PRs.
 
 When suggesting a split, propose concrete PR boundaries based on the actual
 changes. Good split criteria:
@@ -361,11 +393,16 @@ gh api repos/{owner}/{repo}/pulls/{number}/files --jq '.[].patch' | head -100
 ```
 
 Or use the line numbers you already collected during Step 2/3 reading. Verify the
-line exists in the diff by checking `git diff $MERGE_BASE..HEAD -- <file>`.
+line exists in the diff with
+`gather_diff.py --patch-for <file>`.
 
 ## Important Rules
 
 - Always respond in Japanese.
+- Use `gather_diff.py` to gather the diff. Do not run `git` directly.
+- Invoke every script with `uv run --project <skill_dir>`, never a bare `python3`.
+- Review against the base the branch actually merges into, which for a stacked
+  pull request is the PR's base branch, not the repository default.
 - Read ALL changed files before writing any findings. No exceptions.
 - Do not review deleted files.
 - Focus on the diff, not pre-existing code that was not changed in this branch.
