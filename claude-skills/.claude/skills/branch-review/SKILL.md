@@ -50,7 +50,7 @@ the presence of TODOs as a problem.
 
 ## Scripts
 
-Gathering the review context goes through a script, in `scripts/` next to this
+All git and GitHub access goes through these scripts, in `scripts/` next to this
 file. Claude Code expands `${CLAUDE_SKILL_DIR}` below to that directory, in this
 text and in the `allowed-tools` rule alike, so the command matches the rule and
 runs without a permission prompt. Pass it through unchanged rather than
@@ -59,12 +59,15 @@ substituting a path of your own.
 | Script | Use it for |
 | --- | --- |
 | `gather_review_context.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
+| `post_review.py` | Validating and posting the review (Step 5) |
 | `commands.py` | Shared command runner; not run directly |
 
-**Do not run `git` directly.** Resolving the base is easy to get subtly wrong,
-and reviewing against the wrong base wastes the entire review. The script encodes
-the rule and reports what it resolved. If it cannot do what you need, say so
-rather than reaching for a raw command.
+**Do not run `git` or `gh` directly.** Base resolution and comment anchoring are
+both easy to get subtly wrong -- reviewing against the wrong base wastes the
+whole review, and one bad anchor makes GitHub reject every comment at once. The
+scripts encode those rules and check them. If a script cannot do what you need,
+say so rather than reaching for a raw command.
 
 ### Running them
 
@@ -85,6 +88,13 @@ resolution, not `cwd`.
 
 The scripts are standard library only, so `uv` resolves them without a network
 fetch after the first run.
+
+Every script takes `--help`. Their unit tests run with:
+
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} -m unittest discover \
+  -s ${CLAUDE_SKILL_DIR}/scripts -t ${CLAUDE_SKILL_DIR}/scripts
+```
 
 ## Workflow
 
@@ -328,13 +338,8 @@ leave it out entirely instead of marking it "Low".
 
 ### Step 5: PR integration
 
-After writing REVIEW.md, check if a PR exists:
-
-```bash
-gh pr view --json number,url 2>/dev/null
-```
-
-If a PR exists, ask the user:
+`gather_review_context.py` already reported whether a pull request exists, in the
+`pull_request` field of its `review range` block. If one exists, ask the user:
 
 > REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
@@ -343,66 +348,71 @@ using the GitHub Pull Request Review API. Do NOT post without confirmation.
 
 #### How to post inline review comments
 
-Build a JSON payload and submit it via `gh api`. Each finding becomes an inline
-comment attached to the exact file and line it references.
+Write the findings to a JSON file, then let the script validate and post it.
+Write the file to the scratchpad directory, not the user's project.
 
-```bash
-gh api -X POST repos/{owner}/{repo}/pulls/{number}/reviews \
-  --input /dev/stdin <<'JSON'
+```json
 {
-  "body": "Overall summary of the review (cross-cutting concerns, PR size notes, etc.)",
+  "body": "Overall summary: cross-cutting concerns, PR size notes, findings that anchor to no single line.",
   "event": "COMMENT",
   "comments": [
     {
-      "path": "relative/path/to/file.ts",
+      "path": "src/main/index.ts",
       "line": 29,
-      "side": "RIGHT",
       "body": "### 2-1. IPC color inputs not validated\n\nThe `UPDATE_COLOR` handler accepts arbitrary strings...\n\nSuggestion: validate against `/^#[0-9A-Fa-f]{6}$/`."
-    },
-    {
-      "path": "relative/path/to/other.ts",
-      "line": 86,
-      "side": "RIGHT",
-      "body": "### 5-1. Async callback in 'closed' event\n\n..."
     }
   ]
 }
-JSON
 ```
 
-Rules for building the payload:
-
-- **`path`**: relative to the repo root (e.g., `stickies-md-electron/src/main/index.ts`),
-  NOT an absolute filesystem path.
-- **`line`**: the line number in the file on the HEAD side of the diff (the new version).
-  This must be a line that actually appears in the diff. If the finding refers to a line
-  that is not part of the diff (unchanged context), attach it to the nearest changed line
-  in the same file, or fall back to a general review comment in `body`.
-- **`side`**: always `"RIGHT"` (we comment on the new code, not the removed code).
-- **`body`**: use the same heading format as REVIEW.md (`### N-N. Short description`),
-  followed by explanation. Use markdown. Keep each comment self-contained -- reviewers
-  may read them individually.
-- **`event`**: use `"COMMENT"` (neutral). Do NOT use `"REQUEST_CHANGES"` or `"APPROVE"`
-  unless the user explicitly asks.
-- Put cross-cutting concerns (PR size, overall architecture notes) in the top-level
-  `"body"` field, not as inline comments.
-- If a finding cannot be mapped to a specific diff line (e.g., a missing file, a
-  cross-file concern), include it only in the top-level `"body"`.
-
-To find the correct line numbers in the diff, run:
+Validate first, then post once it is clean:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/files --jq '.[].patch' | head -100
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py findings.json --dry-run
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py findings.json
 ```
 
-Or use the line numbers you already collected during Step 2/3 reading. Verify the
-line exists in the diff with
-`gather_review_context.py --patch-for <file>`.
+The script fills in `"side": "RIGHT"` and defaults `"event"` to `"COMMENT"`, so
+neither belongs in the file. It checks every anchor against the pull request
+diff before sending anything, and refuses to post if any is bad -- **GitHub
+rejects the entire review when a single comment anchors outside the diff**, so
+one wrong line number would otherwise lose every finding. On failure it names
+the offending anchor and the nearest usable line:
+
+```text
+error: refusing to post; GitHub rejects the whole review on a bad anchor
+  Makefile:999 - not in the diff; nearest anchorable line is 68
+  no/such/file.go:1 - file is not in the pull request diff
+```
+
+To pick anchors while you are still writing findings, ask which lines are
+available:
+
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py --path src/main/index.ts
+```
+
+Rules for building the findings file:
+
+- **`path`**: relative to the repo root, NOT an absolute filesystem path.
+- **`line`**: a line on the HEAD side of the diff. Added *and* context lines
+  inside a hunk are both anchorable. If a finding refers to a line outside the
+  diff, move it to the nearest changed line in the same file, or to `body`.
+- **`body`**: use the same heading format as REVIEW.md (`### N-N. Short
+  description`), followed by the explanation. Keep each comment self-contained
+  -- reviewers may read them individually, so repeat the context a reader needs
+  rather than referring to "the finding above".
+- **`event`**: leave it out. Only set `"APPROVE"` or `"REQUEST_CHANGES"` when
+  the user explicitly asks for one.
+- Put cross-cutting concerns (PR size, overall architecture notes) and any
+  finding that maps to no single line in the top-level `"body"`.
 
 ## Important Rules
 
 - Always respond in Japanese.
-- Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
+- Use the scripts in `scripts/` for all git and GitHub access. Do not run `git`
+  or `gh` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
   pull request is the PR's base branch, not the repository default.
