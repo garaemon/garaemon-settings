@@ -176,6 +176,16 @@
               ("\C-c t" . 'my-vterm-toggle)
               ("<mouse-1>" . 'my-browse-url-at-point)
               ("\C-k" . 'my-vterm-kill-line)
+              ;; Copy a mouse selection without entering copy mode; both keys
+              ;; fall back to the shell when no region is active.
+              ("C-w" . 'my-vterm-copy-region-or-send-key)
+              ("M-w" . 'my-vterm-copy-region-or-send-key)
+              :map vterm-copy-mode-map
+              ;; `vterm-copy-mode-done' (RET) copies the whole line when no
+              ;; region is active and then leaves copy mode. These copy the
+              ;; region only and stay in copy mode.
+              ("C-w" . 'my-vterm-copy-region)
+              ("M-w" . 'my-vterm-copy-region)
               )
   :custom
   (vterm-max-scrollback  10000)
@@ -185,6 +195,10 @@
                              "C-k"))
   (vterm-always-compile-module t)
   :config
+  ;; The region-only copy commands live in lisp/my-vterm-copy.el so that
+  ;; tests/my-vterm-copy-test.el can load them without pulling in the whole
+  ;; init.
+  (require 'my-vterm-copy)
 
   ;; https://github.com/akermu/emacs-libvterm/issues/304#issuecomment-621617817
   (defun my-vterm-kill-line ()
