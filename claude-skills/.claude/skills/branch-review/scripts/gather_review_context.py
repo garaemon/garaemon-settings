@@ -1,25 +1,33 @@
 #!/usr/bin/env python3
 """Resolve the review range and print everything a branch review starts from.
 
-The range runs from the merge-base with the branch these changes merge into, up
-to HEAD. That base is the pull request's own base branch when one is open, not
-the repository default -- for a stacked pull request, diffing against main would
-drag in every change from the PRs below and make the reviewer re-read work that
-was already reviewed. The resolution order is:
+By default the range is the whole branch: from the merge-base with the branch it
+merges into, up to HEAD. That base is the pull request's own base branch when one
+is open, not the repository default -- for a stacked pull request, diffing
+against main would drag in every change from the PRs below and make the reviewer
+re-read work that was already reviewed. The resolution order is:
 
     1. --base, when given explicitly
     2. the base branch of the pull request for the current branch
     3. the repository default branch (no pull request open yet)
     4. a local main/master (no GitHub remote)
 
+The reviewer can also ask for a narrower range -- "just the last commit", "this
+one commit", "between these two revisions" -- with --last, --commit or --range.
+Those name their endpoints outright and skip the merge-base entirely.
+
 The script also reports the `language` setting from Claude Code's settings
 files, so the review is written in the language the user configured rather than
 one hard-coded into the skill.
 
 Usage:
-    gather_review_context.py                       # range, size, files, commits
-    gather_review_context.py --base develop        # against another base
-    gather_review_context.py --patch               # plus the full unified diff
+    gather_review_context.py                       # whole branch (default)
+    gather_review_context.py --last 1              # only the most recent commit
+    gather_review_context.py --last 3              # the last three commits
+    gather_review_context.py --commit abc123       # that one commit
+    gather_review_context.py --range abc123..def456
+    gather_review_context.py --base develop        # whole branch, another base
+    gather_review_context.py --patch               # any of the above, plus the diff
     gather_review_context.py --patch-for cmd/x.go  # plus one file's diff
 
 Run from anywhere inside the repository checkout.
@@ -38,6 +46,9 @@ from typing import Any, cast
 from commands import detect_github_host, run_command, run_gh_command
 
 SIZE_THRESHOLD = 200
+
+# git's canonical empty tree, used as the left side when a commit has no parent.
+EMPTY_TREE_OBJECT = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 # Claude Code's managed (enterprise) settings file, which outranks every other
 # settings file, lives at a different path on each platform.
@@ -122,6 +133,49 @@ def resolve_base_revision(base_ref: str) -> str:
 def find_merge_base(base_revision: str, head_revision: str = "HEAD") -> str:
     """Return the common ancestor of two revisions."""
     return run_command(["git", "merge-base", base_revision, head_revision]).strip()
+
+
+def parse_range_spec(spec: str | None) -> tuple[str, str, bool]:
+    """Split a git range into (left, right, uses_merge_base).
+
+    Accepts the two forms git uses plus a bare revision:
+
+        "a..b"  -> ("a", "b", False)   everything b has that a does not
+        "a...b" -> ("a", "b", True)    everything b added since they diverged
+        "a"     -> ("a", "HEAD", False)
+
+    Raises ValueError when the left endpoint is missing, since a range with no
+    starting point has no meaning here.
+    """
+    spec = (spec or "").strip()
+    if not spec:
+        raise ValueError("range is empty")
+    separator = "..." if "..." in spec else ".." if ".." in spec else None
+    if separator is None:
+        return spec, "HEAD", False
+    left, right = spec.split(separator, 1)
+    if not left.strip():
+        raise ValueError(f"range {spec!r} has no left endpoint")
+    return left.strip(), (right.strip() or "HEAD"), separator == "..."
+
+
+def build_last_range(count: int) -> tuple[str, str]:
+    """Return the (left, right) endpoints covering the last count commits."""
+    if count < 1:
+        raise ValueError(f"--last needs at least 1 commit, got {count}")
+    return f"HEAD~{count}", "HEAD"
+
+
+def build_commit_range(revision: str) -> tuple[str, str]:
+    """Return the (left, right) endpoints covering one commit's own change.
+
+    A root commit has no parent, so its diff is taken against git's empty tree
+    rather than against "<revision>^", which would fail to resolve.
+    """
+    parent = f"{revision}^"
+    if resolve_existing_revision([parent]) is None:
+        return EMPTY_TREE_OBJECT, revision
+    return parent, revision
 
 
 def format_diff_spec(left: str, right: str) -> str:
@@ -294,10 +348,34 @@ def report_stat_and_commits(diff_spec: str) -> None:
     print(run_command(["git", "log", "--oneline", diff_spec]).rstrip())
 
 
+def resolve_explicit_range(
+    args: argparse.Namespace,
+) -> tuple[str, str, str] | None:
+    """Return (left, right, description) for --last/--commit/--range, or None.
+
+    These three name their endpoints outright, so no base branch is resolved and
+    no merge-base is taken -- the reviewer asked for exactly this span.
+    """
+    if args.last is not None:
+        left, right = build_last_range(args.last)
+        commits = "commit" if args.last == 1 else "commits"
+        return left, right, f"--last {args.last}: the most recent {args.last} {commits}"
+    if args.commit:
+        left, right = build_commit_range(args.commit)
+        return left, right, f"--commit {args.commit}: that commit's own change"
+    if args.range:
+        left, right, uses_merge_base = parse_range_spec(args.range)
+        if uses_merge_base:
+            left = find_merge_base(left, right)
+            return left, right, f"--range {args.range}: since the two diverged"
+        return left, right, f"--range {args.range}"
+    return None
+
+
 def resolve_branch_range(
     args: argparse.Namespace, pull_request: dict[str, Any] | None
 ) -> tuple[str, str, str]:
-    """Return (left, right, description) for the whole-branch review."""
+    """Return (left, right, description) for the default whole-branch review."""
     base_ref, base_source = resolve_review_base(args.base, pull_request)
     base_revision = resolve_base_revision(base_ref)
     merge_base = find_merge_base(base_revision)
@@ -306,7 +384,17 @@ def resolve_branch_range(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", help="review the whole branch against this base ref")
+    scope = parser.add_mutually_exclusive_group()
+    scope.add_argument("--base", help="review the whole branch against this base ref")
+    scope.add_argument(
+        "--last", type=int, metavar="N",
+        help="review only the last N commits (--last 1 is the most recent commit)",
+    )
+    scope.add_argument("--commit", metavar="REV", help="review only this commit's change")
+    scope.add_argument(
+        "--range", metavar="SPEC",
+        help='review an explicit range: "a..b", "a...b", or "a" (meaning a..HEAD)',
+    )
     parser.add_argument(
         "--threshold", type=int, default=SIZE_THRESHOLD,
         help=f"additions above which to flag PR size (default {SIZE_THRESHOLD})",
@@ -317,12 +405,15 @@ def main() -> int:
 
     try:
         pull_request = read_pull_request()
-        left, right, description = resolve_branch_range(args, pull_request)
+        resolved = resolve_explicit_range(args)
+        if resolved is None:
+            resolved = resolve_branch_range(args, pull_request)
+        left, right, description = resolved
         if resolve_existing_revision([left]) is None:
             raise RuntimeError(f"revision {left!r} does not resolve")
         if resolve_existing_revision([right]) is None:
             raise RuntimeError(f"revision {right!r} does not resolve")
-    except RuntimeError as error:
+    except (RuntimeError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
