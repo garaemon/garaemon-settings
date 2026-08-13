@@ -1,0 +1,206 @@
+#!/bin/bash
+# git-checkout-fork: Check out a branch named the way GitHub shows it on a pull
+# request page, such as "garaemon:2026.08.01-fix-bug".
+# Place this script in your PATH to use as `git checkout-fork`.
+set -euo pipefail
+
+show_help() {
+  cat << 'EOF'
+Usage: git checkout-fork [OPTIONS] <owner>:<branch>
+
+Check out a branch named the way GitHub shows it on a pull request page.
+The fork must already be registered as a remote. The local branch takes the
+branch part of the name only.
+
+Example:
+  git checkout-fork garaemon:2026.08.01-fix-bug
+
+Options:
+  -r REMOTE  Use this remote instead of resolving the owner
+  -h         Show this help message
+EOF
+}
+
+to_lower() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# Replacing ':' with '/' collapses every remote URL form into a slash separated
+# path, so the owner is always the second to last segment. This absorbs the scp
+# form (git@host:owner/repo.git) and an explicit port (ssh://host:22/owner/...).
+extract_owner_from_url() {
+  local path="${1%/}"
+  path="${path//:/\/}"
+  local without_repository="${path%/*}"
+  printf '%s\n' "${without_repository##*/}"
+}
+
+extract_repository_from_url() {
+  local path="${1%/}"
+  local repository="${path##*/}"
+  printf '%s\n' "${repository%.git}"
+}
+
+find_remotes_for_owner() {
+  local wanted
+  wanted=$(to_lower "$1")
+  local matches=""
+  local remote=""
+  local url=""
+  local remote_owner=""
+  while IFS= read -r remote; do
+    if [ -z "$remote" ]; then
+      continue
+    fi
+    url=$(git remote get-url "$remote")
+    remote_owner=$(to_lower "$(extract_owner_from_url "$url")")
+    if [ "$remote_owner" = "$wanted" ]; then
+      matches="${matches}${remote}"$'\n'
+    fi
+  done <<< "$(git remote)"
+  printf '%s' "$matches"
+}
+
+guess_repository_name() {
+  local remotes
+  remotes=$(git remote)
+  if [ -z "$remotes" ]; then
+    printf '%s\n' "<repository>"
+    return 0
+  fi
+  local source_remote="origin"
+  if ! git remote get-url origin > /dev/null 2>&1; then
+    source_remote="${remotes%%$'\n'*}"
+  fi
+  extract_repository_from_url "$(git remote get-url "$source_remote")"
+}
+
+find_worktree_for_branch() {
+  git worktree list --porcelain | awk -v ref="refs/heads/$1" '
+    /^worktree / { path = substr($0, 10) }
+    $0 == "branch " ref { print path }
+  '
+}
+
+forced_remote=""
+
+while getopts "hr:" opt; do
+  case "${opt}" in
+    h) show_help; exit 0 ;;
+    r) forced_remote="${OPTARG}" ;;
+    *) show_help >&2; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ $# -ne 1 ]; then
+  echo "Error: Expected exactly one OWNER:BRANCH argument, got $#." >&2
+  show_help >&2
+  exit 1
+fi
+
+spec="$1"
+
+case "$spec" in
+  *:*) ;;
+  *)
+    echo "Error: '${spec}' is not in OWNER:BRANCH form (for example 'garaemon:fix-bug')." >&2
+    exit 1
+    ;;
+esac
+
+owner="${spec%%:*}"
+branch="${spec#*:}"
+
+if [ -z "$owner" ] || [ -z "$branch" ]; then
+  echo "Error: '${spec}' has an empty owner or branch part." >&2
+  exit 1
+fi
+
+if ! git check-ref-format "refs/heads/${branch}"; then
+  echo "Error: '${branch}' is not a valid branch name." >&2
+  exit 1
+fi
+
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "Error: Not inside a git repository." >&2
+  exit 1
+fi
+
+if [ -n "$forced_remote" ]; then
+  if ! git remote get-url "$forced_remote" > /dev/null 2>&1; then
+    echo "Error: No such remote: '${forced_remote}'." >&2
+    exit 1
+  fi
+  remote="$forced_remote"
+  echo "Using remote '${remote}'."
+else
+  matched_remotes=$(find_remotes_for_owner "$owner")
+  match_count=$(printf '%s' "$matched_remotes" | grep -c . || true)
+
+  if [ "$match_count" -eq 0 ]; then
+    echo "Error: No remote points at owner '${owner}'." >&2
+    echo "Register the fork as a remote first:" >&2
+    echo "  git remote add ${owner} https://github.com/${owner}/$(guess_repository_name).git" >&2
+    exit 1
+  fi
+
+  remote=""
+  while IFS= read -r candidate; do
+    if [ -z "$candidate" ]; then
+      continue
+    fi
+    if [ "$(to_lower "$candidate")" = "$(to_lower "$owner")" ]; then
+      remote="$candidate"
+    fi
+  done <<< "$matched_remotes"
+
+  if [ -z "$remote" ]; then
+    if [ "$match_count" -gt 1 ]; then
+      echo "Error: Multiple remotes point at owner '${owner}':" >&2
+      printf '%s' "$matched_remotes" | awk 'NF { print "  " $0 }' >&2
+      echo "Re-run with -r REMOTE to choose one." >&2
+      exit 1
+    fi
+    remote="${matched_remotes%%$'\n'*}"
+  fi
+  echo "Using remote '${remote}' for owner '${owner}'."
+fi
+
+tracking_ref="refs/remotes/${remote}/${branch}"
+current_branch=$(git branch --show-current)
+
+# Refuse to reuse an unrelated local branch that happens to share the name.
+if git show-ref --verify --quiet "refs/heads/${branch}"; then
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name "${branch}@{upstream}" 2> /dev/null || true)
+  if [ "$upstream" != "${remote}/${branch}" ]; then
+    echo "Error: Local branch '${branch}' already exists and tracks '${upstream:-nothing}'." >&2
+    echo "Expected it to track '${remote}/${branch}'." >&2
+    echo "Re-point it with:  git branch -u ${remote}/${branch} ${branch}" >&2
+    exit 1
+  fi
+fi
+
+occupied_worktree=$(find_worktree_for_branch "$branch")
+if [ -n "$occupied_worktree" ] && [ "$branch" != "$current_branch" ]; then
+  echo "Error: Branch '${branch}' is already checked out at ${occupied_worktree}." >&2
+  exit 1
+fi
+
+# Fetch with an explicit refspec so the remote-tracking ref exists even when the
+# remote carries no default fetch refspec.
+echo "Fetching '${branch}' from '${remote}'..."
+git fetch "$remote" "+refs/heads/${branch}:${tracking_ref}"
+
+if git show-ref --verify --quiet "refs/heads/${branch}"; then
+  if [ "$branch" != "$current_branch" ]; then
+    echo "Checking out '${branch}'..."
+    git checkout "$branch"
+  fi
+  if ! git merge --ff-only "$tracking_ref" > /dev/null 2>&1; then
+    echo "Warning: '${branch}' has diverged from '${remote}/${branch}'; left unchanged." >&2
+  fi
+else
+  echo "Creating '${branch}' tracking '${remote}/${branch}'..."
+  git checkout -b "$branch" --track "${remote}/${branch}"
+fi
