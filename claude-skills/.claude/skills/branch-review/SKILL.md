@@ -49,13 +49,13 @@ the presence of TODOs as a problem.
 
 ## Scripts
 
-Gathering the diff goes through a script, in `scripts/` next to this file.
-`<skill_dir>` below is the skill's base directory, given to you when the skill is
-invoked.
+Gathering the review context goes through a script, in `scripts/` next to this
+file. `<skill_dir>` below is the skill's base directory, given to you when the
+skill is invoked.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_diff.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `gather_review_context.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
 | `commands.py` | Shared command runner; not run directly |
 
 **Do not run `git` directly.** Resolving the base is easy to get subtly wrong,
@@ -69,7 +69,7 @@ rather than reaching for a raw command.
 `python3`:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py
 ```
 
 `--project` is required, not decorative. Without it `uv` searches upward from the
@@ -92,7 +92,7 @@ range, the diff size, the changed files, the per-file stat, and the commits in
 one pass:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py
 ```
 
 Read its `review range` block and confirm the base is what you expect before
@@ -111,7 +111,7 @@ from the PRs underneath and makes you review work that was already reviewed. If
 the resolved base looks wrong, override it:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py --base some-other-branch
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --base some-other-branch
 ```
 
 Everything is measured from the merge-base, so commits that landed on the base
@@ -126,7 +126,7 @@ the Read tool when you need to tell changed code from pre-existing code.
 
 ### Step 1.5: Check PR size
 
-`gather_diff.py` prints a `NOTE` when additions exceed 200. When it does, flag
+`gather_review_context.py` prints a `NOTE` when additions exceed 200. When it does, flag
 PR size in Overall Comments and suggest splitting into smaller PRs.
 
 When suggesting a split, propose concrete PR boundaries based on the actual
@@ -394,12 +394,12 @@ gh api repos/{owner}/{repo}/pulls/{number}/files --jq '.[].patch' | head -100
 
 Or use the line numbers you already collected during Step 2/3 reading. Verify the
 line exists in the diff with
-`gather_diff.py --patch-for <file>`.
+`gather_review_context.py --patch-for <file>`.
 
 ## Important Rules
 
 - Always respond in Japanese.
-- Use `gather_diff.py` to gather the diff. Do not run `git` directly.
+- Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
 - Invoke every script with `uv run --project <skill_dir>`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
   pull request is the PR's base branch, not the repository default.

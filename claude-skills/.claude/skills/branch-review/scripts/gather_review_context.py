@@ -13,10 +13,10 @@ was already reviewed. The resolution order is:
     4. a local main/master (no GitHub remote)
 
 Usage:
-    gather_diff.py                       # summary: range, size, files, commits
-    gather_diff.py --base origin/develop # against another base
-    gather_diff.py --patch               # summary plus the full unified diff
-    gather_diff.py --patch-for cmd/x.go  # summary plus one file's diff
+    gather_review_context.py                       # range, size, files, commits
+    gather_review_context.py --base develop        # against another base
+    gather_review_context.py --patch               # plus the full unified diff
+    gather_review_context.py --patch-for cmd/x.go  # plus one file's diff
 
 Run from anywhere inside the repository checkout.
 """
