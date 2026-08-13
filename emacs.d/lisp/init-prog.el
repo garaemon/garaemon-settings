@@ -326,6 +326,28 @@
 (use-package projectile
   :ensure t
   :demand t
+  :preface
+  (defun my-run-project-or-subproject (arg)
+    "Run the project's run command in a directory picked with completion.
+The nearest subproject of the current buffer is the default; the project
+root and the project's other subprojects are offered too.  ARG forces the
+command prompt, as in `projectile-run-project'."
+    (interactive "P")
+    (let* ((root (projectile-acquire-root))
+           (subproject (ignore-errors
+                         (file-relative-name (projectile-subproject-root) root)))
+           (candidates (delete-dups
+                        (append (when subproject (list subproject))
+                                (list "./")
+                                (projectile-project-subprojects root))))
+           (directory (if (cdr candidates)
+                          (completing-read "Run in: " candidates nil t nil nil
+                                           (or subproject "./"))
+                        (car candidates))))
+      ;; A nil base makes the phase resolve against the project root, which
+      ;; is what `projectile-run-project' does.
+      (projectile--run-lifecycle-phase
+       'run arg (unless (equal directory "./") (expand-file-name directory root)))))
   :custom
   ;; So a build and a test run, or two different projects' builds, don't
   ;; overwrite each other's *compilation* buffer.
@@ -335,9 +357,21 @@
   ;; `projectile-run-task' is projectile's equivalent, listing npm scripts,
   ;; Makefile targets, justfile recipes, and the catkin commands registered
   ;; below.
-  :bind (("C-c C-r" . projectile-run-task))
+  ;;
+  ;; C-c r is the same question one level down: projectile's own binding for
+  ;; the subproject variant is C-c p c m r, too long for the edit-run loop.
+  :bind (("C-c C-r" . projectile-run-task)
+         ("C-c r" . my-run-project-or-subproject))
   :config
   (projectile-mode +1)
+
+  ;; Accept a list of strings as a directory-local value of
+  ;; `projectile-subproject-markers' without confirmation. Projectile marks
+  ;; no value of the variable safe, so a repository that names its own
+  ;; subproject markers in .dir-locals.el otherwise asks about them every
+  ;; time one of its files opens.
+  (put 'projectile-subproject-markers 'safe-local-variable
+       (lambda (value) (and (listp value) (seq-every-p #'stringp value))))
 
   ;; A catkin workspace is one git repository holding many ROS packages,
   ;; and "catkin build --this" means "the package default-directory is
