@@ -256,7 +256,8 @@ rather than a per-skill audit job:
   ignore list hand-maintained in a workflow file.
 - The reachability argument belongs in the skill's own documentation, so
   it is version-controlled and reviewed. See
-  [pdf2zh: Known advisories in the pinned dependencies](.claude/skills/pdf2zh/SKILL.md).
+  [.claude/skills/pdf2zh/SECURITY.md](.claude/skills/pdf2zh/SECURITY.md), kept
+  out of `SKILL.md` so it does not load into context on every skill run.
 
 Keep the blocking CI job when the fix *is* actionable, as it is for the
 Node skills where an `npm audit` failure is resolved by bumping.
