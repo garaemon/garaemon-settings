@@ -9,6 +9,7 @@ description: |
   "code review", "/branch-review", "レビューして", "コードレビュー", "PRレビュー",
   "変更をチェックして", or asks to check code quality before merging. Also trigger
   when the user asks to review a specific PR by number.
+allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Edit(REVIEW.md)
 ---
 
 # Code Review Skill
@@ -50,8 +51,10 @@ the presence of TODOs as a problem.
 ## Scripts
 
 Gathering the review context goes through a script, in `scripts/` next to this
-file. `<skill_dir>` below is the skill's base directory, given to you when the
-skill is invoked.
+file. Claude Code expands `${CLAUDE_SKILL_DIR}` below to that directory, in this
+text and in the `allowed-tools` rule alike, so the command matches the rule and
+runs without a permission prompt. Pass it through unchanged rather than
+substituting a path of your own.
 
 | Script | Use it for |
 | --- | --- |
@@ -65,11 +68,11 @@ rather than reaching for a raw command.
 
 ### Running them
 
-**Always run the scripts with `uv run --project <skill_dir>`**, never with a bare
+**Always run the scripts with `uv run --project ${CLAUDE_SKILL_DIR}`**, never with a bare
 `python3`:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
 `--project` is required, not decorative. Without it `uv` searches upward from the
@@ -92,7 +95,7 @@ range, the diff size, the changed files, the per-file stat, and the commits in
 one pass:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
 Read its `review range` block and confirm the base is what you expect before
@@ -111,7 +114,7 @@ from the PRs underneath and makes you review work that was already reviewed. If
 the resolved base looks wrong, override it:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --base some-other-branch
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --base some-other-branch
 ```
 
 Everything is measured from the merge-base, so commits that landed on the base
@@ -400,7 +403,7 @@ line exists in the diff with
 
 - Always respond in Japanese.
 - Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
-- Invoke every script with `uv run --project <skill_dir>`, never a bare `python3`.
+- Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
   pull request is the PR's base branch, not the repository default.
 - Read ALL changed files before writing any findings. No exceptions.
