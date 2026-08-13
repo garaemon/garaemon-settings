@@ -231,3 +231,32 @@ npm-audit:
 When an advisory lands on `main`, the audit job starts failing — fix it
 by bumping the affected package and regenerating the lockfile rather
 than silencing the rule.
+
+### When the fix is blocked upstream, use Dependabot instead of a CI job
+
+The rule above assumes bumping the package is possible. It sometimes is
+not: `pdf2zh` hard-pins `gradio<5.36`, which caps `pillow<12.0`, so the
+`pillow` fix release cannot be installed at all until upstream moves.
+
+A blocking CI job is the wrong tool for that situation. It cannot be made
+green by any change to this repository, so it stays red until someone
+appends another entry to an ignore list — and a permanently red `main`
+teaches everyone to ignore CI, which costs far more than the check is
+worth. The `pip audit (pdf2zh)` job reached 49 ignore entries, two thirds
+of them for a Gradio web server this skill never starts, before it was
+removed.
+
+For those cases, rely on **Dependabot alerts** (enabled repository-wide)
+rather than a per-skill audit job:
+
+- Alerts surface the same advisories without blocking unrelated pull
+  requests.
+- Dismissing one records a reason (`vulnerable code is not actually used`)
+  that persists and reopens if the situation changes, instead of an
+  ignore list hand-maintained in a workflow file.
+- The reachability argument belongs in the skill's own documentation, so
+  it is version-controlled and reviewed. See
+  [pdf2zh: Known advisories in the pinned dependencies](.claude/skills/pdf2zh/SKILL.md).
+
+Keep the blocking CI job when the fix *is* actionable, as it is for the
+Node skills where an `npm audit` failure is resolved by bumping.
