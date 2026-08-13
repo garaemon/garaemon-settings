@@ -238,14 +238,6 @@ The rule above assumes bumping the package is possible. It sometimes is
 not: `pdf2zh` hard-pins `gradio<5.36`, which caps `pillow<12.0`, so the
 `pillow` fix release cannot be installed at all until upstream moves.
 
-A blocking CI job is the wrong tool for that situation. It cannot be made
-green by any change to this repository, so it stays red until someone
-appends another entry to an ignore list — and a permanently red `main`
-teaches everyone to ignore CI, which costs far more than the check is
-worth. The `pip audit (pdf2zh)` job reached 49 ignore entries, two thirds
-of them for a Gradio web server this skill never starts, before it was
-removed.
-
 For those cases, rely on **Dependabot alerts** (enabled repository-wide)
 rather than a per-skill audit job:
 
