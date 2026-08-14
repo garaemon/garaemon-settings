@@ -11,6 +11,23 @@ Usage:
     list_commentable_lines.py --path cmd/up.go    # one file
     list_commentable_lines.py --check findings.json
 
+Example output:
+
+    $ list_commentable_lines.py
+    assets/logo.png: (no anchorable lines)
+    cmd/up.go: 12-18, 40, 55-57
+    docs/README.md: 1-5, 12
+
+    $ list_commentable_lines.py --check findings.json
+    ok      cmd/up.go:40
+    INVALID cmd/up.go:41 - not in the diff; nearest anchorable line is 40
+    INVALID cmd/old.go:7 - file is not in the pull request diff
+
+    2 invalid of 3 anchors
+
+--check exits 1 when any anchor is bad, so a caller can gate posting the
+review on it.
+
 Run from anywhere inside the repository checkout.
 """
 
