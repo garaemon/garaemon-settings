@@ -82,7 +82,8 @@ When the loop ends (either no findings or max iterations reached):
 
 ## Important Rules
 
-- Always respond in Japanese.
+- Respond in the language of Claude Code's `language` setting, defaulting to
+  Japanese when it is unset.
 - The subagent runs branch-review; the parent (this skill) does the fixes.
 - Always pass the full list of previously fixed items to each subagent to prevent
   duplicate findings.

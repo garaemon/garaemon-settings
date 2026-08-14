@@ -12,6 +12,10 @@ was already reviewed. The resolution order is:
     3. the repository default branch (no pull request open yet)
     4. a local main/master (no GitHub remote)
 
+The script also reports the `language` setting from Claude Code's settings
+files, so the review is written in the language the user configured rather than
+one hard-coded into the skill.
+
 Usage:
     gather_review_context.py                       # range, size, files, commits
     gather_review_context.py --base develop        # against another base
@@ -28,11 +32,20 @@ import json
 import subprocess
 import sys
 from collections.abc import Sequence
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 from commands import run_command
 
 SIZE_THRESHOLD = 200
+
+# Claude Code's managed (enterprise) settings file, which outranks every other
+# settings file, lives at a different path on each platform.
+MANAGED_SETTINGS_PATHS = {
+    "darwin": Path("/Library/Application Support/ClaudeCode/managed-settings.json"),
+    "win32": Path("C:/Program Files/ClaudeCode/managed-settings.json"),
+}
+DEFAULT_MANAGED_SETTINGS_PATH = Path("/etc/claude-code/managed-settings.json")
 
 
 def read_pull_request() -> dict[str, Any] | None:
@@ -149,6 +162,51 @@ def measure_size(diff_spec: str) -> tuple[int, int, int]:
     return additions, deletions, file_count
 
 
+def settings_files() -> list[Path]:
+    """Return Claude Code's settings files, highest precedence first.
+
+    Mirrors the order Claude Code itself applies (managed, then the project's
+    local file, then the project file, then the user file). Two sources it
+    consults are invisible from here and therefore missing: the command-line
+    overrides that sit between managed and local, and the `managed-settings.d`
+    drop-in directories.
+    """
+    managed = MANAGED_SETTINGS_PATHS.get(sys.platform, DEFAULT_MANAGED_SETTINGS_PATH)
+    repository_root = Path(run_command(["git", "rev-parse", "--show-toplevel"]).strip())
+    return [
+        managed,
+        repository_root / ".claude" / "settings.local.json",
+        repository_root / ".claude" / "settings.json",
+        Path.home() / ".claude" / "settings.json",
+    ]
+
+
+def resolve_response_language() -> tuple[str | None, Path | None, list[str]]:
+    """Return (language, source_path, notes) for the configured `language`.
+
+    language is None when no settings file sets it, in which case the skill
+    falls back to the language of the conversation. notes carries the settings
+    files that could not be read, so a typo in one is reported instead of
+    silently changing which file wins.
+    """
+    notes: list[str] = []
+    for path in settings_files():
+        try:
+            parsed = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        except (OSError, json.JSONDecodeError) as error:
+            notes.append(f"could not read {path}: {error}")
+            continue
+        if not isinstance(parsed, dict):
+            continue
+        settings = cast("dict[str, Any]", parsed)
+        language = settings.get("language")
+        if isinstance(language, str) and language.strip():
+            return language.strip(), path, notes
+    return None, None, notes
+
+
 def print_section(title: str) -> None:
     """Print a section header."""
     print(f"\n=== {title} ===")
@@ -181,6 +239,20 @@ def report_review_range(
         print(f"pull_request:  #{pull_request['number']} {pull_request['url']}")
     else:
         print("pull_request:  (none for this branch)")
+
+
+def report_response_language() -> None:
+    """Print the language the review should be written in."""
+    language, source_path, notes = resolve_response_language()
+    print_section("review language")
+    if language:
+        print(f"language:      {language}")
+        print(f"source:        {source_path}")
+    else:
+        print("language:      (unset)")
+        print("source:        (no settings file sets `language`)")
+    for note in notes:
+        print(f"note:          {note}")
 
 
 def report_size(diff_spec: str, threshold: int) -> None:
@@ -253,6 +325,7 @@ def main() -> int:
 
     diff_spec = format_diff_spec(left, right)
     report_review_range(left, right, diff_spec, description, pull_request)
+    report_response_language()
     report_size(diff_spec, args.threshold)
     report_files(diff_spec)
     report_stat_and_commits(diff_spec)
