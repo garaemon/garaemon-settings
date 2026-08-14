@@ -5,10 +5,18 @@ command's own stderr attached, rather than a bare exit status. A bad revision or
 a missing pull request then says why, instead of surfacing as "exit code 128".
 """
 
+from __future__ import annotations
+
 import subprocess
+from collections.abc import Mapping, Sequence
 
 
-def run_command(args, check=True, env=None, input_text=None):
+def run_command(
+    args: Sequence[str],
+    check: bool = True,
+    env: Mapping[str, str] | None = None,
+    input_text: str | None = None,
+) -> str:
     """Run a command and return its stdout.
 
     Raises RuntimeError when check is true and the command fails; returns an

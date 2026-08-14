@@ -25,11 +25,15 @@ Usage:
 Run from anywhere inside the repository checkout.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, cast
 
 from commands import run_command
 
@@ -44,7 +48,7 @@ MANAGED_SETTINGS_PATHS = {
 DEFAULT_MANAGED_SETTINGS_PATH = Path("/etc/claude-code/managed-settings.json")
 
 
-def read_pull_request():
+def read_pull_request() -> dict[str, Any] | None:
     """Return the pull request for the current branch, or None if there is none."""
     output = run_command(
         ["gh", "pr", "view", "--json", "number,url,baseRefName,headRefName"],
@@ -58,7 +62,7 @@ def read_pull_request():
         return None
 
 
-def resolve_existing_revision(candidates):
+def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
     """Return the first candidate revision that git can resolve, or None."""
     for candidate in candidates:
         resolved = subprocess.run(
@@ -70,7 +74,7 @@ def resolve_existing_revision(candidates):
     return None
 
 
-def read_default_branch():
+def read_default_branch() -> str | None:
     """Return the repository default branch, or None when it cannot be read."""
     output = run_command(["gh", "repo", "view", "--json", "defaultBranchRef"], check=False)
     if output.strip():
@@ -83,7 +87,9 @@ def read_default_branch():
     return existing.removeprefix("refs/heads/") if existing else None
 
 
-def resolve_review_base(explicit_base, pull_request):
+def resolve_review_base(
+    explicit_base: str | None, pull_request: dict[str, Any] | None
+) -> tuple[str, str]:
     """Return (base_ref, description) for the branch under review."""
     if explicit_base:
         return explicit_base, "explicit --base"
@@ -98,7 +104,7 @@ def resolve_review_base(explicit_base, pull_request):
     raise RuntimeError("cannot resolve a review base; pass --base explicitly")
 
 
-def resolve_base_revision(base_ref):
+def resolve_base_revision(base_ref: str) -> str:
     """Fetch the base and return the revision to diff against.
 
     Prefers the remote-tracking ref so the review sees the base as it is on the
@@ -111,20 +117,23 @@ def resolve_base_revision(base_ref):
     return resolved
 
 
-def find_merge_base(base_revision, head_revision="HEAD"):
+def find_merge_base(base_revision: str, head_revision: str = "HEAD") -> str:
     """Return the common ancestor of two revisions."""
     return run_command(["git", "merge-base", base_revision, head_revision]).strip()
 
 
-def format_diff_spec(left, right):
+def format_diff_spec(left: str, right: str) -> str:
     """Render two endpoints as the range string git diff and git log take."""
     return f"{left}..{right}"
 
 
-def collect_changed_files(diff_spec):
+def collect_changed_files(
+    diff_spec: str,
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     """Return (reviewable, deleted) lists of (status, path) from the diff."""
     output = run_command(["git", "diff", "--name-status", diff_spec])
-    reviewable, deleted = [], []
+    reviewable: list[tuple[str, str]] = []
+    deleted: list[tuple[str, str]] = []
     for line in output.splitlines():
         if not line.strip():
             continue
@@ -137,7 +146,7 @@ def collect_changed_files(diff_spec):
     return reviewable, deleted
 
 
-def measure_size(diff_spec):
+def measure_size(diff_spec: str) -> tuple[int, int, int]:
     """Return (additions, deletions, file_count) for the diff."""
     output = run_command(["git", "diff", "--numstat", diff_spec])
     additions = deletions = file_count = 0
@@ -153,7 +162,7 @@ def measure_size(diff_spec):
     return additions, deletions, file_count
 
 
-def settings_files():
+def settings_files() -> list[Path]:
     """Return Claude Code's settings files, highest precedence first.
 
     Mirrors the order Claude Code itself applies (managed, then the project's
@@ -172,7 +181,7 @@ def settings_files():
     ]
 
 
-def resolve_response_language():
+def resolve_response_language() -> tuple[str | None, Path | None, list[str]]:
     """Return (language, source_path, notes) for the configured `language`.
 
     language is None when no settings file sets it, in which case the skill
@@ -180,27 +189,30 @@ def resolve_response_language():
     files that could not be read, so a typo in one is reported instead of
     silently changing which file wins.
     """
-    notes = []
+    notes: list[str] = []
     for path in settings_files():
         try:
-            settings = json.loads(path.read_text(encoding="utf-8"))
+            parsed = json.loads(path.read_text(encoding="utf-8"))
         except FileNotFoundError:
             continue
         except (OSError, json.JSONDecodeError) as error:
             notes.append(f"could not read {path}: {error}")
             continue
-        language = settings.get("language") if isinstance(settings, dict) else None
+        if not isinstance(parsed, dict):
+            continue
+        settings = cast("dict[str, Any]", parsed)
+        language = settings.get("language")
         if isinstance(language, str) and language.strip():
             return language.strip(), path, notes
     return None, None, notes
 
 
-def print_section(title):
+def print_section(title: str) -> None:
     """Print a section header."""
     print(f"\n=== {title} ===")
 
 
-def describe_revision(revision):
+def describe_revision(revision: str) -> str:
     """Render a revision as "<short sha> <subject>" when it names a commit."""
     described = run_command(
         ["git", "log", "-1", "--format=%h %s", revision], check=False
@@ -208,7 +220,13 @@ def describe_revision(revision):
     return f"{revision}  ({described})" if described else revision
 
 
-def report_review_range(left, right, diff_spec, description, pull_request):
+def report_review_range(
+    left: str,
+    right: str,
+    diff_spec: str,
+    description: str,
+    pull_request: dict[str, Any] | None,
+) -> None:
     """Print the resolved range so the reader can confirm what is under review."""
     print_section("review range")
     print(f"scope:         {description}")
@@ -223,7 +241,7 @@ def report_review_range(left, right, diff_spec, description, pull_request):
         print("pull_request:  (none for this branch)")
 
 
-def report_response_language():
+def report_response_language() -> None:
     """Print the language the review should be written in."""
     language, source_path, notes = resolve_response_language()
     print_section("review language")
@@ -237,7 +255,7 @@ def report_response_language():
         print(f"note:          {note}")
 
 
-def report_size(diff_spec, threshold):
+def report_size(diff_spec: str, threshold: int) -> None:
     """Print the diff size and flag it when it exceeds the threshold."""
     additions, deletions, file_count = measure_size(diff_spec)
     print_section("size")
@@ -251,7 +269,7 @@ def report_size(diff_spec, threshold):
         )
 
 
-def report_files(diff_spec):
+def report_files(diff_spec: str) -> None:
     """Print the files to review and, separately, the ones to skip."""
     reviewable, deleted = collect_changed_files(diff_spec)
     print_section("files to review (added and modified)")
@@ -265,7 +283,7 @@ def report_files(diff_spec):
         print("(none)")
 
 
-def report_stat_and_commits(diff_spec):
+def report_stat_and_commits(diff_spec: str) -> None:
     """Print the per-file stat and the commits in the range."""
     print_section("per-file stat")
     print(run_command(["git", "diff", "--stat", diff_spec]).rstrip())
@@ -273,7 +291,9 @@ def report_stat_and_commits(diff_spec):
     print(run_command(["git", "log", "--oneline", diff_spec]).rstrip())
 
 
-def resolve_branch_range(args, pull_request):
+def resolve_branch_range(
+    args: argparse.Namespace, pull_request: dict[str, Any] | None
+) -> tuple[str, str, str]:
     """Return (left, right, description) for the whole-branch review."""
     base_ref, base_source = resolve_review_base(args.base, pull_request)
     base_revision = resolve_base_revision(base_ref)
@@ -281,7 +301,7 @@ def resolve_branch_range(args, pull_request):
     return merge_base, "HEAD", f"whole branch against {base_ref} ({base_source})"
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", help="review the whole branch against this base ref")
     parser.add_argument(
