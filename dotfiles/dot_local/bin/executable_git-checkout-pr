@@ -1,0 +1,90 @@
+#!/bin/bash
+# git-checkout-pr: Check out a branch named the way GitHub shows it on a pull
+# request page, such as "garaemon:2026.08.01-fix-bug" or "claude/add-login".
+# Place this script in your PATH to use as `git checkout-pr`.
+set -euo pipefail
+
+show_help() {
+  cat << 'EOF'
+Usage: git checkout-pr <owner>:<branch>|<branch>
+
+Check out a branch named the way GitHub shows it on a pull request page.
+A pull request from a fork shows "owner:branch", where the owner is also the
+remote name. One from the base repository shows just "branch", which resolves
+against origin.
+
+Examples:
+  git checkout-pr garaemon:2026.08.01-fix-bug
+  git checkout-pr claude/google-auth-login-signup-qb1fqv
+
+Options:
+  -h  Show this help message
+EOF
+}
+
+while getopts "h" opt; do
+  case "${opt}" in
+    h) show_help; exit 0 ;;
+    *) show_help >&2; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ $# -ne 1 ]; then
+  echo "Error: Expected exactly one OWNER:BRANCH or BRANCH argument, got $#." >&2
+  show_help >&2
+  exit 1
+fi
+
+spec="$1"
+
+# GitHub prefixes the owner only when the branch lives in a fork, and that fork
+# is registered under the owner's name, so the prefix is already a remote name.
+case "$spec" in
+  *:*)
+    remote="${spec%%:*}"
+    branch="${spec#*:}"
+    ;;
+  *)
+    remote="origin"
+    branch="$spec"
+    ;;
+esac
+
+if [ -z "$remote" ] || [ -z "$branch" ]; then
+  echo "Error: '${spec}' has an empty remote or branch part." >&2
+  exit 1
+fi
+
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "Error: Not inside a git repository." >&2
+  exit 1
+fi
+
+if ! git remote get-url "$remote" > /dev/null 2>&1; then
+  origin_url=$(git remote get-url origin 2> /dev/null || true)
+  repository="${origin_url##*/}"
+  repository="${repository%.git}"
+  echo "Error: No remote named '${remote}'." >&2
+  echo "Register the fork first:" >&2
+  echo "  git remote add ${remote} https://github.com/${remote}/${repository:-<repository>}.git" >&2
+  exit 1
+fi
+
+echo "Fetching from '${remote}'..."
+git fetch "$remote"
+
+tracking_ref="refs/remotes/${remote}/${branch}"
+if ! git show-ref --verify --quiet "$tracking_ref"; then
+  echo "Error: '${branch}' does not exist on '${remote}'." >&2
+  exit 1
+fi
+
+if git show-ref --verify --quiet "refs/heads/${branch}"; then
+  git checkout "$branch"
+  if ! git merge --ff-only "$tracking_ref" > /dev/null 2>&1; then
+    echo "Warning: '${branch}' has diverged from '${remote}/${branch}'; left unchanged." >&2
+  fi
+else
+  git checkout -b "$branch" --track "${remote}/${branch}"
+fi
