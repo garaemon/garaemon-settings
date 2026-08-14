@@ -58,7 +58,7 @@ substituting a path of your own.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_review_context.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
 | `commands.py` | Shared command runner; not run directly |
 
 **Do not run `git` directly.** Resolving the base is easy to get subtly wrong,
@@ -91,8 +91,8 @@ fetch after the first run.
 ### Step 0-1: Gather the diff
 
 Run the script. It resolves the range, fetches what it needs, and prints the
-range, the diff size, the changed files, the per-file stat, and the commits in
-one pass:
+range, the review language, the diff size, the changed files, the per-file stat,
+and the commits in one pass:
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
@@ -151,6 +151,19 @@ Example suggestion format:
 
 Still proceed with the full review even if the PR is large -- the user may
 have good reasons for keeping it as one PR. The split suggestion is advisory.
+
+### Step 1.6: Note the review language
+
+The script reports Claude Code's `language` setting:
+
+```text
+=== review language ===
+language:      japanese
+source:        /home/you/.claude/settings.json
+```
+
+Write REVIEW.md in that language. When it reports `(unset)`, write in the
+language the user is using, defaulting to Japanese.
 
 ### Step 2: Read all changed files
 
@@ -284,7 +297,8 @@ formatter is configured in the project.
 
 ### Step 4: Write REVIEW.md
 
-Write findings to `REVIEW.md` at the project root.
+Write findings to `REVIEW.md` at the project root, in the language resolved in
+Step 1.6.
 
 Structure:
 
@@ -334,7 +348,7 @@ After writing REVIEW.md, check if a PR exists:
 gh pr view --json number,url 2>/dev/null
 ```
 
-If a PR exists, ask the user:
+If a PR exists, ask the user (in the review language):
 
 > REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
@@ -401,7 +415,7 @@ line exists in the diff with
 
 ## Important Rules
 
-- Always respond in Japanese.
+- Write REVIEW.md in the language the script reports under `review language`.
 - Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
