@@ -58,7 +58,7 @@ substituting a path of your own.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_review_context.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
 | `commands.py` | Shared command runner; not run directly |
 
 **Do not run `git` directly.** Resolving the base is easy to get subtly wrong,
@@ -91,8 +91,8 @@ fetch after the first run.
 ### Step 0-1: Gather the diff
 
 Run the script. It resolves the range, fetches what it needs, and prints the
-range, the diff size, the changed files, the per-file stat, and the commits in
-one pass:
+range, the review language, the diff size, the changed files, the per-file stat,
+and the commits in one pass:
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
@@ -151,6 +151,33 @@ Example suggestion format:
 
 Still proceed with the full review even if the PR is large -- the user may
 have good reasons for keeping it as one PR. The split suggestion is advisory.
+
+### Step 1.6: Note the review language
+
+The script prints a `review language` block reporting the `language` setting
+from Claude Code's settings files, resolved in Claude Code's own precedence
+order (managed, then the project's `.claude/settings.local.json`, then
+`.claude/settings.json`, then `~/.claude/settings.json`):
+
+```text
+=== review language ===
+language:      japanese
+source:        /home/you/.claude/settings.json
+```
+
+Write everything the user reads -- REVIEW.md, the chat replies, and any review
+comments posted to the pull request -- in that language. This is the *user's*
+language setting, not the language of the code, and it says nothing about the
+programming language under review.
+
+When the block reports `language: (unset)`, no settings file configures one:
+write in the language the user is using in this conversation, and fall back to
+Japanese when there is no user message to read it from (a cron-driven or
+scripted review, say).
+
+Two things stay in English regardless: the category headings from the Step 4
+template, so findings stay cross-referenceable between REVIEW.md and the inline
+PR comments, and code identifiers quoted from the diff.
 
 ### Step 2: Read all changed files
 
@@ -284,9 +311,10 @@ formatter is configured in the project.
 
 ### Step 4: Write REVIEW.md
 
-Write findings to `REVIEW.md` at the project root.
+Write findings to `REVIEW.md` at the project root, in the language resolved in
+Step 1.6.
 
-Structure:
+Structure (the headings stay in English, the prose does not):
 
 ```markdown
 # Code Review: [branch description]
@@ -334,7 +362,9 @@ After writing REVIEW.md, check if a PR exists:
 gh pr view --json number,url 2>/dev/null
 ```
 
-If a PR exists, ask the user:
+If a PR exists, ask the user -- in the review language -- whether to post the
+review to the PR: say that REVIEW.md is written, name the PR number, and ask
+whether to post inline review comments on it. In Japanese, for example:
 
 > REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
@@ -401,7 +431,8 @@ line exists in the diff with
 
 ## Important Rules
 
-- Always respond in Japanese.
+- Write REVIEW.md and every reply in the language the script reports under
+  `review language`, falling back as described in Step 1.6 when it is unset.
 - Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
