@@ -154,10 +154,7 @@ have good reasons for keeping it as one PR. The split suggestion is advisory.
 
 ### Step 1.6: Note the review language
 
-The script prints a `review language` block reporting the `language` setting
-from Claude Code's settings files, resolved in Claude Code's own precedence
-order (managed, then the project's `.claude/settings.local.json`, then
-`.claude/settings.json`, then `~/.claude/settings.json`):
+The script reports Claude Code's `language` setting:
 
 ```text
 === review language ===
@@ -165,19 +162,8 @@ language:      japanese
 source:        /home/you/.claude/settings.json
 ```
 
-Write everything the user reads -- REVIEW.md, the chat replies, and any review
-comments posted to the pull request -- in that language. This is the *user's*
-language setting, not the language of the code, and it says nothing about the
-programming language under review.
-
-When the block reports `language: (unset)`, no settings file configures one:
-write in the language the user is using in this conversation, and fall back to
-Japanese when there is no user message to read it from (a cron-driven or
-scripted review, say).
-
-Two things stay in English regardless: the category headings from the Step 4
-template, so findings stay cross-referenceable between REVIEW.md and the inline
-PR comments, and code identifiers quoted from the diff.
+Write REVIEW.md in that language. When it reports `(unset)`, write in the
+language the user is using, defaulting to Japanese.
 
 ### Step 2: Read all changed files
 
@@ -314,7 +300,7 @@ formatter is configured in the project.
 Write findings to `REVIEW.md` at the project root, in the language resolved in
 Step 1.6.
 
-Structure (the headings stay in English, the prose does not):
+Structure:
 
 ```markdown
 # Code Review: [branch description]
@@ -362,9 +348,7 @@ After writing REVIEW.md, check if a PR exists:
 gh pr view --json number,url 2>/dev/null
 ```
 
-If a PR exists, ask the user -- in the review language -- whether to post the
-review to the PR: say that REVIEW.md is written, name the PR number, and ask
-whether to post inline review comments on it. In Japanese, for example:
+If a PR exists, ask the user (in the review language):
 
 > REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
@@ -431,8 +415,7 @@ line exists in the diff with
 
 ## Important Rules
 
-- Write REVIEW.md and every reply in the language the script reports under
-  `review language`, falling back as described in Step 1.6 when it is unset.
+- Write REVIEW.md in the language the script reports under `review language`.
 - Use `gather_review_context.py` to gather the diff. Do not run `git` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
