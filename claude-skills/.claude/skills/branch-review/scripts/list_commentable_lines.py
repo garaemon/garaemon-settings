@@ -39,7 +39,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
-from commands import run_command
+from commands import run_gh_command
 
 HUNK_PREFIX = "@@"
 
@@ -94,13 +94,13 @@ def collect_commentable_lines(patch: str) -> set[int]:
 
 def find_pull_request_number() -> int:
     """Return the pull request number for the current branch."""
-    output = run_command(["gh", "pr", "view", "--json", "number"])
+    output = run_gh_command(["gh", "pr", "view", "--json", "number"])
     return json.loads(output)["number"]
 
 
 def find_repository() -> str:
     """Return the current repository as "owner/name"."""
-    output = run_command(["gh", "repo", "view", "--json", "nameWithOwner"])
+    output = run_gh_command(["gh", "repo", "view", "--json", "nameWithOwner"])
     return json.loads(output)["nameWithOwner"]
 
 
@@ -109,7 +109,7 @@ def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, 
 
     Uses newline-delimited JSON so pagination works across gh versions.
     """
-    output = run_command([
+    output = run_gh_command([
         "gh", "api", "--paginate",
         f"repos/{repository}/pulls/{pr_number}/files",
         "--jq", ".[]",

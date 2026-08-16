@@ -35,7 +35,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, cast
 
-from commands import run_command
+from commands import detect_github_host, run_command, run_gh_command
 
 SIZE_THRESHOLD = 200
 
@@ -50,7 +50,7 @@ DEFAULT_MANAGED_SETTINGS_PATH = Path("/etc/claude-code/managed-settings.json")
 
 def read_pull_request() -> dict[str, Any] | None:
     """Return the pull request for the current branch, or None if there is none."""
-    output = run_command(
+    output = run_gh_command(
         ["gh", "pr", "view", "--json", "number,url,baseRefName,headRefName"],
         check=False,
     )
@@ -76,7 +76,9 @@ def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
 
 def read_default_branch() -> str | None:
     """Return the repository default branch, or None when it cannot be read."""
-    output = run_command(["gh", "repo", "view", "--json", "defaultBranchRef"], check=False)
+    output = run_gh_command(
+        ["gh", "repo", "view", "--json", "defaultBranchRef"], check=False
+    )
     if output.strip():
         try:
             return json.loads(output)["defaultBranchRef"]["name"]
@@ -235,6 +237,7 @@ def report_review_range(
     print(f"to:            {describe_revision(right)}")
     branch = run_command(["git", "branch", "--show-current"]).strip()
     print(f"head_ref:      {branch or '(detached HEAD)'}")
+    print(f"github_host:   {detect_github_host() or '(no origin remote)'}")
     if pull_request:
         print(f"pull_request:  #{pull_request['number']} {pull_request['url']}")
     else:
