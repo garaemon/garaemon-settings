@@ -11,19 +11,40 @@ Usage:
     list_commentable_lines.py --path cmd/up.go    # one file
     list_commentable_lines.py --check findings.json
 
+Example output:
+
+    $ list_commentable_lines.py
+    assets/logo.png: (no anchorable lines)
+    cmd/up.go: 12-18, 40, 55-57
+    docs/README.md: 1-5, 12
+
+    $ list_commentable_lines.py --check findings.json
+    ok      cmd/up.go:40
+    INVALID cmd/up.go:41 - not in the diff; nearest anchorable line is 40
+    INVALID cmd/old.go:7 - file is not in the pull request diff
+
+    2 invalid of 3 anchors
+
+--check exits 1 when any anchor is bad, so a caller can gate posting the
+review on it.
+
 Run from anywhere inside the repository checkout.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
 import sys
+from collections.abc import Sequence
+from typing import Any
 
 from commands import run_gh_command
 
 HUNK_PREFIX = "@@"
 
 
-def parse_hunk_header(line):
+def parse_hunk_header(line: str) -> tuple[int, int] | None:
     """Return (new_start, new_count) from a "@@ -a,b +c,d @@" header.
 
     An omitted count means one line, so "@@ -30 +32 @@" yields (32, 1). Returns
@@ -46,13 +67,13 @@ def parse_hunk_header(line):
     return None
 
 
-def collect_commentable_lines(patch):
+def collect_commentable_lines(patch: str) -> set[int]:
     """Return the set of new-side line numbers present in a unified diff patch.
 
     Both added and context lines are anchorable; removed lines exist only on the
     old side and do not advance the new-side counter.
     """
-    commentable = set()
+    commentable: set[int] = set()
     new_line = 0
     # splitlines drops the trailing element that a final newline would add,
     # while keeping genuine blank context lines inside the patch.
@@ -71,19 +92,19 @@ def collect_commentable_lines(patch):
     return commentable
 
 
-def find_pull_request_number():
+def find_pull_request_number() -> int:
     """Return the pull request number for the current branch."""
     output = run_gh_command(["gh", "pr", "view", "--json", "number"])
     return json.loads(output)["number"]
 
 
-def find_repository():
+def find_repository() -> str:
     """Return the current repository as "owner/name"."""
     output = run_gh_command(["gh", "repo", "view", "--json", "nameWithOwner"])
     return json.loads(output)["nameWithOwner"]
 
 
-def fetch_pull_request_files(repository, pr_number):
+def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:
     """Return the pull request's changed files as a list of API objects.
 
     Uses newline-delimited JSON so pagination works across gh versions.
@@ -96,9 +117,9 @@ def fetch_pull_request_files(repository, pr_number):
     return [json.loads(line) for line in output.splitlines() if line.strip()]
 
 
-def build_commentable_index(files):
+def build_commentable_index(files: Sequence[dict[str, Any]]) -> dict[str, set[int]]:
     """Return {path: set of anchorable new-side line numbers} for the PR."""
-    index = {}
+    index: dict[str, set[int]] = {}
     for changed_file in files:
         patch = changed_file.get("patch")
         if patch is None:
@@ -109,12 +130,12 @@ def build_commentable_index(files):
     return index
 
 
-def format_line_ranges(lines):
+def format_line_ranges(lines: set[int]) -> str:
     """Render a set of line numbers as "1-5, 12, 40-44"."""
     if not lines:
         return "(no anchorable lines)"
     ordered = sorted(lines)
-    parts = []
+    parts: list[str] = []
     start = previous = ordered[0]
     for line in ordered[1:]:
         if line == previous + 1:
@@ -126,14 +147,14 @@ def format_line_ranges(lines):
     return ", ".join(parts)
 
 
-def find_nearest_line(lines, target):
+def find_nearest_line(lines: set[int], target: int) -> int | None:
     """Return the anchorable line closest to target, or None if there is none."""
     if not lines:
         return None
     return min(lines, key=lambda line: (abs(line - target), line))
 
 
-def check_findings(index, findings_path):
+def check_findings(index: dict[str, set[int]], findings_path: str) -> int:
     """Print a verdict per finding anchor. Returns the number of bad anchors."""
     with open(findings_path, encoding="utf-8") as handle:
         findings = json.load(handle)
@@ -156,7 +177,7 @@ def check_findings(index, findings_path):
     return bad_count
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pr", type=int, help="pull request number (default: current branch)")
     parser.add_argument("--repo", help='repository as "owner/name" (default: current)')

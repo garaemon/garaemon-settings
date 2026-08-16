@@ -10,14 +10,22 @@ applied uniformly:
     to github.com and reports that the pull request does not exist.
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
+from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit
 
 GITHUB_HOST_VARIABLE = "GH_HOST"
 
 
-def run_command(args, check=True, env=None, input_text=None):
+def run_command(
+    args: Sequence[str],
+    check: bool = True,
+    env: Mapping[str, str] | None = None,
+    input_text: str | None = None,
+) -> str:
     """Run a command and return its stdout.
 
     Raises RuntimeError when check is true and the command fails; returns an
@@ -35,7 +43,7 @@ def run_command(args, check=True, env=None, input_text=None):
     return completed.stdout
 
 
-def parse_host_from_remote_url(url):
+def parse_host_from_remote_url(url: str | None) -> str | None:
     """Return the hostname in a git remote URL, or None when it carries no host.
 
     Handles both URL forms git accepts: a real URL (`https://host/owner/repo`,
@@ -57,13 +65,15 @@ def parse_host_from_remote_url(url):
     return None
 
 
-def detect_github_host():
+def detect_github_host() -> str | None:
     """Return the GitHub host the origin remote points at, or None."""
     url = run_command(["git", "remote", "get-url", "origin"], check=False).strip()
     return parse_host_from_remote_url(url)
 
 
-def build_gh_environment(host, base_environment=None):
+def build_gh_environment(
+    host: str | None, base_environment: Mapping[str, str] | None = None
+) -> dict[str, str]:
     """Return an environment for `gh` with GH_HOST set to host.
 
     An inherited GH_HOST is overridden rather than preserved: the repository
@@ -77,7 +87,12 @@ def build_gh_environment(host, base_environment=None):
     return environment
 
 
-def run_gh_command(args, check=True, host=None, input_text=None):
+def run_gh_command(
+    args: Sequence[str],
+    check: bool = True,
+    host: str | None = None,
+    input_text: str | None = None,
+) -> str:
     """Run a `gh` command against the repository's own GitHub host."""
     resolved_host = host or detect_github_host()
     return run_command(

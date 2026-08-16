@@ -26,9 +26,12 @@ Usage:
 Run from anywhere inside the repository checkout.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
+from typing import Any
 
 from commands import run_gh_command
 from list_commentable_lines import (
@@ -42,7 +45,7 @@ from list_commentable_lines import (
 VALID_EVENTS = ("COMMENT", "APPROVE", "REQUEST_CHANGES")
 
 
-def load_findings(findings_path):
+def load_findings(findings_path: str) -> dict[str, Any]:
     """Read the findings file and return it as a review payload."""
     with open(findings_path, encoding="utf-8") as handle:
         findings = json.load(handle)
@@ -61,9 +64,9 @@ def load_findings(findings_path):
     return findings
 
 
-def validate_anchors(findings, index):
+def validate_anchors(findings: dict[str, Any], index: dict[str, set[int]]) -> list[str]:
     """Return a list of human-readable problems with the comment anchors."""
-    problems = []
+    problems: list[str] = []
     for comment in findings["comments"]:
         path, line = comment["path"], comment["line"]
         lines = index.get(path)
@@ -81,7 +84,9 @@ def validate_anchors(findings, index):
     return problems
 
 
-def submit_review(repository, pr_number, findings):
+def submit_review(
+    repository: str, pr_number: int, findings: dict[str, Any]
+) -> dict[str, Any]:
     """POST the review and return the created review object."""
     output = run_gh_command(
         [
@@ -94,7 +99,7 @@ def submit_review(repository, pr_number, findings):
     return json.loads(output)
 
 
-def count_posted_comments(repository, pr_number):
+def count_posted_comments(repository: str, pr_number: int) -> int:
     """Return how many inline comments the pull request now carries."""
     output = run_gh_command([
         "gh", "api", "--paginate",
@@ -104,7 +109,7 @@ def count_posted_comments(repository, pr_number):
     return len([line for line in output.splitlines() if line.strip()])
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("findings", help="path to the findings JSON file")
     parser.add_argument("--pr", type=int, help="pull request number (default: current branch)")

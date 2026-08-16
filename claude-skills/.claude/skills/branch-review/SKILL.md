@@ -9,6 +9,7 @@ description: |
   "code review", "/branch-review", "レビューして", "コードレビュー", "PRレビュー",
   "変更をチェックして", or asks to check code quality before merging. Also trigger
   when the user asks to review a specific PR by number.
+allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Edit(REVIEW.md)
 ---
 
 # Code Review Skill
@@ -50,12 +51,14 @@ the presence of TODOs as a problem.
 ## Scripts
 
 All git and GitHub access goes through these scripts, in `scripts/` next to this
-file. `<skill_dir>` below is the skill's base directory, given to you when the
-skill is invoked.
+file. Claude Code expands `${CLAUDE_SKILL_DIR}` below to that directory, in this
+text and in the `allowed-tools` rule alike, so the command matches the rule and
+runs without a permission prompt. Pass it through unchanged rather than
+substituting a path of your own.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_diff.py` | Resolving the review range and printing the diff (Steps 0-1.5) |
+| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |
 | `commands.py` | Shared git/`gh` runners; not run directly |
@@ -69,11 +72,11 @@ you need, say so rather than reaching for a raw command.
 
 ### Running them
 
-**Always run the scripts with `uv run --project <skill_dir>`**, never with a bare
+**Always run the scripts with `uv run --project ${CLAUDE_SKILL_DIR}`**, never with a bare
 `python3`:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
 `--project` is required, not decorative. Without it `uv` searches upward from the
@@ -90,8 +93,8 @@ fetch after the first run.
 Every script takes `--help`. Their unit tests run with:
 
 ```bash
-uv run --project <skill_dir> -m unittest discover \
-  -s <skill_dir>/scripts -t <skill_dir>/scripts
+uv run --project ${CLAUDE_SKILL_DIR} -m unittest discover \
+  -s ${CLAUDE_SKILL_DIR}/scripts -t ${CLAUDE_SKILL_DIR}/scripts
 ```
 
 ### GitHub Enterprise
@@ -102,21 +105,21 @@ are understood: `git@github.example.com:owner/repo.git` and
 `https://github.example.com/owner/repo.git`.
 
 An inherited `GH_HOST` is deliberately overridden -- the repository under review
-decides which server to talk to, not the ambient environment. `gather_diff.py`
-prints the host it resolved as `github_host:` in its `review range` block; if
-that line names the wrong server, stop and tell the user rather than posting
-anything.
+decides which server to talk to, not the ambient environment.
+`gather_review_context.py` prints the host it resolved as `github_host:` in its
+`review range` block; if that line names the wrong server, stop and tell the user
+rather than posting anything.
 
 ## Workflow
 
 ### Step 0-1: Gather the diff
 
 Run the script. It resolves the range, fetches what it needs, and prints the
-range, the diff size, the changed files, the per-file stat, and the commits in
-one pass:
+range, the review language, the diff size, the changed files, the per-file stat,
+and the commits in one pass:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
 Read its `review range` block and confirm the base is what you expect before
@@ -135,7 +138,7 @@ from the PRs underneath and makes you review work that was already reviewed. If
 the resolved base looks wrong, override it:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_diff.py --base some-other-branch
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --base some-other-branch
 ```
 
 Everything is measured from the merge-base, so commits that landed on the base
@@ -150,7 +153,7 @@ the Read tool when you need to tell changed code from pre-existing code.
 
 ### Step 1.5: Check PR size
 
-`gather_diff.py` prints a `NOTE` when additions exceed 200. When it does, flag
+`gather_review_context.py` prints a `NOTE` when additions exceed 200. When it does, flag
 PR size in Overall Comments and suggest splitting into smaller PRs.
 
 When suggesting a split, propose concrete PR boundaries based on the actual
@@ -172,6 +175,19 @@ Example suggestion format:
 
 Still proceed with the full review even if the PR is large -- the user may
 have good reasons for keeping it as one PR. The split suggestion is advisory.
+
+### Step 1.6: Note the review language
+
+The script reports Claude Code's `language` setting:
+
+```text
+=== review language ===
+language:      japanese
+source:        /home/you/.claude/settings.json
+```
+
+Write REVIEW.md in that language. When it reports `(unset)`, write in the
+language the user is using, defaulting to Japanese.
 
 ### Step 2: Read all changed files
 
@@ -305,7 +321,8 @@ formatter is configured in the project.
 
 ### Step 4: Write REVIEW.md
 
-Write findings to `REVIEW.md` at the project root.
+Write findings to `REVIEW.md` at the project root, in the language resolved in
+Step 1.6.
 
 Structure:
 
@@ -349,8 +366,9 @@ leave it out entirely instead of marking it "Low".
 
 ### Step 5: PR integration
 
-`gather_diff.py` already reported whether a pull request exists, in the
-`pull_request` field of its `review range` block. If one exists, ask the user:
+`gather_review_context.py` already reported whether a pull request exists, in the
+`pull_request` field of its `review range` block. If one exists, ask the user
+in the review language:
 
 > REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
@@ -379,8 +397,8 @@ Write the file to the scratchpad directory, not the user's project.
 Validate first, then post once it is clean:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/post_review.py findings.json --dry-run
-uv run --project <skill_dir> <skill_dir>/scripts/post_review.py findings.json
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py findings.json --dry-run
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py findings.json
 ```
 
 The script fills in `"side": "RIGHT"` and defaults `"event"` to `"COMMENT"`, so
@@ -400,8 +418,8 @@ To pick anchors while you are still writing findings, ask which lines are
 available:
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/list_commentable_lines.py
-uv run --project <skill_dir> <skill_dir>/scripts/list_commentable_lines.py --path src/main/index.ts
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py --path src/main/index.ts
 ```
 
 Rules for building the findings file:
@@ -421,10 +439,10 @@ Rules for building the findings file:
 
 ## Important Rules
 
-- Always respond in Japanese.
+- Write REVIEW.md in the language the script reports under `review language`.
 - Use the scripts in `scripts/` for all git and GitHub access. Do not run `git`
   or `gh` directly.
-- Invoke every script with `uv run --project <skill_dir>`, never a bare `python3`.
+- Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
 - Review against the base the branch actually merges into, which for a stacked
   pull request is the PR's base branch, not the repository default.
 - Read ALL changed files before writing any findings. No exceptions.
