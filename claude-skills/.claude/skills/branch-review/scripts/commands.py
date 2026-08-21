@@ -57,12 +57,17 @@ def parse_host_from_remote_url(url: str | None) -> str | None:
     if "://" in url:
         hostname = urlsplit(url).hostname
         return hostname.lower() if hostname else None
-    # scp-like shorthand: [user@]host:path, where the path is not absolute.
-    if ":" in url:
-        location = url.split(":", 1)[0]
-        host = location.rsplit("@", 1)[-1]
-        return host.lower() if host else None
-    return None
+    # scp-like shorthand: [user@]host:path. git applies this form only when the
+    # first colon precedes the first slash, which keeps a local path such as
+    # /srv/git:mirror/repo.git from parsing as the host "/srv/git".
+    user_and_host = url.split(":", 1)[0]
+    if ":" not in url or "/" in user_and_host:
+        return None
+    # A Windows drive letter, as git reads "C:/src/repo": a path, not a host.
+    if len(user_and_host) == 1 and url[2:3] in ("/", "\\"):
+        return None
+    host = user_and_host.rsplit("@", 1)[-1]
+    return host.lower() if host else None
 
 
 def detect_github_host() -> str | None:

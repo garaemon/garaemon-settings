@@ -52,6 +52,18 @@ class ParseHostFromRemoteUrlTest(unittest.TestCase):
     def test_returns_none_for_a_local_path(self) -> None:
         self.assertIsNone(parse_host_from_remote_url("/srv/git/repo.git"))
 
+    def test_returns_none_for_a_local_path_containing_a_colon(self) -> None:
+        # The colon comes after a slash, so this is a path and not the host
+        # "/srv/git". Reading it as a host would export a nonsense GH_HOST and
+        # fail every gh call.
+        self.assertIsNone(parse_host_from_remote_url("/srv/git:mirror/repo.git"))
+
+    def test_returns_none_for_a_relative_path_containing_a_colon(self) -> None:
+        self.assertIsNone(parse_host_from_remote_url("./work:repo/.git"))
+
+    def test_returns_none_for_a_windows_drive_letter(self) -> None:
+        self.assertIsNone(parse_host_from_remote_url("C:/src/repo"))
+
     def test_returns_none_for_an_empty_url(self) -> None:
         self.assertIsNone(parse_host_from_remote_url(""))
 
