@@ -110,7 +110,9 @@ def count_posted_comments(repository: str, pr_number: int) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("findings", help="path to the findings JSON file")
     parser.add_argument("--pr", type=int, help="pull request number (default: current branch)")
     parser.add_argument("--repo", help='repository as "owner/name" (default: current)')
