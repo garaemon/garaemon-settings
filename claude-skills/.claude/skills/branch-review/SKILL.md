@@ -82,10 +82,10 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_c
 `--project` is required, not decorative. Without it `uv` searches upward from the
 current directory for a `pyproject.toml` and would attach to **the repository
 being reviewed**, picking up that project's Python version and dependencies.
-Pointing it at the skill directory pins the interpreter to the one in `uv.lock`
-regardless of which repository the review runs in. The working directory still
-has to be inside the checkout under review -- `--project` changes dependency
-resolution, not `cwd`.
+Pointing it at the skill directory pins the interpreter to the one in
+`uv.lock` regardless of which repository the review runs in. The working
+directory still has to be inside the checkout under review -- `--project`
+changes dependency resolution, not `cwd`.
 
 The scripts are standard library only, so `uv` resolves them without a network
 fetch after the first run.
@@ -122,8 +122,38 @@ and the commits in one pass:
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
-Read its `review range` block and confirm the base is what you expect before
-going further. The base is **the branch these changes will actually merge
+Read its `review range` block and confirm the scope is what the user asked for
+before going further.
+
+#### Scoping the review
+
+By default the whole branch is reviewed. **If the user asked for a narrower
+scope, pass the matching flag** -- do not review the whole branch and filter the
+findings by hand, because the size check, the file list and the commit list
+would all still describe the wrong span.
+
+| The user says | Flag |
+| --- | --- |
+| "直近のcommitだけ", "just the last commit" | `--last 1` |
+| "最後の3コミット", "the last 3 commits" | `--last 3` |
+| "このコミットだけ", "review commit abc123" | `--commit abc123` |
+| "abc123からdef456まで", an explicit range | `--range abc123..def456` |
+| "developブランチとの差分" | `--base develop` |
+| nothing about scope | (no flag: whole branch) |
+
+```bash
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --last 1
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --commit abc123
+uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --range abc123..def456
+```
+
+`--commit` reviews that commit's own change (`REV^..REV`), and works on a root
+commit. `--range` also accepts git's three-dot form (`main...HEAD`, meaning
+"since the two diverged") and a bare revision (`abc123`, meaning `abc123..HEAD`).
+
+#### How the default base is chosen
+
+With no scope flag, the base is **the branch these changes will actually merge
 into**, which is not always the repository default:
 
 | Situation | Base used |
@@ -135,14 +165,15 @@ into**, which is not always the repository default:
 This matters most for **stacked pull requests**, where the PR targets the branch
 below it rather than `main`. Diffing against `main` there pulls in every change
 from the PRs underneath and makes you review work that was already reviewed. If
-the resolved base looks wrong, override it:
+the resolved base looks wrong, override it with `--base`.
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --base some-other-branch
 ```
 
-Everything is measured from the merge-base, so commits that landed on the base
-after this branch was cut are excluded.
+The default range is measured from the merge-base, so commits that landed on the
+base after this branch was cut are excluded. The explicit flags (`--last`,
+`--commit`, `--range`) name their endpoints outright and take no merge-base.
 
 Review the files listed under `files to review`. The script lists deleted files
 separately -- ignore those entirely.
@@ -422,6 +453,13 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentabl
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py --path src/main/index.ts
 ```
 
+Anchorable lines always come from **the pull request's own diff**, whatever range
+you reviewed. That is normally a superset of a narrower range, so a `--last 1`
+review anchors fine. It is not a superset in one case: a line that an
+intermediate commit touched and a later commit changed back or removed does not
+survive into the PR's net diff. `post_review.py` catches those and names them --
+move such a finding to the top-level `body` rather than forcing an anchor.
+
 Rules for building the findings file:
 
 - **`path`**: relative to the repo root, NOT an absolute filesystem path.
@@ -443,6 +481,10 @@ Rules for building the findings file:
 - Use the scripts in `scripts/` for all git and GitHub access. Do not run `git`
   or `gh` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
+- Honour a requested scope. If the user asked for "just the last commit" or a
+  specific range, pass `--last` / `--commit` / `--range` to
+  `gather_review_context.py` rather than reviewing the whole branch and
+  filtering afterwards. Say which range you reviewed when reporting back.
 - Review against the base the branch actually merges into, which for a stacked
   pull request is the PR's base branch, not the repository default.
 - Read ALL changed files before writing any findings. No exceptions.
