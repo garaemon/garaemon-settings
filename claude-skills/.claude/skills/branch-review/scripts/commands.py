@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import subprocess
 from collections.abc import Mapping, Sequence
+from functools import lru_cache
 from urllib.parse import urlsplit
 
 GITHUB_HOST_VARIABLE = "GH_HOST"
@@ -70,8 +71,14 @@ def parse_host_from_remote_url(url: str | None) -> str | None:
     return host.lower() if host else None
 
 
+@lru_cache(maxsize=None)
 def detect_github_host() -> str | None:
-    """Return the GitHub host the origin remote points at, or None."""
+    """Return the GitHub host the origin remote points at, or None.
+
+    Cached for the life of the process: the remote cannot change mid-review, and
+    a single post_review.py run makes five `gh` calls that would otherwise each
+    spawn a git subprocess to re-read the same value.
+    """
     url = run_command(["git", "remote", "get-url", "origin"], check=False).strip()
     return parse_host_from_remote_url(url)
 
@@ -95,14 +102,12 @@ def build_gh_environment(
 def run_gh_command(
     args: Sequence[str],
     check: bool = True,
-    host: str | None = None,
     input_text: str | None = None,
 ) -> str:
     """Run a `gh` command against the repository's own GitHub host."""
-    resolved_host = host or detect_github_host()
     return run_command(
         args,
         check=check,
-        env=build_gh_environment(resolved_host),
+        env=build_gh_environment(detect_github_host()),
         input_text=input_text,
     )
