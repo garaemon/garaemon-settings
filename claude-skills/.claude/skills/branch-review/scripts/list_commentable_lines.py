@@ -178,7 +178,9 @@ def check_findings(index: dict[str, set[int]], findings_path: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--pr", type=int, help="pull request number (default: current branch)")
     parser.add_argument("--repo", help='repository as "owner/name" (default: current)')
     parser.add_argument("--path", action="append", help="restrict output to this file")
