@@ -1,0 +1,296 @@
+#!/usr/bin/env node
+// Search and browse Spotify library from Google Sheets.
+// Requires GOOGLE_SA_KEY_FILE and SPOTIFY_SPREADSHEET_ID env vars.
+
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { google } = require('googleapis');
+
+const KEY_FILE = process.env.GOOGLE_SA_KEY_FILE;
+const SPREADSHEET_ID = process.env.SPOTIFY_SPREADSHEET_ID;
+
+const SONGS_SHEET = 'Spotify Liked Songs';
+const ARTISTS_SHEET = 'Spotify Followed Artists';
+
+async function getSheetsClient() {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: KEY_FILE,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+  return google.sheets({ version: 'v4', auth });
+}
+
+async function fetchRows(sheets, sheetName) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A:Z`,
+  });
+  const [header, ...rows] = res.data.values || [];
+  return rows.map((row) => {
+    const obj = {};
+    header.forEach((col, i) => {
+      obj[col] = row[i] || '';
+    });
+    return obj;
+  });
+}
+
+function formatSong(song) {
+  const parts = [
+    `  ${song['Track Name']} - ${song['Artists']}`,
+    `  Album: ${song['Album Name']}`,
+  ];
+  if (song['Genres']) parts.push(`  Genres: ${song['Genres']}`);
+  parts.push(`  Released: ${song['Release Date']}  Added: ${song['Added At']?.slice(0, 10)}`);
+  parts.push(`  ${song['Track Link']}`);
+  return parts.join('\n');
+}
+
+function formatArtist(artist) {
+  const parts = [`  ${artist['Artist Name']}`];
+  if (artist['Genres']) parts.push(`  Genres: ${artist['Genres']}`);
+  parts.push(`  ${artist['Spotify URL']}`);
+  return parts.join('\n');
+}
+
+function matchesQuery(text, query) {
+  return text.toLowerCase().includes(query.toLowerCase());
+}
+
+function filterSongsSince(songs, sinceDate) {
+  return songs.filter((s) => {
+    const added = s['Added At']?.slice(0, 10);
+    return added && added >= sinceDate;
+  });
+}
+
+function searchSongs(songs, query) {
+  return songs.filter(
+    (s) =>
+      matchesQuery(s['Track Name'], query) ||
+      matchesQuery(s['Artists'], query) ||
+      matchesQuery(s['Album Name'], query) ||
+      matchesQuery(s['Genres'], query),
+  );
+}
+
+function searchArtists(artists, query) {
+  return artists.filter(
+    (a) =>
+      matchesQuery(a['Artist Name'], query) ||
+      matchesQuery(a['Genres'], query),
+  );
+}
+
+function printItems(label, items, formatter) {
+  console.log(`${label} (${items.length}):\n`);
+  items.forEach((item, i) => {
+    console.log(`${i + 1}.`);
+    console.log(formatter(item));
+    console.log();
+  });
+}
+
+async function listSongs(limit) {
+  const sheets = await getSheetsClient();
+  const songs = await fetchRows(sheets, SONGS_SHEET);
+  const shown = songs.slice(0, limit);
+  printItems(`Liked Songs (showing ${shown.length} of ${songs.length})`, shown, formatSong);
+}
+
+async function listArtists() {
+  const sheets = await getSheetsClient();
+  const artists = await fetchRows(sheets, ARTISTS_SHEET);
+  printItems('Followed Artists', artists, formatArtist);
+}
+
+async function showNewSince(sinceDate) {
+  const sheets = await getSheetsClient();
+  const songs = await fetchRows(sheets, SONGS_SHEET);
+  const recent = filterSongsSince(songs, sinceDate);
+
+  printItems(`Songs liked since ${sinceDate}`, recent, formatSong);
+
+  // Extract unique new artists from these songs
+  const artistNames = new Set();
+  recent.forEach((s) => {
+    s['Artists'].split(',').forEach((a) => artistNames.add(a.trim()));
+  });
+  if (artistNames.size > 0) {
+    console.log(`\nUnique artists in new likes: ${[...artistNames].join(', ')}`);
+  }
+}
+
+async function showArtistDetail(artistQuery) {
+  const sheets = await getSheetsClient();
+  const artists = await fetchRows(sheets, ARTISTS_SHEET);
+  const songs = await fetchRows(sheets, SONGS_SHEET);
+
+  const matchedArtists = searchArtists(artists, artistQuery);
+  printItems(`Artists matching "${artistQuery}"`, matchedArtists, formatArtist);
+
+  const matchedSongs = songs.filter((s) =>
+    matchesQuery(s['Artists'], artistQuery),
+  );
+  if (matchedSongs.length > 0) {
+    printItems(`Liked songs by "${artistQuery}"`, matchedSongs, formatSong);
+  }
+}
+
+async function search(query, scope) {
+  const sheets = await getSheetsClient();
+  if (scope !== 'artists') {
+    const songs = await fetchRows(sheets, SONGS_SHEET);
+    const matched = searchSongs(songs, query);
+    printItems(`Songs matching "${query}"`, matched, formatSong);
+  }
+  if (scope !== 'songs') {
+    const artists = await fetchRows(sheets, ARTISTS_SHEET);
+    const matched = searchArtists(artists, query);
+    printItems(`Artists matching "${query}"`, matched, formatArtist);
+  }
+}
+
+async function listGenres() {
+  const sheets = await getSheetsClient();
+  const songs = await fetchRows(sheets, SONGS_SHEET);
+  const artists = await fetchRows(sheets, ARTISTS_SHEET);
+
+  const genreCounts = {};
+  const addGenres = (genreStr) => {
+    if (!genreStr) return;
+    genreStr.split(',').forEach((g) => {
+      const genre = g.trim();
+      if (genre) genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    });
+  };
+
+  songs.forEach((s) => addGenres(s['Genres']));
+  artists.forEach((a) => addGenres(a['Genres']));
+
+  const sorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]);
+  console.log(`Genres (${sorted.length}):\n`);
+  sorted.forEach(([genre, count]) => {
+    console.log(`  ${genre}: ${count}`);
+  });
+}
+
+async function showStats() {
+  const sheets = await getSheetsClient();
+  const songs = await fetchRows(sheets, SONGS_SHEET);
+  const artists = await fetchRows(sheets, ARTISTS_SHEET);
+
+  console.log(`Total liked songs: ${songs.length}`);
+  console.log(`Total followed artists: ${artists.length}`);
+
+  if (songs.length > 0) {
+    const newest = songs[0]['Added At']?.slice(0, 10);
+    const oldest = songs[songs.length - 1]['Added At']?.slice(0, 10);
+    console.log(`Date range: ${oldest} to ${newest}`);
+  }
+
+  // Top genres
+  const genreCounts = {};
+  songs.forEach((s) => {
+    if (!s['Genres']) return;
+    s['Genres'].split(',').forEach((g) => {
+      const genre = g.trim();
+      if (genre) genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    });
+  });
+  const topGenres = Object.entries(genreCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  console.log(`\nTop 10 genres:`);
+  topGenres.forEach(([genre, count]) => {
+    console.log(`  ${genre}: ${count}`);
+  });
+}
+
+function printUsage() {
+  console.error(`Usage:
+  spotify-sheets list-songs [--limit N]       List recent liked songs
+  spotify-sheets list-artists                 List followed artists
+  spotify-sheets search [--songs|--artists] Q Search songs and/or artists
+  spotify-sheets new-since YYYY-MM-DD         Songs liked since a date
+  spotify-sheets artist-detail <name>         Show artist info + their liked songs
+  spotify-sheets genres                       List all genres with counts
+  spotify-sheets stats                        Library overview and top genres`);
+  process.exit(1);
+}
+
+function parseArgs(args) {
+  const result = { flags: {}, positional: [] };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].startsWith('--')) {
+      const flag = args[i].slice(2);
+      if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+        result.flags[flag] = args[++i];
+      } else {
+        result.flags[flag] = true;
+      }
+    } else {
+      result.positional.push(args[i]);
+    }
+  }
+  return result;
+}
+
+async function main() {
+  if (!KEY_FILE || !SPREADSHEET_ID) {
+    console.error('Error: GOOGLE_SA_KEY_FILE and SPOTIFY_SPREADSHEET_ID must be set');
+    process.exit(1);
+  }
+
+  const args = process.argv.slice(2);
+  if (args.length === 0) return printUsage();
+
+  const command = args[0];
+  const parsed = parseArgs(args.slice(1));
+
+  switch (command) {
+    case 'list-songs': {
+      const limit = parseInt(parsed.flags.limit, 10) || 20;
+      await listSongs(limit);
+      break;
+    }
+    case 'list-artists':
+      await listArtists();
+      break;
+    case 'search': {
+      const scope = parsed.flags.songs ? 'songs' : parsed.flags.artists ? 'artists' : 'all';
+      const query = parsed.positional[0];
+      if (!query) return printUsage();
+      await search(query, scope);
+      break;
+    }
+    case 'new-since': {
+      const sinceDate = parsed.positional[0];
+      if (!sinceDate || !/^\d{4}-\d{2}-\d{2}$/.test(sinceDate)) {
+        console.error('Error: provide a date in YYYY-MM-DD format');
+        process.exit(1);
+      }
+      await showNewSince(sinceDate);
+      break;
+    }
+    case 'artist-detail': {
+      const name = parsed.positional[0];
+      if (!name) return printUsage();
+      await showArtistDetail(name);
+      break;
+    }
+    case 'genres':
+      await listGenres();
+      break;
+    case 'stats':
+      await showStats();
+      break;
+    default:
+      printUsage();
+  }
+}
+
+main().catch((err) => {
+  console.error('Error:', err.message);
+  process.exit(1);
+});

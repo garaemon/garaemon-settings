@@ -1,0 +1,142 @@
+name: Skills CI
+
+on:
+  pull_request:
+    paths:
+      - 'claude-skills/**'
+      - '.github/workflows/skills-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'claude-skills/**'
+      - '.github/workflows/skills-ci.yml'
+
+defaults:
+  run:
+    working-directory: claude-skills
+
+jobs:
+  markdownlint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            claude-skills/**/*.md
+            !claude-skills/REVIEW.md
+            !claude-skills/**/templates/**
+
+  readme-skills-link:
+    name: README links all skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check-readme-skills.py
+
+  branch-review-tests:
+    name: branch-review unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      # Pinned to the requires-python floor so a newer-only construct fails here
+      # rather than on the first machine whose uv resolves 3.9.
+      - name: Run unit tests
+        working-directory: claude-skills/.claude/skills/branch-review
+        run: uv run --project . --python 3.9 -m unittest discover -s scripts -t scripts
+
+  shellcheck:
+    name: Shellcheck shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: |
+          shopt -s globstar nullglob
+          # gws-secure has no .sh extension; gws-secure-bootstrap is Python and
+          # is intentionally excluded.
+          scripts=(
+            .claude/skills/**/*.sh
+            scripts/gws-secure
+            scripts/tests/gws-secure-smoke.sh
+          )
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No shell scripts to check."
+            exit 0
+          fi
+          shellcheck "${scripts[@]}"
+
+  gws-secure-smoke:
+    name: gws-secure smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run smoke test
+        run: bash scripts/tests/gws-secure-smoke.sh
+
+  spotify-sheets-image:
+    name: Build spotify-sheets image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t spotify-sheets:local .claude/skills/spotify-sheets
+      - name: Smoke test image
+        run: bash .claude/skills/spotify-sheets/tests/smoke.sh
+
+  add-paper-from-url-image:
+    name: Build add-paper-from-url image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t add-paper-from-url:local .claude/skills/add-paper-from-url
+      - name: Smoke test image
+        run: bash .claude/skills/add-paper-from-url/tests/smoke.sh
+
+  npm-audit:
+    name: npm audit (spotify-sheets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit production dependencies
+        working-directory: claude-skills/.claude/skills/spotify-sheets
+        run: npm audit --omit=dev --audit-level=high
+
+  slack-post-image:
+    name: Build slack-post image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t slack-post:local .claude/skills/slack-post
+      - name: Smoke test image
+        run: bash .claude/skills/slack-post/tests/smoke.sh
+
+  npm-audit-slack-post:
+    name: npm audit (slack-post)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit production dependencies
+        working-directory: claude-skills/.claude/skills/slack-post
+        run: npm audit --omit=dev --audit-level=high
+
+  pdf2zh-image:
+    name: Build pdf2zh image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t pdf2zh:local .claude/skills/pdf2zh
+      - name: Smoke test image
+        run: bash .claude/skills/pdf2zh/tests/smoke.sh
+
