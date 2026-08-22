@@ -1,3 +1,3 @@
 [submodule "markdown-dnd-images"]
-	path = markdown-dnd-images
+	path = emacs.d/markdown-dnd-images
 	url = https://github.com/mooreryan/markdown-dnd-images
