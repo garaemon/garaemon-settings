@@ -1,9 +1,19 @@
-name: CI
+name: Skills CI
 
 on:
   pull_request:
+    paths:
+      - 'claude-skills/**'
+      - '.github/workflows/skills-ci.yml'
   push:
     branches: [main]
+    paths:
+      - 'claude-skills/**'
+      - '.github/workflows/skills-ci.yml'
+
+defaults:
+  run:
+    working-directory: claude-skills
 
 jobs:
   markdownlint:
@@ -14,9 +24,9 @@ jobs:
       - uses: DavidAnson/markdownlint-cli2-action@v16
         with:
           globs: |
-            **/*.md
-            !REVIEW.md
-            !**/templates/**
+            claude-skills/**/*.md
+            !claude-skills/REVIEW.md
+            !claude-skills/**/templates/**
 
   readme-skills-link:
     name: README links all skills
@@ -34,7 +44,7 @@ jobs:
       # Pinned to the requires-python floor so a newer-only construct fails here
       # rather than on the first machine whose uv resolves 3.9.
       - name: Run unit tests
-        working-directory: .claude/skills/branch-review
+        working-directory: claude-skills/.claude/skills/branch-review
         run: uv run --project . --python 3.9 -m unittest discover -s scripts -t scripts
 
   shellcheck:
@@ -95,7 +105,7 @@ jobs:
         with:
           node-version: '22'
       - name: Audit production dependencies
-        working-directory: .claude/skills/spotify-sheets
+        working-directory: claude-skills/.claude/skills/spotify-sheets
         run: npm audit --omit=dev --audit-level=high
 
   slack-post-image:
@@ -117,7 +127,7 @@ jobs:
         with:
           node-version: '22'
       - name: Audit production dependencies
-        working-directory: .claude/skills/slack-post
+        working-directory: claude-skills/.claude/skills/slack-post
         run: npm audit --omit=dev --audit-level=high
 
   pdf2zh-image:
