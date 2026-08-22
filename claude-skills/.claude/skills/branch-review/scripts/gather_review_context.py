@@ -270,6 +270,8 @@ def print_section(title: str) -> None:
 
 def describe_revision(revision: str) -> str:
     """Render a revision as "<short sha> <subject>" when it names a commit."""
+    if revision == EMPTY_TREE_OBJECT:
+        return f"{revision}  (git's empty tree: the commit has no parent)"
     described = run_command(
         ["git", "log", "-1", "--format=%h %s", revision], check=False
     ).strip()
