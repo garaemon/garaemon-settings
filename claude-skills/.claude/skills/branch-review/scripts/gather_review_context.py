@@ -14,7 +14,9 @@ re-read work that was already reviewed. The resolution order is:
 
 The reviewer can also ask for a narrower range -- "just the last commit", "this
 one commit", "between these two revisions" -- with --last, --commit or --range.
-Those name their endpoints outright and skip the merge-base entirely.
+Those name their endpoints outright, so no base branch is resolved. The one
+exception to skipping the merge-base is --range a...b, git's own spelling for
+"since the two diverged".
 
 The script also reports the `language` setting from Claude Code's settings
 files, so the review is written in the language the user configured rather than
@@ -407,8 +409,9 @@ def resolve_explicit_range(
 ) -> tuple[str, str, str] | None:
     """Return (left, right, description) for --last/--commit/--range, or None.
 
-    These three name their endpoints outright, so no base branch is resolved and
-    no merge-base is taken -- the reviewer asked for exactly this span.
+    These three name their endpoints outright, so no base branch is resolved --
+    the reviewer asked for exactly this span. Only --range a...b takes a
+    merge-base, and it takes it between the two revisions the reviewer named.
     """
     if args.last is not None:
         left, right = build_last_range(args.last)
