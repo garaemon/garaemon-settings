@@ -12,9 +12,9 @@ Monorepo for garaemon's environment setup.
   configuration. The root-level `install.sh` is a shim for GitHub Codespaces
   and Dev Containers that delegates to `dotfiles/install.sh`. See
   [dotfiles/README.md](dotfiles/README.md).
-
-The `emacs.d/` directory is being merged into this repository from its
-original standalone repository.
+- **emacs.d/**: Emacs configuration. `~/.emacs.d` is a symlink to this
+  directory, managed by the Ansible emacs role. See
+  [emacs.d/README.md](emacs.d/README.md).
 
 ## Scope
 
