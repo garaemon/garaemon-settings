@@ -6,9 +6,11 @@ Monorepo for garaemon's environment setup.
 
 - **ansible/**: Ansible playbooks and roles that provision the interactive
   desktop environment (packages, fonts, keyboard, editor toolchain).
+- **claude-skills/**: Claude Code skills. `~/.claude/skills` is a symlink to
+  `claude-skills/.claude/skills`. See [claude-skills/README.md](claude-skills/README.md).
 
-Additional directories (`dotfiles/`, `claude-skills/`, `emacs.d/`) are being
-merged into this repository from their original standalone repositories.
+Additional directories (`dotfiles/`, `emacs.d/`) are being merged into this
+repository from their original standalone repositories.
 
 ## Scope
 

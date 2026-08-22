@@ -1,8 +1,9 @@
-# claude-private-skills
+# claude-skills
 
-This is my private set of Claude Code skills.
+This is my private set of Claude Code skills, hosted in the `claude-skills/`
+directory of the garaemon-settings monorepo.
 
-The repository is the single source of truth for my skills: `~/.claude/skills`
+This directory is the single source of truth for my skills: `~/.claude/skills`
 is a symlink to `.claude/skills` here, so every skill is available globally and
 edits are live (no copy/sync step). See [Installation](#installation) below.
 
@@ -38,19 +39,19 @@ Python helpers and need `uv` to run them.
 
 ## Installation
 
-`~/.claude/skills` is a symlink to this repository's `.claude/skills`, so all
+`~/.claude/skills` is a symlink to this directory's `.claude/skills`, so all
 skills are available in every directory and editing a skill here takes effect
-immediately. On a new machine, clone the repository and point `~/.claude/skills`
+immediately. On a new machine, clone the monorepo and point `~/.claude/skills`
 at it:
 
 ```bash
-git clone <this-repo> ~/ghq/github.com/garaemon/claude-private-skills
-ln -s ~/ghq/github.com/garaemon/claude-private-skills/.claude/skills ~/.claude/skills
+git clone git@github.com:garaemon/garaemon-settings.git ~/ghq/github.com/garaemon/garaemon-settings
+ln -s ~/ghq/github.com/garaemon/garaemon-settings/claude-skills/.claude/skills ~/.claude/skills
 ```
 
 Machine configuration (the thin `~/.claude/CLAUDE.md`, etc.) is managed
 separately by chezmoi; the skills directory is deliberately left out of chezmoi
-(`.claude/skills` is in its `.chezmoiignore`) so this repository is the only
+(`.claude/skills` is in its `.chezmoiignore`) so this directory is the only
 owner of skill files.
 
 ## Tools
