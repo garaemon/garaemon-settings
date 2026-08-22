@@ -215,6 +215,25 @@ def collect_changed_files(
     return reviewable, deleted
 
 
+def count_commits(diff_spec: str) -> int:
+    """Return how many commits the range contains."""
+    output = run_command(["git", "rev-list", "--count", diff_spec], check=False).strip()
+    return int(output) if output.isdigit() else 0
+
+
+def expect_commit_count(args: argparse.Namespace) -> int | None:
+    """Return how many commits the scope flags asked for, or None when they did not.
+
+    --range names its endpoints, so it implies no count; --last and --commit both
+    state one outright.
+    """
+    if args.last is not None:
+        return args.last
+    if args.commit is not None:
+        return 1
+    return None
+
+
 def measure_size(diff_spec: str) -> tuple[int, int, int]:
     """Return (additions, deletions, file_count) for the diff."""
     output = run_command(["git", "diff", "--numstat", diff_spec])
@@ -341,6 +360,26 @@ def report_size(diff_spec: str, threshold: int) -> None:
         )
 
 
+def report_merge_widening(diff_spec: str, expected_count: int | None) -> None:
+    """Warn when the range holds more commits than the scope flag asked for.
+
+    "HEAD~N..HEAD" and "REV^..REV" step through first parents, so a merge among
+    those steps drags in everything its second parent brought along -- typically
+    the base branch merged back into the feature branch, already reviewed where
+    it landed. The header still reads "the most recent commit", so say otherwise.
+    """
+    if expected_count is None:
+        return
+    actual_count = count_commits(diff_spec)
+    if actual_count <= expected_count:
+        return
+    print(
+        f"\nNOTE: this range holds {actual_count} commits, not {expected_count}. A "
+        "merge commit pulled in the branch it merged, so the diff covers work that "
+        "was reviewed elsewhere. Narrow it with --range if that is not what you meant."
+    )
+
+
 def report_files(diff_spec: str) -> None:
     """Print the files to review and, separately, the ones to skip."""
     reviewable, deleted = collect_changed_files(diff_spec)
@@ -442,6 +481,7 @@ def main() -> int:
     report_review_range(left, right, diff_spec, description, pull_request)
     report_response_language()
     report_size(diff_spec, args.threshold)
+    report_merge_widening(diff_spec, expect_commit_count(args))
     report_files(diff_spec)
     report_stat_and_commits(diff_spec)
 

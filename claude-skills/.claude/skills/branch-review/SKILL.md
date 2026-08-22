@@ -155,6 +155,11 @@ An endpoint named as `origin/<branch>` is fetched before it is resolved, so
 `--range origin/develop..HEAD` sees the branch as it is on the server. Every
 other endpoint is taken from the local checkout as it stands.
 
+`--last N` and `--commit` step through first parents, so a merge commit among
+those steps widens the span to everything that merge brought in. The script
+prints a `NOTE` naming the real commit count when that happens; read it, and
+reach for `--range` if the wider span is not what the user asked for.
+
 #### How the default base is chosen
 
 With no scope flag, the base is **the branch these changes will actually merge

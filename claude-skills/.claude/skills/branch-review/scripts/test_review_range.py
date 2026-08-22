@@ -18,6 +18,7 @@ from gather_review_context import (
     EMPTY_TREE_OBJECT,
     build_commit_range,
     build_last_range,
+    expect_commit_count,
     fetch_remote_endpoint,
     format_diff_spec,
     parse_range_spec,
@@ -171,6 +172,27 @@ class ResolveExplicitRangeTest(unittest.TestCase):
         left, right, description = resolved
         self.assertEqual((left, right), ("mergebase", "HEAD"))
         self.assertIn("since the two diverged", description)
+
+
+class ExpectCommitCountTest(unittest.TestCase):
+    """expect_commit_count reports the commit count a scope flag asked for."""
+
+    def expect(self, **flags: object) -> int | None:
+        arguments: dict[str, object] = {"last": None, "commit": None, "range": None}
+        arguments.update(flags)
+        return expect_commit_count(argparse.Namespace(**arguments))
+
+    def test_reads_the_count_from_last(self) -> None:
+        self.assertEqual(self.expect(last=3), 3)
+
+    def test_counts_one_commit_for_commit(self) -> None:
+        self.assertEqual(self.expect(commit="abc123"), 1)
+
+    def test_expects_nothing_from_an_explicit_range(self) -> None:
+        self.assertIsNone(self.expect(range="abc123..def456"))
+
+    def test_expects_nothing_from_a_whole_branch_review(self) -> None:
+        self.assertIsNone(self.expect())
 
 
 class FetchRemoteEndpointTest(unittest.TestCase):
