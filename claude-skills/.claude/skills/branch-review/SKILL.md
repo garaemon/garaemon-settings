@@ -5,10 +5,14 @@ description: |
   (the pull request's base branch when one is open, so stacked PRs review only their
   own changes; the repository default branch otherwise), producing a structured
   REVIEW.md and posting inline review comments on specific file lines via GitHub API.
+  The review can also be scoped to a narrower commit range: the last N commits, one
+  commit, or an explicit range.
   Use this skill whenever the user wants a code review, says things like "review",
   "code review", "/branch-review", "レビューして", "コードレビュー", "PRレビュー",
   "変更をチェックして", or asks to check code quality before merging. Also trigger
-  when the user asks to review a specific PR by number.
+  when the user asks to review a specific PR by number, or a specific commit range with
+  phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
+  "review the last commit", "review commits abc123..def456".
 allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Edit(REVIEW.md)
 ---
 
@@ -142,14 +146,23 @@ would all still describe the wrong span.
 | nothing about scope | (no flag: whole branch) |
 
 ```bash
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --last 1
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --commit abc123
-uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --range abc123..def456
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --last 1
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --commit abc123
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --range abc123..def456
 ```
 
 `--commit` reviews that commit's own change (`REV^..REV`), and works on a root
 commit. `--range` also accepts git's three-dot form (`main...HEAD`, meaning
 "since the two diverged") and a bare revision (`abc123`, meaning `abc123..HEAD`).
+
+An endpoint named as `origin/<branch>` is fetched before it is resolved, so
+`--range origin/develop..HEAD` sees the branch as it is on the server. Every
+other endpoint is taken from the local checkout as it stands.
+
+`--last N` and `--commit` step through first parents, so a merge commit among
+those steps widens the span to everything that merge brought in. The script
+prints a `NOTE` naming the real commit count when that happens; read it, and
+reach for `--range` if the wider span is not what the user asked for.
 
 #### How the default base is chosen
 
@@ -173,7 +186,9 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_c
 
 The default range is measured from the merge-base, so commits that landed on the
 base after this branch was cut are excluded. The explicit flags (`--last`,
-`--commit`, `--range`) name their endpoints outright and take no merge-base.
+`--commit`, `--range`) name their endpoints outright and resolve no base branch.
+The one exception is `--range a...b`, where git's three-dot spelling asks for the
+merge-base of the two revisions you named.
 
 Review the files listed under `files to review`. The script lists deleted files
 separately -- ignore those entirely.
@@ -455,10 +470,14 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentabl
 
 Anchorable lines always come from **the pull request's own diff**, whatever range
 you reviewed. That is normally a superset of a narrower range, so a `--last 1`
-review anchors fine. It is not a superset in one case: a line that an
-intermediate commit touched and a later commit changed back or removed does not
-survive into the PR's net diff. `post_review.py` catches those and names them --
-move such a finding to the top-level `body` rather than forcing an anchor.
+review anchors fine. It is not a superset when the reviewed range reaches outside
+the pull request: `--range`, `--commit` and `--base` take any revision, so a span
+that only partly overlaps the PR -- or does not overlap it at all -- leaves
+findings with nowhere to anchor. It is also not a superset for a line that an
+intermediate commit touched and a later commit changed back or removed, which
+does not survive into the PR's net diff. Either way, `post_review.py` names the
+anchors it rejects -- move those findings to the top-level `body` rather than
+forcing an anchor.
 
 Rules for building the findings file:
 

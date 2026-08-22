@@ -14,7 +14,9 @@ re-read work that was already reviewed. The resolution order is:
 
 The reviewer can also ask for a narrower range -- "just the last commit", "this
 one commit", "between these two revisions" -- with --last, --commit or --range.
-Those name their endpoints outright and skip the merge-base entirely.
+Those name their endpoints outright, so no base branch is resolved. The one
+exception to skipping the merge-base is --range a...b, git's own spelling for
+"since the two diverged".
 
 The script also reports the `language` setting from Claude Code's settings
 files, so the review is written in the language the user configured rather than
@@ -37,7 +39,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -76,11 +77,8 @@ def read_pull_request() -> dict[str, Any] | None:
 def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
     """Return the first candidate revision that git can resolve, or None."""
     for candidate in candidates:
-        resolved = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", candidate],
-            capture_output=True,
-        )
-        if resolved.returncode == 0:
+        verify_command = ["git", "rev-parse", "--verify", "--quiet", candidate]
+        if run_command(verify_command, check=False).strip():
             return candidate
     return None
 
@@ -128,6 +126,23 @@ def resolve_base_revision(base_ref: str) -> str:
     if resolved is None:
         raise RuntimeError(f"base ref {base_ref!r} does not resolve locally or on origin")
     return resolved
+
+
+def fetch_remote_endpoint(revision: str) -> None:
+    """Update the remote-tracking ref an "origin/<branch>" endpoint names.
+
+    An explicit range takes its endpoints as written, with no base resolution to
+    fetch on its behalf. Without this, `--range origin/develop..HEAD` would
+    resolve against whatever origin/develop the checkout last saw and review the
+    wrong span while printing a range that looks authoritative. Only origin is
+    fetched, because that is the remote the rest of this script resolves
+    against; every other endpoint is left to the local checkout as it stands.
+    """
+    remote_prefix = "origin/"
+    if not revision.startswith(remote_prefix):
+        return
+    branch = revision.removeprefix(remote_prefix)
+    run_command(["git", "fetch", "origin", branch], check=False)
 
 
 def find_merge_base(base_revision: str, head_revision: str = "HEAD") -> str:
@@ -202,6 +217,25 @@ def collect_changed_files(
     return reviewable, deleted
 
 
+def count_commits(diff_spec: str) -> int:
+    """Return how many commits the range contains."""
+    output = run_command(["git", "rev-list", "--count", diff_spec], check=False).strip()
+    return int(output) if output.isdigit() else 0
+
+
+def expect_commit_count(args: argparse.Namespace) -> int | None:
+    """Return how many commits the scope flags asked for, or None when they did not.
+
+    --range names its endpoints, so it implies no count; --last and --commit both
+    state one outright.
+    """
+    if args.last is not None:
+        return args.last
+    if args.commit is not None:
+        return 1
+    return None
+
+
 def measure_size(diff_spec: str) -> tuple[int, int, int]:
     """Return (additions, deletions, file_count) for the diff."""
     output = run_command(["git", "diff", "--numstat", diff_spec])
@@ -270,6 +304,8 @@ def print_section(title: str) -> None:
 
 def describe_revision(revision: str) -> str:
     """Render a revision as "<short sha> <subject>" when it names a commit."""
+    if revision == EMPTY_TREE_OBJECT:
+        return f"{revision}  (git's empty tree: the commit has no parent)"
     described = run_command(
         ["git", "log", "-1", "--format=%h %s", revision], check=False
     ).strip()
@@ -326,6 +362,26 @@ def report_size(diff_spec: str, threshold: int) -> None:
         )
 
 
+def report_merge_widening(diff_spec: str, expected_count: int | None) -> None:
+    """Warn when the range holds more commits than the scope flag asked for.
+
+    "HEAD~N..HEAD" and "REV^..REV" step through first parents, so a merge among
+    those steps drags in everything its second parent brought along -- typically
+    the base branch merged back into the feature branch, already reviewed where
+    it landed. The header still reads "the most recent commit", so say otherwise.
+    """
+    if expected_count is None:
+        return
+    actual_count = count_commits(diff_spec)
+    if actual_count <= expected_count:
+        return
+    print(
+        f"\nNOTE: this range holds {actual_count} commits, not {expected_count}. A "
+        "merge commit pulled in the branch it merged, so the diff covers work that "
+        "was reviewed elsewhere. Narrow it with --range if that is not what you meant."
+    )
+
+
 def report_files(diff_spec: str) -> None:
     """Print the files to review and, separately, the ones to skip."""
     reviewable, deleted = collect_changed_files(diff_spec)
@@ -353,18 +409,26 @@ def resolve_explicit_range(
 ) -> tuple[str, str, str] | None:
     """Return (left, right, description) for --last/--commit/--range, or None.
 
-    These three name their endpoints outright, so no base branch is resolved and
-    no merge-base is taken -- the reviewer asked for exactly this span.
+    These three name their endpoints outright, so no base branch is resolved --
+    the reviewer asked for exactly this span. Only --range a...b takes a
+    merge-base, and it takes it between the two revisions the reviewer named.
     """
     if args.last is not None:
         left, right = build_last_range(args.last)
-        commits = "commit" if args.last == 1 else "commits"
-        return left, right, f"--last {args.last}: the most recent {args.last} {commits}"
-    if args.commit:
+        span = (
+            "the most recent commit"
+            if args.last == 1
+            else f"the last {args.last} commits"
+        )
+        return left, right, f"--last {args.last}: {span}"
+    if args.commit is not None:
+        fetch_remote_endpoint(args.commit)
         left, right = build_commit_range(args.commit)
         return left, right, f"--commit {args.commit}: that commit's own change"
-    if args.range:
+    if args.range is not None:
         left, right, uses_merge_base = parse_range_spec(args.range)
+        fetch_remote_endpoint(left)
+        fetch_remote_endpoint(right)
         if uses_merge_base:
             left = find_merge_base(left, right)
             return left, right, f"--range {args.range}: since the two diverged"
@@ -405,10 +469,9 @@ def main() -> int:
 
     try:
         pull_request = read_pull_request()
-        resolved = resolve_explicit_range(args)
-        if resolved is None:
-            resolved = resolve_branch_range(args, pull_request)
-        left, right, description = resolved
+        explicit_range = resolve_explicit_range(args)
+        resolved_range = explicit_range or resolve_branch_range(args, pull_request)
+        left, right, description = resolved_range
         if resolve_existing_revision([left]) is None:
             raise RuntimeError(f"revision {left!r} does not resolve")
         if resolve_existing_revision([right]) is None:
@@ -421,6 +484,7 @@ def main() -> int:
     report_review_range(left, right, diff_spec, description, pull_request)
     report_response_language()
     report_size(diff_spec, args.threshold)
+    report_merge_widening(diff_spec, expect_commit_count(args))
     report_files(diff_spec)
     report_stat_and_commits(diff_spec)
 

@@ -25,11 +25,11 @@ Claude app on smartphones or desktop via Claude Code's `/remote-control`.
 
 ### Local development workflow
 
-These are general-purpose coding-workflow skills (no network or credentials of
-their own beyond `gh`/`git`, plus `uv` where a skill ships Python helpers), used
-in any repository.
+These are general-purpose coding-workflow skills, used in any repository. They
+carry no network access or credentials of their own beyond `gh`/`git`. Some ship
+Python helpers and need `uv` to run them.
 
-- [branch-review](.claude/skills/branch-review/SKILL.md) — Review changes on the current branch against the branch they merge into: the pull request's own base branch when one is open, so a stacked PR reviews only its own changes. The scope can be narrowed to a commit range (`--last 1` for the most recent commit, `--commit`, `--range`). Produces a structured `REVIEW.md` and posts inline review comments on specific file lines via the GitHub API. All git and GitHub access goes through tested Python helpers under `scripts/`, run via `uv`, which also derive `GH_HOST` from the origin remote so GitHub Enterprise checkouts work unconfigured.
+- [branch-review](.claude/skills/branch-review/SKILL.md) — Review changes on the current branch against the branch they merge into — the pull request's own base branch when one is open, so a stacked PR reviews only its own changes — or against a narrower commit range. Produces a structured `REVIEW.md` and posts inline comments via the GitHub API, on github.com or GitHub Enterprise.
 - [branch-review-loop](.claude/skills/branch-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `branch-review` skill via a subagent, fix every reported issue, then re-review until no findings remain (up to 5 iterations).
 - [create-pr](.claude/skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
 - [fix-agent-todo](.claude/skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
