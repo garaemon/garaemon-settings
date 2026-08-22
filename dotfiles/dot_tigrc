@@ -1,0 +1,8 @@
+set main-view = id date author commit-title:graph=yes,refs=yes
+set vertical-split = yes
+
+# tig version should be greater than 2.1
+bind diff o @code -g %(file):%(lineno)
+bind status o @code -g %(file):%(lineno)
+
+set mouse = true

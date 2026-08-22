@@ -8,9 +8,13 @@ Monorepo for garaemon's environment setup.
   desktop environment (packages, fonts, keyboard, editor toolchain).
 - **claude-skills/**: Claude Code skills. `~/.claude/skills` is a symlink to
   `claude-skills/.claude/skills`. See [claude-skills/README.md](claude-skills/README.md).
+- **dotfiles/**: chezmoi source for shell, git, editor, and terminal
+  configuration. The root-level `install.sh` is a shim for GitHub Codespaces
+  and Dev Containers that delegates to `dotfiles/install.sh`. See
+  [dotfiles/README.md](dotfiles/README.md).
 
-Additional directories (`dotfiles/`, `emacs.d/`) are being merged into this
-repository from their original standalone repositories.
+The `emacs.d/` directory is being merged into this repository from its
+original standalone repository.
 
 ## Scope
 
