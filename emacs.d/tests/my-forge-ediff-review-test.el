@@ -17,6 +17,7 @@
 ;;; Code:
 
 (require 'ert)
+(require 'cl-lib)
 
 (defvar my-forge-ediff-review-test--available
   (and (require 'magit nil t)
@@ -189,11 +190,8 @@ and point into the next test."
       (my-forge-ediff-review-test--conversation-session
        (list (list :author "seed" :body "from forge")))
     (my-forge-ediff-review--on-conversation-fetched
-     '((data (repository
-              (pullRequest
-               (id . "PR_kwABC")
-               (comments (nodes . (((body . "from api")
-                                    (author (login . "bob"))))))))))
+     '(((body . "from api") (author (login . "bob"))))
+     '((data (repository (pullRequest (id . "PR_kwABC")))))
      42)
     (let ((posts (plist-get my-forge-ediff-review--session :conversation)))
       (should (= 1 (length posts)))
@@ -208,11 +206,8 @@ and point into the next test."
       (my-forge-ediff-review-test--conversation-session
        (list (list :author "seed" :body "from forge")))
     (my-forge-ediff-review--on-conversation-fetched
-     '((data (repository
-              (pullRequest
-               (id . "PR_other")
-               (comments (nodes . (((body . "wrong PR")
-                                    (author (login . "eve"))))))))))
+     '(((body . "wrong PR") (author (login . "eve"))))
+     '((data (repository (pullRequest (id . "PR_other")))))
      99)
     (should (equal "from forge"
                    (plist-get
@@ -220,6 +215,72 @@ and point into the next test."
                                     :conversation))
                     :body)))
     (should-not (plist-get my-forge-ediff-review--session :pr-node-id))))
+
+;;;; Paged GraphQL requests
+
+(defun my-forge-ediff-review-test--page (nodes &optional cursor)
+  "Build one comments page carrying NODES, continuing when CURSOR is given."
+  `((data
+     (repository
+      (pullRequest
+       (comments
+        (pageInfo (hasNextPage . ,(if cursor t :json-false))
+                  (endCursor . ,cursor))
+        (nodes . ,nodes)))))))
+
+(defmacro my-forge-ediff-review-test--with-ghub-pages (pages asked &rest body)
+  "Run BODY with `ghub-query' replaced by one serving PAGES in order.
+Each request's `after' variable is pushed onto ASKED, so a test can
+assert the cursor was actually threaded through rather than the pages
+merely being concatenated."
+  (declare (indent 2))
+  `(cl-letf (((symbol-function 'ghub-query)
+              (lambda (_query variables &rest args)
+                (push (alist-get 'after variables) ,asked)
+                (funcall (plist-get args :callback) (pop ,pages)))))
+     ,@body))
+
+(ert-deftest my-forge-ediff-review-pagination-follows-the-cursor ()
+  "Every page is fetched and the nodes arrive as one list."
+  (skip-unless my-forge-ediff-review-test--available)
+  (let ((pages (list (my-forge-ediff-review-test--page
+                      '(((body . "one"))) "C1")
+                     (my-forge-ediff-review-test--page
+                      '(((body . "two"))))))
+        (asked nil)
+        (got 'unset))
+    (my-forge-ediff-review-test--with-ghub-pages pages asked
+      (let ((my-forge-ediff-review--session (list :host nil)))
+        (my-forge-ediff-review--query-all-pages
+         "query" '((owner . "o"))
+         '(repository pullRequest comments)
+         (lambda (nodes _response) (setq got nodes)))))
+    (should (equal '(((body . "one")) ((body . "two"))) got))
+    ;; First request carries no cursor; the second carries the first page's.
+    (should (equal '(nil "C1") (nreverse asked)))))
+
+(ert-deftest my-forge-ediff-review-pagination-stops-on-a-single-page ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (let ((pages (list (my-forge-ediff-review-test--page '(((body . "only"))))))
+        (asked nil)
+        (calls 0))
+    (my-forge-ediff-review-test--with-ghub-pages pages asked
+      (let ((my-forge-ediff-review--session (list :host nil)))
+        (my-forge-ediff-review--query-all-pages
+         "query" '((owner . "o"))
+         '(repository pullRequest comments)
+         (lambda (_nodes _response) (setq calls (1+ calls))))))
+    (should (= 1 calls))
+    (should (equal '(nil) asked))))
+
+(ert-deftest my-forge-ediff-review-threads-ignore-other-pr-response ()
+  "The threads fetch guards on PR number the way the conversation does."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-session
+      (list :num 42 :existing 'untouched)
+    (my-forge-ediff-review--on-threads-fetched nil 99)
+    (should (eq 'untouched
+                (plist-get my-forge-ediff-review--session :existing)))))
 
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here

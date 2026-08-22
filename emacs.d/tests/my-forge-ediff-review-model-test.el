@@ -481,6 +481,73 @@ LOCATION is an alist providing the thread-level `path', `line',
            (my-forge-ediff-review-model-format-card "▤" "Memo" "just one" 20 t)
            "▸ ▤ Memo: just one      ")))
 
+;;;; GraphQL connection walking and pagination
+
+(defun review-model-test--connection (nodes &optional has-next cursor)
+  "Wrap NODES in a pullRequest comments connection, with optional page info."
+  `((data
+     (repository
+      (pullRequest
+       (comments
+        ,@(when has-next
+            `((pageInfo (hasNextPage . t) (endCursor . ,cursor))))
+        ,@(when (and (not has-next) cursor)
+            `((pageInfo (hasNextPage . :json-false) (endCursor . ,cursor))))
+        (nodes . ,nodes)))))))
+
+(ert-deftest review-model-connection-should-walk-the-path ()
+  (let ((connection (my-forge-ediff-review-model-connection
+                     (review-model-test--connection '(((body . "hi"))))
+                     '(repository pullRequest comments))))
+    (should (equal '(((body . "hi")))
+                   (my-forge-ediff-review-model-connection-nodes connection)))))
+
+(ert-deftest review-model-connection-should-be-nil-for-a-missing-path ()
+  (should-not (my-forge-ediff-review-model-connection
+               (review-model-test--connection nil)
+               '(repository pullRequest reviews))))
+
+(ert-deftest review-model-connection-nodes-should-accept-a-vector ()
+  (should (= 1 (length (my-forge-ediff-review-model-connection-nodes
+                        '((nodes . [((body . "hi"))])))))))
+
+(ert-deftest review-model-next-cursor-should-return-the-end-cursor ()
+  (should (equal "C1"
+                 (my-forge-ediff-review-model-next-cursor
+                  (my-forge-ediff-review-model-connection
+                   (review-model-test--connection nil t "C1")
+                   '(repository pullRequest comments))))))
+
+(ert-deftest review-model-next-cursor-should-be-nil-on-the-last-page ()
+  (should-not (my-forge-ediff-review-model-next-cursor
+               (my-forge-ediff-review-model-connection
+                (review-model-test--connection nil nil "C1")
+                '(repository pullRequest comments)))))
+
+(ert-deftest review-model-next-cursor-should-be-nil-without-page-info ()
+  "A connection fetched without pageInfo must read as complete, not loop."
+  (should-not (my-forge-ediff-review-model-next-cursor
+               (my-forge-ediff-review-model-connection
+                (review-model-test--connection nil)
+                '(repository pullRequest comments)))))
+
+(ert-deftest review-model-should-parse-accumulated-conversation-nodes ()
+  "The nodes entry point takes what several pages accumulated."
+  (let ((posts (my-forge-ediff-review-model-parse-conversation-nodes
+                '(((body . "one") (author (login . "alice")))
+                  ((body . "two") (author (login . "bob")))))))
+    (should (equal '("one" "two") (mapcar (lambda (p) (plist-get p :body))
+                                          posts)))))
+
+(ert-deftest review-model-should-parse-accumulated-thread-nodes ()
+  (let ((entries (my-forge-ediff-review-model-parse-review-thread-nodes
+                  (list (my-forge-ediff-review-model-test--thread
+                         nil '((path . "a.el") (line . 3) (diffSide . "RIGHT"))
+                         (list (my-forge-ediff-review-model-test--comment
+                                "body" "alice")))))))
+    (should (= 1 (length entries)))
+    (should (equal "a.el" (plist-get (car entries) :path)))))
+
 ;;;; API host resolution (github.com and GitHub Enterprise)
 
 (ert-deftest review-model-resolve-host-should-return-github-apihost ()
