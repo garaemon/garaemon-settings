@@ -115,6 +115,63 @@
     (should-not (string-match-p "0c" line))
     (should-not (string-match-p "0m" line))))
 
+;;;; Existing-thread counts per file
+
+(defun review-model-test--thread-entry (path thread-id resolved)
+  "Build an existing-comment entry on PATH in THREAD-ID with RESOLVED."
+  (list :path path :line 1 :side "RIGHT" :body "x"
+        :thread-id thread-id :resolved resolved))
+
+(ert-deftest review-model-count-threads-should-count-each-thread-once ()
+  "A thread with several replies is one thread\u2019s worth of attention."
+  (let ((entries (list (review-model-test--thread-entry "a.el" "T1" nil)
+                       (review-model-test--thread-entry "a.el" "T1" nil)
+                       (review-model-test--thread-entry "a.el" "T2" t))))
+    (should (equal '(2 . 1)
+                   (my-forge-ediff-review-model-count-threads-for-file
+                    entries "a.el")))))
+
+(ert-deftest review-model-count-threads-should-ignore-other-files ()
+  (let ((entries (list (review-model-test--thread-entry "a.el" "T1" nil)
+                       (review-model-test--thread-entry "b.el" "T2" nil))))
+    (should (equal '(1 . 1)
+                   (my-forge-ediff-review-model-count-threads-for-file
+                    entries "b.el")))))
+
+(ert-deftest review-model-count-threads-should-be-zero-when-absent ()
+  (should (equal '(0 . 0)
+                 (my-forge-ediff-review-model-count-threads-for-file
+                  nil "a.el"))))
+
+(ert-deftest review-model-count-threads-should-report-all-resolved ()
+  (let ((entries (list (review-model-test--thread-entry "a.el" "T1" t)
+                       (review-model-test--thread-entry "a.el" "T2" t))))
+    (should (equal '(2 . 0)
+                   (my-forge-ediff-review-model-count-threads-for-file
+                    entries "a.el")))))
+
+(ert-deftest review-model-format-line-should-show-thread-counts ()
+  (should (string-suffix-p "a.el [2c/1m/3t/1u]"
+                           (my-forge-ediff-review-model-format-file-line
+                            "a.el" nil nil 2 1 3 1))))
+
+(ert-deftest review-model-format-line-should-drop-zero-count-fields ()
+  "Only the counts that carry information are shown."
+  (should (string-suffix-p "a.el [3t/1u]"
+                           (my-forge-ediff-review-model-format-file-line
+                            "a.el" nil nil 0 0 3 1)))
+  (should (string-suffix-p "a.el [2c]"
+                           (my-forge-ediff-review-model-format-file-line
+                            "a.el" nil nil 2 0 0 0)))
+  (should (string-suffix-p "a.el [3t]"
+                           (my-forge-ediff-review-model-format-file-line
+                            "a.el" nil nil 0 0 3 0))))
+
+(ert-deftest review-model-format-line-should-stay-quiet-when-all-zero ()
+  (should (string-suffix-p "a.el"
+                           (my-forge-ediff-review-model-format-file-line
+                            "a.el" nil nil 0 0 0 0))))
+
 ;;;; Commit history
 
 (ert-deftest review-model-parse-commit-line-should-split-on-nul ()

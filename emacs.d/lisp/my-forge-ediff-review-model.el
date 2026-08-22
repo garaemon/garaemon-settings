@@ -53,6 +53,25 @@ list is not modified."
   (cl-count-if (lambda (entry) (equal (plist-get entry :path) path))
                entries))
 
+(defun my-forge-ediff-review-model-count-threads-for-file (entries path)
+  "Return (TOTAL . UNRESOLVED) thread counts for PATH within ENTRIES.
+ENTRIES are existing review comments, and several of them can belong to
+one thread, so threads are counted by distinct :thread-id rather than by
+entry -- a ten-reply discussion is one thread\='s worth of attention, not
+ten.  UNRESOLVED counts the threads whose :resolved is nil, which is the
+number that actually still asks something of the reviewer."
+  (let ((seen nil)
+        (total 0)
+        (unresolved 0))
+    (dolist (entry entries (cons total unresolved))
+      (when (equal (plist-get entry :path) path)
+        (let ((id (plist-get entry :thread-id)))
+          (unless (member id seen)
+            (push id seen)
+            (setq total (1+ total))
+            (unless (plist-get entry :resolved)
+              (setq unresolved (1+ unresolved)))))))))
+
 (defun my-forge-ediff-review-model-entries-for-side (entries path side)
   "Return entries in ENTRIES whose :path is PATH and :side is SIDE."
   (cl-remove-if-not
@@ -63,24 +82,40 @@ list is not modified."
 
 ;;;; Sidebar line formatting
 
-(defun my-forge-ediff-review-model--counts-suffix (comment-count memo-count)
-  "Return a trailing count string for COMMENT-COUNT and MEMO-COUNT.
-Empty when both are zero so untouched files stay visually quiet."
-  (if (and (zerop comment-count) (zerop memo-count))
-      ""
-    (format " [%dc/%dm]" comment-count memo-count)))
+(defun my-forge-ediff-review-model--counts-suffix
+    (comment-count memo-count &optional thread-count unresolved-count)
+  "Return a trailing count string for a sidebar file line.
+COMMENT-COUNT and MEMO-COUNT are the reviewer\='s own pending entries;
+THREAD-COUNT and UNRESOLVED-COUNT describe the discussion already posted
+on GitHub.  Zero-valued fields are dropped and the suffix is empty when
+every count is zero, so untouched files stay visually quiet and what is
+left on a busy file is only what is worth reading."
+  (let ((parts (delq nil
+                     (list (and (> comment-count 0)
+                                (format "%dc" comment-count))
+                           (and (> memo-count 0)
+                                (format "%dm" memo-count))
+                           (and thread-count (> thread-count 0)
+                                (format "%dt" thread-count))
+                           (and unresolved-count (> unresolved-count 0)
+                                (format "%du" unresolved-count))))))
+    (if parts
+        (concat " [" (mapconcat #'identity parts "/") "]")
+      "")))
 
 (defun my-forge-ediff-review-model-format-file-line
-    (file current-p reviewed-p comment-count memo-count)
+    (file current-p reviewed-p comment-count memo-count
+          &optional thread-count unresolved-count)
   "Return the sidebar text line for FILE.
 CURRENT-P marks the file shown in ediff with a leading caret.
-REVIEWED-P selects the checkbox glyph.  COMMENT-COUNT and MEMO-COUNT are
-appended only when non-zero."
+REVIEWED-P selects the checkbox glyph.  COMMENT-COUNT, MEMO-COUNT,
+THREAD-COUNT and UNRESOLVED-COUNT are appended only when non-zero, so
+the discussion waiting in a file is visible before it is opened."
   (let ((pointer (if current-p "> " "  "))
         (checkbox (if reviewed-p "[x] " "[ ] ")))
     (concat pointer checkbox file
             (my-forge-ediff-review-model--counts-suffix
-             comment-count memo-count))))
+             comment-count memo-count thread-count unresolved-count))))
 
 ;;;; Commit history
 
