@@ -356,8 +356,12 @@ def resolve_explicit_range(
     """
     if args.last is not None:
         left, right = build_last_range(args.last)
-        commits = "commit" if args.last == 1 else "commits"
-        return left, right, f"--last {args.last}: the most recent {args.last} {commits}"
+        span = (
+            "the most recent commit"
+            if args.last == 1
+            else f"the last {args.last} commits"
+        )
+        return left, right, f"--last {args.last}: {span}"
     if args.commit is not None:
         left, right = build_commit_range(args.commit)
         return left, right, f"--commit {args.commit}: that commit's own change"
@@ -403,10 +407,9 @@ def main() -> int:
 
     try:
         pull_request = read_pull_request()
-        resolved = resolve_explicit_range(args)
-        if resolved is None:
-            resolved = resolve_branch_range(args, pull_request)
-        left, right, description = resolved
+        explicit_range = resolve_explicit_range(args)
+        resolved_range = explicit_range or resolve_branch_range(args, pull_request)
+        left, right, description = resolved_range
         if resolve_existing_revision([left]) is None:
             raise RuntimeError(f"revision {left!r} does not resolve")
         if resolve_existing_revision([right]) is None:
