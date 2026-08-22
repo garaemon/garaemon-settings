@@ -126,6 +126,23 @@ def resolve_base_revision(base_ref: str) -> str:
     return resolved
 
 
+def fetch_remote_endpoint(revision: str) -> None:
+    """Update the remote-tracking ref an "origin/<branch>" endpoint names.
+
+    An explicit range takes its endpoints as written, with no base resolution to
+    fetch on its behalf. Without this, `--range origin/develop..HEAD` would
+    resolve against whatever origin/develop the checkout last saw and review the
+    wrong span while printing a range that looks authoritative. Only origin is
+    fetched, because that is the remote the rest of this script resolves
+    against; every other endpoint is left to the local checkout as it stands.
+    """
+    remote_prefix = "origin/"
+    if not revision.startswith(remote_prefix):
+        return
+    branch = revision.removeprefix(remote_prefix)
+    run_command(["git", "fetch", "origin", branch], check=False)
+
+
 def find_merge_base(base_revision: str, head_revision: str = "HEAD") -> str:
     """Return the common ancestor of two revisions."""
     return run_command(["git", "merge-base", base_revision, head_revision]).strip()
@@ -363,10 +380,13 @@ def resolve_explicit_range(
         )
         return left, right, f"--last {args.last}: {span}"
     if args.commit is not None:
+        fetch_remote_endpoint(args.commit)
         left, right = build_commit_range(args.commit)
         return left, right, f"--commit {args.commit}: that commit's own change"
     if args.range is not None:
         left, right, uses_merge_base = parse_range_spec(args.range)
+        fetch_remote_endpoint(left)
+        fetch_remote_endpoint(right)
         if uses_merge_base:
             left = find_merge_base(left, right)
             return left, right, f"--range {args.range}: since the two diverged"

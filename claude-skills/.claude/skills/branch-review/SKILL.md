@@ -151,6 +151,10 @@ uv run --project <skill_dir> <skill_dir>/scripts/gather_review_context.py --rang
 commit. `--range` also accepts git's three-dot form (`main...HEAD`, meaning
 "since the two diverged") and a bare revision (`abc123`, meaning `abc123..HEAD`).
 
+An endpoint named as `origin/<branch>` is fetched before it is resolved, so
+`--range origin/develop..HEAD` sees the branch as it is on the server. Every
+other endpoint is taken from the local checkout as it stands.
+
 #### How the default base is chosen
 
 With no scope flag, the base is **the branch these changes will actually merge

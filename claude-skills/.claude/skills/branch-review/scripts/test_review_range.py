@@ -18,6 +18,7 @@ from gather_review_context import (
     EMPTY_TREE_OBJECT,
     build_commit_range,
     build_last_range,
+    fetch_remote_endpoint,
     format_diff_spec,
     parse_range_spec,
     resolve_explicit_range,
@@ -145,6 +146,22 @@ class ResolveExplicitRangeTest(unittest.TestCase):
         resolved = self.resolve(range="abc123..def456")
         self.assertEqual(resolved, ("abc123", "def456", "--range abc123..def456"))
 
+    def test_fetches_neither_endpoint_of_a_local_range(self) -> None:
+        with mock.patch.object(gather_review_context, "run_command") as run_command_mock:
+            self.resolve(range="abc123..def456")
+        run_command_mock.assert_not_called()
+
+    def test_fetches_both_endpoints_of_a_remote_range(self) -> None:
+        with mock.patch.object(gather_review_context, "run_command") as run_command_mock:
+            self.resolve(range="origin/develop..origin/main")
+        self.assertEqual(
+            [call.args[0] for call in run_command_mock.call_args_list],
+            [
+                ["git", "fetch", "origin", "develop"],
+                ["git", "fetch", "origin", "main"],
+            ],
+        )
+
     def test_replaces_a_three_dot_left_endpoint_with_the_merge_base(self) -> None:
         with mock.patch.object(
             gather_review_context, "find_merge_base", return_value="mergebase"
@@ -154,6 +171,22 @@ class ResolveExplicitRangeTest(unittest.TestCase):
         left, right, description = resolved
         self.assertEqual((left, right), ("mergebase", "HEAD"))
         self.assertIn("since the two diverged", description)
+
+
+class FetchRemoteEndpointTest(unittest.TestCase):
+    """fetch_remote_endpoint refreshes only endpoints on origin."""
+
+    def test_fetches_the_branch_an_origin_endpoint_names(self) -> None:
+        with mock.patch.object(gather_review_context, "run_command") as run_command_mock:
+            fetch_remote_endpoint("origin/develop")
+        run_command_mock.assert_called_once_with(
+            ["git", "fetch", "origin", "develop"], check=False
+        )
+
+    def test_leaves_a_local_revision_alone(self) -> None:
+        with mock.patch.object(gather_review_context, "run_command") as run_command_mock:
+            fetch_remote_endpoint("abc123")
+        run_command_mock.assert_not_called()
 
 
 if __name__ == "__main__":
