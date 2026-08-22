@@ -1,0 +1,16 @@
+font-family = "Monaco Nerd Font Mono"
+# To fix the glitches of Japanese texts.
+# See https://github.com/ghostty-org/ghostty/discussions/5203
+font-feature = -dlig
+theme = "Spacedust"
+cursor-style = block
+cursor-style-blink = true
+shell-integration-features = no-cursor
+clipboard-paste-protection = false
+copy-on-select = false
+macos-option-as-alt = true
+keybind = ¥=text:\\
+keybind = ctrl+cmd+left=unbind
+keybind = ctrl+cmd+right=unbind
+keybind = ctrl+cmd+up=unbind
+keybind = ctrl+cmd+down=unbind

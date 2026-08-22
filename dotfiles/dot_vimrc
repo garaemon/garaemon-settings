@@ -1,0 +1,16 @@
+set nocompatible  " おまじない
+syntax on  " シンタックスハイライト有効化
+set number  " 行数表示
+nnoremap q :<C-u>q<CR>  " q でvimを閉じる
+"colorscheme darkblue
+
+" 行末のスペースを赤く表示する
+highlight WhitespaceEOL ctermbg=red
+match WhitespaceEOL /\s\+$/
+
+" for search
+set hlsearch  " マッチした箇所をハイライトする
+set incsearch  " インクリメンタルサーチ
+set smartcase  " 大文字小文字をいい具合に区別する
+set showmatch
+
