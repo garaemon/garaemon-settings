@@ -1,0 +1,67 @@
+- name: Install 1Password desktop app
+  when:
+    - ansible_facts.os_family == "Debian"
+    - ansible_facts.architecture == "x86_64"
+  block:
+    - name: Check if 1Password is already installed
+      command: which 1password
+      register: onepassword_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install 1Password from the official apt repository
+      when: onepassword_installed.rc != 0
+      block:
+        - name: Install dependencies for 1Password
+          apt:
+            name:
+              - gnupg
+            state: present
+          become: true
+
+        - name: Download 1Password signing key
+          get_url:
+            url: https://downloads.1password.com/linux/keys/1password.asc
+            dest: /tmp/1password-signing-key.asc
+            mode: "0644"
+
+        - name: Convert and install 1Password signing key to keyrings
+          ansible.builtin.shell: |
+            gpg --dearmor < /tmp/1password-signing-key.asc > /usr/share/keyrings/1password-archive-keyring.gpg
+          become: true
+          args:
+            creates: /usr/share/keyrings/1password-archive-keyring.gpg
+
+        - name: Set permissions on 1Password keyring
+          file:
+            path: /usr/share/keyrings/1password-archive-keyring.gpg
+            mode: "0644"
+          become: true
+
+        - name: Write 1Password repository file with signed-by
+          copy:
+            dest: /etc/apt/sources.list.d/1password.list
+            # The folded scalar keeps the repository definition on one line in the file.
+            content: >
+              deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg]
+              https://downloads.1password.com/linux/debian/amd64 stable main
+            mode: "0644"
+          become: true
+          register: onepassword_repository
+
+        - name: Update apt cache
+          apt:
+            update_cache: true
+          become: true
+          when: onepassword_repository.changed
+
+        - name: Install 1Password
+          apt:
+            name: 1password
+            state: present
+          become: true
+
+        - name: Clean up temporary signing key
+          file:
+            path: /tmp/1password-signing-key.asc
+            state: absent

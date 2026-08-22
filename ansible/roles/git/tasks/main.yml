@@ -1,0 +1,15 @@
+- name: Check if git is installed
+  apt:
+    name: git
+    state: present
+  check_mode: true
+  register: git_check
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install git
+  apt:
+    name: git
+  become: true
+  when:
+    - ansible_facts.os_family == "Debian"
+    - git_check.changed

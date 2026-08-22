@@ -1,0 +1,3 @@
+# Set the variable true if you want to build emacs from source.
+emacs_build_emacs: false
+emacs_version: emacs-30.1

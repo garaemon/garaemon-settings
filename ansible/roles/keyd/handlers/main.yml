@@ -1,0 +1,6 @@
+---
+- name: Restart keyd service
+  systemd:
+    name: keyd
+    state: restarted
+  become: true

@@ -1,4 +1,4 @@
-# emacs.d [![Build Status](https://github.com/garaemon/emacs.d/actions/workflows/test.yml/badge.svg)](https://github.com/garaemon/emacs.d/actions/workflows/test.yml)
+# emacs.d [![Build Status](https://github.com/garaemon/garaemon-settings/actions/workflows/emacs-test.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/emacs-test.yml)
 
 my private emacs setting
 

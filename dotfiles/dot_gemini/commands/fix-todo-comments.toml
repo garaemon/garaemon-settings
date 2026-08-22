@@ -1,0 +1,9 @@
+description = "Fix TODO comments for coding agent"
+prompt = """
+Fix TODO comments for coding agents with the following steps:
+
+1. Search for "TODO(agent)" in the current and sub directories recursively.
+2. Fix the codes accordingly.
+3. Do not leave "TODO(agent)" in the comments.
+
+"""

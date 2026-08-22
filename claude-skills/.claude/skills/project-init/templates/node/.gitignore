@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Tooling caches
+.eslintcache
+
+# Coverage
+coverage/
+
+# Environment / secrets
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS / editor
+.DS_Store

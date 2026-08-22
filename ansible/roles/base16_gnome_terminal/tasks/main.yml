@@ -1,0 +1,18 @@
+- name: Install base16-gnome-terminal requirements
+  apt:
+    name:
+      - uuid-runtime
+  become: true
+
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone base16-gnome-terminal using git
+  ansible.builtin.git:
+    repo: https://github.com/aarowill/base16-gnome-terminal.git
+    dest: "{{ ghq_root_path }}/github.com/aarowill/base16-gnome-terminal"
+    update: false
+
+- name: Execute theme setting script
+  command: ./base16-solarized-dark.sh
+  args:
+    chdir: "{{ ghq_root_path }}/github.com/aarowill/base16-gnome-terminal/color-scripts"

@@ -141,6 +141,25 @@
   (apheleia-global-mode +1)
   )
 
+;; Display code coverage in the left fringe. `cov' locates the coverage file by
+;; itself: gcov (C/C++), lcov tracefiles (Go/Rust/JS/Ruby via converters),
+;; coverage.json (coverage.py), clover.xml and coveralls output are all
+;; supported. Generating those files is left to each project; enable `cov-mode'
+;; in a buffer to look at the result.
+(use-package cov
+  :ensure t
+  :defer t
+  :commands (cov-mode cov-update cov-visit-coverage-file)
+  :init
+  ;; Mark lines as executed/not-executed instead of drawing an execution-count
+  ;; heat map.
+  (setq cov-coverage-mode t)
+  :config
+  ;; `cov-lcov-patterns' only looks for "*.info" by default. Add the places
+  ;; where tracefiles usually end up.
+  (setq cov-lcov-patterns '("*.info" "coverage/lcov.info" "lcov.info"))
+  )
+
 (use-package clang-format :ensure t
   ;; :bind (:map c-mode-base-map
   ;;             ("C-c f" . 'clang-format-buffer))
@@ -176,6 +195,16 @@
               ("\C-c t" . 'my-vterm-toggle)
               ("<mouse-1>" . 'my-browse-url-at-point)
               ("\C-k" . 'my-vterm-kill-line)
+              ;; Copy a mouse selection without entering copy mode; both keys
+              ;; fall back to the shell when no region is active.
+              ("C-w" . 'my-vterm-copy-region-or-send-key)
+              ("M-w" . 'my-vterm-copy-region-or-send-key)
+              :map vterm-copy-mode-map
+              ;; `vterm-copy-mode-done' (RET) copies the whole line when no
+              ;; region is active and then leaves copy mode. These copy the
+              ;; region only and stay in copy mode.
+              ("C-w" . 'my-vterm-copy-region)
+              ("M-w" . 'my-vterm-copy-region)
               )
   :custom
   (vterm-max-scrollback  10000)
@@ -185,6 +214,10 @@
                              "C-k"))
   (vterm-always-compile-module t)
   :config
+  ;; The region-only copy commands live in lisp/my-vterm-copy.el so that
+  ;; tests/my-vterm-copy-test.el can load them without pulling in the whole
+  ;; init.
+  (require 'my-vterm-copy)
 
   ;; https://github.com/akermu/emacs-libvterm/issues/304#issuecomment-621617817
   (defun my-vterm-kill-line ()
@@ -212,6 +245,13 @@
 
 (use-package multi-vterm :ensure t
   :after (vterm))
+
+;; A vterm-only `C-x b'. lisp/my-vterm-buffer.el is a local file rather than a
+;; package, so `:ensure' must stay nil; `:bind' autoloads it on the first
+;; `C-c b'.
+(use-package my-vterm-buffer
+  :ensure nil
+  :bind ("C-c b" . 'my-vterm-switch-to-buffer))
 
 (use-package vterm-toggle :ensure t
   :after (vterm)
@@ -305,6 +345,28 @@
 (use-package projectile
   :ensure t
   :demand t
+  :preface
+  (defun my-run-project-or-subproject (arg)
+    "Run the project's run command in a directory picked with completion.
+The nearest subproject of the current buffer is the default; the project
+root and the project's other subprojects are offered too.  ARG forces the
+command prompt, as in `projectile-run-project'."
+    (interactive "P")
+    (let* ((root (projectile-acquire-root))
+           (subproject (ignore-errors
+                         (file-relative-name (projectile-subproject-root) root)))
+           (candidates (delete-dups
+                        (append (when subproject (list subproject))
+                                (list "./")
+                                (projectile-project-subprojects root))))
+           (directory (if (cdr candidates)
+                          (completing-read "Run in: " candidates nil t nil nil
+                                           (or subproject "./"))
+                        (car candidates))))
+      ;; A nil base makes the phase resolve against the project root, which
+      ;; is what `projectile-run-project' does.
+      (projectile--run-lifecycle-phase
+       'run arg (unless (equal directory "./") (expand-file-name directory root)))))
   :custom
   ;; So a build and a test run, or two different projects' builds, don't
   ;; overwrite each other's *compilation* buffer.
@@ -314,9 +376,21 @@
   ;; `projectile-run-task' is projectile's equivalent, listing npm scripts,
   ;; Makefile targets, justfile recipes, and the catkin commands registered
   ;; below.
-  :bind (("C-c C-r" . projectile-run-task))
+  ;;
+  ;; C-c r is the same question one level down: projectile's own binding for
+  ;; the subproject variant is C-c p c m r, too long for the edit-run loop.
+  :bind (("C-c C-r" . projectile-run-task)
+         ("C-c r" . my-run-project-or-subproject))
   :config
   (projectile-mode +1)
+
+  ;; Accept a list of strings as a directory-local value of
+  ;; `projectile-subproject-markers' without confirmation. Projectile marks
+  ;; no value of the variable safe, so a repository that names its own
+  ;; subproject markers in .dir-locals.el otherwise asks about them every
+  ;; time one of its files opens.
+  (put 'projectile-subproject-markers 'safe-local-variable
+       (lambda (value) (and (listp value) (seq-every-p #'stringp value))))
 
   ;; A catkin workspace is one git repository holding many ROS packages,
   ;; and "catkin build --this" means "the package default-directory is

@@ -1,0 +1,49 @@
+- name: Install apt packages
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: true
+  become: true
+  vars:
+    packages:
+      - anthy-el
+      - asciinema
+      - bison
+      - build-essential
+      - ccls
+      - cmigemo
+      - curl
+      - ffmpeg
+      - gawk
+      - git-core
+      - htop
+      - imagemagick
+      - man
+      - mercurial
+      - rlwrap
+      - rlwrap
+      # ag requires autotools so we keep it here
+      - silversearcher-ag
+      - sqlite3
+      - ssh
+      - tcpflow
+      - texinfo
+      - texlive
+      - tmux
+      - toilet
+      - ttyrec
+      - urlview
+      - vim
+      - w3m
+      - xclip
+      - zsh
+- name: Install apt packages (xenial)
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: true
+  become: true
+  vars:
+    packages:
+      - libgnutls-dev
+  when: ansible_facts.lsb.codename == "xenial"

@@ -1,0 +1,31 @@
+name: Auto-assign
+
+# CODEOWNERS cannot cover the case that matters most here. GitHub never
+# requests review from a pull request's own author, and almost every pull
+# request in this repository is opened by the owner, so a CODEOWNERS entry
+# alone would fire on none of them. Assigning is allowed where requesting
+# review is not, so this workflow sets the assignee instead.
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-owner:
+    name: Assign the pull request to the repository owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            // Adding an assignee who is already assigned is a no-op, so
+            // reopening a pull request does not need a guard here.
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number: context.payload.pull_request.number,
+              assignees: [owner],
+            });

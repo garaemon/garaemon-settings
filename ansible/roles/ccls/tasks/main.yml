@@ -1,0 +1,36 @@
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone ccls using git
+  ansible.builtin.git:
+    repo: https://github.com/MaskRay/ccls.git
+    dest: "{{ ghq_root_path }}/github.com/MaskRay/ccls"
+    update: false
+
+- name: Create build directory
+  file:
+    path: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
+    state: directory
+- name: Install clang
+  apt:
+    name: "{{ packages }}"
+    state: present
+  become: true
+  vars:
+    packages:
+      - clang-10
+      - libclang-10-dev
+- name: Configure ccls
+  command: >-
+    cmake -H..
+        -BRelease
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_PREFIX_PATH=/usr/lib/llvm-10
+        -DLLVM_INCLUDE_DIR=/usr/lib/llvm-10/include
+        -DLLVM_BUILD_INCLUDE_DIR=/usr/include/llvm-10/
+        -DCMAKE_INSTALL_PREFIX=$HOME/.local
+  args:
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"
+- name: Build and install ccls
+  command: cmake --build Release --target install
+  args:
+    chdir: "{{ ghq_root_path }}/github.com/MaskRay/ccls/build"

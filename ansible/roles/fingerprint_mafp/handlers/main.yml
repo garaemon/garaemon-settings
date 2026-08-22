@@ -1,0 +1,10 @@
+---
+- name: Reload udev rules
+  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+  become: true
+
+- name: Restart fprintd
+  systemd:
+    name: fprintd
+    state: restarted
+  become: true

@@ -1,0 +1,45 @@
+name: Ansible Lint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible-lint.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible-lint.yml'
+
+defaults:
+  run:
+    working-directory: ansible
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Ansible Playbooks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible Lint (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible-lint
+
+      - name: Install Ansible Lint (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible-lint
+
+      - name: Lint Ansible Playbooks
+        run: ansible-lint

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# git-push-pr: Push the current branch with -u and create a GitHub PR.
+# Place this script in your PATH to use as `git push-pr`.
+set -euo pipefail
+
+show_help() {
+  cat << 'EOF'
+Usage: git push-pr [OPTIONS]
+
+Push the current branch with -u and create a GitHub PR.
+
+Options:
+  -b BASE   Base branch for the PR (default: auto-detect from origin HEAD)
+  -d        Create as draft PR
+  -h        Show this help message
+EOF
+}
+
+base_branch=""
+draft_flag=""
+
+while getopts "hdb:" opt; do
+  case "${opt}" in
+    h) show_help; exit 0 ;;
+    b) base_branch="${OPTARG}" ;;
+    d) draft_flag="--draft" ;;
+    *) show_help; exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if ! command -v gh &> /dev/null; then
+  echo "Error: 'gh' command not found." >&2
+  exit 1
+fi
+
+current_branch=$(git branch --show-current)
+if [ -z "$current_branch" ]; then
+  echo "Error: Not on any branch (detached HEAD?)." >&2
+  exit 1
+fi
+
+default_branch=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
+if [ "$current_branch" = "${base_branch:-$default_branch}" ]; then
+  echo "Error: You are on the base branch '${current_branch}'. Switch to a feature branch first." >&2
+  exit 1
+fi
+
+echo "Pushing branch '${current_branch}' with -u..."
+git push -u origin "${current_branch}"
+
+if [ -z "$base_branch" ]; then
+  base_branch="$default_branch"
+fi
+
+echo "Creating PR: ${current_branch} -> ${base_branch}..."
+# shellcheck disable=SC2086
+gh pr create --base "${base_branch}" --fill ${draft_flag}

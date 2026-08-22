@@ -1,0 +1,138 @@
+# rtm-ros-robotics
+- git:
+    uri: https://github.com/start-jsk/openrtm_aist_core.git
+    local-name: rtm-ros-robotics/openrtm_common/openrtm_aist_core
+- git:
+    uri: https://github.com/start-jsk/openhrp3.git
+    local-name: rtm-ros-robotics/openrtm_common/openhrp3
+- git:
+    uri: https://github.com/start-jsk/rtshell_core.git
+    local-name: rtm-ros-robotics/openrtm_common/rtshell_core
+- git:
+    uri: https://github.com/start-jsk/hrpsys.git
+    local-name: rtm-ros-robotics/openrtm_common/hrpsys
+- git:
+    uri: https://github.com/start-jsk/rtmros_common.git
+    local-name: rtm-ros-robotics/rtmros_common
+- git:
+    uri: https://github.com/start-jsk/rtmros_tutorials.git
+    local-name: rtm-ros-robotics/rtmros_tutorials
+# - git:
+#     uri: https://github.com/start-jsk/rtmros_hironx
+#     local-name: rtm-ros-robotics/rtmros_hironx
+- git:
+    uri: https://github.com/start-jsk/rtmros_gazebo.git
+    local-name: rtm-ros-robotics/rtmros_gazebo
+- svn:
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/openrtm_apps
+    local-name: rtm-ros-robotics/openrtm_apps
+- svn:
+    uri: https://rtm-ros-robotics.googlecode.com/svn/trunk/agentsystem_ros_tutorials
+    local-name: rtm-ros-robotics/agentsystem_ros_tutorials
+# jsk-ros-pkg
+- git:
+    uri: https://github.com/jsk-ros-pkg/openrave_planning.git
+    local-name: jsk-ros-pkg/openrave_planning
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_visualization.git
+    local-name: jsk-ros-pkg/jsk_visualization
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_smart_apps.git
+    local-name: jsk-ros-pkg/jsk_smart_apps
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_roseus.git
+    local-name: jsk-ros-pkg/jsk_roseus
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_robot.git
+    local-name: jsk-ros-pkg/jsk_robot
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_recognition.git
+    local-name: jsk-ros-pkg/jsk_recognition
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_pr2eus.git
+    local-name: jsk-ros-pkg/jsk_pr2eus
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_planning.git
+    local-name: jsk-ros-pkg/jsk_planning
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_model_tools.git
+    local-name: jsk-ros-pkg/jsk_model_tools
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_demos.git
+    local-name: jsk-ros-pkg/jsk_demos
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_control.git
+    local-name: jsk-ros-pkg/jsk_control
+- git:
+    uri: https://github.com/jsk-ros-pkg/jsk_common.git
+    local-name: jsk-ros-pkg/jsk_common
+
+# for snap map icp
+# - svn:
+#     uri: https://svn.code.sf.net/p/tum-ros-pkg/code/highlevel/SnapMapICP
+#     local-name: tum-ros-pkg/highlevel/SnapMapICP
+# for face_detector_mono
+# - svn:
+#     uri: https://svn.code.sf.net/p/tum-ros-pkg/code/perception/
+#     local-name: tum-ros-pkg/perception
+# for safe_teleop_pr2
+# - svn:
+#     uri: http://svn.code.sf.net/p/bosch-ros-pkg/code/trunk/stacks/bosch_shared_autonomy
+#     local-name: bosch-ros-pkg/stacks/bosch_shared_autonomy
+# for ee_cart_imped
+# - svn:
+#     uri: https://svn.csail.mit.edu/mit-ros-pkg/trunk/ee_cart_imped
+#     local-name: mit-ros-pkg/trunk/ee_cart_imped
+
+# rwt
+- git:    
+    uri: git://github.com/jihoonl/roswww.git
+    local-name : roswww
+- git:    
+    uri: https://github.com/tork-a/rwt_ros.git
+    local-name : rwt_ros
+- git:
+    uri: https://github.com/tork-a/visualization_rwt.git
+    local-name: visualization_rwt
+# - git:
+#     uri: https://github.com/RobotWebTools/mjpeg_server.git
+#     local-name: mjpeg_server
+# nao
+# - git:
+#     uri: https://github.com/ahornung/nao_robot.git
+#     local-name: humanoid_stacks/nao_robot
+# - git:
+#     uri: https://github.com/ahornung/nao_common.git
+#     local-name: humanoid_stacks/nao_common
+# - git:
+#     uri: https://github.com/ahornung/nao_viz.git
+#     local-name: humanoid_stacks/nao_viz
+# - git:
+#     uri: https://github.com/ahornung/humanoid_msgs.git
+#     local-name: humanoid_stacks/humanoid_msgs
+# - git:
+#     uri: https://github.com/ahornung/humanoid_navigation.git
+#     local-name: humanoid_stacks/humanoid_navigation
+
+# baxter
+- git:
+    uri: https://github.com/RethinkRobotics/baxter.git
+    local-name: RethinkRobotics/baxter
+- git:
+    uri: https://github.com/RethinkRobotics/baxter_interface.git
+    local-name: RethinkRobotics/baxter_interface
+- git:
+    uri: https://github.com/RethinkRobotics/baxter_tools.git
+    local-name: RethinkRobotics/baxter_tools
+- git:
+   uri: https://github.com/RethinkRobotics/baxter_common.git
+   local-name: RethinkRobotics/baxter_common
+- git:
+   uri: https://github.com/RethinkRobotics/baxter_examples.git
+   local-name: RethinkRobotics/baxter_examples
+
+# rviz stuff
+- git:
+    local-name: view_controller_msgs
+    uri: https://github.com/ros-visualization/view_controller_msgs.git
+    version: hydro-devel

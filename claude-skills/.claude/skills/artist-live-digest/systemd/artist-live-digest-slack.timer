@@ -1,0 +1,13 @@
+[Unit]
+Description=Run artist-live-digest to Slack every Friday at 07:00 local time
+
+[Timer]
+OnCalendar=Fri *-*-* 07:00:00
+# Catch up if the machine was off at the scheduled time.
+Persistent=true
+# Jitter to avoid hammering upstreams at a sharp minute boundary.
+RandomizedDelaySec=2min
+Unit=artist-live-digest-slack.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,30 @@
+[tools]
+# pragma: allowlist nextline secret
+1password = "latest"
+atuin = "latest"
+aws = { version = "latest", symlink_bins = "true" }
+bat = "latest"
+bazel = "latest"
+bazelisk = "latest"
+chezmoi = "latest"
+delta = "latest"
+direnv = "latest"
+gcloud = "latest"
+gemini = "latest"
+gemini-cli = "latest"
+gh = "latest"
+ghq = "latest"
+go = "latest"
+jq = "latest"
+kafkactl = "latest"
+node = "22.22.0"
+peco = "latest"
+pnpm = "latest"
+pre-commit = "latest"
+python = "3.12"
+rclone = "latest"
+ripgrep = "latest"
+starship = "1.24.2"
+teleport-community = "latest"
+
+[env]

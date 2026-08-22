@@ -1,0 +1,104 @@
+name: Ansible Playbook Execution
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
+
+defaults:
+  run:
+    working-directory: ansible
+
+jobs:
+  minimal:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04]
+    name: Execute minimal.yml on ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible
+
+      - name: Install Ansible (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible
+
+      - name: Install ansible galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Install ansible galaxy roles
+        run: ansible-galaxy role install -r requirements.yml
+
+      - name: Execute minimal.yml
+        run: ansible-playbook -i localhost, -c local minimal.yml -v
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  main:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04]
+    name: Execute main.yml on ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up ccache
+        if: ${{ !env.ACT }}
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{ runner.os }}
+
+      - name: Set up Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible
+
+      - name: Install Ansible (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible
+
+      - name: Install ansible galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Install ansible galaxy roles
+        run: ansible-galaxy role install -r requirements.yml
+
+      - name: Check for changes in emacs role
+        id: changed-files-emacs
+        uses: tj-actions/changed-files@v46
+        with:
+          files: ansible/roles/emacs/**
+
+      - name: Execute main.yml
+        run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

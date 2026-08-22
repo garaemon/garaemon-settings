@@ -1,0 +1,23 @@
+---
+- name: Check if enchant is installed on Debian/Ubuntu
+  apt:
+    name: enchant-2
+    state: present
+  check_mode: true
+  register: enchant_check
+  when: ansible_facts.os_family == "Debian"
+
+- name: "Install enchant on Debian/Ubuntu"
+  apt:
+    name: enchant-2
+    state: present
+  become: true
+  when:
+    - ansible_facts.os_family == "Debian"
+    - enchant_check.changed
+
+- name: "Install enchant on macOS"
+  homebrew:
+    name: enchant
+    state: present
+  when: ansible_facts.os_family == "Darwin"

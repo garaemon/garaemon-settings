@@ -1,0 +1,116 @@
+- name: Check if git is installed
+  command: which git
+  register: base_git_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install git
+  apt:
+    name:
+      - git
+  become: true
+  when:
+    - ansible_facts.os_family == "Debian"
+    - base_git_check.rc != 0
+
+- name: Ensure ghq root directory exists
+  file:
+    path: "{{ ghq_root_path }}"
+    state: directory
+
+- name: Get hostname
+  command: hostname
+  register: base_hostname
+  changed_when: false
+
+- name: Make temp directory to copy the remote public key
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.tempfile:
+    state: directory
+  register: base_local_temp_directory_for_ssh_key
+
+- name: Check if gh command exists
+  command: which gh
+  register: base_gh_exists
+  ignore_errors: true
+  changed_when: false
+
+- name: Check if gh is authenticated
+  command: gh auth status
+  register: base_gh_auth_status
+  ignore_errors: true
+  changed_when: false
+  when: base_gh_exists.rc == 0
+
+- name: Create ~/.ssh directory
+  file:
+    path: ~/.ssh
+    state: directory
+    mode: '0700'
+
+- name: Get github.com SSH key
+  command: ssh-keyscan -H github.com
+  register: base_github_key
+  changed_when: false
+
+- name: Add github.com to known_hosts
+  lineinfile:
+    path: ~/.ssh/known_hosts
+    line: "{{ item }}"
+    create: true
+    mode: '0644'
+  loop: "{{ base_github_key.stdout_lines }}"
+  when: item | length > 0
+
+- name: Check if garaemon-settings repository exists
+  stat:
+    path: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings/.git"
+  register: base_repo_exists
+
+- name: Get current branch of garaemon-settings  # noqa: command-instead-of-module
+  command: git -C "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings" rev-parse --abbrev-ref HEAD
+  register: base_current_branch
+  ignore_errors: true
+  changed_when: false
+  when: base_repo_exists.stat.exists
+
+- name: Test SSH connection to GitHub
+  command: ssh -T git@github.com
+  register: base_ssh_test
+  ignore_errors: true
+  changed_when: false
+
+- name: Check if SSH authentication is working
+  set_fact:
+    base_ssh_auth_working: "{{ 'successfully authenticated' in base_ssh_test.stderr }}"
+
+# Use git clone instead of ghq because ghq is managed by chezmoi via mise
+# and may not be available in CI or fresh environments.
+- name: Clone garaemon-settings using git (SSH)
+  ansible.builtin.git:
+    repo: git@github.com:garaemon/garaemon-settings.git
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: false
+  when:
+    - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
+    - base_ssh_auth_working | bool
+
+- name: Clone garaemon-settings using git (HTTPS)
+  ansible.builtin.git:
+    repo: https://github.com/garaemon/garaemon-settings.git
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: false
+  when:
+    - not base_repo_exists.stat.exists or (base_current_branch is defined and base_current_branch.stdout == "master")
+    - not (base_ssh_auth_working | bool)
+
+- name: Update garaemon-settings repository
+  ansible.builtin.git:
+    repo: "{{ 'git@github.com:garaemon/garaemon-settings.git' if base_ssh_auth_working | bool else 'https://github.com/garaemon/garaemon-settings.git' }}"
+    dest: "{{ ghq_root_path }}/github.com/garaemon/garaemon-settings"
+    update: true
+  ignore_errors: true
+  when:
+    - base_repo_exists.stat.exists
+    - base_current_branch is defined and base_current_branch.stdout == "master"

@@ -1,0 +1,53 @@
+- name: Install homebrew packages
+  homebrew:
+    name:
+      # ag requires autotools so we keep it here
+      - ag
+      - agg
+      - asciinema
+      - alt-tab
+      - aspell
+      - ccache
+      - ccls
+      - clang-format
+      - cmake
+      - cmigemo
+      - coreutils
+      - cowsay
+      - findutils
+      - fontconfig
+      - git
+      - gnu-sed
+      - gpg
+      - hg
+      - hub
+      - imagemagick
+      - keycastr
+      - libvterm
+      - llvm # for clangd
+      - meshlab
+      - mosh
+      - raycast
+      - reattach-to-user-namespace
+      - tmux
+      - vlc
+      - w3m
+      - wget
+      - zlib
+      - xquartz
+    state: present
+
+# - name: Install ffmpeg with special options
+#  homebrew:
+#    name: ffmpeg
+#    state: present
+#    install_options:
+#      - with-fdk-aac
+#      - with-ffplay
+#      - with-freetype
+#      - with-libass
+#      - with-libquvi
+#      - with-libvorbis
+#      - with-libvpx
+#      - with-opus
+#      - with-x265

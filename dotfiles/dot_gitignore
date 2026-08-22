@@ -1,0 +1,6 @@
+.ccls-cache
+.vscode
+.worktrees/
+*.elc
+
+**/.claude/settings.local.json
