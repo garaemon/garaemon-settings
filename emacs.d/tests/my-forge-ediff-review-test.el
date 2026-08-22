@@ -332,5 +332,42 @@ merely being concatenated."
       (should (eq 'my-forge-ediff-review-existing-comment-face
                   (get-text-property 1 'face card))))))
 
+;;;; Opening at GitHub
+
+(defmacro my-forge-ediff-review-test--capture-browse (place &rest body)
+  "Run BODY with `browse-url' recording its argument into PLACE."
+  (declare (indent 1))
+  `(cl-letf (((symbol-function 'browse-url)
+              (lambda (url &rest _) (setq ,place url))))
+     ,@body))
+
+(ert-deftest my-forge-ediff-review-opens-the-thread-under-point ()
+  "A line carrying a posted thread opens that comment, not the PR page."
+  (skip-unless my-forge-ediff-review-test--available)
+  (let ((opened nil))
+    (my-forge-ediff-review-test--with-overlaid-thread
+        (list :path "a.el" :line 3 :side "RIGHT" :body "hi" :author "alice"
+              :thread-id "T1" :url "https://github.com/o/r/pull/1#r1")
+      (goto-char (point-min))
+      (forward-line 2)
+      (my-forge-ediff-review-test--capture-browse opened
+        (my-forge-ediff-review-open-at-github)))
+    (should (equal "https://github.com/o/r/pull/1#r1" opened))))
+
+(ert-deftest my-forge-ediff-review-falls-back-to-the-pr-page ()
+  "A line with no thread on it opens the pull request itself."
+  (skip-unless my-forge-ediff-review-test--available)
+  (let ((opened nil))
+    (my-forge-ediff-review-test--with-overlaid-thread
+        (list :path "a.el" :line 3 :side "RIGHT" :body "hi" :author "alice"
+              :thread-id "T1" :url "https://github.com/o/r/pull/1#r1")
+      (setf (plist-get my-forge-ediff-review--session :owner) "garaemon")
+      (setf (plist-get my-forge-ediff-review--session :repo) "emacs.d")
+      (setf (plist-get my-forge-ediff-review--session :num) 42)
+      (goto-char (point-min))
+      (my-forge-ediff-review-test--capture-browse opened
+        (my-forge-ediff-review-open-at-github)))
+    (should (equal "https://github.com/garaemon/emacs.d/pull/42" opened))))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here

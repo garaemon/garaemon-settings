@@ -427,10 +427,11 @@ hand over one accumulated node list."
           (dolist (comment comments)
             (let ((body (alist-get 'body comment))
                   (author (alist-get 'login (alist-get 'author comment)))
-                  (created-at (alist-get 'createdAt comment)))
+                  (created-at (alist-get 'createdAt comment))
+                  (url (alist-get 'url comment)))
               (push (list :path path :line line :side side :body body
                           :author author :created-at created-at
-                          :resolved resolved :outdated outdated
+                          :resolved resolved :outdated outdated :url url
                           :reactions
                           (my-forge-ediff-review-model-parse-reactions comment)
                           :thread-id thread-id :reply-to-id reply-to-id)
@@ -477,6 +478,32 @@ so it is worth keeping once the conversation query has fetched it."
     (alist-get 'id pullreq)))
 
 ;;;; API host resolution
+
+(defun my-forge-ediff-review-model-web-host (apihost)
+  "Return the browser-facing host for a repository\='s APIHOST.
+APIHOST is what ghub uses to reach the API -- \"api.github.com\" for
+github.com, or something like \"ghe.example.com/api/v3\" for an
+Enterprise instance.  A browser wants the site itself, which is that
+with the API part taken off: any path suffix dropped, then a leading
+\"api.\" removed.  A nil or empty APIHOST means the default host.
+
+An Enterprise site genuinely served from a host beginning \"api.\" would
+be mangled by that second rule, but such a host cannot be told apart
+from github.com\='s API endpoint by inspection, and github.com is by far
+the likelier case."
+  (let* ((host (if (and (stringp apihost) (not (string-empty-p apihost)))
+                   apihost
+                 "api.github.com"))
+         (host (replace-regexp-in-string "/.*\\'" "" host)))
+    (if (string-prefix-p "api." host)
+        (substring host 4)
+      host)))
+
+(defun my-forge-ediff-review-model-pullreq-url (apihost owner repo num)
+  "Return the web URL of pull request NUM in OWNER/REPO served by APIHOST."
+  (format "https://%s/%s/%s/pull/%s"
+          (my-forge-ediff-review-model-web-host apihost)
+          owner repo num))
 
 (defun my-forge-ediff-review-model-resolve-host (apihost)
   "Return the ghub `:host' value for a forge repository's APIHOST.
