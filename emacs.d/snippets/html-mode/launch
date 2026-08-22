@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: launch
+# key: launch
+# binding: direct-keybinding
+# --
+<launch>
+  $0
+</launch>

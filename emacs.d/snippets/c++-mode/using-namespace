@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: using-namespace
+# key: using-namespace
+# binding: direct-keybinding
+# --
+using namespace $1;

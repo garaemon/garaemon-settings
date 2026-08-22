@@ -1,0 +1,9 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: include-guard
+# key: include-guard
+# binding: direct-keybinding
+# --
+#ifndef __$1__
+#define __$1__
+$0
+#endif  // __$1__

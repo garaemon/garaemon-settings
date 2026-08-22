@@ -1,0 +1,18 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: rviz-plugin-headers
+# key: rviz-plugin-headers
+# binding: direct-keybinding
+# --
+
+#include <rviz/display.h>
+#include <rviz/message_filter_display.h>
+#include <rviz/properties/float_property.h>
+#include <rviz/properties/color_property.h>
+#include <rviz/properties/string_property.h>
+#include <rviz/properties/editable_enum_property.h>
+#include <rviz/properties/tf_frame_property.h>
+#include <rviz/properties/ros_topic_property.h>
+#include <rviz/properties/enum_property.h>
+#include <rviz/display_context.h>
+#include <rviz/frame_manager.h>
+#include <rviz/uniform_string_stream.h>

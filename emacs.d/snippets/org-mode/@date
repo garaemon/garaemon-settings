@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: Org Date from Calendar
+# key: @date
+# --
+<`(org-read-date)`>

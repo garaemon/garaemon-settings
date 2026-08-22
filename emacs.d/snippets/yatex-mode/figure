@@ -1,0 +1,12 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: figure
+# key: figure
+# binding: direct-keybinding
+# --
+\begin{figure}[htb]
+  \begin{center}
+   \includegraphics[width=\columnwidth]{$1}
+   \figlab{$2}
+   \caption{$3}
+  \end{center}
+ \end{figure}

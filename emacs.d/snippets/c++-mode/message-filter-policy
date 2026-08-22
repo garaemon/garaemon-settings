@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: message-filter-policy
+# key: message-filter-policy
+# binding: direct-keybinding
+# --
+typedef message_filters::sync_policies::ExactTime<$1, $2> SyncPolicy;

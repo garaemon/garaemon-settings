@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: message-filter-sync
+# key: message-filter-sync
+# binding: direct-keybinding
+# --
+boost::shared_ptr<message_filters::Synchronizer<SyncPolicy> >sync_;

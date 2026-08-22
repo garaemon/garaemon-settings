@@ -1,0 +1,707 @@
+;;; init-org.el --- Org mode configuration -*- lexical-binding: t -*-
+
+;;; Commentary:
+;; All Org mode related configuration.
+
+;;; Code:
+
+(use-package org
+  :ensure nil
+  ;; If we build org through package.el and `:ensure t`, org-mode can be slower than the
+  ;; the built-in version.
+  ;; To prevent package.el from installing and building from the source code, specify it as
+  ;; built-in.
+  :requires (cl-lib)
+  :init
+  (setq org-jouornelly-file
+        (expand-file-name
+         "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
+  ;; Only set the default when custom.el has not already provided one, so
+  ;; per-machine overrides via custom.el take precedence.
+  (unless (boundp 'org-directory)
+    (setq org-directory (expand-file-name "~/ghq/github.com/garaemon/org/")))
+  :custom
+  (org-startup-indented t)
+  ;; Org's default, made explicit because it is load-bearing here: wrapping a
+  ;; table row wider than the window folds it in the middle, which destroys
+  ;; the column alignment the font setup works to preserve (see
+  ;; `my-font-candidates' in init-ui.el).  Emacs has no per-line
+  ;; `truncate-lines', so this is all-or-nothing per buffer -- long prose runs
+  ;; off the right edge instead of wrapping.  For a table too wide to scroll
+  ;; around comfortably, Org's own column shrinking is the complementary
+  ;; answer: `C-c TAB' (`org-table-toggle-column-width'), `| <10> | <30> |'
+  ;; width cookies in the first row, or `#+STARTUP: shrink'.
+  (org-startup-truncated t)
+  (org-hide-emphasis-markers t)
+  (org-startup-with-latex-preview nil)
+  (org-link-file-path-type 'relative)
+  ;; The special characters for org-capture-templates are described below:
+  ;; https://orgmode.org/manual/Template-expansion.html#Template-expansion
+  (org-capture-templates
+   '(("t" "Todo" entry (file+headline (lambda () (concat org-directory "Tasks.org"))
+                                      "Tasks")
+      "* TODO %?\n  CAPTURED_AT: %a\n  %i\n"
+      )
+     ("m" "Memo" entry (file+headline
+                        (lambda () (concat org-directory "INBOX.org"))
+                        "Memos")
+      "*** MEMO [%T] %? \n    CAPTURED_AT: %a\n    %i"
+      :unarrowed t
+      :prepend t)
+     ("j" "Journelly" entry (file org-jouornelly-file)
+      "* %T @ %(system-name) by %(user-login-name)\n%?"
+      :prepend t
+      :jump-to-captured nil
+      )
+
+     ))
+  (org-todo-keywords '((sequence "TODO" "INPROGRESS" "|" "DONE" "DELEGATED" "CANCELLED")))
+  ;; Use C-c C-q to insert tag.
+  ;; To update the tag list from the agenda files, I set
+  ;; `org-complete-tags-always-offer-all-agenda-tags' t.
+  (org-complete-tags-always-offer-all-agenda-tags t)
+  ;; Required so that links using `:image-data-fun' (e.g. excalidraw: links
+  ;; provided by org-excalidraw) are rendered by `org-display-inline-images'.
+  ;; The default `skip' suppresses them entirely. Local SVGs are cheap to
+  ;; cache, so `cache' is safe even outside the org-excalidraw use case.
+  (org-display-remote-inline-images 'cache)
+  ;; Auto-display inline images when opening an org file. Must be set via
+  ;; `:custom' rather than in `org-mode-hook' because `org-mode' checks this
+  ;; variable before running mode hooks; setting it in the hook is too late
+  ;; for the buffer being opened.
+  (org-startup-with-inline-images t)
+  :config
+  (add-to-list 'org-agenda-files org-directory)
+  (add-to-list 'org-agenda-files org-jouornelly-file)
+  ;; Write content to org-capture from MINI Buffer
+  ;; http://ganmacs.hatenablog.com/entry/2016/04/01/164245
+  (defun org/note-right-now (content)
+    (interactive "sContent for org-capture quick memo: ")
+    (org-capture nil "m")
+    (insert content)
+    (org-capture-finalize))
+
+  (defun my-org-mode-wrap-inline-code (start end)
+    "Wrap the region between START and END with backticks."
+    (interactive "r")
+    (let ((text (buffer-substring-no-properties start end)))
+      (delete-region start end)
+      ;; TODO: do not insert whitespaces around = if no need
+      (insert " =" text "= ")))
+
+  (defun my-org-schedule-if-todo ()
+    "When an item becomes a TODO state, schedule it for today if not already scheduled."
+    (when (equal org-state "TODO")
+      (org-schedule nil (with-temp-buffer (org-time-stamp '(16)) (buffer-string)))))
+
+  (add-hook 'org-todo-state-hook #'my-org-schedule-if-todo)
+  (add-hook 'org-after-todo-state-change-hook #'my-org-schedule-if-todo)
+
+  (defun my-org-continue-checkbox-item ()
+    "Continue a checkbox list with a new unchecked checkbox item.
+Intended for `org-metareturn-hook'.  When point is in a list item that
+already has a checkbox, `org-meta-return' (M-RET) otherwise inserts a
+new item without one.  Insert a new item with an empty \"[ ]\" checkbox
+instead and return non-nil so `org-meta-return' stops.  Return nil when
+point is not in a checkbox item, so the normal dispatch proceeds."
+    (let ((item-start (and (not current-prefix-arg) (org-in-item-p))))
+      (when (and item-start
+                 (save-excursion
+                   (goto-char item-start)
+                   (org-at-item-checkbox-p)))
+        (org-insert-item t)
+        t)))
+
+  (add-hook 'org-metareturn-hook #'my-org-continue-checkbox-item)
+  ;; org-babel
+  (org-babel-do-load-languages 'org-babel-load-languages
+                               '((plantuml . t)
+                                 (sql . t)
+                                 (gnuplot . t)
+                                 (emacs-lisp . t)
+                                 (python . t)
+                                 (shell . t)
+                                 (js . t)
+                                 (org . t)
+                                 (ruby . t)))
+  ;; The default font color is too dark. Use brighter color.
+  (plist-put org-format-latex-options :foreground "whitesmoke")
+  ;; The default font is too small. Increase the size.
+  (plist-put org-format-latex-options :scale 2.0)
+  ;; Customize `textwidth` in LaTeX headers from -3cm to -6cm.
+  ;; This adjustment moves equation numbers further left, compensating for increased font size
+  ;; and ensuring proper alignment, as `org-format-latex-header` updates.
+  (setq org-format-latex-header
+        "\\documentclass{article}
+\\usepackage[usenames]{color}
+[DEFAULT-PACKAGES]
+[PACKAGES]
+\\pagestyle{empty}             % do not remove
+% The settings below are copied from fullpage.sty
+\\setlength{\\textwidth}{\\paperwidth}
+\\addtolength{\\textwidth}{-6cm}
+\\setlength{\\oddsidemargin}{1.5cm}
+\\addtolength{\\oddsidemargin}{-2.54cm}
+\\setlength{\\evensidemargin}{\\oddsidemargin}
+\\setlength{\\textheight}{\\paperheight}
+\\addtolength{\\textheight}{-\\headheight}
+\\addtolength{\\textheight}{-\\headsep}
+\\addtolength{\\textheight}{-\\footskip}
+\\addtolength{\\textheight}{-3cm}
+\\setlength{\\topmargin}{1.5cm}
+\\addtolength{\\topmargin}{-2.54cm}")
+
+  (defun my-create-org-blog-file (title)
+    "Create a new org file with the current date and a user-provided title.
+The filename will be in the format 'YYYY-MM-DD-your-title.org'.
+Spaces in the title are replaced with hyphens.
+If the file is new, it will be populated with a default template."
+    ;; Using (interactive "s...") receives string input from the user
+    ;; and binds it to the function's argument `title`.
+    (interactive "sEnter file title: ")
+    (let* ((org-blog-directory (concat org-directory "blog/"))
+           ;; Get the current date as a string in "YYYY-MM-DD" format.
+           (date-str (format-time-string "%Y-%m-%d"))
+           ;; Replace all spaces in the user-provided title with hyphens.
+           (processed-title (replace-regexp-in-string " " "-" title))
+           ;; Construct the filename in the format "date-title.org".
+           (filename (concat org-blog-directory date-str "-" processed-title ".org")))
+
+      ;; find-file opens the file if it exists, or creates a new one if it doesn't.
+      (find-file filename)
+
+      ;; Check if the buffer size is zero.
+      ;; If it's zero, it means the file was newly created.
+      (when (zerop (buffer-size))
+        ;; For a new file, insert the specified template.
+        ;; Insert the original user-provided title into #+TITLE:.
+        (insert (format "#+TITLE: %s\n" title))
+        (insert "#+FILETAGS:\n"))))
+
+  ;; Set up for auto commit and pull
+  (defvar my-org-git-pull-done-sessions nil
+    "An alist of (repo-root . date) pairs tracking when git pull was last executed.
+Date format is YYYY-MM-DD.")
+
+  (defun my-org-get-git-root ()
+    "Returns the root directory of the Git repository for the current buffer's file.
+     Returns nil if not found or if it's not a file buffer."
+    (when (buffer-file-name)
+      ;; Prefer vc-git-root (available in Emacs 29+)
+      (if (fboundp 'vc-git-root)
+          (vc-git-root (buffer-file-name))
+        ;; Use locate-dominating-file as a fallback
+        (locate-dominating-file (buffer-file-name) ".git"))))
+
+  (defun my-org-git-pull-interactive (repo-root)
+    "Asks the user whether to run git pull in the specified repository."
+    ;; Confirm with user (yes-or-no-p)
+    (when (yes-or-no-p (format "Run git pull in Org repository (%s)? " repo-root))
+      (message "Org-Git-Sync: Executing git pull in %s..." repo-root)
+      (let ((default-directory repo-root))
+        (condition-case e
+            (shell-command "git pull")
+          (error (message "Org-Git-Sync: git pull failed: %s" e)))
+        (message "Org-Git-Sync: git pull complete."))
+
+      ;; Record today's date for this repository
+      (let ((today (format-time-string "%Y-%m-%d"))
+            (existing (assoc repo-root my-org-git-pull-done-sessions)))
+        (if existing
+            (setcdr existing today)
+          (add-to-list 'my-org-git-pull-done-sessions (cons repo-root today))))))
+
+  (defun my-org-check-for-initial-pull ()
+    "Attempts git pull when opening a Git-managed Org file if not done today."
+    ;; Is this an org-mode buffer?
+    (when (and (eq major-mode 'org-mode)
+               buffer-file-name
+               (boundp 'org-directory)
+               org-directory
+               (string-prefix-p (expand-file-name org-directory)
+                                (expand-file-name buffer-file-name)))
+      ;; Get the Git repository root
+      (let ((git-root (my-org-get-git-root)))
+        (when git-root
+          ;; Check if pull has already been run for this repo today
+          (let ((last-pull-date (cdr (assoc git-root my-org-git-pull-done-sessions)))
+                (today (format-time-string "%Y-%m-%d")))
+            (unless (string= last-pull-date today)
+              (my-org-git-pull-interactive git-root)))))))
+
+  (add-hook 'find-file-hook 'my-org-check-for-initial-pull nil nil)
+
+  ;; Auto commit and push for org files
+  (defvar my-org-auto-commit-timer nil
+    "Timer for auto commit and push of org files.")
+
+  (defvar my-org-auto-commit-idle-delay 300
+    "Idle time in seconds before auto committing org changes.")
+
+  (defun my-org-git-commit-and-push ()
+    "Commit and push changes in the org directory."
+    (when (and (boundp 'org-directory) org-directory)
+      (let ((default-directory (expand-file-name org-directory)))
+        (when (file-exists-p (concat default-directory ".git"))
+          (message "Org-Git-Sync: Auto-committing changes...")
+          ;; Check if there are any changes
+          (let ((status-output (shell-command-to-string "git status --porcelain")))
+            (if (string-empty-p (string-trim status-output))
+                (message "Org-Git-Sync: No changes to commit.")
+              ;; Add all org files
+              (let ((add-result (shell-command "git add . 2>&1")))
+                (unless (eq add-result 0)
+                  (message "Org-Git-Sync: git add failed"))
+                ;; Commit with timestamp
+                (let* ((commit-msg (format-time-string "Auto-commit org changes at %Y-%m-%d %H:%M:%S"))
+                       (commit-result (shell-command (format "git commit -m \"%s\" 2>&1" commit-msg))))
+                  (if (eq commit-result 0)
+                      (progn
+                        ;; Push
+                        (let ((push-result (shell-command "git push 2>&1")))
+                          (if (eq push-result 0)
+                              (message "Org-Git-Sync: Auto-commit and push complete.")
+                            (message "Org-Git-Sync: git push failed"))))
+                    (message "Org-Git-Sync: git commit failed"))))))))))
+
+  (defun my-org-schedule-auto-commit ()
+    "Schedule an auto-commit after idle delay."
+    (when (and (eq major-mode 'org-mode)
+               buffer-file-name
+               (boundp 'org-directory)
+               org-directory
+               (string-prefix-p (expand-file-name org-directory)
+                                (expand-file-name buffer-file-name)))
+      ;; Cancel existing timer if any
+      (when my-org-auto-commit-timer
+        (cancel-timer my-org-auto-commit-timer))
+      ;; Schedule new timer
+      (setq my-org-auto-commit-timer
+            (run-with-idle-timer my-org-auto-commit-idle-delay
+                                 nil
+                                 'my-org-git-commit-and-push))))
+
+  (add-hook 'after-save-hook 'my-org-schedule-auto-commit)
+
+  ;; Use proportional font for the headings in org-mode.
+  (let ((default-font (face-attribute 'default :family)))
+    (custom-set-faces `(org-level-1 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-2 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-3 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-4 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-5 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-6 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-7 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-level-8 ((t (:family ,default-font :inherit default)))))
+    (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
+    )
+
+  :bind (("C-c c" . 'org-capture)
+         ("C-M-c" . 'org/note-right-now)
+         ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link)
+         :map org-mode-map
+         ("M-e" . 'my-org-mode-wrap-inline-code)
+         ("C-c /" . 'consult-org-agenda)
+         ("C-c s" . 'org-store-link))
+  :hook ((org-mode . (lambda ()
+                       ;; Enable only under org-directory
+                       (when (and buffer-file-name
+                                  (string-prefix-p org-directory
+                                                   (file-name-directory buffer-file-name)))
+                         )))
+         (org-agenda-mode . (lambda ()
+                              (display-line-numbers-mode -1)
+                              (display-fill-column-indicator-mode -1)))
+         )
+  )
+
+(use-package org-agenda
+  :ensure nil
+  ;; org includes org-agenda
+  :after (org)
+  :config
+
+  (defmacro define-org-quick-command (new-func org-func &optional kill-new-buffers)
+    `(defun ,new-func ()
+       ,(format "Call %s with Org features tuned for speed.
+
+Always disables: global watchers (auto-revert, jinx, treesit-auto,
+magit refresh, vc), Org startup actions (inline images, indent,
+LaTeX preview, folding), persistent element-cache I/O, and bumps
+the GC threshold.%s"
+                org-func
+                (if kill-new-buffers
+                    "
+
+Also disables per-file setup hooks (`org-mode-hook',
+`after-change-major-mode-hook', `find-file-hook') and dir-locals
+lookup for additional speed. Org buffers opened during this
+command (and not already visited beforehand) are killed afterwards
+so they get a fresh, fully configured setup the next time they are
+visited."
+                  "
+
+Per-file setup hooks (`org-mode-hook',
+`after-change-major-mode-hook', `find-file-hook') are left active
+because the caller (e.g. `org-agenda') stores markers into the
+buffers it opens, and the user will dereference them later (e.g.
+by clicking an agenda entry). Those buffers therefore need to be
+fully configured, not stripped down."))
+       (interactive)
+       (let ((started-at (float-time))
+             ,@(when kill-new-buffers
+                 '((pre-existing-buffers (buffer-list))))
+             (auto-revert-was-on global-auto-revert-mode)
+             (jinx-was-on (and (boundp 'global-jinx-mode) global-jinx-mode))
+             (treesit-was-on (and (boundp 'global-treesit-auto-mode)
+                                  global-treesit-auto-mode))
+             (gc-cons-threshold (* 500 1024 1024))
+             (org-modules nil)
+             ,@(when kill-new-buffers
+                 ;; These bindings strip a freshly opened buffer down to a
+                 ;; bare org-mode shell. Safe only when we throw the buffer
+                 ;; away afterwards; otherwise the user inherits a broken,
+                 ;; feature-less buffer.
+                 '((org-mode-hook nil)
+                   (after-change-major-mode-hook nil)
+                   (find-file-hook nil)
+                   (enable-dir-local-variables nil)))
+             (org-element-cache-persistent nil)
+             (org-inhibit-startup t)
+             (org-startup-with-inline-images nil)
+             (org-startup-indented nil)
+             (org-startup-with-latex-preview nil)
+             (org-startup-folded 'showall)
+             (org-agenda-inhibit-startup t)
+             (magit-refresh-status-buffer nil)
+             (magit-auto-revert-mode nil)
+             (vc-handled-backends nil)
+             (treesit-auto-langs nil))
+         (when auto-revert-was-on (global-auto-revert-mode -1))
+         (when jinx-was-on (global-jinx-mode -1))
+         (when treesit-was-on (global-treesit-auto-mode -1))
+         (unwind-protect
+             (call-interactively ',org-func)
+           ,@(when kill-new-buffers
+               '((dolist (buf (buffer-list))
+                   (when (and (not (memq buf pre-existing-buffers))
+                              (buffer-live-p buf)
+                              (buffer-file-name buf)
+                              (not (buffer-modified-p buf))
+                              (with-current-buffer buf
+                                (derived-mode-p 'org-mode)))
+                     (kill-buffer buf)))))
+           (when auto-revert-was-on (global-auto-revert-mode 1))
+           (when jinx-was-on (global-jinx-mode 1))
+           (when treesit-was-on (global-treesit-auto-mode 1)))
+         (let* ((ended-at (float-time))
+                (delta-duration (- ended-at started-at)))
+           (message "%s took %s sec" (symbol-name ',org-func) delta-duration)))))
+
+  (define-org-quick-command org-agenda-quick org-agenda)
+  (define-org-quick-command org-set-tags-command-quick org-set-tags-command t)
+
+  :bind (("C-c a" . 'org-agenda-quick)
+         ("C-c C-q" . 'org-set-tags-command-quick)
+         :map org-mode-map
+         ("C-c C-q" . 'org-set-tags-command-quick)
+         )
+  )
+
+;; Create the *org-scratch* buffer at startup so a throwaway org buffer is
+;; always available. Based on
+;; https://qiita.com/KaitoMuraoka/items/d86acdd50f2229a3bf92
+(defun my-create-org-scratch-buffer ()
+  "Create the *org-scratch* buffer in `org-mode'."
+  (let ((buf (get-buffer-create "*org-scratch*")))
+    (with-current-buffer buf
+      (unless (derived-mode-p 'org-mode)
+        (org-mode)))))
+
+(add-hook 'emacs-startup-hook #'my-create-org-scratch-buffer)
+
+(use-package org-ai :ensure t :after org
+  ;; C-c C-c (=org-ai-complete-block) to get AI response.
+  :bind
+  ;; In org capture mode, C-c C-c is used to finish a capture.
+  ;; We need a different keymap.
+  ("C-c x" . 'org-execute-block-src-or-ai)
+  :custom
+  ;; Use Geimini
+  (org-ai-service 'google)
+  (org-ai-default-chat-model "gemini-2.5-flash")
+  (org-ai-auto-fill nil)
+  ;; ~/.authinfo should have
+  ;; machine generativelanguage.googleapis.com login org-ai password <API-KEY>.
+  :config
+  ;; Fix the indent of ai response in ai block.
+  ;; https://github.com/rksm/org-ai/issues/18#issuecomment-1737931580
+  (defun dss/-org-ai-after-chat-insertion-hook (type _text)
+    (when (and (eq type 'end) (eq major-mode 'org-mode)
+               (memq 'org-indent-mode minor-mode-list))
+      (org-indent-indent-buffer)))
+  (add-hook 'org-ai-after-chat-insertion-hook #'dss/-org-ai-after-chat-insertion-hook)
+  (defun org-execute-block-src-or-ai ()
+    (interactive)
+    (if (eq (car (org-element-context)) 'src-block)
+        (org-babel-execute-src-block)
+      (org-ai-complete-block)))
+  )
+
+(use-package org-tempo :after org
+  :ensure nil
+  :custom
+  (org-structure-template-alist
+   '(("A" . "ai")
+     ("a" . "ai")
+     ("ai" . "ai")
+     ;;("a" . "export ascii")
+     ("c" . "center")
+     ("C" . "comment")
+     ("cpp" . "src c++")
+     ("py" . "src python")
+     ("el" . "src elisp")
+     ("e" . "example")
+     ("E" . "export")
+     ("h" . "export html")
+     ("l" . "export latex")
+     ("q" . "quote")
+     ("s" . "src")
+     ("sh" . "src shell")
+     ("v" . "verse")
+     ))
+  ;; The keys of org-tempo-keywords-alist and org-structure-template-alist have to be unique.
+  ;; To simplify it, clean up org-tempo-keywords-alist.
+  (org-tempo-keywords-alist nil)
+  )
+
+(use-package org-download :ensure t :after org
+  :custom (org-download-image-dir (concat org-directory "/images"))
+  )
+
+(use-package ob-mermaid :ensure t
+  :requires (org)
+  ;; npm install -g @mermaid-js/mermaid-cli
+  :init
+  (if (not (executable-find "mmdc"))
+      (call-process-shell-command "npm install -g @mermaid-js/mermaid-cli"))
+  :config
+  (add-to-list 'org-babel-load-languages '(mermaid . t))
+  (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+
+  ;; Show freshly generated images after a src block runs so the user does not
+  ;; need to call `C-c C-x C-v' manually. The `refresh' arg replaces existing
+  ;; overlays so regenerated files (mermaid keeps the same path) actually show
+  ;; their new contents instead of the cached previous image.
+  (defun my-refresh-org-inline-images-after-babel ()
+    (when (derived-mode-p 'org-mode)
+      (org-display-inline-images nil t)))
+  (add-hook 'org-babel-after-execute-hook
+            #'my-refresh-org-inline-images-after-babel)
+
+  ;; Derive an output filename for mermaid blocks that omit `:file', so a bare
+  ;; `#+begin_src mermaid' still produces an image without per-block boilerplate.
+  ;; Uses the block's `#+NAME:' when present, otherwise a stable hash of the
+  ;; body so re-evaluating the same block reuses the same file.
+  (defun my-derive-ob-mermaid-output-file (body)
+    (let* ((info (org-babel-get-src-block-info t))
+           (block-name (nth 4 info))
+           (base (or block-name
+                     (format "mermaid-%s"
+                             (substring (secure-hash 'sha1 body) 0 12))))
+           (dir (expand-file-name
+                 "mermaid"
+                 (or (and buffer-file-name
+                          (file-name-directory buffer-file-name))
+                     default-directory))))
+      (unless (file-directory-p dir) (make-directory dir t))
+      (expand-file-name (concat base ".png") dir)))
+
+  ;; ob-mermaid's `org-babel-execute:mermaid' returns nil. When the user
+  ;; supplied `:file' explicitly, org-babel's own logic (see ob-core.el's
+  ;; `(setq result file)' branch) inserts the `#+RESULTS:' link to that
+  ;; file, so we keep the nil return — returning the path here would trip
+  ;; the sibling branch that overwrites `:file' with the result string,
+  ;; corrupting the freshly generated PNG.
+  ;;
+  ;; When `:file' was auto-derived (not present in the original params),
+  ;; that org-babel branch is skipped because it keys off `:file' in the
+  ;; original params, so we must return the path ourselves to give
+  ;; `org-babel-insert-result' something to link to.
+  (defun my-fill-ob-mermaid-file-param (original-function body params)
+    (let* ((existing-file (cdr (assq :file params)))
+           (file (or existing-file
+                     (my-derive-ob-mermaid-output-file body)))
+           (augmented (if existing-file
+                          params
+                        (cons (cons :file file) params)))
+           (result (funcall original-function body augmented)))
+      (or result (and (not existing-file) file))))
+  (advice-add 'org-babel-execute:mermaid :around
+              #'my-fill-ob-mermaid-file-param)
+  :custom
+  (ob-mermaid-cli-path (executable-find "mmdc"))
+  ;; Default to file-typed results so `:results file' can be omitted too. The
+  ;; advice above fills in `:file' automatically when not specified.
+  (org-babel-default-header-args:mermaid
+   '((:results . "file") (:exports . "results")))
+  )
+
+;; 4honor/org-excalidraw is a fork rewritten for Org 9.7+. It ships its own
+;; `org-display-user-inline-images' advised onto `org-display-inline-images',
+;; so excalidraw: links are rendered without the upstream workaround that
+;; wdavew/org-excalidraw needs. It also generates the SVG thumbnail on demand
+;; instead of relying on file-notify, supports `kroki' as an alternative
+;; converter, and registers an `:export' handler.
+;;
+;; Requires excalidraw.com installed as a Chrome PWA so the OS can dispatch
+;; `.excalidraw' files via `open' / `xdg-open' for editing. The File Handling
+;; API is enabled by default since Chrome 102, so no chrome://flags toggle is
+;; needed; Chrome will prompt to grant the PWA permission on first open.
+(use-package org-excalidraw
+  :ensure nil
+  :after org
+  ;; Nothing in this block declares an autoload trigger, so without `:demand'
+  ;; the file would not load eagerly and its top-level `org-link-set-parameters'
+  ;; / `advice-add' would never register.
+  :demand t
+  :vc (:url "https://github.com/4honor/org-excalidraw.git" :rev :newest)
+  :init
+  ;; `excalidraw-brute-export-cli' renders the SVG by driving the real
+  ;; Excalidraw web app under headless Firefox via Playwright, so modern font
+  ;; IDs (5=Excalifont, 6=Nunito, 7=Lilita One, 8=Comic Shanns Mono) resolve
+  ;; correctly without the post-export font/Y patching that the unmaintained
+  ;; `excalidraw_export' needs. The trade-off is a heavier first-time install
+  ;; (Playwright pulls in Firefox, ~hundreds of MB) and a slower per-export
+  ;; round-trip due to browser startup.
+  (when (not (executable-find "excalidraw-brute-export-cli"))
+    (call-process-shell-command
+     "npm install -g excalidraw-brute-export-cli && npx playwright install firefox"))
+  :custom
+  (org-excalidraw-default-directory (concat org-directory "excalidraw/"))
+  :config
+  (unless (file-directory-p org-excalidraw-default-directory)
+    (make-directory org-excalidraw-default-directory t))
+
+  ;; 4honor/org-excalidraw hard-codes its converter chain to `kroki' then
+  ;; `excalidraw_export' with no extension point, so swap the whole function
+  ;; out via `:override' to delegate to `excalidraw-brute-export-cli'.
+  ;; `--scale' must be one of 1/2/3 and is mandatory in brute CLI 0.4.0; 1 matches
+  ;; the unscaled output that the old `excalidraw_export' produced.
+  ;; `--background true' bakes Excalidraw's default white background into the SVG
+  ;; so thumbnails stay readable on any Emacs theme; without it the transparent
+  ;; default makes dark strokes disappear on dark backgrounds.
+  ;; The brute CLI spins up headless Firefox per invocation (multi-second cost),
+  ;; so guard with a mtime check: 4honor calls this function on every inline-image
+  ;; display, and re-exporting an unchanged file would stall buffer redisplay.
+  (defun my-org-excalidraw-to-svg-thumbnail (file)
+    "Export excalidraw FILE to SVG via `excalidraw-brute-export-cli'.
+Skip when the cached SVG is already newer than FILE."
+    (let* ((path (expand-file-name file))
+           (svg-path (org-excalidraw-svg-thumbnail-path path)))
+      (unless (string-suffix-p ".excalidraw" path)
+        (error "File %s does not have .excalidraw extension" path))
+      (when (or (not (file-exists-p svg-path))
+                (file-newer-than-file-p path svg-path))
+        (with-temp-buffer
+          (let ((exit-code (call-process "excalidraw-brute-export-cli"
+                                         nil t nil
+                                         "--input" path
+                                         "--output" svg-path
+                                         "--format" "svg"
+                                         "--scale" "1"
+                                         "--background" "true")))
+            (unless (zerop exit-code)
+              (error "excalidraw-brute-export-cli failed (exit %d) for %s:\n%s"
+                     exit-code path (buffer-string))))))))
+
+  (advice-add 'org-excalidraw-to-svg-thumbnail
+              :override #'my-org-excalidraw-to-svg-thumbnail)
+
+  ;; Auto-refresh thumbnails when Emacs regains focus, on the assumption that the
+  ;; `.excalidraw' source was just edited in the Chrome PWA. Combined with the
+  ;; mtime guard above this only pays the brute-CLI cost for files that actually
+  ;; changed. Limited to visible org buffers that contain at least one
+  ;; `excalidraw:' link so we don't cause flicker for unrelated org buffers.
+  (defun my-org-excalidraw-redisplay-on-focus ()
+    "Redisplay inline images in visible org buffers referencing excalidraw."
+    (when (frame-focus-state)
+      (dolist (window (window-list nil 'no-mini))
+        (with-current-buffer (window-buffer window)
+          (when (and (derived-mode-p 'org-mode)
+                     org-inline-image-overlays
+                     (save-excursion
+                       (goto-char (point-min))
+                       (re-search-forward "\\[\\[excalidraw:" nil t)))
+            (org-redisplay-inline-images))))))
+
+  (add-function :after after-focus-change-function
+                #'my-org-excalidraw-redisplay-on-focus)
+  )
+
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-db-update-method 'immediate)
+  (org-roam-db-location "~/.emacs.d/org-roam.db")
+  (org-roam-directory (concat org-directory "org-roam/"))
+  (org-roam-index-file (concat org-roam-directory "Index.org"))
+  (org-roam-capture-templates
+   '(("d" "default" plain "%?"
+      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                         "#+title: ${title}\n#+date: %T\n#+filetags: \n")
+      :unnarrowed t
+      :jump-to-captured t)))
+  :config
+  (if (not (file-exists-p org-roam-directory))
+      (make-directory org-roam-directory t))
+  (org-roam-db-autosync-mode)
+  (add-to-list 'org-agenda-files org-roam-directory)
+  ;; Why do we need this? Without this require, (use-package org-roam-dailies) does not load the
+  ;; configuration.
+  (require 'org-roam-dailies)
+  :bind
+  (("C-c n f" . 'org-roam-node-find)
+   ("C-c n i" . 'org-roam-node-insert))
+  )
+
+(use-package org-roam-dailies
+  :ensure nil
+  :after org-roam
+  :custom
+  (org-roam-dailies-capture-templates
+   ;; Insert timestamp automatically for org-agenda
+   '(("d" "default" entry
+      "* %T %?\n "
+      :target (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n")
+      :jump-to-captured t)))
+  :config
+  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
+  :bind-keymap ("C-c n d" . org-roam-dailies-map)
+  )
+
+(use-package org-modern :ensure t
+  :custom
+  (org-modern-block-indent t)
+  (org-modern-fold-stars
+   '(("▶" . "▼")
+     ("▷" . "▽")
+     ("▸" . "▾")
+     ("▹" . "▿")))
+  (org-modern-checkbox
+   '((?X . "✅")
+     (?- . "🏃‍➡️")
+     (?\s . "⬜")))
+  ;; TODO: update the face configuration to make stars visible
+  (org-modern-hide-stars nil)
+  :config (global-org-modern-mode)
+  )
+
+(use-package outshine :ensure t
+  :hook (outline-minor-mode . outshine-hook-function))
+
+(use-package calfw :ensure t :defer t)
+
+(provide 'init-org)
+;;; init-org.el ends here

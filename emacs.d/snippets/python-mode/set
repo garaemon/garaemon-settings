@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: set.py
+# key: set
+# --
+
+x = set()
+x.add(1)
+x.remove(1)
+len(x)

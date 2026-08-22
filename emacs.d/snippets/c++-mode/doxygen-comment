@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: doxygen-comment
+# key: doxygen-comment
+# binding: direct-keybinding
+# --
+/** @brief
+ * $0
+ */

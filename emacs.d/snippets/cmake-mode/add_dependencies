@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: add_dependencies
+# key: add_dependencies
+# binding: direct-keybinding
+# --
+add_dependencies($1 $2)
