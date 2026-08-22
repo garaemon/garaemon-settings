@@ -141,6 +141,25 @@
   (apheleia-global-mode +1)
   )
 
+;; Display code coverage in the left fringe. `cov' locates the coverage file by
+;; itself: gcov (C/C++), lcov tracefiles (Go/Rust/JS/Ruby via converters),
+;; coverage.json (coverage.py), clover.xml and coveralls output are all
+;; supported. Generating those files is left to each project; enable `cov-mode'
+;; in a buffer to look at the result.
+(use-package cov
+  :ensure t
+  :defer t
+  :commands (cov-mode cov-update cov-visit-coverage-file)
+  :init
+  ;; Mark lines as executed/not-executed instead of drawing an execution-count
+  ;; heat map.
+  (setq cov-coverage-mode t)
+  :config
+  ;; `cov-lcov-patterns' only looks for "*.info" by default. Add the places
+  ;; where tracefiles usually end up.
+  (setq cov-lcov-patterns '("*.info" "coverage/lcov.info" "lcov.info"))
+  )
+
 (use-package clang-format :ensure t
   ;; :bind (:map c-mode-base-map
   ;;             ("C-c f" . 'clang-format-buffer))
