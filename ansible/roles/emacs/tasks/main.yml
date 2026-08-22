@@ -1,16 +1,9 @@
-- name: Check if emacs.d already exists
-  stat:
-    path: "{{ ghq_root_path }}/github.com/garaemon/emacs.d"
-  register: emacs_d_exists
-
-# Use git clone instead of ghq because ghq is managed by chezmoi via mise
-# and may not be available in CI or fresh environments.
-- name: Clone emacs.d using git
-  ansible.builtin.git:
-    repo: https://github.com/garaemon/emacs.d
-    dest: "{{ ghq_root_path }}/github.com/garaemon/emacs.d"
-    update: false
-  when: not emacs_d_exists.stat.exists
+# The emacs.d directory ships inside this monorepo, so no clone step is
+# needed: running this playbook implies the repository is already checked
+# out. playbook_dir points at ansible/, so its parent is the repo root.
+- name: Set emacs.d source path inside the monorepo
+  ansible.builtin.set_fact:
+    emacs_d_source_path: "{{ playbook_dir | dirname }}/emacs.d"
 
 - name: Check if .emacs.d exists
   stat:
@@ -18,7 +11,7 @@
   register: emacs_d_link_stat
 
 - name: Check if .emacs.d directories are identical
-  command: diff -r ~/.emacs.d {{ ghq_root_path }}/github.com/garaemon/emacs.d
+  command: diff -r ~/.emacs.d {{ emacs_d_source_path }}
   register: emacs_d_diff
   failed_when: false
   changed_when: false
@@ -35,7 +28,7 @@
 
 - name: Symlink for emacs.d
   file:
-    src: "{{ ghq_root_path }}/github.com/garaemon/emacs.d"
+    src: "{{ emacs_d_source_path }}"
     dest: ~/.emacs.d
     state: link
 
