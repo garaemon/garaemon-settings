@@ -3,12 +3,21 @@ name: Test Emacs Lisp
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'emacs.d/**'
+      - '.github/workflows/emacs-test.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'emacs.d/**'
+      - '.github/workflows/emacs-test.yml'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: emacs.d
     steps:
     - uses: actions/checkout@v4
     - name: Set up Emacs
