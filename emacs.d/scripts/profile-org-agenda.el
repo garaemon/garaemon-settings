@@ -120,7 +120,7 @@ name afterwards."
   (let* ((files-bench
           (benchmark-run 1
             (profile-org-agenda--with-quick-bindings
-              (org-agenda-files))))
+             (org-agenda-files))))
          (n-files (length (org-agenda-files))))
     (profile-org-agenda--record-line (format "agenda files: %d" n-files))
     (profile-org-agenda--record-bench "(org-agenda-files)" files-bench))
@@ -132,13 +132,13 @@ name afterwards."
   (let ((cold-bench
          (benchmark-run 1
            (profile-org-agenda--with-quick-bindings
-             (profile-org-agenda--run-target)))))
+            (profile-org-agenda--run-target)))))
     (profile-org-agenda--record-bench "agenda cold (no buffers)" cold-bench))
 
   (let ((warm-bench
          (benchmark-run 1
            (profile-org-agenda--with-quick-bindings
-             (profile-org-agenda--run-target)))))
+            (profile-org-agenda--run-target)))))
     (profile-org-agenda--record-bench "agenda warm (buffers reused)" warm-bench))
 
   ;; Persist bench summary up-front so it survives a later crash.
@@ -151,32 +151,32 @@ name afterwards."
     (message "\n=== Bench summary ===\n%s\n" bench-text)
     (message "Wrote bench to %s" bench-path))
 
-    ;; CPU profile: cold
-    (message ">> profiling cold run...")
-    (profile-org-agenda--kill-org-buffers)
-    (garbage-collect)
-    (profiler-reset)
-    (profiler-start 'cpu)
-    (profile-org-agenda--with-quick-bindings
-      (profile-org-agenda--run-target))
-    (profiler-stop)
-    (profile-org-agenda--save-report
-     (expand-file-name "org-agenda-profile-cold.txt"
-                       profile-org-agenda-output-dir))
-    (message ">> wrote cold CPU profile")
+  ;; CPU profile: cold
+  (message ">> profiling cold run...")
+  (profile-org-agenda--kill-org-buffers)
+  (garbage-collect)
+  (profiler-reset)
+  (profiler-start 'cpu)
+  (profile-org-agenda--with-quick-bindings
+   (profile-org-agenda--run-target))
+  (profiler-stop)
+  (profile-org-agenda--save-report
+   (expand-file-name "org-agenda-profile-cold.txt"
+                     profile-org-agenda-output-dir))
+  (message ">> wrote cold CPU profile")
 
-    ;; CPU profile: warm
-    (message ">> profiling warm run...")
-    (garbage-collect)
-    (profiler-reset)
-    (profiler-start 'cpu)
-    (profile-org-agenda--with-quick-bindings
-      (profile-org-agenda--run-target))
-    (profiler-stop)
-    (profile-org-agenda--save-report
-     (expand-file-name "org-agenda-profile-warm.txt"
-                       profile-org-agenda-output-dir))
-    (message ">> wrote warm CPU profile"))
+  ;; CPU profile: warm
+  (message ">> profiling warm run...")
+  (garbage-collect)
+  (profiler-reset)
+  (profiler-start 'cpu)
+  (profile-org-agenda--with-quick-bindings
+   (profile-org-agenda--run-target))
+  (profiler-stop)
+  (profile-org-agenda--save-report
+   (expand-file-name "org-agenda-profile-warm.txt"
+                     profile-org-agenda-output-dir))
+  (message ">> wrote warm CPU profile"))
 
 ;; Suppress interactive tramp prompts that init.el triggers.
 (advice-add 'yes-or-no-p :override (lambda (&rest _) t))

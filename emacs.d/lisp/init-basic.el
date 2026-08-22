@@ -7,7 +7,7 @@
 
 (require 'init-utils)
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 ;;; Enable repeat-mode so commands like C-x { can be repeated by pressing { again
 (repeat-mode 1)

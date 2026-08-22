@@ -230,6 +230,13 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package embark
   :ensure t
+  :custom
+  ;; Use completion rather than typing shortcut characters
+  (embark-prompter #'embark-completing-read-prompter)
+  ;; Do not show *Embark Actions*
+  (embark-indicators '(embark-minimal-indicator
+                       embark-highlight-indicator
+                       embark-isearch-highlight-indicator))
   :bind (("C-." . embark-act)
          :map minibuffer-local-map
          ("C-c C-c" . embark-collect)
@@ -263,6 +270,16 @@ if ENV-SH indicates a remote path. Relies on the helper function
    ("<C-M-up>" . 'mc/mark-previous-like-this)
    )
   )
+
+;;; Jump to visible text
+
+(use-package avy
+  :ensure t
+  :bind (("C-c j" . 'avy-goto-char-timer)
+         ("C-c J" . 'avy-goto-line))
+  :custom
+  ;; Shorter than the 0.5s default so candidates appear while still typing.
+  (avy-timeout-seconds 0.3))
 
 ;;; Region expansion
 
@@ -336,7 +353,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (setq backup-each-save-size-limit 5000000)
   ;; backup all the files
   (setq backup-each-save-filter-function 'identity)
-  :init (add-hook 'after-save #'backup-each-save)
+  :init (add-hook 'after-save-hook #'backup-each-save)
   )
 
 ;;; Buffer management

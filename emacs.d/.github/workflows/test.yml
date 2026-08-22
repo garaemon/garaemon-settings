@@ -19,7 +19,7 @@ jobs:
       run: emacs -batch -l init.el -f batch-byte-compile init.el
     - name: Install test dependencies
       run: |
-        emacs -Q --batch --eval '(progn (require (quote package)) (add-to-list (quote package-archives) (cons "melpa" "https://melpa.org/packages/") t) (add-to-list (quote package-archives) (cons "nongnu" "https://elpa.nongnu.org/nongnu/") t) (package-initialize) (package-refresh-contents) (dolist (pkg (quote (magit ghub))) (unless (package-installed-p pkg) (package-install pkg))))'
+        emacs -Q --batch --eval '(progn (require (quote package)) (add-to-list (quote package-archives) (cons "melpa" "https://melpa.org/packages/") t) (add-to-list (quote package-archives) (cons "nongnu" "https://elpa.nongnu.org/nongnu/") t) (package-initialize) (package-refresh-contents) (dolist (pkg (quote (magit ghub projectile))) (unless (package-installed-p pkg) (package-install pkg))))'
     - name: Run ERT tests
       run: |
         emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
