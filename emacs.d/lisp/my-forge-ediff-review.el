@@ -389,7 +389,8 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
            pageInfo{ hasNextPage endCursor }
            nodes{
              id
-             isResolved path line originalLine diffSide
+             isResolved isOutdated path line originalLine originalStartLine
+             diffSide
              comments(first:100){
                nodes{
                  databaseId body createdAt author{login}
@@ -474,6 +475,17 @@ header (author and timestamp) does not fit."
   '((((background light)) :background "#eaeef2" :foreground "#57606a")
     (((background dark))  :background "#21262d" :foreground "#8b949e"))
   "Face for existing review comments already posted to the PR on GitHub."
+  :group 'my-forge-ediff-review)
+
+(defface my-forge-ediff-review-outdated-comment-face
+  '((((background light)) :background "#fff1e5" :foreground "#8a6d3b"
+     :slant italic)
+    (((background dark))  :background "#2d1a00" :foreground "#c9a227"
+     :slant italic))
+  "Face for review comments whose line no longer matches the current head.
+Distinct from `my-forge-ediff-review-existing-comment-face' because the
+card is sitting at a line number from an older commit: the text is worth
+reading, its position is not worth trusting."
   :group 'my-forge-ediff-review)
 
 (defcustom my-forge-ediff-review-dim-diff-faces t
@@ -581,23 +593,33 @@ one-line summary instead of the full box."
   "Overlay existing review comments in ENTRIES matching FILE and SIDE.
 Each card header carries the author, the comment's posting time and a
 resolved marker so it is clearly distinguished from the reviewer's own
-pending comments."
+pending comments.
+
+A thread GitHub reports as outdated is marked and painted differently.
+Its line number counts positions in an older head, so the card lands
+wherever that number falls in the current file -- which may be unrelated
+code.  Saying so is the honest minimum; moving the card to where the
+line went is a separate, much harder problem."
   (dolist (entry (my-forge-ediff-review-model-entries-for-side
                   entries file side))
     (let* ((author (or (plist-get entry :author) "reviewer"))
            (time (my-forge-ediff-review-model-format-time
                   (plist-get entry :created-at)))
            (resolved (if (plist-get entry :resolved) " (resolved)" ""))
+           (outdated (plist-get entry :outdated))
            (header (concat author
                            (if (string-empty-p time) "" (concat "  " time))
-                           resolved)))
+                           resolved
+                           (if outdated " (outdated)" ""))))
       (my-forge-ediff-review--put-overlay
        (current-buffer)
        (plist-get entry :line)
        "◈" header
        (my-forge-ediff-review-model-append-reactions
         (plist-get entry :body) (plist-get entry :reactions))
-       'my-forge-ediff-review-existing-comment-face))))
+       (if outdated
+           'my-forge-ediff-review-outdated-comment-face
+         'my-forge-ediff-review-existing-comment-face)))))
 
 (defun my-forge-ediff-review--put-side-overlays (entries file side glyph header face)
   "Overlay each of ENTRIES matching FILE and SIDE as a GLYPH/HEADER card.

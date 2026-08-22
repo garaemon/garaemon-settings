@@ -282,5 +282,55 @@ merely being concatenated."
     (should (eq 'untouched
                 (plist-get my-forge-ediff-review--session :existing)))))
 
+;;;; Outdated thread overlays
+
+(defun my-forge-ediff-review-test--card-at (line)
+  "Return the review overlay card rendered after LINE, or nil."
+  (save-excursion
+    (goto-char (point-min))
+    (forward-line (1- line))
+    (car (delq nil
+               (mapcar (lambda (overlay)
+                         (and (overlay-get overlay 'my-forge-ediff-review)
+                              (overlay-get overlay 'after-string)))
+                       (overlays-in (line-end-position)
+                                    (line-end-position)))))))
+
+(defmacro my-forge-ediff-review-test--with-overlaid-thread (thread &rest body)
+  "Run BODY in a 20-line revision buffer overlaid with existing THREAD."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (insert (mapconcat #'number-to-string (number-sequence 1 20) "\n"))
+     (setq-local my-magit-ediff--buf-file "a.el")
+     (setq-local my-magit-ediff--buf-rev "head")
+     (let ((my-forge-ediff-review--session
+            (list :base-rev "base" :head-rev "head"
+                  :comments nil :memos nil :existing (list ,thread))))
+       (my-forge-ediff-review--reapply-overlays)
+       ,@body)))
+
+(ert-deftest my-forge-ediff-review-marks-an-outdated-thread ()
+  "The header says so and the card is painted with the outdated face."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-overlaid-thread
+      (list :path "a.el" :line 3 :side "RIGHT" :body "stale"
+            :author "alice" :outdated t :thread-id "T1")
+    (let ((card (my-forge-ediff-review-test--card-at 3)))
+      (should card)
+      (should (string-match-p "(outdated)" card))
+      (should (eq 'my-forge-ediff-review-outdated-comment-face
+                  (get-text-property 1 'face card))))))
+
+(ert-deftest my-forge-ediff-review-leaves-a-current-thread-unmarked ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-overlaid-thread
+      (list :path "a.el" :line 3 :side "RIGHT" :body "current"
+            :author "alice" :outdated nil :thread-id "T1")
+    (let ((card (my-forge-ediff-review-test--card-at 3)))
+      (should card)
+      (should-not (string-match-p "(outdated)" card))
+      (should (eq 'my-forge-ediff-review-existing-comment-face
+                  (get-text-property 1 'face card))))))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here
