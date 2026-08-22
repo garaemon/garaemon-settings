@@ -1,6 +1,14 @@
 # garaemon-settings [![Ansible Lint](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml) [![Ansible Playbook](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml) [![Ansible Playbook macOS](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml)
 
-some script to setup garaemon's environment
+Monorepo for garaemon's environment setup.
+
+## Layout
+
+- **ansible/**: Ansible playbooks and roles that provision the interactive
+  desktop environment (packages, fonts, keyboard, editor toolchain).
+
+Additional directories (`dotfiles/`, `claude-skills/`, `emacs.d/`) are being
+merged into this repository from their original standalone repositories.
 
 ## Scope
 
@@ -23,7 +31,7 @@ Device- and login-oriented settings (for example the MAFP fingerprint reader on
 
 ```sh
 ghq get git@github.com:garaemon/garaemon-settings.git
-cd $(ghq root)/github.com/garaemon/garaemon-settings
+cd $(ghq root)/github.com/garaemon/garaemon-settings/ansible
 ansible-playbook -i localhost, -c local main.yml --ask-become-pass
 ```
 
@@ -31,7 +39,7 @@ ansible-playbook -i localhost, -c local main.yml --ask-become-pass
 
 ```sh
 ghq get git@github.com:garaemon/garaemon-settings.git
-cd $(ghq root)/github.com/garaemon/garaemon-settings
+cd $(ghq root)/github.com/garaemon/garaemon-settings/ansible
 ansible-playbook -i localhost, -c local minimal.yml --ask-become-pass
 ```
 
@@ -40,10 +48,10 @@ ansible-playbook -i localhost, -c local minimal.yml --ask-become-pass
 ### ax8-max
 
 Runs `main.yml` plus host-specific roles for the ax8-max machine (e.g. the
-MicroArray MAFP fingerprint reader, see `roles/fingerprint_mafp`).
+MicroArray MAFP fingerprint reader, see `ansible/roles/fingerprint_mafp`).
 
 ```sh
 ghq get git@github.com:garaemon/garaemon-settings.git
-cd $(ghq root)/github.com/garaemon/garaemon-settings
+cd $(ghq root)/github.com/garaemon/garaemon-settings/ansible
 ansible-playbook -i localhost, -c local ax8-max.yml --ask-become-pass
 ```
