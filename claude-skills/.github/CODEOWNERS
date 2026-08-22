@@ -1,0 +1,8 @@
+# Requests review from the repository owner on every pull request.
+#
+# GitHub never requests review from a pull request's own author, so this file
+# only fires on contributions from someone else -- which, on a public repo, is
+# the case it exists for. Pull requests opened by the owner are covered by
+# .github/workflows/auto-assign.yml instead, which sets the assignee.
+
+* @garaemon

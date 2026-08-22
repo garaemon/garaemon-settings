@@ -1,0 +1,393 @@
+---
+name: daily-wrapup
+description: |
+  Wrap up the user's day: write a Japanese end-of-day summary of their
+  GitHub activity for a given day (default: today) into their org-roam daily
+  note, then commit and push the org repository (asking the user to confirm
+  before the commit). This is the evening counterpart to the morning-brief
+  skill — morning-brief plans the day ahead, daily-wrapup records what
+  actually got done. The summary covers pull requests and issues the user
+  touched that day and the commits they authored, grouped by repository and
+  synthesized into a short narrative, alongside the day's events from the
+  user's own (primary) Google Calendar and a summary of the shell commands
+  the user ran that day. GitHub is read with `gh search`, the calendar
+  through the `gws-secure` wrapper, and the shell history with `atuin`
+  (synced from the atuin server first); the note is written to
+  `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org` and tagged as Claude-generated
+  and unreviewed. After writing the note, if an Emacs server is reachable,
+  the file is opened in the user's running Emacs for review.
+  The skill also detects forgotten wrap-ups: before writing, it scans the
+  past week (at most seven days, today excluded) for daily notes that have no
+  wrap-up subtree and offers to backfill each missing day.
+  Trigger when the user asks to wrap up or record what they did today, or
+  for a daily log/standup at end of day, with phrases like "今日のまとめ",
+  "今日のラップアップ", "一日のまとめ", "今日やったことまとめて", "日報",
+  "日次まとめ", "今日の締め", "daily wrapup", "wrap up my day",
+  "today's summary", "今日の活動まとめて". Also trigger when the user wants
+  to catch up on days they forgot, with phrases like "やり忘れた日",
+  "まとめ忘れた日", "抜けてる日", "先週分のまとめ", "まとめてない日",
+  "backfill", "catch up on my wrapups".
+allowed-tools: Bash(gh search:*), Bash(gh api:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-shell-history.sh:*), Bash($CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/find-missing-wrapups.sh:*), Bash(jq:*), Bash(date:*), Bash(uuidgen:*), Bash(mkdir:*), Bash(git:*), Bash(emacsclient:*)
+---
+
+# Daily Wrapup Skill
+
+Wrap up the user's day by summarizing their GitHub activity, today's events
+from their own Google Calendar, and the shell commands they ran, appending
+the result to their org-roam daily note as a Claude-generated, unreviewed
+subtree, then commit and push the org repository — but only after the user
+confirms the commit. This is the end-of-day counterpart to the
+`morning-brief` skill. The three sources are gathered and summarized in
+parallel by three subagents (calendar, GitHub, and shell history), each
+returning a finished org section.
+
+The daily note lives in a private repository (the user's org), so the note
+itself is written in Japanese and may contain real names and titles. This
+SKILL.md stays generic and English, and never hardcodes a username or path
+(the GitHub login is detected with `gh api user`; the org path comes from
+`$ORG_DIR`).
+
+## Prerequisites
+
+- `gh` (GitHub CLI) is authenticated (`gh auth status` succeeds). The search
+  covers private repositories the authenticated user can see.
+- The calendar section runs `fetch-calendar.sh` (in this skill directory),
+  which reads the calendar through `gws-secure`. That requires `gws-secure`
+  on `PATH` and bootstrapped (1Password-backed; see
+  [`scripts/README.md`](../../../scripts/README.md)) and `op` (1Password CLI)
+  signed in. If the script exits non-zero, skip the calendar section and note
+  it in one line — never trigger an interactive login from this skill, and
+  never fail the whole wrap-up because the calendar could not be read.
+- `ORG_DIR` points at the user's org repository (the one that contains
+  `org-roam/daily/`). If it is unset, default to `$HOME/org` and, if that is
+  not a git work tree, stop and ask the user to export `ORG_DIR`.
+- `git`, `jq`, `date`, and `uuidgen` are available on the host. The scripts
+  additionally use `sed`, `tr`, and `grep` (host coreutils).
+- The shell-history section runs `fetch-shell-history.sh` (in this skill
+  directory). It first runs `atuin sync` to pull the day's commands from the
+  atuin server, then reads the day's history with `atuin`. `atuin` must be
+  installed and, for the sync step, logged in; if the sync fails the script
+  warns and falls back to the local database rather than failing the wrap-up.
+  atuin's history database and sync/encryption keys are host-bound (they live
+  under the user's home directory), so — like `gh`, `git`, and `gws-secure` —
+  atuin runs on the host, not in a container.
+- The forgotten-day detection runs `find-missing-wrapups.sh` (in this skill
+  directory). It reads only local org files under `$DAILY_DIR`, needs no
+  network or credentials, and therefore runs on the host rather than in a
+  container.
+
+## Workflow
+
+### Step 1: Resolve the day, paths, and identity
+
+```bash
+DAY="${1:-$(date +%Y-%m-%d)}"          # allow an explicit YYYY-MM-DD argument
+USER_LOGIN="$(gh api user --jq .login)"
+ORG_DIR="${ORG_DIR:-$HOME/org}"
+DAILY_DIR="$ORG_DIR/org-roam/daily"
+DAILY_FILE="$DAILY_DIR/$DAY.org"
+mkdir -p "$DAILY_DIR"
+```
+
+Confirm `ORG_DIR` is a git work tree (`git -C "$ORG_DIR" rev-parse` succeeds);
+if not, stop and ask the user to set `ORG_DIR`.
+
+### Step 2: Detect forgotten wrap-ups in the past week
+
+Run the detection script to find recent days with no wrap-up note. It scans
+the past seven days ending yesterday (today is excluded — the day is not over
+yet) and prints each missing `YYYY-MM-DD`, oldest first; it prints nothing
+when every recent day is already wrapped:
+
+```bash
+"$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/find-missing-wrapups.sh"
+```
+
+A day counts as missing when its daily file is absent, or exists but carries
+no wrap-up provenance marker — neither `:GENERATED_BY: claude-code/daily-wrapup`
+nor the legacy `:GENERATED_BY: claude-code/daily-digest` (the skill's former
+name), so days already wrapped by the predecessor are not re-flagged. A day on
+which nothing
+happened is also reported here — the detector cannot tell "forgotten" from
+"nothing to record" — but wrapping it is harmless: Step 4 writes nothing and
+moves on when all sources are empty.
+
+Use the result to decide which days to process:
+
+- **Backfill request** — the user asked to catch up on days they forgot (or
+  this is an unattended run): set the day list to every date the script
+  printed and process them oldest first.
+- **Normal wrap-up** — a specific day (default today): process that day as
+  usual. If the script also printed other missing days, mention them in one
+  line and ask whether to backfill those too; add the days the user accepts to
+  the list.
+
+Run Steps 3–6 for each day in the list, passing that day as `$DAY`. When the
+list ends up empty (nothing requested and nothing missing), there is nothing
+to do — say so and stop.
+
+### Step 3: Summarize calendar, GitHub, and shell history in parallel (subagents)
+
+Gather and summarize the three sources concurrently. Spawn three subagents
+with the Agent tool **in a single message** so they run in parallel; each one
+gathers its own source and returns a finished, Japanese, org-formatted
+section, so the raw API JSON and command list never enter the main context.
+Pass the resolved `$DAY` (and `$USER_LOGIN` for GitHub) into each prompt
+verbatim.
+
+**Calendar subagent.** Tell it to:
+
+- Run the calendar fetch script. It reads the user's own primary calendar for
+  the day and prints one event per line as `start|end|summary|location`; it
+  excludes imported and subscribed calendars, cancelled events, and events
+  the user declined (see the script header for the rationale):
+
+  ```bash
+  "$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-calendar.sh" "$DAY"
+  ```
+
+- Format each line as an org bullet for a `** 予定` section: a timed event
+  (the `start` field contains a `T`) as `- HH:MM–HH:MM <summary>`, appending
+  `@<location>` (preceded by a space) when the location is non-empty; an
+  all-day event (no `T`) as `- 終日: <summary>`. Keep chronological order,
+  one bullet per event.
+- Return **only** those bullet lines. If the script printed nothing, return
+  the single token `NO_EVENTS`. If the script exited non-zero (e.g. a
+  gws-secure auth failure), return the single token `CALENDAR_UNAVAILABLE`.
+  Never invent events.
+
+**GitHub subagent.** Tell it to run these three queries (`gh search` returns
+reliable titles and states; the `users/<login>/events` API ships stripped
+payloads, so do not use it):
+
+```bash
+# Pull requests the user touched that day (opened, merged, commented).
+gh search prs --author="$USER_LOGIN" --updated="$DAY" \
+  --json number,title,repository,state,url --limit 50
+
+# Issues the user touched that day. gh search issues also returns PRs, so
+# drop entries where isPullRequest is true.
+gh search issues --author="$USER_LOGIN" --updated="$DAY" \
+  --json number,title,repository,state,url,isPullRequest --limit 50
+
+# Commits the user authored that day (repository.fullName + message).
+gh search commits --author="$USER_LOGIN" --committer-date="$DAY" \
+  --json repository,sha,commit --limit 100
+```
+
+Then group by repository and return org subtrees — one `*** owner/repo`
+heading per repository with `-` bullets beneath it: lead with the PRs (title
+and state, i.e. merged / open / closed) and issues, then fold in the notable
+commit subjects. Synthesize, do not dump; drop the wall of
+`Merge pull request #N …` commits, since the PR list already covers them. If
+all three queries are empty, return the single token `NO_ACTIVITY`.
+
+**Shell subagent.** Tell it to:
+
+- Run the shell-history fetch script. It syncs from the atuin server first,
+  then prints one command per line as `time|exit|directory|command` for the
+  day (`{command}` is the last field and may itself contain `|`):
+
+  ```bash
+  "$CLAUDE_PLUGIN_ROOT/skills/daily-wrapup/fetch-shell-history.sh" "$DAY"
+  ```
+
+- Synthesize, do not dump. Summarize what the user did in the terminal: the
+  projects or directories they worked in, the notable tools and operations
+  (builds, tests, git, deploys), and anything that stands out such as repeated
+  failures (non-zero exit codes). Return `-` bullets for a `** シェル`
+  section — a few lines at most, never a list of every command.
+- Never copy a command carrying a secret (tokens, passwords, keys) verbatim
+  into the note — describe what it did instead.
+- Return **only** those bullet lines. If the script printed nothing, return
+  the single token `NO_HISTORY`. If the script exited non-zero (atuin missing
+  or the query failed), return the single token `HISTORY_UNAVAILABLE`.
+
+Wait for all three subagents before continuing.
+
+### Step 4: Write the daily org note
+
+Combine the three subagent results. Only when the calendar returned
+`NO_EVENTS`/`CALENDAR_UNAVAILABLE`, GitHub returned `NO_ACTIVITY`, **and** the
+shell subagent returned `NO_HISTORY`/`HISTORY_UNAVAILABLE` is there nothing to
+record — tell the user and stop without writing or committing. When the
+calendar came back `CALENDAR_UNAVAILABLE` (or the shell history came back
+`HISTORY_UNAVAILABLE`), note that to the user in one line but still write the
+sections that do have content.
+
+The note is an org-roam daily file. Two cases:
+
+- **File does not exist**: create it with the org-roam node header, then the
+  Claude subtree. Lead with the calendar, then GitHub:
+
+  ```org
+  :PROPERTIES:
+  :ID:       <uuidgen output, uppercase>
+  :END:
+  #+title: <DAY>
+  * <DAY Dow HH:MM> Daily wrapup                                   :claude:
+  :PROPERTIES:
+  :STATUS:   unreviewed
+  :GENERATED_BY: claude-code/daily-wrapup
+  :END:
+
+  ** 予定
+  - HH:MM–HH:MM <event> @<location>
+  - 終日: <event>
+
+  ** GitHub
+  *** <owner/repo>
+  - …
+
+  ** シェル
+  - <one-line summary of the day's terminal work>
+  ```
+
+- **File already exists**: do not touch the existing header or entries.
+  Append the same `* … :claude:` subtree to the end of the file.
+
+Omit a section whose source is empty: write the `** 予定` heading only when
+there are events, the `** GitHub` heading only when there is GitHub activity,
+and the `** シェル` heading only when there is shell activity. Do not emit an
+empty heading.
+
+Provenance rules (from the project plan):
+
+- Tag the generated subtree headline `:claude:`. When this skill runs
+  unattended (a `claude -p` batch run with no human in the loop), also add
+  `:autogenerated:` (org tags cannot contain hyphens, so use
+  `autogenerated`, not `auto-generated`).
+- Put `:STATUS: unreviewed` in the subtree's property drawer. Review happens
+  by editing this tag in org (or by the user telling the skill they reviewed
+  it — see Step 5), not through a git PR.
+- Generate a fresh `:ID:` with `uuidgen` only when creating a new file;
+  never invent or reuse an id for an existing node.
+
+Write the file with the editor tools (not a shell heredoc) so the Japanese
+body is handled cleanly.
+
+### Step 5: Confirm, then commit and push the org repo
+
+Stage only the daily file — never `git add .`:
+
+```bash
+git -C "$ORG_DIR" add "org-roam/daily/$DAY.org"
+git -C "$ORG_DIR" --no-pager diff --cached -- "org-roam/daily/$DAY.org"
+BRANCH="$(git -C "$ORG_DIR" branch --show-current)"
+```
+
+Then show the user a short confirmation in Japanese: the day, the target
+branch (`$BRANCH`), and a one-line summary of what was written, and ask
+plainly whether to commit and push (e.g. `org に commit & push していい？`).
+Wait for an explicit yes. The org repo may be on a non-default branch — name
+the branch in the prompt so the user can catch it; if they want it on
+`main`, they switch the org repo themselves first.
+
+The user signalling that they reviewed the note (e.g. "reviewed",
+"review した", "確認した") counts as that explicit yes: treat it as approval
+to commit and push, do not ask again. In that case also flip the subtree's
+`:STATUS:` from `unreviewed` to `reviewed` before committing (re-stage the
+file afterward), since the note has now been reviewed.
+
+On confirmation, commit in English and push the current branch:
+
+```bash
+git -C "$ORG_DIR" commit -m "Add daily wrapup for $DAY"
+git -C "$ORG_DIR" push || git -C "$ORG_DIR" push -u origin HEAD
+```
+
+If the user declines, leave the file written but uncommitted and stop. Do
+not commit without an explicit yes.
+
+When a backfill wrote notes for several days at once, do not ask once per
+day. Stage every written daily file, show one combined confirmation that
+lists the days, and on a single yes commit each day as its own
+`Add daily wrapup for $DAY` commit before pushing — so the org history keeps
+one commit per day even though the user approved the set together.
+
+### Step 6: Open the note in Emacs (best-effort, host-side)
+
+Once the daily file has been written — regardless of whether it was
+committed — open it in the user's running Emacs so they can review the
+`unreviewed` note in place. This is a convenience, not a requirement: only
+attach to an Emacs server that is already running, never start a new Emacs,
+and never block waiting for the buffer to close.
+
+```bash
+if emacsclient --eval t >/dev/null 2>&1; then
+  emacsclient --no-wait "$DAILY_FILE"
+fi
+```
+
+- `emacsclient --eval t` is a cheap probe: it exits non-zero when no Emacs
+  server is running and is "command not found" when `emacsclient` is not
+  installed, so the single guard covers both cases. If it fails, skip this
+  step silently.
+- `--no-wait` opens the buffer and returns immediately instead of blocking
+  until the user closes it.
+- `emacsclient` talks to the user's host Emacs over a local socket, so (like
+  `git` and `gh`) it runs on the host, not in a container.
+
+## Output rules
+
+- The org note body is Japanese and may include real repository names, PR
+  titles, commit subjects, and calendar event titles and locations — it
+  lives in the private org repo.
+- This SKILL.md and the commit message stay English. Never hardcode the
+  username or org path; resolve them at run time.
+- Synthesize; do not dump every commit. A reader should understand the day
+  from a few lines per repository.
+- Record only real activity returned by `gh search` and real events returned
+  by the calendar API. Do not invent work or meetings.
+
+## Error handling
+
+- `gh` not authenticated: stop and tell the user to run `gh auth login`.
+- `fetch-calendar.sh` exits non-zero (gws-secure / 1Password / network), so
+  the calendar subagent returns `CALENDAR_UNAVAILABLE`: skip the calendar
+  section, record the GitHub activity alone, and note in one line that the
+  calendar could not be read. Do not trigger an interactive login, and do not
+  fail the whole wrap-up over a calendar error.
+- `ORG_DIR` not a git work tree: stop and ask the user to export `ORG_DIR`.
+- `fetch-shell-history.sh` exits non-zero (atuin missing or the query failed),
+  so the shell subagent returns `HISTORY_UNAVAILABLE`: skip the shell section
+  and note in one line that the history could not be read. An `atuin sync`
+  failure alone is not fatal — the script warns and summarizes the local
+  history instead.
+- `find-missing-wrapups.sh` exits non-zero (missing daily directory, bad
+  lookback argument): skip the forgotten-day detection and proceed with the
+  requested day's wrap-up; the detection is a nudge, not a hard dependency.
+- No calendar events, no GitHub activity, and no shell history for the day:
+  say so and stop without writing or committing.
+- `git push` fails (no upstream, rejected): report the error and leave the
+  commit in place; do not force-push.
+- `emacsclient` missing or no Emacs server running: skip opening the note in
+  Emacs; this is a convenience step, not an error.
+
+## Out of scope
+
+- Sources other than GitHub, the user's own calendar, and shell history
+  (atuin). Claude Code session logs are a planned future source for this
+  skill but are not read yet.
+- Calendars other than the user's primary one. Imported and subscribed
+  calendars are intentionally excluded.
+- A PR flow for the org repo. The daily note is committed directly to the
+  org repo's current branch (with confirmation), not via a pull request.
+- Mail. Unread inbox triage belongs to the `morning-brief` skill; the
+  wrap-up reads the calendar but not mail.
+
+## Security note
+
+GitHub activity is read with the authenticated `gh` CLI on the host and
+covers the user's own public and private GitHub activity. Today's calendar
+events are read through the `gws-secure` wrapper (see
+[`scripts/README.md`](../../../scripts/README.md)), which keeps the OAuth
+client and refresh token in 1Password and mints a short-lived access token
+in memory on each call — no OAuth token is written to disk — and the read is
+scoped read-only to the user's own primary calendar. The shell history is read
+locally with `atuin` (its database and keys are host-bound), after syncing the
+day's commands from the user's own atuin server; because shell commands can
+carry secrets in their arguments, the summarizing subagent synthesizes what
+was done and never copies a secret-bearing command verbatim into the note. The
+skill writes only to the user's org repository and commits only the single
+daily file it generated, after an explicit confirmation.

@@ -1,0 +1,9 @@
+[project]
+name = "branch-review-scripts"
+version = "0.1.0"
+description = "Git and GitHub helpers for the branch-review skill"
+# The scripts are standard library only. The pinned floor exists so uv resolves
+# one interpreter rather than whatever python3 happens to be on PATH in the
+# repository being reviewed.
+requires-python = ">=3.9"
+dependencies = []

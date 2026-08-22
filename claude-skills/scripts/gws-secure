@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+#
+# gws-secure — call the Google Workspace CLI (`gws`) without ever writing an
+# OAuth token to disk.
+#
+# On every invocation this wrapper:
+#   1. Reads the OAuth client (client_secret.json) and a long-lived refresh
+#      token out of 1Password, in memory only.
+#   2. Exchanges the refresh token for a short-lived access token via Google's
+#      token endpoint, in memory only.
+#   3. Runs the real `gws` with that access token supplied through
+#      GOOGLE_WORKSPACE_CLI_TOKEN, so `gws` never persists a refresh token or
+#      token cache. The only thing it writes to GOOGLE_WORKSPACE_CLI_CONFIG_DIR
+#      is the non-secret API discovery schema cache.
+#
+# Run scripts/gws-secure-bootstrap once first to mint the refresh token and
+# store it in the 1Password item.
+#
+# Usage: gws-secure <service> <resource> [...] [flags]   (same args as `gws`)
+#
+set -euo pipefail
+
+readonly OP_ITEM="${GWS_SECURE_OP_ITEM:-googleworkspace cli}"
+readonly OP_VAULT="${GWS_SECURE_OP_VAULT:-Private}"
+readonly REFRESH_FIELD="${GWS_SECURE_REFRESH_FIELD:-refresh_token}"
+readonly CACHE_DIR="${GWS_SECURE_CACHE_DIR:-$HOME/.cache/gws-secure}"
+readonly GWS_BIN="${GWS_SECURE_GWS_BIN:-gws}"
+
+fail() {
+  printf 'gws-secure: %s\n' "$1" >&2
+  exit 1
+}
+
+require_dependency() {
+  local dependency="$1"
+  command -v "$dependency" >/dev/null 2>&1 \
+    || fail "required command not found on PATH: $dependency"
+}
+
+require_dependency op
+require_dependency curl
+require_dependency jq
+require_dependency "$GWS_BIN"
+
+# Pull the OAuth client document from 1Password (memory only).
+client_json="$(op document get "$OP_ITEM" --vault "$OP_VAULT" 2>/dev/null)" \
+  || fail "could not read 1Password document '$OP_ITEM' in vault '$OP_VAULT' (is 'op' signed in?)"
+
+client_id="$(printf '%s' "$client_json" | jq -r '.installed.client_id // .web.client_id // empty')"
+client_secret="$(printf '%s' "$client_json" | jq -r '.installed.client_secret // .web.client_secret // empty')"
+token_uri="$(printf '%s' "$client_json" | jq -r '.installed.token_uri // .web.token_uri // "https://oauth2.googleapis.com/token"')"
+[ -n "$client_id" ] || fail "client_id missing from 1Password document '$OP_ITEM'"
+[ -n "$client_secret" ] || fail "client_secret missing from 1Password document '$OP_ITEM'"
+
+# Pull the refresh token field from the same item (memory only).
+refresh_token="$(op read "op://$OP_VAULT/$OP_ITEM/$REFRESH_FIELD" 2>/dev/null)" \
+  || fail "no '$REFRESH_FIELD' field in 1Password item '$OP_ITEM'. Run scripts/gws-secure-bootstrap first."
+[ -n "$refresh_token" ] || fail "'$REFRESH_FIELD' field in '$OP_ITEM' is empty. Run scripts/gws-secure-bootstrap first."
+
+# Exchange the refresh token for a short-lived access token (memory only).
+token_response="$(curl -fsS "$token_uri" \
+  --data-urlencode "client_id=$client_id" \
+  --data-urlencode "client_secret=$client_secret" \
+  --data-urlencode "refresh_token=$refresh_token" \
+  --data-urlencode "grant_type=refresh_token" 2>/dev/null)" \
+  || fail "token endpoint request failed (network error or revoked credentials)"
+
+access_token="$(printf '%s' "$token_response" | jq -r '.access_token // empty')"
+if [ -z "$access_token" ]; then
+  error_description="$(printf '%s' "$token_response" | jq -r '.error_description // .error // "unknown error"')"
+  fail "could not obtain access token: $error_description. Re-run scripts/gws-secure-bootstrap if the grant was revoked."
+fi
+
+# The config dir only ever holds the non-secret API discovery schema cache;
+# the access token is passed through the environment, never written to disk.
+mkdir -p "$CACHE_DIR"
+
+export GOOGLE_WORKSPACE_CLI_TOKEN="$access_token"
+export GOOGLE_WORKSPACE_CLI_CONFIG_DIR="$CACHE_DIR"
+
+exec "$GWS_BIN" "$@"
