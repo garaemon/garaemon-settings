@@ -108,8 +108,10 @@ call, so a GitHub Enterprise checkout works with no setup. Both remote URL forms
 are understood: `git@github.example.com:owner/repo.git` and
 `https://github.example.com/owner/repo.git`.
 
-An inherited `GH_HOST` is deliberately overridden -- the repository under review
-decides which server to talk to, not the ambient environment.
+An inherited `GH_HOST` is deliberately overridden whenever the `origin` remote
+names a host -- the repository under review decides which server to talk to, not
+the ambient environment. With no such remote, an exported `GH_HOST` is left
+alone.
 `gather_review_context.py` prints the host it resolved as `github_host:` in its
 `review range` block; if that line names the wrong server, stop and tell the user
 rather than posting anything.
