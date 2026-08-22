@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: comment-box
+# key: comment-box
+# binding: direct-keybinding
+# --
+########################################################
+ ## $0
+ ########################################################

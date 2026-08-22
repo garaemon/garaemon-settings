@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: image_view
+# key: image_view
+# binding: direct-keybinding
+# --
+<node pkg="image_view" type="image_view" name="image_view">
+   <remap from="image" to="" />
+</node>

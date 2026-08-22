@@ -1,0 +1,8 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: bool-property
+# key: bool-property
+# binding: direct-keybinding
+# --
+ $1_property_ = new rviz::BoolProperty("$2", $3,
+                                       "$4",
+                                       this, SLOT(update$5()));

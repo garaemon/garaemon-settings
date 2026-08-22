@@ -1,0 +1,7 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: color-property
+# key: color-property
+# binding: direct-keybinding
+# --
+$1_property = new rviz::ColorProperty("$2", $0QColor(25, 255, 0),
+                                      "$3", this, SLOT(update$4()));

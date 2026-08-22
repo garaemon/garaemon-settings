@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: rviz-float-property
+# key: float-property
+# binding: direct-keybinding
+# --
+$1_property_ = new rviz::FloatProperty( "$2", $3, "$4", this, SLOT(update$5()));

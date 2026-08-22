@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: message-filter-sync-initialize
+# key: message-filter-sync-initialize
+# binding: direct-keybinding
+# --
+sync_ = boost::make_shared<message_filters::Synchronizer<SyncPolicy> >(100);

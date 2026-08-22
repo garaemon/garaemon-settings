@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: gdb
+# key: gdb
+# binding: direct-keybinding
+# --
+launch-prefix="xterm -e gdb --args"

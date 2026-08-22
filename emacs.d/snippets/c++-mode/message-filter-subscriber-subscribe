@@ -1,0 +1,6 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: message-filter-subscriber-subscribe
+# key: message-filter-subscriber-subscribe
+# binding: direct-keybinding
+# --
+sub_$1_.subscribe(*pnh_, "$2", $3);
