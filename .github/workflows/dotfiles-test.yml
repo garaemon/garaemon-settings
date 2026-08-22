@@ -1,15 +1,24 @@
-name: Test
+name: Dotfiles Test
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'dotfiles/**'
+      - '.github/workflows/dotfiles-test.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'dotfiles/**'
+      - '.github/workflows/dotfiles-test.yml'
 
 jobs:
   pytest:
     name: Pytest
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dotfiles
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

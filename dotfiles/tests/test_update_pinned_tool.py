@@ -1,4 +1,4 @@
-"""Tests for .github/scripts/update_pinned_tool.py.
+"""Tests for scripts/ci/update_pinned_tool.py.
 
 Pure-Python tests: import the script as a module and exercise the
 transformation helpers against fixtures, parameterised over both tools the
@@ -20,11 +20,11 @@ import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SCRIPT_PATH = REPO_ROOT / ".github" / "scripts" / "update_pinned_tool.py"
+SCRIPT_PATH = REPO_ROOT / "scripts" / "ci" / "update_pinned_tool.py"
 
 
 def load_script_module():
-    # Imported by file path because .github/scripts/ is not a Python package
+    # Imported by file path because scripts/ci/ is not a Python package
     # (no __init__.py) and a hyphen would not be valid in an import name
     # anyway. spec_from_file_location is the stdlib-blessed escape hatch.
     spec = importlib.util.spec_from_file_location(

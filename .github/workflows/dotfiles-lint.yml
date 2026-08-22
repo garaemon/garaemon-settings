@@ -1,15 +1,26 @@
-name: Lint
+name: Dotfiles Lint
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'dotfiles/**'
+      - '.github/workflows/dotfiles-lint.yml'
+      - '.pre-commit-config.yaml'
   pull_request:
     branches: [main]
+    paths:
+      - 'dotfiles/**'
+      - '.github/workflows/dotfiles-lint.yml'
+      - '.pre-commit-config.yaml'
 
 jobs:
   shellcheck:
     name: ShellCheck
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dotfiles
     steps:
       - uses: actions/checkout@v5
       - name: Install ShellCheck
@@ -40,12 +51,17 @@ jobs:
       - uses: actions/checkout@v5
       - name: Check for trailing whitespace
         run: |
-          targets="dot_zshrc dot_zshenv dot_zlogin dot_zlogout"
-          targets="$targets dot_zshrc.zplug dot_zsh/"
-          targets="$targets dot_gitconfig.tmpl dot_tmux.conf"
-          targets="$targets dot_vimrc dot_tigrc"
-          targets="$targets .github/ .pre-commit-config.yaml"
-          targets="$targets README.md"
+          targets="dotfiles/dot_zshrc dotfiles/dot_zshenv"
+          targets="$targets dotfiles/dot_zlogin dotfiles/dot_zlogout"
+          targets="$targets dotfiles/dot_zshrc.zplug dotfiles/dot_zsh/"
+          targets="$targets dotfiles/dot_gitconfig.tmpl dotfiles/dot_tmux.conf"
+          targets="$targets dotfiles/dot_vimrc dotfiles/dot_tigrc"
+          targets="$targets dotfiles/scripts/"
+          targets="$targets .github/workflows/dotfiles-lint.yml"
+          targets="$targets .github/workflows/dotfiles-test.yml"
+          targets="$targets .github/workflows/dotfiles-update-pinned-tools.yml"
+          targets="$targets .pre-commit-config.yaml"
+          targets="$targets dotfiles/README.md"
           if grep -rn ' $' $targets 2>/dev/null; then
             echo "::error::Trailing whitespace found"
             exit 1
@@ -63,10 +79,10 @@ jobs:
         run: >-
           yamllint -d relaxed
           .pre-commit-config.yaml
-          .github/workflows/lint.yml
-          .github/workflows/test.yml
-          .github/workflows/update-pinned-tools.yml
-          .markdownlint.yaml
+          .github/workflows/dotfiles-lint.yml
+          .github/workflows/dotfiles-test.yml
+          .github/workflows/dotfiles-update-pinned-tools.yml
+          dotfiles/.markdownlint.yaml
 
   markdownlint:
     name: Markdown Lint
@@ -76,4 +92,4 @@ jobs:
       - name: Run markdownlint
         uses: DavidAnson/markdownlint-cli2-action@v23
         with:
-          globs: "**/*.md"
+          globs: "dotfiles/**/*.md"

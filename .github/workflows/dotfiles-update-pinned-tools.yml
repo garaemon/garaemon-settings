@@ -14,7 +14,7 @@ jobs:
     # fork, so the blast radius is wasted runner minutes plus a self-PR,
     # but this is the standard mitigation for scheduled jobs in template
     # / dotfile repos.
-    if: github.repository == 'garaemon/dotfiles'
+    if: github.repository == 'garaemon/garaemon-settings'
     timeout-minutes: 10
     permissions:
       contents: write
@@ -49,8 +49,8 @@ jobs:
           # and adds an Authorization header.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
-          python .github/scripts/update_pinned_tool.py
-          --tool ${{ matrix.tool }} install.sh
+          python dotfiles/scripts/ci/update_pinned_tool.py
+          --tool ${{ matrix.tool }} dotfiles/install.sh
       - name: Open pull request
         if: steps.bump.outputs.changed == 'true'
         # Pinned by commit SHA because this action runs with contents:write
@@ -71,15 +71,15 @@ jobs:
           commit-message: "Bump ${{ matrix.tool }} to v${{ steps.bump.outputs.version }}"
           body: |
             Automated bump produced by
-            `.github/workflows/update-pinned-tools.yml`.
+            `.github/workflows/dotfiles-update-pinned-tools.yml`.
 
             - Updates the pinned `${{ matrix.tool }}` version and its
-              sha256 checksums in `install.sh`.
+              sha256 checksums in `dotfiles/install.sh`.
             - Checksums are taken from the matching upstream release's
               checksum manifest.
             - Upstream release notes:
               https://github.com/${{ matrix.repo }}/releases/tag/v${{ steps.bump.outputs.version }}
-          add-paths: install.sh
+          add-paths: dotfiles/install.sh
           delete-branch: true
           # Request review from the repository owner. PRs are authored by
           # github-actions[bot], so the owner is never the author and the
