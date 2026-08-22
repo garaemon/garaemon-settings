@@ -37,7 +37,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -76,11 +75,8 @@ def read_pull_request() -> dict[str, Any] | None:
 def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
     """Return the first candidate revision that git can resolve, or None."""
     for candidate in candidates:
-        resolved = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", candidate],
-            capture_output=True,
-        )
-        if resolved.returncode == 0:
+        verify_command = ["git", "rev-parse", "--verify", "--quiet", candidate]
+        if run_command(verify_command, check=False).strip():
             return candidate
     return None
 
