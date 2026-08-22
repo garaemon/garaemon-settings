@@ -4,9 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible.yml'
+
+defaults:
+  run:
+    working-directory: ansible
 
 jobs:
   minimal:
@@ -86,7 +96,7 @@ jobs:
         id: changed-files-emacs
         uses: tj-actions/changed-files@v46
         with:
-          files: roles/emacs/**
+          files: ansible/roles/emacs/**
 
       - name: Execute main.yml
         run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"

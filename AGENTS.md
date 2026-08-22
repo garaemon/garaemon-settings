@@ -4,17 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is an Ansible-based dotfiles and system configuration repository for setting up development environments on macOS and Linux. The repository uses Ansible playbooks to automate the installation and configuration of development tools, shell environments, and applications.
+This is a monorepo for garaemon's environment setup on macOS and Linux. The `ansible/` directory contains Ansible playbooks that automate the installation and configuration of development tools, shell environments, and applications.
 
 ## Architecture
 
-- **main.yml**: Full system setup playbook with all roles
-- **minimal.yml**: Minimal setup playbook with essential tools only
-- **roles/**: Individual Ansible roles for specific tools/configurations
+- **ansible/main.yml**: Full system setup playbook with all roles
+- **ansible/minimal.yml**: Minimal setup playbook with essential tools only
+- **ansible/roles/**: Individual Ansible roles for specific tools/configurations
   - Each role follows standard Ansible structure (tasks/main.yml, files/, defaults/, etc.)
-- **resources/**: Configuration files and templates used by roles
+- **ansible/resources/**: Configuration files and templates used by roles
 
 ## Common Commands
+
+Run all Ansible commands from the `ansible/` directory:
+
+```bash
+cd ansible
+```
 
 ### Setup and Installation
 ```bash
