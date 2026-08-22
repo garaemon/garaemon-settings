@@ -13,7 +13,7 @@ Monorepo for garaemon's environment setup.
   and Dev Containers that delegates to `dotfiles/install.sh`. See
   [dotfiles/README.md](dotfiles/README.md).
 - **emacs.d/**: Emacs configuration. `~/.emacs.d` is a symlink to this
-  directory, managed by the Ansible emacs role. See
+  directory, managed by chezmoi (`dotfiles/symlink_dot_emacs.d.tmpl`). See
   [emacs.d/README.md](emacs.d/README.md).
 
 ## Scope

@@ -1,36 +1,6 @@
-# The emacs.d directory ships inside this monorepo, so no clone step is
-# needed: running this playbook implies the repository is already checked
-# out. playbook_dir points at ansible/, so its parent is the repo root.
-- name: Set emacs.d source path inside the monorepo
-  ansible.builtin.set_fact:
-    emacs_d_source_path: "{{ playbook_dir | dirname }}/emacs.d"
-
-- name: Check if .emacs.d exists
-  stat:
-    path: ~/.emacs.d
-  register: emacs_d_link_stat
-
-- name: Check if .emacs.d directories are identical
-  command: diff -r ~/.emacs.d {{ emacs_d_source_path }}
-  register: emacs_d_diff
-  failed_when: false
-  changed_when: false
-  when: emacs_d_link_stat.stat.exists and not emacs_d_link_stat.stat.islnk
-
-- name: Remove existing .emacs.d if identical to target
-  file:
-    path: ~/.emacs.d
-    state: absent
-  when:
-    - emacs_d_link_stat.stat.exists
-    - not emacs_d_link_stat.stat.islnk
-    - emacs_d_diff.rc == 0
-
-- name: Symlink for emacs.d
-  file:
-    src: "{{ emacs_d_source_path }}"
-    dest: ~/.emacs.d
-    state: link
+# The ~/.emacs.d symlink is managed by chezmoi
+# (dotfiles/symlink_dot_emacs.d.tmpl), not by this role. This role only
+# builds the Emacs binary.
 
 # Only for ubuntu
 - name: Build emacs for Debian
