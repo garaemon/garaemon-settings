@@ -360,10 +360,10 @@ def resolve_explicit_range(
         left, right = build_last_range(args.last)
         commits = "commit" if args.last == 1 else "commits"
         return left, right, f"--last {args.last}: the most recent {args.last} {commits}"
-    if args.commit:
+    if args.commit is not None:
         left, right = build_commit_range(args.commit)
         return left, right, f"--commit {args.commit}: that commit's own change"
-    if args.range:
+    if args.range is not None:
         left, right, uses_merge_base = parse_range_spec(args.range)
         if uses_merge_base:
             left = find_merge_base(left, right)
