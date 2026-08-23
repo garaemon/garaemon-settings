@@ -136,19 +136,7 @@
   ("C-x b" . consult-buffer)
   ("M-s" . consult-ripgrep)
   :config
-  (defun my-get-git-files ()
-    (let ((root-dir (magit-toplevel "")))
-      (when root-dir
-        (with-temp-buffer
-          (let ((default-directory root-dir))
-            ;; Change default-directory to the root directory of the git project. This is because
-            ;; git ls-files returns the paths relative from the current working directory.
-            (vc-git-command (current-buffer) t nil "ls-files"))
-          (let ((local-file-names (split-string (buffer-string) "\n" t)))
-            ;; local-file-names is a relative path from root-dir.
-            (mapcar #'(lambda (local-file)
-                        (file-name-concat root-dir local-file))
-                    local-file-names))))))
+  (require 'my-consult-sources)
 
   (setq my-git-files-source
         `( :name "Git Files"
@@ -156,13 +144,6 @@
            :category 'file
            :items ,#'my-get-git-files
            :state ,#'consult--file-state))
-
-  (defun my-get-ghq-repositories ()
-    "Get list of ghq repositories."
-    (when (executable-find "ghq")
-      (with-temp-buffer
-        (call-process "ghq" nil (current-buffer) nil "list" "-p")
-        (split-string (buffer-string) "\n" t))))
 
   (setq my-ghq-repositories-source
         `( :name "Ghq Repositories"
