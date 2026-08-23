@@ -15,8 +15,11 @@
 (defun my-get-git-files ()
   "Return the absolute paths of the files tracked in the current repository.
 
-Return nil outside a repository."
-  (let ((root-dir (magit-toplevel "")))
+Return nil outside a repository, and nil when `default-directory' is
+remote: this runs on every `C-x b', and over Tramp both `magit-toplevel'
+and git ls-files become round trips that stall the completion UI."
+  (let ((root-dir (unless (file-remote-p default-directory)
+                    (magit-toplevel ""))))
     (when root-dir
       (with-temp-buffer
         (let ((default-directory root-dir))

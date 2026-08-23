@@ -3,6 +3,11 @@
 ;;; Commentary:
 ;; Regression tests for the custom `consult-buffer' sources.
 ;;
+;; `my-get-git-files' runs on every `C-x b'.  Over Tramp both
+;; `magit-toplevel' and git ls-files turn into round trips to the remote
+;; host, which stalls the completion UI, so the function must return nil
+;; for a remote `default-directory' without shelling out at all.
+;;
 ;; The tests stub `magit-toplevel' and `vc-git-command' so neither magit
 ;; nor a real repository is needed.  Run with:
 ;;
@@ -26,6 +31,14 @@
 (ert-deftest my-get-git-files-should-return-nil-outside-a-repository ()
   (cl-letf (((symbol-function 'magit-toplevel) (lambda (&rest _) nil)))
     (should (null (my-get-git-files)))))
+
+(ert-deftest my-get-git-files-should-return-nil-for-a-remote-directory ()
+  (let ((default-directory "/ssh:host:/home/user/"))
+    (cl-letf (((symbol-function 'magit-toplevel)
+               (lambda (&rest _) (error "magit-toplevel must not run on a remote host")))
+              ((symbol-function 'vc-git-command)
+               (lambda (&rest _) (error "vc-git-command must not run on a remote host"))))
+      (should (null (my-get-git-files))))))
 
 (ert-deftest my-get-ghq-repositories-should-return-nil-without-the-ghq-executable ()
   (cl-letf (((symbol-function 'executable-find) (lambda (&rest _) nil)))
