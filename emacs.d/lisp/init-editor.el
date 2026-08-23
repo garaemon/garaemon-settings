@@ -135,6 +135,13 @@
   :bind
   ("C-x b" . consult-buffer)
   ("M-s" . consult-ripgrep)
+  :custom
+  ;; Preview opens the candidate file for real: disk read, major mode, and
+  ;; fontification. At the default `any' that cost lands on every candidate
+  ;; move, measured at 32-100 ms per step for local elisp files and worse
+  ;; over Tramp. Debouncing drops a move to 0.4 ms and still previews once
+  ;; the selection settles.
+  (consult-preview-key '(:debounce 0.3 any))
   :config
   (require 'my-consult-sources)
 
