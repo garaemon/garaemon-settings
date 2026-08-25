@@ -135,43 +135,22 @@
   :bind
   ("C-x b" . consult-buffer)
   ("M-s" . consult-ripgrep)
+  :custom
+  ;; `consult-line' and `consult-ripgrep' still preview on every candidate
+  ;; move. Debouncing keeps a fast scroll through their matches from opening
+  ;; a file per step. `consult-buffer' overrides this per source below.
+  (consult-preview-key '(:debounce 0.3 any))
   :config
-  (defun my-get-git-files ()
-    (let ((root-dir (magit-toplevel "")))
-      (when root-dir
-        (with-temp-buffer
-          (let ((default-directory root-dir))
-            ;; Change default-directory to the root directory of the git project. This is because
-            ;; git ls-files returns the paths relative from the current working directory.
-            (vc-git-command (current-buffer) t nil "ls-files"))
-          (let ((local-file-names (split-string (buffer-string) "\n" t)))
-            ;; local-file-names is a relative path from root-dir.
-            (mapcar #'(lambda (local-file)
-                        (file-name-concat root-dir local-file))
-                    local-file-names))))))
-
-  (setq my-git-files-source
-        `( :name "Git Files"
-           :narrow ?g
-           :category 'file
-           :items ,#'my-get-git-files
-           :state ,#'consult--file-state))
-
-  (defun my-get-ghq-repositories ()
-    "Get list of ghq repositories."
-    (when (executable-find "ghq")
-      (with-temp-buffer
-        (call-process "ghq" nil (current-buffer) nil "list" "-p")
-        (split-string (buffer-string) "\n" t))))
-
-  (setq my-ghq-repositories-source
-        `( :name "Ghq Repositories"
-           :narrow ?q
-           :category 'file
-           :items ,#'my-get-ghq-repositories
-           :state ,#'consult--file-state))
+  (require 'my-consult-sources)
 
   (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source my-ghq-repositories-source)))
+
+  ;; Every source below previews by opening a file, which costs about 840 ms
+  ;; per candidate here. Wait for a key press instead of a pause.
+  (consult-customize
+   consult-source-recent-file consult-source-project-recent-file-hidden
+   consult-source-bookmark consult-source-file-register
+   :preview-key my-consult-file-preview-key)
 
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.
