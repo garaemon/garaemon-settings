@@ -23,6 +23,7 @@ cd ansible
 ```
 
 ### Setup and Installation
+
 ```bash
 # Full setup
 ansible-playbook -i localhost, -c local main.yml --ask-become-pass
@@ -38,6 +39,7 @@ ansible-playbook -i localhost, -c local --tags "role_name" main.yml --ask-become
 ```
 
 ### Development and Testing
+
 ```bash
 # Lint Ansible playbooks
 ansible-lint
@@ -52,6 +54,7 @@ ansible-playbook -i localhost, -c local main.yml --check
 ## Key Roles
 
 The repository includes roles for:
+
 - **base**: Essential system packages and configurations
 - **zsh**: Shell setup with custom configurations
 - **emacs**: Emacs installation and configuration
@@ -63,6 +66,7 @@ The repository includes roles for:
 ## Platform Support
 
 Roles use Ansible conditionals for cross-platform compatibility:
+
 - `ansible_facts.os_family == "Darwin"` for macOS-specific tasks
 - `ansible_facts.os_family == "Debian"` for Linux-specific tasks
 - `ansible_facts.architecture != 'aarch64'` for architecture-specific exclusions
@@ -70,12 +74,14 @@ Roles use Ansible conditionals for cross-platform compatibility:
 ## Sudo Policy
 
 ### minimal.yml
+
 - **Can run without sudo** when git is already installed on the system
 - Only requires sudo for git package installation on Debian/Ubuntu systems
 - The git role checks if git is installed before attempting installation with sudo
 - All other roles (dotfiles, symlinks, configurations) run without sudo privileges
 
 ### main.yml
+
 - **Requires sudo** for package installation and system-level configuration
 - Uses `--ask-become-pass` flag for elevated privileges
 - Installs system packages via apt (Linux) or homebrew (macOS)
