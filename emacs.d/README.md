@@ -60,13 +60,14 @@ Run the scenarios by hand with:
 
 ```sh
 emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
-  -L lisp -L benchmarks -l my-consult-benchmark \
+  -L lisp -L benchmarks -l my-benchmarks \
   -f my-benchmark-run-batch results.json
 ```
 
-Add a scenario with `my-benchmark-define`. Give it an `:available-p` that
-returns nil when the code it measures is absent, so that the branch a pull
-request starts from reports `n/a` instead of failing.
+Add a scenario with `my-benchmark-define`, in a file that `my-benchmarks.el`
+requires. Give it an `:available-p` that returns nil when the code it measures
+is absent, so that the branch a pull request starts from reports `n/a` instead
+of failing.
 
 ## Fonts
 
