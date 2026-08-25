@@ -1,10 +1,6 @@
 # dotfiles
 
-My dotfiles managed by chezmoi
-
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply garaemon
-```
+My dotfiles managed by chezmoi, inside the `garaemon-settings` monorepo.
 
 To install chezmoi, you can use mise.
 
@@ -12,16 +8,59 @@ To install chezmoi, you can use mise.
 mise use -g chezmoi
 ```
 
+## Source directory
+
+This directory, not the repository root, is the chezmoi source directory. The
+`.chezmoiroot` file at the repository root contains `dotfiles`, so chezmoi
+reads the source state from here and leaves `ansible/`, `emacs.d/`, and
+`claude-skills/` alone.
+
+### Existing monorepo checkout
+
+Prefer this over a fresh clone. `~/.emacs.d` and `~/.claude/skills` are
+symlinks into `~/ghq/github.com/garaemon/garaemon-settings`, so a second copy
+of the repository under `~/.local/share/chezmoi` only adds a checkout to keep
+in sync.
+
+Add `sourceDir` to `~/.config/chezmoi/chezmoi.toml`. Put it above every
+`[table]` header, because TOML reads a bare key below a header as a member of
+that table:
+
+```toml
+sourceDir = "~/ghq/github.com/garaemon/garaemon-settings"
+```
+
+Then review and apply:
+
+```bash
+chezmoi diff
+chezmoi apply
+```
+
+### Fresh clone
+
+`chezmoi init` clones the whole monorepo into `~/.local/share/chezmoi` and
+still finds the source state through `.chezmoiroot`:
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply garaemon/garaemon-settings
+```
+
+The `~/.emacs.d` and `~/.claude/skills` symlinks dangle until you also run
+`ghq get git@github.com:garaemon/garaemon-settings.git`.
+
 ## Setup
 
 ### VS Code Dev Containers / GitHub Codespaces
 
 This repository can be used as a [dotfiles
 repository](https://code.visualstudio.com/docs/devcontainers/containers#_personalizing-with-dotfile-repositories)
-for VS Code Dev Containers and GitHub Codespaces. Configure the repo URL in
-your VS Code settings (`dotfiles.repository`) or Codespaces settings; the
-container will clone it and run `install.sh`, which installs chezmoi and
-applies the dotfiles.
+for VS Code Dev Containers and GitHub Codespaces. Configure the monorepo URL
+(`garaemon/garaemon-settings`) in your VS Code settings
+(`dotfiles.repository`) or Codespaces settings; the container will clone it
+and run the root-level `install.sh` shim, which delegates to
+`dotfiles/install.sh`, installs chezmoi, and applies the dotfiles with
+`chezmoi apply --source=`.
 
 The container image must include `bash` (4 or later, for associative
 arrays) and `curl`. Most popular base images (Debian/Ubuntu, the Codespaces
