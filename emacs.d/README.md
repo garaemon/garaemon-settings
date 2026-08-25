@@ -38,6 +38,36 @@ Configuration is split into focused modules in the `lisp/` directory:
 
 Each module is loaded via `(require 'init-*)` in `init.el`.
 
+### Tests (tests/)
+
+ERT tests for the standalone `my-*.el` modules. CI runs them on every push
+that touches `emacs.d/`:
+
+```sh
+emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
+  -L lisp -L benchmarks -l ert \
+  $(printf -- '-l %s ' tests/*.el) -f ert-run-tests-batch-and-exit
+```
+
+### Benchmarks (benchmarks/)
+
+Timings for the code paths whose cost grows with the size of a project, such
+as the candidate collection behind `C-x b`. CI measures a pull request against
+its base branch and posts the comparison as a comment, because an absolute
+time from a shared runner says little on its own.
+
+Run the scenarios by hand with:
+
+```sh
+emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
+  -L lisp -L benchmarks -l my-consult-benchmark \
+  -f my-benchmark-run-batch results.json
+```
+
+Add a scenario with `my-benchmark-define`. Give it an `:available-p` that
+returns nil when the code it measures is absent, so that the branch a pull
+request starts from reports `n/a` instead of failing.
+
 ## Fonts
 
 `init-ui.el` picks the default face from `my-font-candidates`, taking the first
