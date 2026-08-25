@@ -145,20 +145,6 @@
   :config
   (require 'my-consult-sources)
 
-  (setq my-git-files-source
-        `( :name "Git Files"
-           :narrow ?g
-           :category 'file
-           :items ,#'my-get-git-files
-           :state ,#'consult--file-state))
-
-  (setq my-ghq-repositories-source
-        `( :name "Ghq Repositories"
-           :narrow ?q
-           :category 'file
-           :items ,#'my-get-ghq-repositories
-           :state ,#'consult--file-state))
-
   (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source my-ghq-repositories-source)))
 
   (defun my-consult-async-process (program process-function &rest program-args)

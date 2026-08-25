@@ -1,14 +1,15 @@
 ;;; my-consult-sources.el --- Extra consult-buffer sources -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Candidate collectors for the custom `consult-buffer' sources: the files
-;; tracked in the current git repository, and the repositories ghq knows
-;; about.  They live here rather than inside the `use-package consult'
-;; body so that tests/my-consult-sources-test.el can exercise them without
-;; consult installed.
+;; The custom `consult-buffer' sources and the functions that collect their
+;; candidates: the files tracked in the current git repository, and the
+;; repositories ghq knows about.  They live here rather than inside the
+;; `use-package consult' body so that tests/my-consult-sources-test.el can
+;; exercise them without consult installed.
 
 ;;; Code:
 
+(declare-function consult--file-state "consult" ())
 (declare-function magit-toplevel "magit-git" (&optional directory))
 (declare-function vc-git-command "vc-git" (buffer okstatus file-or-list &rest flags))
 
@@ -35,6 +36,22 @@ and git ls-files become round trips that stall the completion UI."
     (with-temp-buffer
       (call-process "ghq" nil (current-buffer) nil "list" "-p")
       (split-string (buffer-string) "\n" t))))
+
+(defvar my-git-files-source
+  `( :name "Git Files"
+     :narrow ?g
+     :category file
+     :items ,#'my-get-git-files
+     :state ,#'consult--file-state)
+  "`consult-buffer' source listing the files tracked in the current repository.")
+
+(defvar my-ghq-repositories-source
+  `( :name "Ghq Repositories"
+     :narrow ?q
+     :category file
+     :items ,#'my-get-ghq-repositories
+     :state ,#'consult--file-state)
+  "`consult-buffer' source listing the repositories managed by ghq.")
 
 (provide 'my-consult-sources)
 ;;; my-consult-sources.el ends here

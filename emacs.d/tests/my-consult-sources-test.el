@@ -52,5 +52,11 @@
                0)))
     (should (equal (my-get-ghq-repositories) '("/ghq/a" "/ghq/b")))))
 
+(ert-deftest my-git-files-source-should-declare-the-file-category ()
+  (should (eq (plist-get my-git-files-source :category) 'file)))
+
+(ert-deftest my-ghq-repositories-source-should-declare-the-file-category ()
+  (should (eq (plist-get my-ghq-repositories-source :category) 'file)))
+
 (provide 'my-consult-sources-test)
 ;;; my-consult-sources-test.el ends here
