@@ -136,16 +136,21 @@
   ("C-x b" . consult-buffer)
   ("M-s" . consult-ripgrep)
   :custom
-  ;; Preview opens the candidate file for real: disk read, major mode, and
-  ;; fontification. At the default `any' that cost lands on every candidate
-  ;; move, measured at 32-100 ms per step for local elisp files and worse
-  ;; over Tramp. Debouncing drops a move to 0.4 ms and still previews once
-  ;; the selection settles.
+  ;; `consult-line' and `consult-ripgrep' still preview on every candidate
+  ;; move. Debouncing keeps a fast scroll through their matches from opening
+  ;; a file per step. `consult-buffer' overrides this per source below.
   (consult-preview-key '(:debounce 0.3 any))
   :config
   (require 'my-consult-sources)
 
   (setq consult-buffer-sources (append consult-buffer-sources '(my-git-files-source my-ghq-repositories-source)))
+
+  ;; Every source below previews by opening a file, which costs about 840 ms
+  ;; per candidate here. Wait for a key press instead of a pause.
+  (consult-customize
+   consult-source-recent-file consult-source-project-recent-file-hidden
+   consult-source-bookmark consult-source-file-register
+   :preview-key my-consult-file-preview-key)
 
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.

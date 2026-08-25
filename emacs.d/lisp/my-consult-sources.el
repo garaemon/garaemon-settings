@@ -1,11 +1,11 @@
 ;;; my-consult-sources.el --- Extra consult-buffer sources -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; The custom `consult-buffer' sources and the functions that collect their
-;; candidates: the files tracked in the current git repository, and the
-;; repositories ghq knows about.  They live here rather than inside the
-;; `use-package consult' body so that tests/my-consult-sources-test.el can
-;; exercise them without consult installed.
+;; Candidate collectors for the custom `consult-buffer' sources: the files
+;; tracked in the current git repository, and the repositories ghq knows
+;; about.  They live here rather than inside the `use-package consult'
+;; body so that tests/my-consult-sources-test.el can exercise them without
+;; consult installed.
 
 ;;; Code:
 
@@ -37,10 +37,18 @@ and git ls-files become round trips that stall the completion UI."
       (call-process "ghq" nil (current-buffer) nil "list" "-p")
       (split-string (buffer-string) "\n" t))))
 
+;; Opening a file for preview costs about 840 ms here, almost all of it spent
+;; rebuilding `major-mode-remap-alist' inside the `set-auto-mode-0' advice of
+;; `global-treesit-auto-mode'.  Previewing a buffer costs 0 ms in comparison,
+;; so only the file sources wait for an explicit key.
+(defconst my-consult-file-preview-key "M-."
+  "Key that triggers the preview of a candidate that consult must open.")
+
 (defvar my-git-files-source
   `( :name "Git Files"
      :narrow ?g
      :category file
+     :preview-key ,my-consult-file-preview-key
      :items ,#'my-get-git-files
      :state ,#'consult--file-state)
   "`consult-buffer' source listing the files tracked in the current repository.")
@@ -49,6 +57,7 @@ and git ls-files become round trips that stall the completion UI."
   `( :name "Ghq Repositories"
      :narrow ?q
      :category file
+     :preview-key ,my-consult-file-preview-key
      :items ,#'my-get-ghq-repositories
      :state ,#'consult--file-state)
   "`consult-buffer' source listing the repositories managed by ghq.")

@@ -58,5 +58,11 @@
 (ert-deftest my-ghq-repositories-source-should-declare-the-file-category ()
   (should (eq (plist-get my-ghq-repositories-source :category) 'file)))
 
+(ert-deftest my-git-files-source-should-preview-only-on-a-key-press ()
+  (should (stringp (plist-get my-git-files-source :preview-key))))
+
+(ert-deftest my-ghq-repositories-source-should-preview-only-on-a-key-press ()
+  (should (stringp (plist-get my-ghq-repositories-source :preview-key))))
+
 (provide 'my-consult-sources-test)
 ;;; my-consult-sources-test.el ends here
