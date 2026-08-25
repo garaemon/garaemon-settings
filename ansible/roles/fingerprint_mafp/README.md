@@ -24,7 +24,7 @@ Only runs on Debian/Ubuntu (`x86_64`).
 See `defaults/main.yml`:
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
+| ---------- | --------- | --------- |
 | `fingerprint_mafp_enabled` | `true` | Build and install the driver. |
 | `fingerprint_mafp_driver_repo` | jdillon repo | Upstream driver source. |
 | `fingerprint_mafp_driver_version` | pinned commit | Revision built (reproducible). |

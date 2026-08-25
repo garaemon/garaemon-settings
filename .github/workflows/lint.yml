@@ -1,0 +1,88 @@
+---
+# One lint workflow for the whole monorepo. Jobs are split by language, not by
+# subdirectory, so every file gets the same checks wherever it lives. Each job
+# delegates to scripts/lint.sh, which developers run locally.
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shell:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # ubuntu-latest ships ShellCheck; the act image does not.
+      - name: Install ShellCheck
+        run: >-
+          command -v shellcheck ||
+          (sudo apt-get update && sudo apt-get install -y shellcheck)
+      - name: Run ShellCheck
+        run: scripts/lint.sh shell
+
+  markdown:
+    name: Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run markdownlint
+        run: scripts/lint.sh markdown
+
+  yaml:
+    name: YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      - name: Install yamllint
+        run: pip install yamllint
+      - name: Run yamllint
+        run: scripts/lint.sh yaml
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+      - name: Install ruff
+        run: pip install ruff
+      - name: Run ruff
+        run: scripts/lint.sh python
+
+  ansible:
+    name: Ansible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        if: ${{ !env.ACT }}
+        with:
+          python-version: '3.x'
+      - name: Install ansible-lint (GitHub Actions)
+        if: ${{ !env.ACT }}
+        run: pip install ansible-lint
+      - name: Install ansible-lint (act)
+        if: ${{ env.ACT }}
+        run: pip install --break-system-packages --ignore-installed ansible-lint
+      - name: Run ansible-lint
+        run: scripts/lint.sh ansible
+
+  whitespace:
+    name: Trailing whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check for trailing whitespace
+        run: scripts/lint.sh whitespace

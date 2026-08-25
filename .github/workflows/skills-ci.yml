@@ -16,18 +16,6 @@ defaults:
     working-directory: claude-skills
 
 jobs:
-  markdownlint:
-    name: Markdown lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v16
-        with:
-          globs: |
-            claude-skills/**/*.md
-            !claude-skills/REVIEW.md
-            !claude-skills/**/templates/**
-
   readme-skills-link:
     name: README links all skills
     runs-on: ubuntu-latest
@@ -46,27 +34,6 @@ jobs:
       - name: Run unit tests
         working-directory: claude-skills/.claude/skills/branch-review
         run: uv run --project . --python 3.9 -m unittest discover -s scripts -t scripts
-
-  shellcheck:
-    name: Shellcheck shell scripts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run shellcheck
-        run: |
-          shopt -s globstar nullglob
-          # gws-secure has no .sh extension; gws-secure-bootstrap is Python and
-          # is intentionally excluded.
-          scripts=(
-            .claude/skills/**/*.sh
-            scripts/gws-secure
-            scripts/tests/gws-secure-smoke.sh
-          )
-          if [ ${#scripts[@]} -eq 0 ]; then
-            echo "No shell scripts to check."
-            exit 0
-          fi
-          shellcheck "${scripts[@]}"
 
   gws-secure-smoke:
     name: gws-secure smoke test
@@ -139,4 +106,3 @@ jobs:
         run: docker build -t pdf2zh:local .claude/skills/pdf2zh
       - name: Smoke test image
         run: bash .claude/skills/pdf2zh/tests/smoke.sh
-

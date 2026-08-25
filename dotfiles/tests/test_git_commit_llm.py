@@ -4,7 +4,6 @@ import importlib.util
 import importlib.machinery
 import json
 import os
-import sys
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -68,7 +67,7 @@ class TestFormatCommitMessage:
         raw = '{"summary": "Fix bug", "details": ["Valid", "", "  ", "Also valid"]}'
         result = gcl.format_commit_message(raw)
         lines = result.split("\n")
-        bullet_lines = [l for l in lines if l.startswith("- ")]
+        bullet_lines = [line for line in lines if line.startswith("- ")]
         assert len(bullet_lines) == 2
         assert "- Valid" in bullet_lines
         assert "- Also valid" in bullet_lines
@@ -117,7 +116,7 @@ class TestFormatCommitMessage:
         raw = '{"summary": "Fix bug", "details": ["Valid", 123, null, "Also valid"]}'
         result = gcl.format_commit_message(raw)
         lines = result.split("\n")
-        bullet_lines = [l for l in lines if l.startswith("- ")]
+        bullet_lines = [line for line in lines if line.startswith("- ")]
         assert len(bullet_lines) == 2
 
     def test_details_not_a_list(self):

@@ -1,0 +1,10 @@
+---
+# Repository-wide markdownlint rules. Keep the configuration here so a document
+# obeys the same rules wherever it lives in the monorepo.
+
+# MD013 line-length: long URLs and long CLI examples do not wrap.
+MD013: false
+# MD033 inline HTML: skill documents embed <details> and <br> tags.
+MD033: false
+# MD041 first-line heading: topic and rule files open with front matter.
+MD041: false

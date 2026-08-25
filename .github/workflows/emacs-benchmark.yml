@@ -20,71 +20,71 @@ jobs:
     name: Compare the pull request against its base branch
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        # The base commit has to be checked out later in this job.
-        fetch-depth: 0
-    - name: Set up Emacs
-      uses: purcell/setup-emacs@master
-      with:
-        version: '30.1'
-    - name: Install benchmark dependencies
-      run: |
-        emacs -Q --batch --eval '(progn (require (quote package)) (add-to-list (quote package-archives) (cons "melpa" "https://melpa.org/packages/") t) (add-to-list (quote package-archives) (cons "nongnu" "https://elpa.nongnu.org/nongnu/") t) (package-initialize) (package-refresh-contents) (dolist (pkg (quote (magit consult orderless))) (unless (package-installed-p pkg) (package-install pkg))))'
-    - name: Keep the harness outside the working tree
-      # The base branch may predate the harness, and a scenario has to be
-      # timed by the same code on both sides to be comparable at all.
-      run: cp -r emacs.d/benchmarks "$RUNNER_TEMP/benchmarks"
-    - name: Benchmark the pull request
-      working-directory: emacs.d
-      run: |
-        emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
-          -L lisp -L "$RUNNER_TEMP/benchmarks" \
-          -l my-consult-benchmark -f my-benchmark-run-batch "$RUNNER_TEMP/head.json"
-    - name: Benchmark the base branch
-      working-directory: emacs.d
-      run: |
-        git checkout --quiet --force '${{ github.event.pull_request.base.sha }}'
-        emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
-          -L lisp -L "$RUNNER_TEMP/benchmarks" \
-          -l my-consult-benchmark -f my-benchmark-run-batch "$RUNNER_TEMP/base.json"
-    - name: Render the comparison
-      run: |
-        emacs -Q --batch -L "$RUNNER_TEMP/benchmarks" -l my-benchmark \
-          -f my-benchmark-render-batch "$RUNNER_TEMP/base.json" "$RUNNER_TEMP/head.json" \
-          > "$RUNNER_TEMP/comparison.md"
-        cat "$RUNNER_TEMP/comparison.md"
-    - name: Comment the comparison on the pull request
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const { owner, repo } = context.repo;
-          const issue_number = context.payload.pull_request.number;
-          // Every run rewrites one comment instead of appending another, so a
-          // branch that is pushed ten times leaves one table, not ten.
-          const marker = '<!-- emacs-benchmark -->';
-          const table = fs.readFileSync(process.env.RUNNER_TEMP + '/comparison.md', 'utf8');
-          const body = [
-            marker,
-            '## Emacs benchmark',
-            '',
-            table.trim(),
-            '',
-            `base \`${context.payload.pull_request.base.sha.slice(0, 7)}\` vs ` +
-            `head \`${context.payload.pull_request.head.sha.slice(0, 7)}\`, ` +
-            'median of 9 runs on a shared runner. Read the deltas, not the absolute times:',
-            'the same code measured twice drifts by about 5%, so treat anything under',
-            '10% as noise.',
-            'An `n/a` row means the scenario could not run on that side, which is what a',
-            'scenario added or removed by this pull request looks like.',
-          ].join('\n');
-          const comments = await github.paginate(github.rest.issues.listComments, {
-            owner, repo, issue_number,
-          });
-          const existing = comments.find((comment) => comment.body.startsWith(marker));
-          if (existing) {
-            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-          } else {
-            await github.rest.issues.createComment({ owner, repo, issue_number, body });
-          }
+      - uses: actions/checkout@v4
+        with:
+          # The base commit has to be checked out later in this job.
+          fetch-depth: 0
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: '30.1'
+      - name: Install benchmark dependencies
+        run: |
+          emacs -Q --batch --eval '(progn (require (quote package)) (add-to-list (quote package-archives) (cons "melpa" "https://melpa.org/packages/") t) (add-to-list (quote package-archives) (cons "nongnu" "https://elpa.nongnu.org/nongnu/") t) (package-initialize) (package-refresh-contents) (dolist (pkg (quote (magit consult orderless))) (unless (package-installed-p pkg) (package-install pkg))))'
+      - name: Keep the harness outside the working tree
+        # The base branch may predate the harness, and a scenario has to be
+        # timed by the same code on both sides to be comparable at all.
+        run: cp -r emacs.d/benchmarks "$RUNNER_TEMP/benchmarks"
+      - name: Benchmark the pull request
+        working-directory: emacs.d
+        run: |
+          emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
+            -L lisp -L "$RUNNER_TEMP/benchmarks" \
+            -l my-consult-benchmark -f my-benchmark-run-batch "$RUNNER_TEMP/head.json"
+      - name: Benchmark the base branch
+        working-directory: emacs.d
+        run: |
+          git checkout --quiet --force '${{ github.event.pull_request.base.sha }}'
+          emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
+            -L lisp -L "$RUNNER_TEMP/benchmarks" \
+            -l my-consult-benchmark -f my-benchmark-run-batch "$RUNNER_TEMP/base.json"
+      - name: Render the comparison
+        run: |
+          emacs -Q --batch -L "$RUNNER_TEMP/benchmarks" -l my-benchmark \
+            -f my-benchmark-render-batch "$RUNNER_TEMP/base.json" "$RUNNER_TEMP/head.json" \
+            > "$RUNNER_TEMP/comparison.md"
+          cat "$RUNNER_TEMP/comparison.md"
+      - name: Comment the comparison on the pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            // Every run rewrites one comment instead of appending another, so a
+            // branch that is pushed ten times leaves one table, not ten.
+            const marker = '<!-- emacs-benchmark -->';
+            const table = fs.readFileSync(process.env.RUNNER_TEMP + '/comparison.md', 'utf8');
+            const body = [
+              marker,
+              '## Emacs benchmark',
+              '',
+              table.trim(),
+              '',
+              `base \`${context.payload.pull_request.base.sha.slice(0, 7)}\` vs ` +
+              `head \`${context.payload.pull_request.head.sha.slice(0, 7)}\`, ` +
+              'median of 9 runs on a shared runner. Read the deltas, not the absolute times:',
+              'the same code measured twice drifts by about 5%, so treat anything under',
+              '10% as noise.',
+              'An `n/a` row means the scenario could not run on that side, which is what a',
+              'scenario added or removed by this pull request looks like.',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number,
+            });
+            const existing = comments.find((comment) => comment.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
