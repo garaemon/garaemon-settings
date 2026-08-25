@@ -15,7 +15,7 @@ readonly REPO_ROOT
 # Pinned so a new upstream rule does not turn a green branch red on its own.
 readonly MARKDOWNLINT_CLI2_VERSION="0.23.2"
 
-# project-init templates hold placeholders such as PROJECT_DESCRIPTION that
+# project-init templates hold placeholders such as __PROJECT_DESCRIPTION__ that
 # markdownlint reads as malformed prose.
 readonly TEMPLATE_PATH_PREFIX="claude-skills/.claude/skills/project-init/templates/"
 

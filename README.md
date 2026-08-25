@@ -1,4 +1,4 @@
-# garaemon-settings [![Ansible Lint](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-lint.yml) [![Ansible Playbook](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml) [![Ansible Playbook macOS](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml)
+# garaemon-settings [![Lint](https://github.com/garaemon/garaemon-settings/actions/workflows/lint.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/lint.yml) [![Ansible Playbook](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible.yml) [![Ansible Playbook macOS](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml/badge.svg)](https://github.com/garaemon/garaemon-settings/actions/workflows/ansible-macos.yml)
 
 Monorepo for garaemon's environment setup.
 
@@ -17,6 +17,25 @@ Monorepo for garaemon's environment setup.
 - **emacs.d/**: Emacs configuration. `~/.emacs.d` is a symlink to this
   directory, managed by chezmoi (`dotfiles/symlink_dot_emacs.d.tmpl`). See
   [emacs.d/README.md](emacs.d/README.md).
+
+## Lint
+
+Lint runs per language, not per subdirectory, so a file gets the same checks
+wherever it lives in the monorepo. `.github/workflows/lint.yml` starts one job
+per language, and every job calls the same script:
+
+```sh
+scripts/lint.sh
+```
+
+Pass targets to narrow the run: `shell`, `markdown`, `yaml`, `python`,
+`ansible`, `whitespace`. Rule configuration lives at the repository root
+(`.markdownlint.yaml`, `.yamllint.yaml`, `ruff.toml`), except where one dialect
+needs its own: `dotfiles/.shellcheckrc` covers the zsh startup files, and
+`ansible/.ansible-lint` covers the playbooks.
+
+Tests stay with the component they exercise (`dotfiles-test.yml`,
+`emacs-test.yml`, `skills-ci.yml`, `ansible.yml`).
 
 ## Scope
 

@@ -88,4 +88,5 @@ Roles use Ansible conditionals for cross-platform compatibility:
 
 ## Memories
 
-- Check the code by linter every time you change the code by `act -j lint`.
+- Run `./scripts/lint.sh` every time you change the code.
+  Pass a target such as `./scripts/lint.sh shell` to run one language only.
