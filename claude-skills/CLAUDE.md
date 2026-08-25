@@ -4,27 +4,31 @@ Guidance for Claude Code when working in this repository.
 
 ## Run CI checks locally before opening a PR
 
-This repository enforces markdown lint and a README skills-link check in CI
-(see `.github/workflows/ci.yml`). Run the same checks locally before
-creating a pull request and fix any failures.
+Linters live at the monorepo root and run per language, not per
+subdirectory: `.github/workflows/lint.yml` calls `scripts/lint.sh` for
+shell, Markdown, YAML, Python, Ansible, and trailing whitespace.
+Skill-specific jobs (Docker image builds, smoke tests, dependency audits,
+the README skills-link check) stay in `.github/workflows/skills-ci.yml`.
+Run both locally before creating a pull request and fix any failures.
 
 ### Markdown lint
 
-Run markdownlint-cli2 over all tracked Markdown files. The `REVIEW.md`
-artifact produced by the branch-review skill is explicitly excluded because
-it is a local work product that is not committed. Skill template files
-under any `templates/` directory (e.g. `project-init`'s per-language
-scaffolds) are also excluded: they intentionally contain placeholders like
-`__PROJECT_DESCRIPTION__` that are only valid once substituted into a
-generated project, so linting them in place is meaningless:
+Run the repository linter from the monorepo root:
 
 ```bash
-npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" "!**/templates/**"
+scripts/lint.sh markdown
 ```
 
-Configuration lives in `.markdownlint.json`. It keeps the default rule set
-but disables `MD013` (line length), `MD033` (inline HTML), and `MD041`
-(first-line heading) so docs with YAML frontmatter pass cleanly.
+The linter feeds markdownlint-cli2 the list of tracked Markdown files, so
+the uncommitted `REVIEW.md` artifact of the branch-review skill never
+reaches it. Files under any `templates/` directory (for example
+`project-init`'s per-language scaffolds) are excluded too: they contain
+placeholders such as `__PROJECT_DESCRIPTION__` that are valid only once
+substituted into a generated project.
+
+Configuration lives in the root `.markdownlint.yaml`. It keeps the default
+rule set but disables `MD013` (line length), `MD033` (inline HTML), and
+`MD041` (first-line heading) so docs with YAML frontmatter pass cleanly.
 
 ### README skills-link check
 
@@ -44,7 +48,7 @@ the `## Skills` section of `README.md` that links to its `SKILL.md`.
 ### Run both checks together
 
 ```bash
-npx --yes markdownlint-cli2 "**/*.md" "!REVIEW.md" "!**/templates/**" && python3 scripts/check-readme-skills.py
+../scripts/lint.sh markdown && python3 scripts/check-readme-skills.py
 ```
 
 ## Run skill scripts inside Docker
@@ -152,14 +156,13 @@ Every wrapper must:
 
 ### CI expectations for Docker-backed skills
 
-`.github/workflows/ci.yml` runs these jobs that every Docker-backed skill must
-satisfy:
+Every Docker-backed skill must satisfy these jobs:
 
-- `shellcheck` — lints every `.claude/skills/**/*.sh` script. Run locally via
-  `docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable
-  .claude/skills/<name>/run.sh .claude/skills/<name>/tests/smoke.sh`.
-- A `<name>-image` job that runs `docker build` and then executes the
-  skill's `tests/smoke.sh`.
+- The `shell` job of `.github/workflows/lint.yml` — shellcheck over every
+  shell script in the monorepo, this skill's `run.sh` and
+  `tests/smoke.sh` included. Run it locally with `../scripts/lint.sh shell`.
+- A `<name>-image` job in `.github/workflows/skills-ci.yml` that runs
+  `docker build` and then executes the skill's `tests/smoke.sh`.
 - A per-language dependency audit job (e.g. `npm audit`) when the skill
   ships its own manifest — see
   [DevSecOps: lock dependencies and audit them in CI](#devsecops-lock-dependencies-and-audit-them-in-ci).

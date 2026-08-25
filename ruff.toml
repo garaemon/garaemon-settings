@@ -1,0 +1,12 @@
+# Repository-wide ruff rules. Keep the configuration here so a Python file obeys
+# the same rules wherever it lives in the monorepo.
+
+[lint]
+# ruff 0.16 widened the default rule set, which turned a green branch red on a
+# version bump alone. Name the rule set instead: pycodestyle errors and
+# Pyflakes, the set ruff shipped as its default before that release.
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# percol evaluates this rc file with a `percol` object already in scope.
+"ansible/resources/rcfiles/percol_rc.py" = ["F821"]

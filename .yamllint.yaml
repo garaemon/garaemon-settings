@@ -1,0 +1,9 @@
+---
+# Repository-wide yamllint rules. "relaxed" reports style issues as warnings and
+# fails only on real YAML errors, which suits hand-written Ansible playbooks and
+# GitHub workflows.
+extends: relaxed
+
+rules:
+  # Ansible module arguments and workflow shell commands do not wrap.
+  line-length: disable
