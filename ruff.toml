@@ -1,0 +1,6 @@
+# Repository-wide ruff rules. Keep the configuration here so a Python file obeys
+# the same rules wherever it lives in the monorepo.
+
+[lint.per-file-ignores]
+# percol evaluates this rc file with a `percol` object already in scope.
+"ansible/resources/rcfiles/percol_rc.py" = ["F821"]
