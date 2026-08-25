@@ -610,7 +610,13 @@
         (add-to-list 'treesit-auto-langs lang)))
     )
 
-  (global-treesit-auto-mode))
+  (global-treesit-auto-mode)
+
+  ;; `global-treesit-auto-mode' rebuilds `major-mode-remap-alist' on every
+  ;; `set-auto-mode-0', which probes each entry of `treesit-auto-langs' and
+  ;; costs about 840 ms per file open here. Serve that answer from a cache.
+  (require 'my-treesit-auto-cache)
+  (my-treesit-auto-enable-remap-cache))
 
 (use-package nix-mode
   :ensure t
