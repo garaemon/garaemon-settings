@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "googleapis": "^144.0.0"
+    "googleapis": "^176.0.0"
   }
 }
