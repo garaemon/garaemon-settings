@@ -190,11 +190,17 @@ else
   GHQ_ROOT=$HOME/ghq
 fi
 
+DIRCOLORS_FILE=${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light
+
 if [ $(uname) != Darwin ]; then
-  eval $(dircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
+  if [ -f ${DIRCOLORS_FILE} ]; then
+    eval $(dircolors ${DIRCOLORS_FILE})
+  fi
   alias ls="ls -AF --color=auto"
 else
-  eval $(gdircolors ${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light)
+  if [ -f ${DIRCOLORS_FILE} ]; then
+    eval $(gdircolors ${DIRCOLORS_FILE})
+  fi
   alias ls="gls -AF --color=auto"
 fi
 
