@@ -28,11 +28,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up Python
         if: ${{ !env.ACT }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -64,7 +64,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up ccache
         if: ${{ !env.ACT }}
@@ -74,7 +74,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ !env.ACT }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -94,7 +94,7 @@ jobs:
 
       - name: Check for changes in emacs role
         id: changed-files-emacs
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           files: ansible/roles/emacs/**
 

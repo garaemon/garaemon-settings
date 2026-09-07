@@ -20,7 +20,7 @@ jobs:
     name: Compare the pull request against its base branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The base commit has to be checked out later in this job.
           fetch-depth: 0
@@ -55,7 +55,7 @@ jobs:
             > "$RUNNER_TEMP/comparison.md"
           cat "$RUNNER_TEMP/comparison.md"
       - name: Comment the comparison on the pull request
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
