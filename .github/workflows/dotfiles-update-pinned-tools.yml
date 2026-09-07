@@ -37,8 +37,8 @@ jobs:
       group: update-pinned-tools-${{ matrix.tool }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Run update script
@@ -63,7 +63,7 @@ jobs:
         # close-and-reopen the PR (or push an empty commit) to force CI
         # to run, or the maintainer can switch this token to a fine-grained
         # PAT / GitHub App token in the future.
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c  # v6
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
         with:
           branch: auto/bump-${{ matrix.tool }}-v${{ steps.bump.outputs.version }}
           base: main
