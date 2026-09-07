@@ -27,9 +27,10 @@ if [[ "${BASH_VERSINFO[0]:-0}" -lt 4 ]]; then
 fi
 
 # Pinned chezmoi release. The scheduled workflow at
-# .github/workflows/update-pinned-tools.yml refreshes both fields
-# automatically by running
-# `.github/scripts/update_pinned_tool.py --tool chezmoi` and opening a PR.
+# .github/workflows/dotfiles-update-pinned-tools.yml refreshes both
+# fields automatically by running
+# `dotfiles/scripts/ci/update_pinned_tool.py --tool chezmoi` and opening
+# a PR.
 # To bump manually:
 #   1. Pick a new tag from https://github.com/twpayne/chezmoi/releases.
 #   2. Update CHEZMOI_VERSION below.
@@ -52,9 +53,10 @@ declare -rA CHEZMOI_CHECKSUMS=(
 # --tools. mise is the same tool manager the dotfiles configure (see
 # dot_config/mise/config.toml), so installing tools through it keeps versions
 # consistent with day-to-day use. The scheduled workflow at
-# .github/workflows/update-pinned-tools.yml refreshes both fields
-# automatically by running
-# `.github/scripts/update_pinned_tool.py --tool mise` and opening a PR.
+# .github/workflows/dotfiles-update-pinned-tools.yml refreshes both
+# fields automatically by running
+# `dotfiles/scripts/ci/update_pinned_tool.py --tool mise` and opening
+# a PR.
 # To bump manually:
 #   1. Pick a new tag from https://github.com/jdx/mise/releases.
 #   2. Update MISE_VERSION below (without the leading "v").
