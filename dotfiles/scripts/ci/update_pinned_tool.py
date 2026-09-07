@@ -9,10 +9,11 @@ release, and rewrites the matching ``readonly <TOOL>_VERSION`` line and
 ``<TOOL>_CHECKSUMS`` array in place.
 
 Select the tool with ``--tool {chezmoi,mise}``. Run from the scheduled
-GitHub Actions workflow at .github/workflows/update-pinned-tools.yml (one
-matrix job per tool). Exits 0 with no file changes when install.sh already
-pins the latest release; otherwise rewrites install.sh in place and exits 0
-so the workflow can detect the diff and open a PR.
+GitHub Actions workflow at
+.github/workflows/dotfiles-update-pinned-tools.yml (one matrix job per
+tool). Exits 0 with no file changes when install.sh already pins the
+latest release; otherwise rewrites install.sh in place and exits 0 so the
+workflow can detect the diff and open a PR.
 
 The per-tool differences (upstream repo, checksum file layout, release
 asset naming, platform keys, and the install.sh variable names) are captured

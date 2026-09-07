@@ -1,0 +1,29 @@
+# Dependabot version updates.
+#
+# Scope note: Dependabot has no manager for a version pinned in a shell
+# script, and no way to recompute a sha256 table. It therefore cannot bump
+# the chezmoi and mise releases pinned in dotfiles/install.sh. Those stay
+# with .github/workflows/dotfiles-update-pinned-tools.yml.
+version: 2
+
+updates:
+  # Covers every `uses:` in .github/workflows. `directory: /` is the
+  # repository root; Dependabot resolves the workflow directory from there.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Mirrors MIN_RELEASE_AGE_DAYS in
+    # dotfiles/scripts/ci/update_pinned_tool.py: give a compromised upstream
+    # tag a week to surface publicly before this repository runs it.
+    cooldown:
+      default-days: 7
+    # One pull request per run rather than one per action. A dotfiles
+    # repository does not justify reviewing eight workflows' bumps apart.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: build(deps)
