@@ -585,6 +585,8 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
+      (define-key map (kbd "]") #'my-forge-ediff-review-next-annotation)
+      (define-key map (kbd "[") #'my-forge-ediff-review-prev-annotation)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
       (use-local-map map)
       (setq-local my-forge-ediff-review--keys-installed t))))
@@ -618,6 +620,56 @@ when it shows the head."
                       ((equal rev (plist-get s :head-rev)) "RIGHT"))))
           (when side
             (list :path file :line line :side side)))))))
+
+;;;; Moving between annotated lines
+
+(defun my-forge-ediff-review--annotated-lines ()
+  "Return the sorted lines carrying any review annotation in this buffer.
+Derived from the session rather than by scanning overlays: an overlay
+carries only a flag saying it belongs to the review, so it cannot say
+which line it annotates once found, and a collapsed card looks no
+different from an expanded one to a scan."
+  (let ((ctx (my-forge-ediff-review--current-context))
+        (s my-forge-ediff-review--session))
+    (when ctx
+      (my-forge-ediff-review-model-annotated-lines
+       (append (plist-get s :existing)
+               (plist-get s :comments)
+               (plist-get s :memos))
+       (plist-get ctx :path)
+       (plist-get ctx :side)))))
+
+(defun my-forge-ediff-review--goto-annotated-line (direction)
+  "Move point to the next annotated line in DIRECTION, `next\=' or `prev\='.
+Reports the position within the file so a wrap around the end is
+obvious rather than silently disorienting."
+  (my-forge-ediff-review--ensure-session)
+  (let ((lines (my-forge-ediff-review--annotated-lines)))
+    (unless lines
+      (user-error "No review comments or memos in this file"))
+    (let* ((current (line-number-at-pos))
+           (target (if (eq direction 'next)
+                       (my-forge-ediff-review-model-line-after lines current)
+                     (my-forge-ediff-review-model-line-before lines current)))
+           (wrapped (if (eq direction 'next)
+                        (<= target current)
+                      (>= target current))))
+      (goto-char (point-min))
+      (forward-line (1- target))
+      (message "Review annotation %d/%d%s"
+               (1+ (seq-position lines target))
+               (length lines)
+               (if wrapped " (wrapped)" "")))))
+
+(defun my-forge-ediff-review-next-annotation ()
+  "Move point to the next line carrying a review comment, memo or thread."
+  (interactive)
+  (my-forge-ediff-review--goto-annotated-line 'next))
+
+(defun my-forge-ediff-review-prev-annotation ()
+  "Move point to the previous line carrying a review comment, memo or thread."
+  (interactive)
+  (my-forge-ediff-review--goto-annotated-line 'prev))
 
 ;;;; Adding comments and memos
 
