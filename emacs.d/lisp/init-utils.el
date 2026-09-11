@@ -177,5 +177,12 @@ then generates a report. Prompts the user for the duration in seconds."
           ))
   )
 
+;;; Keybinding usage statistics
+
+;; Count every command and the keys that ran it. `scripts/keybind_stats.py'
+;; turns the log into a report of forgotten and unused bindings.
+(require 'my-keybind-stats)
+(my-keybind-stats-mode 1)
+
 (provide 'init-utils)
 ;;; init-utils.el ends here

@@ -36,6 +36,10 @@ Configuration is split into focused modules in the `lisp/` directory:
 - **init-org.el**: Org-mode specific settings
 - **init-utils.el**: Utility functions and helper tools
 
+Standalone `my-*.el` modules under `lisp/` hold the logic that the init files
+wire in. `my-keybind-stats.el` is described in
+[Keybinding Stats](#keybinding-stats).
+
 Each module is loaded via `(require 'init-*)` in `init.el`.
 
 ### Tests (tests/)
@@ -47,6 +51,12 @@ that touches `emacs.d/`:
 emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
   -L lisp -L benchmarks -l ert \
   $(printf -- '-l %s ' tests/*.el) -f ert-run-tests-batch-and-exit
+```
+
+Pytest covers the Python scripts under `scripts/`:
+
+```sh
+python -m pytest tests/
 ```
 
 ### Benchmarks (benchmarks/)
@@ -98,6 +108,48 @@ of the list is all it takes to switch.
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.
 
+## Keybinding Stats
+
+`my-keybind-stats-mode` (enabled in `init-utils.el`) records every command,
+the keys that ran it, and the major mode, so that the report can tell which
+bindings earn their place. It skips typing and scrolling commands, keeps the
+counts in memory, and appends them every 5 minutes as JSON lines to
+`~/.emacs.d/keybind-stats/events-YYYY-MM.jsonl`:
+
+```json
+{"ts":"2026-09-11T10:05:00+0900","command":"forward-char","keys":"C-f","mode":"python-mode","mx":false,"bound":null,"count":12}
+```
+
+A command chosen through `M-x` is logged with keys `M-x`, and `bound` names the
+key that would have run the command directly. The global keymap and the local
+keymap of every major mode seen in a session go to
+`~/.emacs.d/keybind-stats/bindings/<scope>.jsonl`, so that the report can list
+bindings that never appear in the log.
+
+Run `M-x my-keybind-stats-report` to flush the pending counts and open the
+HTML report in the browser, or `C-u M-x my-keybind-stats-report` for the text
+report in a buffer. The same report comes from the command line:
+
+```sh
+python scripts/keybind_stats.py                 # text report on stdout
+python scripts/keybind_stats.py --days 30       # only the last 30 days
+python scripts/keybind_stats.py --html /tmp/keybind-stats.html
+```
+
+The report has these sections:
+
+- **Top commands**: the most used commands, with a breakdown per key.
+- **Forgotten bindings**: commands run through `M-x` although a key exists.
+- **Unbound favorites**: commands run through `M-x` at least twice with no key.
+- **Long key sequences**: sequences of three chords or more, sorted by use.
+- **Unused bindings**: bound keys that never appear in the log, per scope.
+- **By major mode**, **By hour**, **By weekday**: where and when the commands
+  run.
+
+Run `M-x my-keybind-stats-flush` to write the pending counts before building a
+report from the command line, and `M-x my-keybind-stats-mode` to pause the
+recorder.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.
@@ -116,6 +168,9 @@ Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs
   - `/tmp/org-agenda-profile-warm.txt` — CPU profile, warm run
 
   Use this to spot which hooks or globalized minor modes dominate cold agenda time when adding new Org-related packages.
+
+- **keybind_stats.py**: Report of the keybinding usage log. See
+  [Keybinding Stats](#keybinding-stats).
 
 - **latest_directory_timestamp.py**: Print the most recent modification timestamp under a directory tree.
 
