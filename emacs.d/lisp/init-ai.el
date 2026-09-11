@@ -7,6 +7,12 @@
 
 (require 'my-ollama)
 
+;; Download what minuet and gptel-magit name below.  Ollama rejects a request
+;; for a model it does not hold, and minuet reports the rejection as a
+;; completion that never appears, which gives a fresh machine no clue that a
+;; download is missing.
+(add-hook 'emacs-startup-hook #'my-ollama-ensure-models)
+
 (use-package minuet
   :ensure t
   :bind

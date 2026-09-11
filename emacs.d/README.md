@@ -98,6 +98,33 @@ of the list is all it takes to switch.
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.
 
+## Local AI Models
+
+`init-ai.el`, `init-git.el` and `lisp/my-ollama.el` drive one local Ollama
+server. `my-ollama.el` owns the host and the model names, so a switch touches
+one file:
+
+- `my-ollama-completion-model` (`qwen2.5-coder:3b`) answers the inline
+  completions that minuet requests. The request is a fill-in-the-middle
+  completion capped at 56 tokens, which a 3B model returns well inside
+  `minuet-request-timeout`.
+- `my-ollama-chat-model` (`gemma3:4b`) answers gptel and writes the commit
+  messages that gptel-magit proposes.
+
+Emacs downloads the missing models itself. `my-ollama-ensure-models` runs from
+`emacs-startup-hook`, asks the server which models it holds, and runs
+`ollama pull` for each one of `my-ollama-required-models` that is absent:
+
+- The check is one asynchronous HTTP request and downloads nothing when the
+  server already holds every model.
+- A machine that never starts Ollama gets no message. The check simply finds
+  no server and stops.
+- The download reports its start and its outcome in the echo area, and leaves
+  the progress in the `*ollama-pull*` buffer.
+
+Run `M-x my-ollama-ensure-models` to repeat the check after changing a model
+name.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.
