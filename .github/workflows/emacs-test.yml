@@ -35,3 +35,18 @@ jobs:
             -L lisp -L benchmarks -l ert \
             $(printf -- '-l %s ' tests/*.el) \
             -f ert-run-tests-batch-and-exit
+  pytest:
+    name: Pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: emacs.d
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run tests
+        run: python -m pytest tests/ -v
