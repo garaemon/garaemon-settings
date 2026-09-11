@@ -5,6 +5,8 @@
 
 ;;; Code:
 
+(require 'my-ollama)
+
 (use-package minuet
   :ensure t
   :bind
@@ -27,15 +29,14 @@
   (minuet-auto-suggestion-block-functions '(minuet-evil-not-insert-state-p my-not-eolp))
   :config
   (plist-put minuet-openai-fim-compatible-options
-             :end-point "http://localhost:11434/v1/completions")
+             :end-point (my-ollama-completions-url))
   ;; an arbitrary non-null environment variable as placeholder.
   ;; For Windows users, TERM may not be present in environment variables.
   ;; Consider using APPDATA instead.
   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
-  ;; TODO: Install qwen2.5-coder:3b automatically
-  ;; (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
-  (plist-put minuet-openai-fim-compatible-options :model "deepseek-coder-v2:lite")
+  (plist-put minuet-openai-fim-compatible-options
+             :model my-ollama-completion-model)
 
   (defun my-not-eolp ()
     (not (eolp)))
@@ -80,10 +81,7 @@ You have to follow the following orders:
                         :key gptel-api-key
                         :stream t))
 
-  (gptel-make-ollama "Ollama (gemmma3:4b)"
-    :host "localhost:11434"
-    :stream t
-    :models '(gemma3:4b))
+  (my-ollama-make-gptel-backend)
 
   (defun my-gptel-get-buffer ()
     (car (cl-remove-if #'null
