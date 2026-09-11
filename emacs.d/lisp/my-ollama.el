@@ -18,8 +18,12 @@
   :type 'string
   :group 'my-ollama)
 
-(defcustom my-ollama-completion-model "deepseek-coder-v2:lite"
-  "Model that minuet asks for inline code completions."
+(defcustom my-ollama-completion-model "qwen2.5-coder:3b"
+  "Model that minuet asks for inline code completions.
+The job is a fill-in-the-middle request capped at 56 tokens, which a 3B model
+answers well inside the 10 second `minuet-request-timeout\='.  Its predecessor
+here, deepseek-coder-v2:lite, spent 9 GB of disk and 16B parameters on the same
+request."
   :type 'string
   :group 'my-ollama)
 
