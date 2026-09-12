@@ -157,8 +157,13 @@
   (defvar-keymap my-consult-buffer-map
     :doc "Keymap that `consult-buffer' composes over the minibuffer map."
     "TAB" #'embark-act)
-  (consult-customize consult-buffer my-vterm-switch-to-buffer
-                     :keymap my-consult-buffer-map)
+  (consult-customize consult-buffer :keymap my-consult-buffer-map)
+  ;; `embark-consult' loads consult during init, before init-prog.el
+  ;; autoloads `my-vterm-switch-to-buffer', so customizing that command
+  ;; here would warn. Wait for its file instead.
+  (with-eval-after-load 'my-vterm-buffer
+    (consult-customize my-vterm-switch-to-buffer
+                       :keymap my-consult-buffer-map))
 
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.
