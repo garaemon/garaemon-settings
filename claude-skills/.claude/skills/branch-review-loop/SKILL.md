@@ -1,8 +1,9 @@
 ---
 name: branch-review-loop
 description: |
-  Iterative code review and fix loop. Runs the branch-review skill via a subagent,
-  fixes all reported issues, then re-reviews until no findings remain (up to 5 iterations).
+  Iterative code review and fix loop. Runs the branch-review skill via a subagent
+  (which writes REVIEW.md and REVIEW.html), fixes all reported issues, then
+  re-reviews until no findings remain (up to 5 iterations).
   Use this skill when the user wants a thorough review with automatic fixes, says things
   like "review and fix", "branch-review-loop", "レビューして直して", "レビューループ",
   "コードレビューして修正して", "review loop", or asks to iteratively review and fix code.
@@ -32,7 +33,7 @@ Launch an Agent (general-purpose) with the following prompt structure:
 ```text
 Run the /branch-review skill on the current branch in {working_directory}.
 
-After REVIEW.md is written, do NOT post comments to GitHub.
+After REVIEW.md and REVIEW.html are written, do NOT post comments to GitHub.
 Do NOT ask for user confirmation about posting PR comments.
 
 Previously fixed items (do NOT re-flag these):
@@ -40,18 +41,21 @@ Previously fixed items (do NOT re-flag these):
 ```
 
 The subagent will invoke the branch-review skill via the Skill tool, which produces
-REVIEW.md at the project root.
+REVIEW.md and REVIEW.html at the project root.
 
 #### Step 2: Read and analyze REVIEW.md
 
 After the subagent completes:
 
 1. Read `REVIEW.md` from the project root.
-2. Parse the findings. If the review says "No issues found" or has no actionable
+2. Parse the findings. If the review says "No findings." (the exact sentence
+   `render_review.py` writes when every category is empty) or has no actionable
    findings, the loop is done -- skip to Completion.
 3. Summarize the findings to the user:
    - Show iteration number (e.g., "Iteration 1/5")
    - List each finding briefly (category + short description)
+   - Mention that `REVIEW.html` holds the full report with a summary table,
+     for anyone who wants to read this iteration's findings in a browser
 
 #### Step 3: Fix all reported issues
 
@@ -65,14 +69,14 @@ After all fixes:
 
 1. Run the project's checks (lint, typecheck, tests) to verify nothing is broken.
    Use commands from the project's CLAUDE.md or package.json scripts.
-2. Delete REVIEW.md to prepare for the next iteration.
+2. Delete REVIEW.md and REVIEW.html to prepare for the next iteration.
 3. Increment the iteration counter and loop back to Step 1.
 
 ### Completion
 
 When the loop ends (either no findings or max iterations reached):
 
-1. Delete REVIEW.md if it exists.
+1. Delete REVIEW.md and REVIEW.html if they exist.
 2. Report the final result to the user:
    - Total number of iterations performed
    - Summary of all fixes applied across all iterations
