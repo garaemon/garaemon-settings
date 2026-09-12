@@ -32,7 +32,7 @@
   (minuet-context-window 1024)
   (minuet-request-timeout 10)
   ;; Do not show the completion when the cursor is NOT at the end of lines.
-  (minuet-auto-suggestion-block-functions '(minuet-evil-not-insert-state-p my-not-eolp))
+  (minuet-auto-suggestion-block-predicates '(minuet-evil-not-insert-state-p my-not-eolp))
   :config
   (plist-put minuet-openai-fim-compatible-options
              :end-point (my-ollama-completions-url))
