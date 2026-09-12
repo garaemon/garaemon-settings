@@ -6,3 +6,7 @@ install.sh
 dot_config/private_karabiner
 private_Library
 {{ end }}
+{{ if eq .chezmoi.os "darwin" }}
+dot_config/systemd
+.chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl
+{{ end }}

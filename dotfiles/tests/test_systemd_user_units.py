@@ -1,0 +1,106 @@
+"""Keep the Slack digest systemd --user units and the chezmoi script that
+enables them in sync.
+
+The units live under dot_config/systemd/user and are enabled by a
+run_onchange_after script. chezmoi reruns that script only when its rendered
+contents change, so the script embeds a hash of every unit file. These tests
+fail when a unit is added without wiring it into the script.
+"""
+
+import re
+from pathlib import Path
+
+import pytest
+
+
+DOTFILES_ROOT = Path(__file__).resolve().parent.parent
+UNIT_DIR = DOTFILES_ROOT / "dot_config" / "systemd" / "user"
+ENABLE_SCRIPT = (
+    DOTFILES_ROOT
+    / ".chezmoiscripts"
+    / "run_onchange_after_enable-slack-digest-timers.sh.tmpl"
+)
+CHEZMOIIGNORE = DOTFILES_ROOT / ".chezmoiignore.tmpl"
+SLACK_TIMER_NAMES = [
+    "artist-live-digest-slack.timer",
+    "news-digest-slack.timer",
+    "spotify-daily-digest-slack.timer",
+]
+
+
+def list_unit_files():
+    return sorted(UNIT_DIR.glob("*.service")) + sorted(UNIT_DIR.glob("*.timer"))
+
+
+def read_enable_script():
+    return ENABLE_SCRIPT.read_text()
+
+
+@pytest.mark.parametrize("timer_name", SLACK_TIMER_NAMES)
+def test_should_ship_timer_unit(timer_name):
+    assert (UNIT_DIR / timer_name).is_file()
+
+
+@pytest.mark.parametrize("timer_name", SLACK_TIMER_NAMES)
+def test_should_ship_service_for_each_timer(timer_name):
+    service_name = timer_name.replace(".timer", ".service")
+    assert (UNIT_DIR / service_name).is_file()
+
+
+@pytest.mark.parametrize("timer_name", SLACK_TIMER_NAMES)
+def test_should_point_service_at_monorepo_wrapper_script(timer_name):
+    service_text = (UNIT_DIR / timer_name.replace(".timer", ".service")).read_text()
+    match = re.search(r"^ExecStart=%h/(.+)$", service_text, re.MULTILINE)
+    assert match, "ExecStart must start with %h so the unit works on any machine"
+    wrapper_relative_to_home = match.group(1)
+    assert wrapper_relative_to_home.startswith(
+        "ghq/github.com/garaemon/garaemon-settings/claude-skills/"
+    )
+
+
+def test_should_place_enable_script_under_chezmoiscripts():
+    assert ENABLE_SCRIPT.is_file()
+
+
+def test_should_start_enable_script_with_strict_mode():
+    lines = read_enable_script().splitlines()
+    assert lines[:2] == ["#!/bin/bash", "set -euo pipefail"]
+
+
+@pytest.mark.parametrize("unit_path", list_unit_files(), ids=lambda path: path.name)
+def test_should_embed_hash_of_each_unit_in_enable_script(unit_path):
+    include_directive = f'include "dot_config/systemd/user/{unit_path.name}"'
+    assert include_directive in read_enable_script()
+
+
+@pytest.mark.parametrize("timer_name", SLACK_TIMER_NAMES)
+def test_should_enable_each_timer_in_enable_script(timer_name):
+    assert re.search(
+        # Allow backslash-newline continuations between the timer names.
+        rf"systemctl --user enable --now(?:[^\n]|\\\n)*\b{re.escape(timer_name)}\b",
+        read_enable_script(),
+    )
+
+
+def test_should_skip_enable_script_when_no_user_systemd_session():
+    assert "systemctl --user show-environment" in read_enable_script()
+
+
+def test_should_ignore_units_on_darwin():
+    ignore_text = CHEZMOIIGNORE.read_text()
+    darwin_block = re.search(
+        r'{{ if eq \.chezmoi\.os "darwin" }}(.*?){{ end }}', ignore_text, re.DOTALL
+    )
+    assert darwin_block and "dot_config/systemd" in darwin_block.group(1)
+
+
+def test_should_ignore_enable_script_on_darwin():
+    ignore_text = CHEZMOIIGNORE.read_text()
+    darwin_block = re.search(
+        r'{{ if eq \.chezmoi\.os "darwin" }}(.*?){{ end }}', ignore_text, re.DOTALL
+    )
+    assert (
+        darwin_block
+        and ".chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl"
+        in darwin_block.group(1)
+    )
