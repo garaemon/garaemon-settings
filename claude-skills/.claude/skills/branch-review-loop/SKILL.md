@@ -21,6 +21,14 @@ and repeat until the review comes back clean -- up to 5 iterations maximum.
 1. Identify the current branch and working directory.
 2. Initialize an empty list of previously fixed items.
 3. Set iteration counter to 0, max iterations to 5.
+4. Ask which model reviews the first iteration, with AskUserQuestion. Offer
+   these options, with these descriptions:
+   - **Opus 5**: everyday reviews; the baseline price.
+   - **Fable 5.1**: large diffs, or diffs that touch concurrency, security
+     boundaries, or shell execution; twice the price of Opus.
+   - **Sonnet 5**: small, mechanical diffs; 0.4 times the price of Opus.
+   Mark Opus 5 as recommended. When AskUserQuestion is unavailable or the run
+   is non-interactive, skip the question and use the session's model.
 
 ### Loop
 
@@ -28,11 +36,17 @@ For each iteration:
 
 #### Step 1: Run branch-review in a subagent
 
-Launch an Agent (general-purpose) with the following prompt structure:
+Launch an Agent (general-purpose) with `model` set to the choice from Setup
+(`opus`, `fable`, or `sonnet`) on the first iteration and to `opus` on every
+later one. The first pass surfaces the deep findings, so it gets the model the
+user picked; later passes mostly confirm fixes, which Opus 5 does at half the
+price of Fable 5.1. Use this prompt structure:
 
 ```text
 Run the /branch-review skill on the current branch in {working_directory}.
 
+The review model is already chosen. Do NOT ask about the model and do NOT
+delegate to another agent; run the review steps yourself in this agent.
 After REVIEW.md and REVIEW.html are written, do NOT post comments to GitHub.
 Do NOT ask for user confirmation about posting PR comments.
 
@@ -41,7 +55,9 @@ Previously fixed items (do NOT re-flag these):
 ```
 
 The subagent will invoke the branch-review skill via the Skill tool, which produces
-REVIEW.md and REVIEW.html at the project root.
+REVIEW.md and REVIEW.html at the project root. The "already chosen" sentence is
+what stops branch-review from asking about the model again inside the subagent,
+so pass it verbatim.
 
 #### Step 2: Read and analyze REVIEW.md
 
@@ -78,7 +94,7 @@ When the loop ends (either no findings or max iterations reached):
 
 1. Delete REVIEW.md and REVIEW.html if they exist.
 2. Report the final result to the user:
-   - Total number of iterations performed
+   - Total number of iterations performed, and which model reviewed each one
    - Summary of all fixes applied across all iterations
    - Whether the loop ended because the review was clean or because max iterations
      were reached
@@ -89,6 +105,8 @@ When the loop ends (either no findings or max iterations reached):
 - Respond in the language of Claude Code's `language` setting, defaulting to
   Japanese when it is unset.
 - The subagent runs branch-review; the parent (this skill) does the fixes.
+- The user picks the model for the first review; every later review runs on
+  `opus`. Pass the "already chosen" sentence so the subagent never asks.
 - Always pass the full list of previously fixed items to each subagent to prevent
   duplicate findings.
 - Run lint/typecheck/tests after each round of fixes before the next review.
