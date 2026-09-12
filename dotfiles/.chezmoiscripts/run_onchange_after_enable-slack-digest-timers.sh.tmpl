@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+# chezmoi reruns this script only when its rendered text changes, so embed a
+# hash of every unit under dot_config/systemd/user. Editing a unit then
+# reloads systemd and re-enables the timers on the next `chezmoi apply`.
+# artist-live-digest-slack.service: {{ include "dot_config/systemd/user/artist-live-digest-slack.service" | sha256sum }}
+# artist-live-digest-slack.timer: {{ include "dot_config/systemd/user/artist-live-digest-slack.timer" | sha256sum }}
+# news-digest-slack.service: {{ include "dot_config/systemd/user/news-digest-slack.service" | sha256sum }}
+# news-digest-slack.timer: {{ include "dot_config/systemd/user/news-digest-slack.timer" | sha256sum }}
+# spotify-daily-digest-slack.service: {{ include "dot_config/systemd/user/spotify-daily-digest-slack.service" | sha256sum }}
+# spotify-daily-digest-slack.timer: {{ include "dot_config/systemd/user/spotify-daily-digest-slack.timer" | sha256sum }}
+
+# Dev containers and Codespaces apply these dotfiles without a systemd user
+# session, and the timers are pointless there anyway.
+if ! command -v systemctl >/dev/null 2>&1 \
+  || ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "skip: no systemd --user session, leaving the Slack digest timers alone"
+  exit 0
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now \
+  artist-live-digest-slack.timer \
+  news-digest-slack.timer \
+  spotify-daily-digest-slack.timer

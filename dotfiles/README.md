@@ -125,6 +125,36 @@ when `atuin.syncAddress` is set. On a machine without this local config the
 line is omitted entirely and `chezmoi apply` still succeeds, so atuin simply
 runs without a sync server.
 
+### Slack digest timers (systemd --user, Linux only)
+
+`dot_config/systemd/user/` holds the `systemd --user` timers that post the
+`news-digest`, `spotify-daily-digest`, and `artist-live-digest` skills to
+Slack. Each service runs a wrapper script inside
+`~/ghq/github.com/garaemon/garaemon-settings/claude-skills/`, so the monorepo
+must be checked out at that path.
+
+`chezmoi apply` installs the units and then runs
+`.chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl`, which
+reloads systemd and enables the timers. The script embeds a hash of every unit
+file, so chezmoi reruns it whenever a unit changes. The script exits early on
+hosts without a user systemd session, such as dev containers, and
+`.chezmoiignore.tmpl` skips the units entirely on macOS.
+
+Inspect or run the jobs by hand:
+
+```bash
+systemctl --user list-timers '*-slack.timer'
+journalctl --user -u news-digest-slack.service -n 200 --no-pager
+systemctl --user start news-digest-slack.service
+```
+
+To stop a job on one machine, disable its timer. chezmoi re-enables it only
+when a unit file changes:
+
+```bash
+systemctl --user disable --now news-digest-slack.timer
+```
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
