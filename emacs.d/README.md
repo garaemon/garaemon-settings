@@ -111,6 +111,12 @@ one file:
 - `my-ollama-chat-model` (`gemma3:4b`) answers gptel and writes the commit
   messages that gptel-magit proposes.
 
+`my-ollama-fim-suffix` replaces the suffix that minuet sends whenever the
+cursor sits at the end of a buffer. Ollama reads an empty suffix as a request
+that carries no fill-in-the-middle work, renders the prompt through the chat
+template of the model, and an instruct model answers with prose and a markdown
+code fence instead of code.
+
 Emacs downloads the missing models itself. `my-ollama-ensure-models` runs from
 `emacs-startup-hook`, asks the server which models it holds, and runs
 `ollama pull` for each one of `my-ollama-required-models` that is absent:

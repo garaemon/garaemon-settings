@@ -96,5 +96,18 @@ or the symbol `unreachable' to make the fetch fail."
     (should (equal (my-ollama-completions-url)
                    "http://localhost:11434/v1/completions"))))
 
+(ert-deftest my-ollama-fim-suffix-should-keep-the-text-after-the-cursor ()
+  (should (equal (my-ollama-fim-suffix '(:after-cursor "\nreturn x\n"))
+                 "\nreturn x\n")))
+
+(ert-deftest my-ollama-fim-suffix-should-replace-an-empty-suffix ()
+  (should (equal (my-ollama-fim-suffix '(:after-cursor "")) "\n")))
+
+(ert-deftest my-ollama-fim-suffix-should-replace-a-missing-suffix ()
+  (should (equal (my-ollama-fim-suffix '(:before-cursor "if ")) "\n")))
+
+(ert-deftest my-ollama-fim-suffix-should-keep-a-whitespace-suffix ()
+  (should (equal (my-ollama-fim-suffix '(:after-cursor "  ")) "  ")))
+
 (provide 'my-ollama-test)
 ;;; my-ollama-test.el ends here

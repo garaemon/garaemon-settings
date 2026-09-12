@@ -58,6 +58,24 @@ with `my-ollama-host' and `my-ollama-chat-model'."
     :stream t
     :models (list (intern my-ollama-chat-model))))
 
+(defun my-ollama-fim-suffix (context)
+  "Return the text that follows the cursor in CONTEXT, never an empty string.
+
+Meant as the `:suffix\=' entry of the minuet FIM template.  Ollama reads an
+empty suffix as a request that carries no fill-in-the-middle work: its generate
+handler drops the prompt into a chat message and renders it through the model
+template for chat rather than the fill-in-the-middle tokens.  An instruct model
+answers that chat turn in kind, opening with a line of prose and wrapping a
+whole new file in a markdown code fence, and minuet inserts the answer as if it
+were code.
+
+The cursor reaches the end of a buffer often enough that the empty suffix is
+the common case rather than a corner one, so it becomes a newline."
+  (let ((after-cursor (plist-get context :after-cursor)))
+    (if (or (null after-cursor) (string-empty-p after-cursor))
+        "\n"
+      after-cursor)))
+
 (defun my-ollama-tags-url ()
   "Return the URL of the endpoint that lists the models the server holds."
   (format "http://%s/api/tags" my-ollama-host))

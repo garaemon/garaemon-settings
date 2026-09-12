@@ -43,6 +43,11 @@
   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
   (plist-put minuet-openai-fim-compatible-options
              :model my-ollama-completion-model)
+  ;; Keep every request on Ollama's fill-in-the-middle path, which it leaves
+  ;; when the suffix is empty.  See `my-ollama-fim-suffix'.
+  (plist-put minuet-openai-fim-compatible-options :template
+             (plist-put (plist-get minuet-openai-fim-compatible-options :template)
+                        :suffix #'my-ollama-fim-suffix))
 
   (defun my-not-eolp ()
     (not (eolp)))
