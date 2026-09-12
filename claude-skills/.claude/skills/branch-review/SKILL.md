@@ -3,8 +3,9 @@ name: branch-review
 description: |
   Review code changes on the current branch against the branch they merge into
   (the pull request's base branch when one is open, so stacked PRs review only their
-  own changes; the repository default branch otherwise), producing a structured
-  REVIEW.md and posting inline review comments on specific file lines via GitHub API.
+  own changes; the repository default branch otherwise), producing REVIEW.md and
+  REVIEW.html (with a summary of every finding at the top) and posting inline
+  review comments on specific file lines via GitHub API.
   The review can also be scoped to a narrower commit range: the last N commits, one
   commit, or an explicit range.
   Use this skill whenever the user wants a code review, says things like "review",
@@ -13,7 +14,7 @@ description: |
   when the user asks to review a specific PR by number, or a specific commit range with
   phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
   "review the last commit", "review commits abc123..def456".
-allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Edit(REVIEW.md)
+allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*)
 ---
 
 # Code Review Skill
@@ -63,6 +64,7 @@ substituting a path of your own.
 | Script | Use it for |
 | --- | --- |
 | `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
+| `render_review.py` | Rendering `review.json` into `REVIEW.md` and `REVIEW.html` (Step 4) |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |
 | `commands.py` | Shared git/`gh` runners; not run directly |
@@ -234,8 +236,9 @@ language:      japanese
 source:        /home/you/.claude/settings.json
 ```
 
-Write REVIEW.md in that language. When it reports `(unset)`, write in the
-language the user is using, defaulting to Japanese.
+Write the review text in `review.json` (Step 4) in that language. When it
+reports `(unset)`, write in the language the user is using, defaulting to
+Japanese.
 
 ### Step 2: Read all changed files
 
@@ -367,12 +370,76 @@ formatter is configured in the project.
 - Unnecessary allocations in tight loops
 - Missing caching for expensive repeated computations
 
-### Step 4: Write REVIEW.md
+### Step 4: Write review.json and render the reports
 
-Write findings to `REVIEW.md` at the project root, in the language resolved in
-Step 1.6.
+Write the findings to `review.json` in the scratchpad directory, then let the
+script render `REVIEW.md` and `REVIEW.html` at the project root from it. Both
+reports come from the one file, so they never disagree, and the HTML page opens
+with a summary (finding counts per category and a table of contents that links
+to every finding) that the script computes rather than you.
 
-Structure:
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py /path/to/scratchpad/review.json
+```
+
+The working directory must be inside the checkout under review, because the
+script writes next to the repository root it finds there.
+
+The file shape, with the review text in the language resolved in Step 1.6:
+
+```json
+{
+  "title": "Code Review: add color picker",
+  "branch": "feature/color-picker",
+  "range": "whole branch against main (repository default branch)",
+  "pull_request": "https://github.com/octo/repo/pull/12",
+  "stats": {"files": 3, "additions": 120, "deletions": 8},
+  "overall_comments": "Cross-cutting concerns, in markdown.",
+  "categories": [
+    {
+      "number": 2,
+      "name": "Security",
+      "findings": [
+        {
+          "id": "2-1",
+          "title": "IPC color inputs not validated",
+          "path": "src/main/index.ts",
+          "line": 29,
+          "body": "The `UPDATE_COLOR` handler accepts arbitrary strings:\n\n```ts\nipcMain.on(UPDATE_COLOR, (_, color) => setColor(color));\n```\n\nSuggestion: validate against `/^#[0-9A-Fa-f]{6}$/`."
+        }
+      ]
+    }
+  ]
+}
+```
+
+Rules for building the file:
+
+- Copy `branch`, `range` and `pull_request` from the `review range` block and
+  `stats` from the `size` block that `gather_review_context.py` printed. Leave
+  `pull_request` out when the block says `(none for this branch)`.
+- `overall_comments` holds cross-cutting concerns that affect the whole
+  codebase, such as "documentation is consistently missing" or "naming
+  conventions are not followed", plus the PR size note from Step 1.5. Those go
+  here, not as individual findings.
+- List the categories in the order of Step 3, numbered 1-8. Empty categories
+  may be listed or left out; the reports omit them either way.
+- Number findings `<category>-<index>` (`2-1`, `2-2`, ...). Ids must be unique.
+- `path` is relative to the repository root and `line` is the line on the HEAD
+  side. Leave both out for a finding that maps to no single line.
+- `body` and `overall_comments` are markdown. The renderer understands
+  paragraphs, fenced code blocks, inline code, `**bold**`, bullet and numbered
+  lists, and `>` quotes; anything else shows up as plain text.
+- Do not assign priority levels. Every finding in the review should be worth
+  the author's attention. If something is too trivial to act on, leave it out
+  entirely instead of marking it "Low".
+
+The script refuses invalid input with an `error:` line that names the missing
+key or the JSON syntax error and its position. Fix `review.json` and run it
+again; do not edit `REVIEW.md` or `REVIEW.html` by hand, because the next run
+overwrites both.
+
+`REVIEW.md` comes out in this structure:
 
 ```markdown
 # Code Review: [branch description]
@@ -382,10 +449,7 @@ N files changed, X insertions, Y deletions
 
 ## Overall Comments
 
-[Cross-cutting concerns that affect the whole codebase.
-Things like "documentation is consistently missing" or
-"naming conventions are not followed" go here, not as
-individual items.]
+[Cross-cutting concerns.]
 
 ---
 
@@ -395,22 +459,16 @@ individual items.]
 
 Explanation with code snippet.
 
-### 1-2. ...
-
 ---
 
 ## 2. Security
 ...
 
-## 3. Naming
-...
-
-[Continue through all 8 categories. Omit empty categories.]
+[Continues through the non-empty categories.]
 ```
 
-Do not assign priority levels. Every finding in the review should be
-worth the author's attention. If something is too trivial to act on,
-leave it out entirely instead of marking it "Low".
+When reporting back, tell the user where `REVIEW.html` is so they can open it
+in a browser.
 
 ### Step 5: PR integration
 
@@ -418,7 +476,7 @@ leave it out entirely instead of marking it "Low".
 `pull_request` field of its `review range` block. If one exists, ask the user
 in the review language:
 
-> REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
+> REVIEW.md と REVIEW.html を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
 If the user confirms, post the review as **inline comments on specific file lines**
 using the GitHub Pull Request Review API. Do NOT post without confirmation.
@@ -488,17 +546,25 @@ Rules for building the findings file:
   inside a hunk are both anchorable. If a finding refers to a line outside the
   diff, move it to the nearest changed line in the same file, or to `body`.
 - **`body`**: use the same heading format as REVIEW.md (`### N-N. Short
-  description`), followed by the explanation. Keep each comment self-contained
-  -- reviewers may read them individually, so repeat the context a reader needs
+  description`), followed by the explanation, which you can copy from the
+  finding's `body` in `review.json`. Keep each comment self-contained --
+  reviewers may read them individually, so repeat the context a reader needs
   rather than referring to "the finding above".
 - **`event`**: leave it out. Only set `"APPROVE"` or `"REQUEST_CHANGES"` when
   the user explicitly asks for one.
 - Put cross-cutting concerns (PR size, overall architecture notes) and any
   finding that maps to no single line in the top-level `"body"`.
 
+`findings.json` overlaps with `review.json`, which is deliberate for now: the
+posting payload needs anchors checked against the pull request diff, which the
+report does not. Deriving one from the other is left as a later improvement.
+
 ## Important Rules
 
-- Write REVIEW.md in the language the script reports under `review language`.
+- Write the review text in `review.json` in the language the script reports
+  under `review language`.
+- Generate `REVIEW.md` and `REVIEW.html` with `render_review.py`. Never edit
+  either by hand; fix `review.json` and render again.
 - Use the scripts in `scripts/` for all git and GitHub access. Do not run `git`
   or `gh` directly.
 - Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
