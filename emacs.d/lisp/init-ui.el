@@ -285,6 +285,9 @@ face height changes; `text-scale+' and friends below do that."
 
 (use-package auto-highlight-symbol
   :ensure t
+  ;; `:bind' alone defers loading, and nothing else loads this package, so
+  ;; without `:demand' the global mode below never turns on.
+  :demand t
   :config (global-auto-highlight-symbol-mode t)
   :bind (:map auto-highlight-symbol-mode-map
               ;; Do not allow ahs to steal M--
