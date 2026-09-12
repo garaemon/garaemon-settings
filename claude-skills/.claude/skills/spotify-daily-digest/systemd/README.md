@@ -10,7 +10,7 @@ the wrapper instructs the model to skip the Slack post entirely.
 - `spotify-daily-digest-slack.service` — oneshot service that invokes the
   wrapper script. `%h` in the unit resolves to the user's home directory, so
   the same file works on any machine where the repo is cloned at
-  `~/ghq/github.com/garaemon/claude-private-skills`.
+  `~/ghq/github.com/garaemon/garaemon-settings/claude-skills`.
 - `spotify-daily-digest-slack.timer` — fires the service every day at 07:30
   local time with a small randomized delay. `Persistent=true` makes the
   timer catch up once after a missed run (e.g. laptop asleep at 07:30).

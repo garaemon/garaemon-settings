@@ -9,7 +9,7 @@ via the `slack-post` skill.
 - `news-digest-slack.service` — oneshot service that invokes the wrapper
   script. `%h` in the unit resolves to the user's home directory, so the
   same file works on any machine where the repo is cloned at
-  `~/ghq/github.com/garaemon/claude-private-skills`.
+  `~/ghq/github.com/garaemon/garaemon-settings/claude-skills`.
 - `news-digest-slack.timer` — fires the service every day at 08:00 local
   time with a small randomized delay. `Persistent=true` makes the timer
   catch up once after a missed run (e.g. laptop asleep at 08:00).
