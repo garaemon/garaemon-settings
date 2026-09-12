@@ -5,6 +5,14 @@
 
 ;;; Code:
 
+(require 'my-ollama)
+
+;; Download what minuet and gptel-magit name below.  Ollama rejects a request
+;; for a model it does not hold, and minuet reports the rejection as a
+;; completion that never appears, which gives a fresh machine no clue that a
+;; download is missing.
+(add-hook 'emacs-startup-hook #'my-ollama-ensure-models)
+
 (use-package minuet
   :ensure t
   :bind
@@ -24,18 +32,22 @@
   (minuet-context-window 1024)
   (minuet-request-timeout 10)
   ;; Do not show the completion when the cursor is NOT at the end of lines.
-  (minuet-auto-suggestion-block-functions '(minuet-evil-not-insert-state-p my-not-eolp))
+  (minuet-auto-suggestion-block-predicates '(minuet-evil-not-insert-state-p my-not-eolp))
   :config
   (plist-put minuet-openai-fim-compatible-options
-             :end-point "http://localhost:11434/v1/completions")
+             :end-point (my-ollama-completions-url))
   ;; an arbitrary non-null environment variable as placeholder.
   ;; For Windows users, TERM may not be present in environment variables.
   ;; Consider using APPDATA instead.
   (plist-put minuet-openai-fim-compatible-options :name "Ollama")
   (plist-put minuet-openai-fim-compatible-options :api-key "TERM")
-  ;; TODO: Install qwen2.5-coder:3b automatically
-  ;; (plist-put minuet-openai-fim-compatible-options :model "qwen2.5-coder:3b")
-  (plist-put minuet-openai-fim-compatible-options :model "deepseek-coder-v2:lite")
+  (plist-put minuet-openai-fim-compatible-options
+             :model my-ollama-completion-model)
+  ;; Keep every request on Ollama's fill-in-the-middle path, which it leaves
+  ;; when the suffix is empty.  See `my-ollama-fim-suffix'.
+  (plist-put minuet-openai-fim-compatible-options :template
+             (plist-put (plist-get minuet-openai-fim-compatible-options :template)
+                        :suffix #'my-ollama-fim-suffix))
 
   (defun my-not-eolp ()
     (not (eolp)))
@@ -80,10 +92,7 @@ You have to follow the following orders:
                         :key gptel-api-key
                         :stream t))
 
-  (gptel-make-ollama "Ollama (gemmma3:4b)"
-    :host "localhost:11434"
-    :stream t
-    :models '(gemma3:4b))
+  (my-ollama-make-gptel-backend)
 
   (defun my-gptel-get-buffer ()
     (car (cl-remove-if #'null

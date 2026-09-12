@@ -6,6 +6,8 @@
 
 ;;; Code:
 
+(require 'my-ollama)
+
 (use-package magit :ensure t
   ;; (magit-refresh-status-buffer nil)
   :bind (("\C-cl" . 'magit-status)
@@ -153,11 +155,8 @@ commit buffer being set up."
 (use-package gptel-magit
   :ensure t
   :custom
-  (gptel-magit-model 'gemma3:4b)
-  (gptel-magit-backend (gptel-make-ollama "Ollama (gemmma3:4b)"
-                         :host "localhost:11434"
-                         :stream t
-                         :models '(gemma3:4b)))
+  (gptel-magit-model (intern my-ollama-chat-model))
+  (gptel-magit-backend (my-ollama-make-gptel-backend))
   (gptel-magit-commit-prompt
    "You are a programmer. Based on the Git diff provided below, generate a concise and clear English commit message.
 You reply the commit message only.
