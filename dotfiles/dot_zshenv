@@ -13,6 +13,9 @@ fi
 export PATH=$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/opt/openssl/bin:/usr/local/opt/texinfo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/bin:/usr/sbin:/bin:/sbin
 # PATH under the home directory
 export PATH=$PATH:$HOME/.bin:$HOME/bin/:$HOME/.local/bin
+# Expose mise-managed tools to non-interactive shells. `mise activate` runs
+# from .zshrc only, and Emacs reads PATH from a login shell that skips it.
+export PATH=$PATH:$HOME/.local/share/mise/shims
 
 # On mac os x, emacsclient is availale under Emacs.app.
 if [ -e /Applications/Emacs.app/Contents/MacOS/bin ]; then
