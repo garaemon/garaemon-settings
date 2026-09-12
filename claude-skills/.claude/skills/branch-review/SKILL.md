@@ -127,6 +127,59 @@ rather than posting anything.
 
 ## Workflow
 
+### Step 0: Choose the review model
+
+The review runs in a subagent so the user can pick the model for it each time.
+Review quality tracks how deeply the model reads, and Claude Fable 5.1 costs
+twice Claude Opus 5 per token, so the choice belongs to the user, per diff.
+
+**Skip this step entirely when the prompt that invoked you contains this
+sentence**, which marks you as the delegated reviewer (or the reviewer inside
+branch-review-loop):
+
+```text
+The review model is already chosen. Do NOT ask about the model and do NOT
+delegate to another agent; run the review steps yourself in this agent.
+```
+
+In that case start at Step 0-1 and run every step yourself, except Step 5,
+which the parent handles.
+
+Otherwise:
+
+1. Run `gather_review_context.py` first (with the scope flags from Step 0-1) so
+   the question can quote the diff size. Fix the scope flags here; the subagent
+   receives them verbatim.
+2. Ask one question with AskUserQuestion, quoting the `size` block
+   ("N files, +X / -Y"). Offer these options, with these descriptions:
+   - **Opus 5**: everyday reviews; the baseline price.
+   - **Fable 5.1**: large diffs, or diffs that touch concurrency, security
+     boundaries, or shell execution; twice the price of Opus.
+   - **Sonnet 5**: small, mechanical diffs; 0.4 times the price of Opus.
+   Mark Opus 5 as recommended, except when additions exceed 200 or the changed
+   files include authentication, input boundaries, or shell execution, where
+   Fable 5.1 is the recommendation.
+3. Launch an Agent (general-purpose) with `model` set to the choice (`opus`,
+   `fable`, or `sonnet`) and this prompt:
+
+   ```text
+   Run the /branch-review skill in {working_directory} with the scope flags:
+   {flags, or "(none: whole branch)"}.
+
+   The review model is already chosen. Do NOT ask about the model and do NOT
+   delegate to another agent; run the review steps yourself in this agent.
+   Do NOT post comments to GitHub and do NOT ask about posting.
+   When done, report the path of review.json and the finding count.
+   ```
+
+4. When the subagent finishes, read `REVIEW.md`, summarize the findings to the
+   user, tell them where `REVIEW.html` is, and continue with Step 5 yourself.
+   Build the posting payload from the `review.json` path the subagent reported.
+
+When AskUserQuestion is unavailable or the run is non-interactive, skip the
+question and launch the subagent without `model`, which uses the session's
+model.
+
 ### Step 0-1: Gather the diff
 
 Run the script. It resolves the range, fetches what it needs, and prints the
@@ -507,6 +560,10 @@ in a browser.
 
 ### Step 5: PR integration
 
+The parent that asked for the model runs this step, because only the parent
+can talk to the user. A delegated reviewer stops after Step 4 and reports the
+`review.json` path.
+
 `gather_review_context.py` already reported whether a pull request exists, in the
 `pull_request` field of its `review range` block. If one exists, ask the user
 in the review language:
@@ -596,6 +653,11 @@ report does not. Deriving one from the other is left as a later improvement.
 
 ## Important Rules
 
+- Ask which model reviews on every run (Step 0) and run the review in a
+  subagent with that model. Fall back to the session's model only when the
+  question cannot be asked.
+- A delegated reviewer (its prompt says the model is already chosen) never
+  asks about the model, never delegates again, and never posts to GitHub.
 - Write the review text in `review.json` in the language the script reports
   under `review language`.
 - Generate `REVIEW.md` and `REVIEW.html` with `render_review.py`. Never edit
