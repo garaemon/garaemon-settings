@@ -278,6 +278,12 @@
 (use-package lua-mode :ensure t :defer t)
 
 (use-package markdown-mode :ensure t
+  :custom
+  ;; Copy a dropped file next to the buffer and insert its image tag. The
+  ;; default `file-link' matches none of the branches in
+  ;; `markdown--dnd-local-file-handler', so a drop does nothing without an
+  ;; explicit value.
+  (markdown-yank-dnd-method 'copy-and-insert)
   :config
   (setq auto-mode-alist (cons '("\\.md" . markdown-mode) auto-mode-alist))
   (defvar markdown-mode-map)
@@ -315,16 +321,6 @@
   ;; 60 requests per hour limit within minutes of real-time refresh.
   (require 'my-grip-auth)
   (my-grip-auth-apply))
-
-(add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
-(use-package markdown-dnd-images
-  :ensure nil
-  :custom
-  (dnd-save-directory "images")
-  (dnd-view-inline t)
-  (dnd-save-buffer-name nil)
-  (dnd-capture-source t)
-  )
 
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
