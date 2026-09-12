@@ -98,6 +98,21 @@ of the list is all it takes to switch.
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.
 
+## Markdown Preview
+
+`C-c C-c g` in a Markdown buffer toggles `grip-mode`, a live preview in
+GitHub's Markdown style. The preview refreshes on every edit, without saving.
+It opens in an xwidget window when Emacs is built with xwidgets and in the
+default browser otherwise.
+
+The preview needs the `go-grip` command, which renders locally with GitHub's
+stylesheet and needs no GitHub token. mise installs it from
+`dotfiles/dot_config/mise/config.toml`:
+
+```sh
+mise install go:github.com/chrishrb/go-grip
+```
+
 ## Local AI Models
 
 `init-ai.el`, `init-git.el` and `lisp/my-ollama.el` drive one local Ollama

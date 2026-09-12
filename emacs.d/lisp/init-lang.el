@@ -290,6 +290,7 @@
   (define-key markdown-mode-map (kbd "M-p") nil)
   (define-key markdown-mode-map (kbd "M-n") nil)
   (define-key markdown-mode-map (kbd "C-c m") 'newline)
+  (define-key markdown-mode-map (kbd "C-c C-c g") 'grip-mode)
   ;; do not work?
   (setq markdown-display-remote-images t)
   (setq markdown-max-image-size '(600 . 600))
@@ -306,6 +307,18 @@
   (add-hook 'markdown-mode-hook '(lambda ()
                                    (electric-indent-local-mode -1)))
   )
+
+;; Live preview in GitHub's Markdown style.  `C-c C-c g' toggles it.  The
+;; `go-grip' command comes from dotfiles/dot_config/mise/config.toml.
+(use-package grip-mode :ensure t
+  :commands grip-mode
+  :custom
+  ;; go-grip renders locally with GitHub's stylesheet.  The original grip
+  ;; scrapes github.com for CSS that no longer matches its own markup, so
+  ;; the page drifts from GitHub's look and needs an API token besides.
+  (grip-command 'go-grip)
+  ;; Refresh on every edit instead of on save, as VS Code does.
+  (grip-real-time-refresh t))
 
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
