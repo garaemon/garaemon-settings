@@ -207,19 +207,19 @@
          (python-shell-buffer-substring beg end))
         )))
   :bind (:map python-mode-map
-              ("\C-x\C-E" . 'python-shell-send-region-or-statement)
-              ("\C-cE" . 'run-python-and-switch-to-shell)
-              ("\C-ce" . 'run-python-and-switch-to-shell)
-              ("\C-c <right>" . 'python-indent-shift-right)
-              ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'projectile-run-task)
+              ("\C-x\C-E" . python-shell-send-region-or-statement)
+              ("\C-cE" . run-python-and-switch-to-shell)
+              ("\C-ce" . run-python-and-switch-to-shell)
+              ("\C-c <right>" . python-indent-shift-right)
+              ("\C-c <left>" . python-indent-shift-left)
+              ("\C-c\C-r" . projectile-run-task)
               :map python-ts-mode-map
-              ("\C-x\C-E" . 'python-shell-send-region-or-statement)
-              ("\C-cE" . 'run-python-and-switch-to-shell)
-              ("\C-ce" . 'run-python-and-switch-to-shell)
-              ("\C-c <right>" . 'python-indent-shift-right)
-              ("\C-c <left>" . 'python-indent-shift-left)
-              ("\C-c\C-r" . 'projectile-run-task)
+              ("\C-x\C-E" . python-shell-send-region-or-statement)
+              ("\C-cE" . run-python-and-switch-to-shell)
+              ("\C-ce" . run-python-and-switch-to-shell)
+              ("\C-c <right>" . python-indent-shift-right)
+              ("\C-c <left>" . python-indent-shift-left)
+              ("\C-c\C-r" . projectile-run-task)
               )
   :hook ((python-mode . (lambda () (setq-local comment-inline-offset 2))))
   )
@@ -268,7 +268,7 @@
 (use-package jinja2-mode :ensure t
   :bind (:map jinja2-mode-map
               ;; Do not allow jinja2-mode to take over M-o.
-              ("M-o" . 'switch-window-or-split))
+              ("M-o" . switch-window-or-split))
   )
 
 (use-package json-mode :ensure t :defer t)

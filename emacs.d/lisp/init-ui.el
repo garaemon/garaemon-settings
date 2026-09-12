@@ -275,7 +275,7 @@ face height changes; `text-scale+' and friends below do that."
 
 (use-package emoji
   :ensure nil
-  :bind (("C-:" . 'emoji-search))
+  :bind (("C-:" . emoji-search))
   )
 
 (use-package emojify :ensure t
@@ -288,7 +288,7 @@ face height changes; `text-scale+' and friends below do that."
   :config (global-auto-highlight-symbol-mode t)
   :bind (:map auto-highlight-symbol-mode-map
               ;; Do not allow ahs to steal M--
-              ("M--" . 'text-scale-)))
+              ("M--" . text-scale-)))
 
 (defun my-toggle-window-persistence ()
   "Toggle persistence for the current window, preventing or allowing

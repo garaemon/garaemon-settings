@@ -77,7 +77,7 @@
   (lsp-pylsp-server-command '("uv" "tool" "run" "--from" "python-lsp-server" "pylsp" "--verbose"
                               "--log-file" "pylsp.log"))
   :bind (
-         ("M-." . 'lsp-find-definition)
+         ("M-." . lsp-find-definition)
          )
   )
 
