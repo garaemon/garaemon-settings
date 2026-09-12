@@ -248,10 +248,10 @@
 
 ;; A vterm-only `C-x b'. lisp/my-vterm-buffer.el is a local file rather than a
 ;; package, so `:ensure' must stay nil; `:bind' autoloads it on the first
-;; `C-c b'.
+;; `C-c b', but only for a bare command name. use-package skips a quoted one.
 (use-package my-vterm-buffer
   :ensure nil
-  :bind ("C-c b" . 'my-vterm-switch-to-buffer))
+  :bind ("C-c b" . my-vterm-switch-to-buffer))
 
 (use-package vterm-toggle :ensure t
   :after (vterm)
