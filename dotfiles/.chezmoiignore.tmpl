@@ -6,6 +6,9 @@ install.sh
 dot_config/private_karabiner
 private_Library
 {{ end }}
+# Every path in this file is skipped, so a path inside the darwin block is
+# installed everywhere except macOS. macOS has no systemd, so the Slack digest
+# timers and the script that enables them stay Linux-only.
 {{ if eq .chezmoi.os "darwin" }}
 dot_config/systemd
 .chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl
