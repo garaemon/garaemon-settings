@@ -103,10 +103,22 @@ separate rows."
       (setq index (1+ index)))
     (substring keys index)))
 
+(defun my-keybind-stats--describe-keys (keys)
+  "Return `key-description' of KEYS with raw bytes written as octal escapes.
+A raw-byte event comes out of `key-description' as a raw-byte character,
+which JSON cannot carry and which makes saving the log prompt for a
+coding system.  Such an event becomes text like \\302 instead."
+  (mapconcat (lambda (char)
+               (if (>= char #x3fff80)
+                   (format "\\%o" (logand char #xff))
+                 (string char)))
+             (key-description keys)
+             ""))
+
 (defun my-keybind-stats--first-binding (command)
   "Return the description of the first key bound to COMMAND, or nil."
   (let ((keys (where-is-internal command nil t)))
-    (and keys (key-description keys))))
+    (and keys (my-keybind-stats--describe-keys keys))))
 
 (defun my-keybind-stats--event-key ()
   "Return the counter key for the command that just ran, or nil to skip it."
@@ -117,7 +129,7 @@ separate rows."
                (not (memq command my-keybind-stats-ignored-commands)))
       (let ((keys (if via-m-x
                       "M-x"
-                    (key-description
+                    (my-keybind-stats--describe-keys
                      (my-keybind-stats--strip-prefix-argument
                       (this-command-keys-vector))))))
         (unless (string-empty-p keys)
@@ -226,7 +238,8 @@ recursion, because a keymap can reach itself through a symbol."
                                                                 (1+ depth))
                             bindings)))
               ((and target (symbolp target) (commandp target))
-               (push (cons (key-description keys) (symbol-name target))
+               (push (cons (my-keybind-stats--describe-keys keys)
+                           (symbol-name target))
                      bindings))))))
        keymap))
     bindings))
@@ -239,13 +252,15 @@ always describes the bindings of the most recent session."
                                 my-keybind-stats-directory))
         (timestamp (my-keybind-stats--timestamp)))
     (make-directory (file-name-directory file) t)
-    (with-temp-file file
-      (dolist (binding (my-keybind-stats--collect-bindings keymap))
+    ;; Name the coding system so that `write-region' never asks for one.
+    (let ((coding-system-for-write 'utf-8))
+      (with-temp-file file
+        (dolist (binding (my-keybind-stats--collect-bindings keymap))
         (insert (json-serialize (list :ts timestamp
                                       :scope scope
                                       :keys (car binding)
                                       :command (cdr binding)))
-                "\n")))))
+                  "\n"))))))
 
 (defun my-keybind-stats--snapshot-local-map-once ()
   "Write the local keymap of the current major mode on its first use."

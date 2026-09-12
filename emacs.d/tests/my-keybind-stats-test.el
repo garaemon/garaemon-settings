@@ -262,6 +262,53 @@ KEYS is a string for `kbd'.  MODE is the major mode symbol to report."
                                                 my-keybind-stats-directory)))
                      1)))))
 
+(defun my-keybind-stats-test--refuse-coding-prompt (&rest _)
+  "Stand in for `select-safe-coding-system' and fail instead of prompting."
+  (error "Coding system prompt"))
+
+(ert-deftest my-keybind-stats-collect-bindings-should-escape-raw-byte-keys ()
+  ;; `key-description' keeps raw-byte events as raw-byte characters, which
+  ;; no JSON serializer or file coding system accepts.
+  (let ((map (make-sparse-keymap)))
+    (define-key map (vector #x3fffc2 #x3fffa5) #'forward-char)
+    (should (equal (my-keybind-stats--collect-bindings map)
+                   '(("\\302 \\245" . "forward-char"))))))
+
+(ert-deftest my-keybind-stats-snapshot-should-not-prompt-for-a-coding-system ()
+  (my-keybind-stats-test--with-directory
+    (let ((map (make-sparse-keymap))
+          (coding-system-for-write nil)
+          (select-safe-coding-system-function
+           #'my-keybind-stats-test--refuse-coding-prompt))
+      (define-key map (vector #x3fffc2) #'forward-char)
+      (define-key map (vector ?\u00a5) #'backward-char)
+      (my-keybind-stats-snapshot-bindings "global" map)
+      (should (equal (sort (mapcar (lambda (row) (alist-get 'keys row))
+                                   (my-keybind-stats-test--read-rows
+                                    (expand-file-name "bindings/global.jsonl"
+                                                      my-keybind-stats-directory)))
+                           #'string<)
+                     '("\\302" "\u00a5"))))))
+
+(ert-deftest my-keybind-stats-should-escape-raw-byte-keys-in-events ()
+  (my-keybind-stats-test--with-directory
+    (let ((real-this-command 'forward-char)
+          (this-command 'forward-char))
+      (cl-letf (((symbol-function 'this-command-keys-vector)
+                 (lambda () (vector #x3fffc2))))
+        (my-keybind-stats--record-command)))
+    (should (equal (alist-get 'keys (car (my-keybind-stats-test--event-rows)))
+                   "\\302"))))
+
+(ert-deftest my-keybind-stats-should-write-non-ascii-keys-as-utf-8 ()
+  (my-keybind-stats-test--with-directory
+    (let ((coding-system-for-write nil)
+          (select-safe-coding-system-function
+           #'my-keybind-stats-test--refuse-coding-prompt))
+      (my-keybind-stats-test--simulate 'forward-char "\u00a5")
+      (should (equal (alist-get 'keys (car (my-keybind-stats-test--event-rows)))
+                     "\u00a5")))))
+
 (ert-deftest my-keybind-stats-should-snapshot-a-mode-once-per-session ()
   (my-keybind-stats-test--with-directory
     (let ((my-keybind-stats--snapshotted-modes nil)
