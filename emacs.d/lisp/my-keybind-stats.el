@@ -171,10 +171,21 @@ key-driven command would be reported as an M-x invocation."
   "Return the current time as an ISO 8601 string with a numeric zone."
   (format-time-string "%Y-%m-%dT%H:%M:%S%z"))
 
+(defun my-keybind-stats--serialize (plist)
+  "Return PLIST as one line of JSON text.
+Emacs 30 `json-serialize' returns UTF-8 bytes.  Inserted into a
+multibyte buffer, the bytes of a key such as C-\u00a5 become raw-byte
+characters, and saving the buffer then prompts for a coding system.
+Decode the bytes so the text carries the characters themselves."
+  (let ((json (json-serialize plist)))
+    (if (multibyte-string-p json)
+        json
+      (decode-coding-string json 'utf-8))))
+
 (defun my-keybind-stats--serialize-event (key count timestamp)
   "Return one JSON line for the counter KEY seen COUNT times at TIMESTAMP."
   (pcase-let ((`(,command ,keys ,mode ,via-m-x ,bound) key))
-    (json-serialize (list :ts timestamp
+    (my-keybind-stats--serialize (list :ts timestamp
                           :command command
                           :keys keys
                           :mode mode
@@ -256,10 +267,10 @@ always describes the bindings of the most recent session."
     (let ((coding-system-for-write 'utf-8))
       (with-temp-file file
         (dolist (binding (my-keybind-stats--collect-bindings keymap))
-        (insert (json-serialize (list :ts timestamp
-                                      :scope scope
-                                      :keys (car binding)
-                                      :command (cdr binding)))
+        (insert (my-keybind-stats--serialize (list :ts timestamp
+                                                   :scope scope
+                                                   :keys (car binding)
+                                                   :command (cdr binding)))
                   "\n"))))))
 
 (defun my-keybind-stats--snapshot-local-map-once ()

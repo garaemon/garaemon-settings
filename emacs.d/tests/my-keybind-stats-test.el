@@ -300,14 +300,43 @@ KEYS is a string for `kbd'.  MODE is the major mode symbol to report."
     (should (equal (alist-get 'keys (car (my-keybind-stats-test--event-rows)))
                    "\\302"))))
 
+(defmacro my-keybind-stats-test--with-unibyte-json (&rest body)
+  "Run BODY with `json-serialize' returning UTF-8 bytes, as Emacs 30 does."
+  (declare (indent 0))
+  `(let ((original (symbol-function 'json-serialize)))
+     (cl-letf (((symbol-function 'json-serialize)
+                (lambda (&rest args)
+                  (encode-coding-string (apply original args) 'utf-8))))
+       ,@body)))
+
+(defun my-keybind-stats-test--raw-byte-free-p (string)
+  "Return non-nil when STRING is multibyte text without raw-byte characters."
+  (and (multibyte-string-p string)
+       (not (string-match-p "[\x3fff80-\x3fffff]" string))))
+
+(ert-deftest my-keybind-stats-serialize-should-decode-unibyte-json ()
+  ;; Emacs 30 `json-serialize' returns UTF-8 bytes. Inserted as-is into a
+  ;; multibyte buffer they become raw bytes, which no coding system encodes
+  ;; without asking.
+  (my-keybind-stats-test--with-unibyte-json
+    (let ((line (my-keybind-stats--serialize (list :keys "\u00a5"))))
+      (should (my-keybind-stats-test--raw-byte-free-p line))
+      (should (string-search "\u00a5" line)))))
+
+(ert-deftest my-keybind-stats-serialize-should-accept-multibyte-json ()
+  (let ((line (my-keybind-stats--serialize (list :keys "\u00a5"))))
+    (should (my-keybind-stats-test--raw-byte-free-p line))
+    (should (string-search "\u00a5" line))))
+
 (ert-deftest my-keybind-stats-should-write-non-ascii-keys-as-utf-8 ()
   (my-keybind-stats-test--with-directory
-    (let ((coding-system-for-write nil)
-          (select-safe-coding-system-function
-           #'my-keybind-stats-test--refuse-coding-prompt))
-      (my-keybind-stats-test--simulate 'forward-char "\u00a5")
-      (should (equal (alist-get 'keys (car (my-keybind-stats-test--event-rows)))
-                     "\u00a5")))))
+    (my-keybind-stats-test--with-unibyte-json
+      (let ((coding-system-for-write nil)
+            (select-safe-coding-system-function
+             #'my-keybind-stats-test--refuse-coding-prompt))
+        (my-keybind-stats-test--simulate 'forward-char "\u00a5")
+        (should (equal (alist-get 'keys (car (my-keybind-stats-test--event-rows)))
+                       "\u00a5"))))))
 
 (ert-deftest my-keybind-stats-should-snapshot-a-mode-once-per-session ()
   (my-keybind-stats-test--with-directory
