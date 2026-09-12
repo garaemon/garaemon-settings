@@ -15,6 +15,12 @@ description: |
   phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
   "review the last commit", "review commits abc123..def456".
 allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*)
+hooks:
+  PostToolUse:
+    - matcher: "Write|Edit"
+      hooks:
+        - type: command
+          command: "uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/check_review_hook.py"
 ---
 
 # Code Review Skill
@@ -64,7 +70,8 @@ substituting a path of your own.
 | Script | Use it for |
 | --- | --- |
 | `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
-| `render_review.py` | Rendering `review.json` into `REVIEW.md` and `REVIEW.html` (Step 4) |
+| `render_review.py` | Checking `review.json` and rendering it into `REVIEW.md` and `REVIEW.html` (Step 4) |
+| `check_review_hook.py` | PostToolUse hook that checks `review.json` as soon as it is written; not run directly |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |
 | `commands.py` | Shared git/`gh` runners; not run directly |
@@ -434,10 +441,38 @@ Rules for building the file:
   the author's attention. If something is too trivial to act on, leave it out
   entirely instead of marking it "Low".
 
-The script refuses invalid input with an `error:` line that names the missing
-key or the JSON syntax error and its position. Fix `review.json` and run it
-again; do not edit `REVIEW.md` or `REVIEW.html` by hand, because the next run
-overwrites both.
+#### Checking the file
+
+The script checks `review.json` before it writes anything and refuses to
+render while a problem remains. Beyond the JSON shape, the checks catch the
+mistakes that would break the reports or the later PR posting:
+
+- finding ids out of sequence, or carrying another category's number
+- a `path` that is absolute or does not exist in the checkout
+- a `line` past the end of its file, or given without a `path`
+- an unterminated ` ``` ` fence in a body or in `overall_comments`
+- a blank title or body, or the `[branch description]` placeholder left in
+  the title
+
+A PostToolUse hook declared in this file's frontmatter runs the same checks
+the moment `review.json` is written or edited, so the problems come back as
+tool feedback before you reach the render command. To run the checks by hand
+without writing the reports:
+
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py /path/to/scratchpad/review.json --check
+```
+
+Every failure names the finding and what to change:
+
+```text
+error: review.json has 2 problems; fix the file and run again:
+  - finding 3-2 should be 3-1: ids run 1, 2, 3 within a category
+  - finding 2-1: line 41 is outside src/main/index.ts (40 lines)
+```
+
+Fix `review.json` and run the render command again; do not edit `REVIEW.md`
+or `REVIEW.html` by hand, because the next run overwrites both.
 
 `REVIEW.md` comes out in this structure:
 
