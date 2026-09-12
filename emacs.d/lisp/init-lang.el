@@ -308,19 +308,17 @@
                                    (electric-indent-local-mode -1)))
   )
 
-;; Live preview rendered by GitHub, so the result matches what a README
-;; looks like on github.com.  `C-c C-c g' toggles it.  The `grip' command
-;; comes from dotfiles/dot_config/mise/config.toml (pipx:grip).
+;; Live preview in GitHub's Markdown style.  `C-c C-c g' toggles it.  The
+;; `go-grip' command comes from dotfiles/dot_config/mise/config.toml.
 (use-package grip-mode :ensure t
   :commands grip-mode
   :custom
+  ;; go-grip renders locally with GitHub's stylesheet.  The original grip
+  ;; scrapes github.com for CSS that no longer matches its own markup, so
+  ;; the page drifts from GitHub's look and needs an API token besides.
+  (grip-command 'go-grip)
   ;; Refresh on every edit instead of on save, as VS Code does.
-  (grip-real-time-refresh t)
-  :config
-  ;; Reuse forge's api.github.com token; anonymous grip hits GitHub's
-  ;; 60 requests per hour limit within minutes of real-time refresh.
-  (require 'my-grip-auth)
-  (my-grip-auth-apply))
+  (grip-real-time-refresh t))
 
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
