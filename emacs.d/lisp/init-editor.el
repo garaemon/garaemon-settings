@@ -247,7 +247,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
 ;;; Query-replace enhancements
 
 (use-package anzu :ensure t
-  :defer t
+  ;; Nothing else loads anzu, so a deferred block never reaches the
+  ;; `global-anzu-mode' call below. Load it at startup instead.
   :config
   (global-anzu-mode +1)
   (setq anzu-search-threshold 1000))
