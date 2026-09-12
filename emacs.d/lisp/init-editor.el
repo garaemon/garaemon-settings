@@ -43,8 +43,8 @@
   :init
   (vertico-mode)
   :bind (:map vertico-map
-              ("C-s" . 'vertico-next)
-              ("C-r" . 'vertico-previous)
+              ("C-s" . vertico-next)
+              ("C-r" . vertico-previous)
               )
   )
 
@@ -157,8 +157,13 @@
   (defvar-keymap my-consult-buffer-map
     :doc "Keymap that `consult-buffer' composes over the minibuffer map."
     "TAB" #'embark-act)
-  (consult-customize consult-buffer my-vterm-switch-to-buffer
-                     :keymap my-consult-buffer-map)
+  (consult-customize consult-buffer :keymap my-consult-buffer-map)
+  ;; `embark-consult' loads consult during init, before init-prog.el
+  ;; autoloads `my-vterm-switch-to-buffer', so customizing that command
+  ;; here would warn. Wait for its file instead.
+  (with-eval-after-load 'my-vterm-buffer
+    (consult-customize my-vterm-switch-to-buffer
+                       :keymap my-consult-buffer-map))
 
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.
@@ -233,7 +238,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package swiper :ensure t
   :bind
-  ("C-s" . 'swiper-isearch)
+  ("C-s" . swiper-isearch)
   :config
   (setopt ivy-use-virtual-buffers t)
   (setopt enable-recursive-minibuffers t)
@@ -251,10 +256,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package multiple-cursors :ensure t
   :bind
-  (("<C-M-return>" . 'mc/edit-lines)
-   ("C-M-j" . 'mc/edit-lines)
-   ("<C-M-down>" . 'mc/mark-next-like-this)
-   ("<C-M-up>" . 'mc/mark-previous-like-this)
+  (("<C-M-return>" . mc/edit-lines)
+   ("C-M-j" . mc/edit-lines)
+   ("<C-M-down>" . mc/mark-next-like-this)
+   ("<C-M-up>" . mc/mark-previous-like-this)
    )
   )
 
@@ -262,8 +267,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package avy
   :ensure t
-  :bind (("C-c j" . 'avy-goto-char-timer)
-         ("C-c J" . 'avy-goto-line))
+  :bind (("C-c j" . avy-goto-char-timer)
+         ("C-c J" . avy-goto-line))
   :custom
   ;; Shorter than the 0.5s default so candidates appear while still typing.
   (avy-timeout-seconds 0.3))
@@ -272,7 +277,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
 
 (use-package expreg
   :ensure t
-  :bind (("\C-^" . 'expreg-expand))
+  :bind (("\C-^" . expreg-expand))
   )
 
 ;;; Spell checking
@@ -310,7 +315,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ("C-c d" . jinx-correct)
   ;; just executing (global-jinx-mode) does not turn on jinx.
   ;; We have to add a hook to emacs-start-hook
-  :hook ('emacs-startup-hook . 'global-jinx-mode)
+  :hook (emacs-startup . global-jinx-mode)
   )
 
 ;;; Dictionary
@@ -346,9 +351,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
 ;;; Buffer management
 
 (use-package bm :ensure t
-  :bind ((("M-^" . 'bm-toggle)
-          ("C-M-n" . 'bm-next)
-          ("C-M-p" . 'bm-previous)))
+  :bind ((("M-^" . bm-toggle)
+          ("C-M-n" . bm-next)
+          ("C-M-p" . bm-previous)))
   :config
   (global-set-key [?\C-\M-\ ] 'bm-toggle) ;not work
   (set-face-background bm-face "orange")
@@ -394,7 +399,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
                 (split-window-horizontally-n split-num))
             (split-window-horizontally)))
       (switch-window)))
-  :bind ("M-o" . 'switch-window-or-split)
+  :bind ("M-o" . switch-window-or-split)
   )
 
 ;;; Dired enhancements
@@ -402,10 +407,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package dired
   :ensure nil
   :bind (:map dired-mode-map
-              ("M-s" . 'consult-grep)
-              ("F" . 'magit-pull)
-              ("b" . 'magit-branch))
-  :hook ('dired-mode-hook . 'auto-revert-mode)
+              ("M-s" . consult-grep)
+              ("F" . magit-pull)
+              ("b" . magit-branch))
+  :hook (dired-mode . auto-revert-mode)
   )
 
 (use-package wdired
@@ -442,10 +447,10 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (
          ("C-x u" . vundo)
          (:map vundo-mode-map
-               ("C-f" . 'vundo-forward)
-               ("C-b" . 'vundo-backward)
-               ("C-p" . 'vundo-previous)
-               ("C-n" . 'vundo-next)
+               ("C-f" . vundo-forward)
+               ("C-b" . vundo-backward)
+               ("C-p" . vundo-previous)
+               ("C-n" . vundo-next)
                ))
   )
 

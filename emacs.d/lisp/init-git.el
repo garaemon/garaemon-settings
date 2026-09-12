@@ -10,9 +10,9 @@
 
 (use-package magit :ensure t
   ;; (magit-refresh-status-buffer nil)
-  :bind (("\C-cl" . 'magit-status)
-         ("\C-cL" . 'my-magit-status-side-window)
-         ("\C-cm" . 'magit-dispatch))
+  :bind (("\C-cl" . magit-status)
+         ("\C-cL" . my-magit-status-side-window)
+         ("\C-cm" . magit-dispatch))
   :custom
   ;; When we visit a file from magit diff view, open the files on the disk rather than the read-only
   ;; buffers.
@@ -507,7 +507,7 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 
 ;; `C-c b' now switches vterm buffers, so this moved to `C-c B'.
 (use-package browse-at-remote :ensure t
-  :bind (("C-c B" . 'echo-url-at-remote))
+  :bind (("C-c B" . echo-url-at-remote))
   :config
   (defun echo-url-at-remote ()
     (interactive)

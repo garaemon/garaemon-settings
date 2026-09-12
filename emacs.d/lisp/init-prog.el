@@ -132,7 +132,7 @@
 ;; apheleia-mode-alist' for the full table.
 (use-package apheleia :ensure t
   :demand t
-  :bind (("C-c f" . 'apheleia-format-buffer))
+  :bind (("C-c f" . apheleia-format-buffer))
   :config
   ;; Format Python with ruff. The apheleia default is black, which is not
   ;; installed here, so Python buffers would otherwise stay unformatted.
@@ -187,24 +187,24 @@
   :ensure t
   :after browse-url
   :bind (:map vterm-mode-map
-              ("\C-c \C-c" . 'vterm--self-insert)
-              ("\C-h" . 'vterm-send-backspace)
+              ("\C-c \C-c" . vterm--self-insert)
+              ("\C-h" . vterm-send-backspace)
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
               ;; key.
-              ("\C-c [" . 'vterm-copy-mode) ; like tmux
-              ("\C-c t" . 'my-vterm-toggle)
-              ("<mouse-1>" . 'my-browse-url-at-point)
-              ("\C-k" . 'my-vterm-kill-line)
+              ("\C-c [" . vterm-copy-mode) ; like tmux
+              ("\C-c t" . my-vterm-toggle)
+              ("<mouse-1>" . my-browse-url-at-point)
+              ("\C-k" . my-vterm-kill-line)
               ;; Copy a mouse selection without entering copy mode; both keys
               ;; fall back to the shell when no region is active.
-              ("C-w" . 'my-vterm-copy-region-or-send-key)
-              ("M-w" . 'my-vterm-copy-region-or-send-key)
+              ("C-w" . my-vterm-copy-region-or-send-key)
+              ("M-w" . my-vterm-copy-region-or-send-key)
               :map vterm-copy-mode-map
               ;; `vterm-copy-mode-done' (RET) copies the whole line when no
               ;; region is active and then leaves copy mode. These copy the
               ;; region only and stay in copy mode.
-              ("C-w" . 'my-vterm-copy-region)
-              ("M-w" . 'my-vterm-copy-region)
+              ("C-w" . my-vterm-copy-region)
+              ("M-w" . my-vterm-copy-region)
               )
   :custom
   (vterm-max-scrollback  10000)
@@ -248,10 +248,10 @@
 
 ;; A vterm-only `C-x b'. lisp/my-vterm-buffer.el is a local file rather than a
 ;; package, so `:ensure' must stay nil; `:bind' autoloads it on the first
-;; `C-c b'.
+;; `C-c b', but only for a bare command name. use-package skips a quoted one.
 (use-package my-vterm-buffer
   :ensure nil
-  :bind ("C-c b" . 'my-vterm-switch-to-buffer))
+  :bind ("C-c b" . my-vterm-switch-to-buffer))
 
 (use-package vterm-toggle :ensure t
   :after (vterm)
@@ -261,7 +261,7 @@
   ;; init.
   (require 'my-vterm-toggle)
   :bind
-  ("\C-c t" . 'my-vterm-toggle)
+  ("\C-c t" . my-vterm-toggle)
   ;; ("\C-c t" . 'vterm-toggle)
   ;; ("\C-c T" . 'vterm-toggle-cd)
   )

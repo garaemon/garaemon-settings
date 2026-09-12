@@ -296,14 +296,14 @@ Date format is YYYY-MM-DD.")
     (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
     )
 
-  :bind (("C-c c" . 'org-capture)
-         ("C-M-c" . 'org/note-right-now)
-         ("C-c /" . 'consult-org-agenda)
-         ("C-c s" . 'org-store-link)
+  :bind (("C-c c" . org-capture)
+         ("C-M-c" . org/note-right-now)
+         ("C-c /" . consult-org-agenda)
+         ("C-c s" . org-store-link)
          :map org-mode-map
-         ("M-e" . 'my-org-mode-wrap-inline-code)
-         ("C-c /" . 'consult-org-agenda)
-         ("C-c s" . 'org-store-link))
+         ("M-e" . my-org-mode-wrap-inline-code)
+         ("C-c /" . consult-org-agenda)
+         ("C-c s" . org-store-link))
   :hook ((org-mode . (lambda ()
                        ;; Enable only under org-directory
                        (when (and buffer-file-name
@@ -402,10 +402,10 @@ fully configured, not stripped down."))
   (define-org-quick-command org-agenda-quick org-agenda)
   (define-org-quick-command org-set-tags-command-quick org-set-tags-command t)
 
-  :bind (("C-c a" . 'org-agenda-quick)
-         ("C-c C-q" . 'org-set-tags-command-quick)
+  :bind (("C-c a" . org-agenda-quick)
+         ("C-c C-q" . org-set-tags-command-quick)
          :map org-mode-map
-         ("C-c C-q" . 'org-set-tags-command-quick)
+         ("C-c C-q" . org-set-tags-command-quick)
          )
   )
 
@@ -426,7 +426,7 @@ fully configured, not stripped down."))
   :bind
   ;; In org capture mode, C-c C-c is used to finish a capture.
   ;; We need a different keymap.
-  ("C-c x" . 'org-execute-block-src-or-ai)
+  ("C-c x" . org-execute-block-src-or-ai)
   :custom
   ;; Use Geimini
   (org-ai-service 'google)
@@ -662,8 +662,8 @@ Skip when the cached SVG is already newer than FILE."
   ;; configuration.
   (require 'org-roam-dailies)
   :bind
-  (("C-c n f" . 'org-roam-node-find)
-   ("C-c n i" . 'org-roam-node-insert))
+  (("C-c n f" . org-roam-node-find)
+   ("C-c n i" . org-roam-node-insert))
   )
 
 (use-package org-roam-dailies
