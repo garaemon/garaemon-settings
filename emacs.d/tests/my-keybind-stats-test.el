@@ -274,6 +274,50 @@ KEYS is a string for `kbd'.  MODE is the major mode symbol to report."
     (should (equal (my-keybind-stats--collect-bindings map)
                    '(("\\302 \\245" . "forward-char"))))))
 
+(defmacro my-keybind-stats-test--capturing-write-region (&rest body)
+  "Run BODY with `write-region' stubbed to record how it was called.
+The buffer's multibyteness and the write coding system land in
+`write-multibyte' and `write-coding'."
+  (declare (indent 0))
+  `(let ((write-multibyte 'not-called)
+         (write-coding 'not-called))
+     (cl-letf (((symbol-function 'write-region)
+                (lambda (&rest _)
+                  (setq write-multibyte enable-multibyte-characters)
+                  (setq write-coding coding-system-for-write))))
+       ,@body)))
+
+(ert-deftest my-keybind-stats-snapshot-should-write-from-a-unibyte-buffer ()
+  ;; A unibyte buffer written without conversion is never subject to
+  ;; `select-safe-coding-system', so no prompt can appear.
+  (my-keybind-stats-test--with-directory
+    (my-keybind-stats-test--capturing-write-region
+      (let ((map (make-sparse-keymap)))
+        (define-key map (vector ?\u00a5) #'forward-char)
+        (my-keybind-stats-snapshot-bindings "global" map))
+      (should-not write-multibyte)
+      (should (eq write-coding 'binary)))))
+
+(ert-deftest my-keybind-stats-flush-should-write-from-a-unibyte-buffer ()
+  (my-keybind-stats-test--with-directory
+    (my-keybind-stats-test--simulate 'forward-char "\u00a5")
+    (my-keybind-stats-test--capturing-write-region
+      (my-keybind-stats-flush)
+      (should-not write-multibyte)
+      (should (eq write-coding 'binary)))))
+
+(ert-deftest my-keybind-stats-snapshot-should-write-utf-8-bytes ()
+  (my-keybind-stats-test--with-directory
+    (let ((map (make-sparse-keymap)))
+      (define-key map (vector ?\u00a5) #'forward-char)
+      (my-keybind-stats-snapshot-bindings "global" map))
+    (let ((file (expand-file-name "bindings/global.jsonl"
+                                  my-keybind-stats-directory)))
+      (with-temp-buffer
+        (set-buffer-multibyte nil)
+        (insert-file-contents-literally file)
+        (should (string-search "\"keys\":\"\302\245\"" (buffer-string)))))))
+
 (ert-deftest my-keybind-stats-snapshot-should-not-prompt-for-a-coding-system ()
   (my-keybind-stats-test--with-directory
     (let ((map (make-sparse-keymap))

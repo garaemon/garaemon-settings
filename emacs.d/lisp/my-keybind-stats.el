@@ -198,15 +198,18 @@ Decode the bytes so the text carries the characters themselves."
   (expand-file-name (format-time-string "events-%Y-%m.jsonl")
                     my-keybind-stats-directory))
 
-(defun my-keybind-stats--append-lines (file lines)
-  "Append LINES to FILE, creating the parent directory when missing."
-  (when lines
-    (make-directory (file-name-directory file) t)
-    (with-temp-buffer
-      (dolist (line lines)
-        (insert line "\n"))
-      (let ((coding-system-for-write 'utf-8))
-        (append-to-file (point-min) (point-max) file)))))
+(defun my-keybind-stats--write-lines (file lines append)
+  "Write LINES to FILE as UTF-8, appending to FILE when APPEND is non-nil.
+The lines are encoded here and written from a unibyte buffer without
+conversion, so `write-region' never consults `select-safe-coding-system'
+and never asks for a coding system, whatever the lines contain."
+  (make-directory (file-name-directory file) t)
+  (with-temp-buffer
+    (set-buffer-multibyte nil)
+    (dolist (line lines)
+      (insert (encode-coding-string line 'utf-8) "\n"))
+    (let ((coding-system-for-write 'binary))
+      (write-region (point-min) (point-max) file append 0))))
 
 (defun my-keybind-stats-flush ()
   "Write the pending counters to the event log and reset them."
@@ -218,8 +221,9 @@ Decode the bytes so the text carries the characters themselves."
                      lines))
              my-keybind-stats--counts)
     (clrhash my-keybind-stats--counts)
-    (my-keybind-stats--append-lines (my-keybind-stats--event-file)
-                                    (nreverse lines))))
+    (when lines
+      (my-keybind-stats--write-lines (my-keybind-stats--event-file)
+                                     (nreverse lines) t))))
 
 ;;; Binding snapshots.
 
@@ -262,16 +266,15 @@ always describes the bindings of the most recent session."
   (let ((file (expand-file-name (format "bindings/%s.jsonl" scope)
                                 my-keybind-stats-directory))
         (timestamp (my-keybind-stats--timestamp)))
-    (make-directory (file-name-directory file) t)
-    ;; Name the coding system so that `write-region' never asks for one.
-    (let ((coding-system-for-write 'utf-8))
-      (with-temp-file file
-        (dolist (binding (my-keybind-stats--collect-bindings keymap))
-        (insert (my-keybind-stats--serialize (list :ts timestamp
-                                                   :scope scope
-                                                   :keys (car binding)
-                                                   :command (cdr binding)))
-                  "\n"))))))
+    (my-keybind-stats--write-lines
+     file
+     (mapcar (lambda (binding)
+               (my-keybind-stats--serialize (list :ts timestamp
+                                                  :scope scope
+                                                  :keys (car binding)
+                                                  :command (cdr binding))))
+             (my-keybind-stats--collect-bindings keymap))
+     nil)))
 
 (defun my-keybind-stats--snapshot-local-map-once ()
   "Write the local keymap of the current major mode on its first use."
