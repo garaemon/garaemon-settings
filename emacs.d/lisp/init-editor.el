@@ -152,6 +152,14 @@
    consult-source-bookmark consult-source-file-register
    :preview-key my-consult-file-preview-key)
 
+  ;; TAB lists the Embark actions for the selected candidate, the way
+  ;; anything.el did. `C-.' does the same, but no terminal can send it.
+  (defvar-keymap my-consult-buffer-map
+    :doc "Keymap that `consult-buffer' composes over the minibuffer map."
+    "TAB" #'embark-act)
+  (consult-customize consult-buffer my-vterm-switch-to-buffer
+                     :keymap my-consult-buffer-map)
+
   (defun my-consult-async-process (program process-function &rest program-args)
     "Create a consult dynamic collection by running PROGRAM asynchronously.
 
