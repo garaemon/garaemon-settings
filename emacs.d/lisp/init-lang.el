@@ -278,12 +278,19 @@
 (use-package lua-mode :ensure t :defer t)
 
 (use-package markdown-mode :ensure t
+  :custom
+  ;; Copy a dropped file next to the buffer and insert its image tag. The
+  ;; default `file-link' matches none of the branches in
+  ;; `markdown--dnd-local-file-handler', so a drop does nothing without an
+  ;; explicit value.
+  (markdown-yank-dnd-method 'copy-and-insert)
   :config
   (setq auto-mode-alist (cons '("\\.md" . markdown-mode) auto-mode-alist))
   (defvar markdown-mode-map)
   (define-key markdown-mode-map (kbd "M-p") nil)
   (define-key markdown-mode-map (kbd "M-n") nil)
   (define-key markdown-mode-map (kbd "C-c m") 'newline)
+  (define-key markdown-mode-map (kbd "C-c C-c g") 'grip-mode)
   ;; do not work?
   (setq markdown-display-remote-images t)
   (setq markdown-max-image-size '(600 . 600))
@@ -301,15 +308,17 @@
                                    (electric-indent-local-mode -1)))
   )
 
-(add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
-(use-package markdown-dnd-images
-  :ensure nil
+;; Live preview in GitHub's Markdown style.  `C-c C-c g' toggles it.  The
+;; `go-grip' command comes from dotfiles/dot_config/mise/config.toml.
+(use-package grip-mode :ensure t
+  :commands grip-mode
   :custom
-  (dnd-save-directory "images")
-  (dnd-view-inline t)
-  (dnd-save-buffer-name nil)
-  (dnd-capture-source t)
-  )
+  ;; go-grip renders locally with GitHub's stylesheet.  The original grip
+  ;; scrapes github.com for CSS that no longer matches its own markup, so
+  ;; the page drifts from GitHub's look and needs an API token besides.
+  (grip-command 'go-grip)
+  ;; Refresh on every edit instead of on save, as VS Code does.
+  (grip-real-time-refresh t))
 
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))

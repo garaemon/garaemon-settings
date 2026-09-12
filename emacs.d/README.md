@@ -108,6 +108,54 @@ of the list is all it takes to switch.
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.
 
+## Markdown Preview
+
+`C-c C-c g` in a Markdown buffer toggles `grip-mode`, a live preview in
+GitHub's Markdown style. The preview refreshes on every edit, without saving.
+It opens in an xwidget window when Emacs is built with xwidgets and in the
+default browser otherwise.
+
+The preview needs the `go-grip` command, which renders locally with GitHub's
+stylesheet and needs no GitHub token. mise installs it from
+`dotfiles/dot_config/mise/config.toml`:
+
+```sh
+mise install go:github.com/chrishrb/go-grip
+```
+
+## Local AI Models
+
+`init-ai.el`, `init-git.el` and `lisp/my-ollama.el` drive one local Ollama
+server. `my-ollama.el` owns the host and the model names, so a switch touches
+one file:
+
+- `my-ollama-completion-model` (`qwen2.5-coder:3b`) answers the inline
+  completions that minuet requests. The request is a fill-in-the-middle
+  completion capped at 56 tokens, which a 3B model returns well inside
+  `minuet-request-timeout`.
+- `my-ollama-chat-model` (`gemma3:4b`) answers gptel and writes the commit
+  messages that gptel-magit proposes.
+
+`my-ollama-fim-suffix` replaces the suffix that minuet sends whenever the
+cursor sits at the end of a buffer. Ollama reads an empty suffix as a request
+that carries no fill-in-the-middle work, renders the prompt through the chat
+template of the model, and an instruct model answers with prose and a markdown
+code fence instead of code.
+
+Emacs downloads the missing models itself. `my-ollama-ensure-models` runs from
+`emacs-startup-hook`, asks the server which models it holds, and runs
+`ollama pull` for each one of `my-ollama-required-models` that is absent:
+
+- The check is one asynchronous HTTP request and downloads nothing when the
+  server already holds every model.
+- A machine that never starts Ollama gets no message. The check simply finds
+  no server and stops.
+- The download reports its start and its outcome in the echo area, and leaves
+  the progress in the `*ollama-pull*` buffer.
+
+Run `M-x my-ollama-ensure-models` to repeat the check after changing a model
+name.
+
 ## Keybinding Stats
 
 `my-keybind-stats-mode` (enabled in `init-utils.el`) records every command,
