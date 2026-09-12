@@ -18,6 +18,7 @@ from render_review import (
     HTML_REPORT_NAME,
     MARKDOWN_REPORT_NAME,
     NO_FINDINGS_TEXT,
+    check_review,
     load_review,
     read_template,
     render_html_report,
@@ -331,6 +332,93 @@ class RenderHtmlReportTest(unittest.TestCase):
             render_html_report(build_review(), "<p>costs $5</p>", GENERATED_AT)
 
 
+def write_checkout(directory: str, files: dict[str, str]) -> pathlib.Path:
+    """Create the given files under directory and return it as the checkout root."""
+    root = pathlib.Path(directory)
+    for relative_path, content in files.items():
+        file_path = root / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding="utf-8")
+    return root
+
+
+class CheckReviewTest(unittest.TestCase):
+    """check_review lists the mistakes a schema-valid review can still carry."""
+
+    def check(self, review: dict[str, Any], files: dict[str, str] | None = None) -> list[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            root = write_checkout(directory, files or {"src/main/index.ts": "x\n" * 40})
+            return check_review(review, root)
+
+    def test_accepts_a_consistent_review(self) -> None:
+        self.assertEqual(self.check(build_review()), [])
+
+    def test_rejects_an_id_whose_prefix_is_not_the_category_number(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security", "findings": [build_finding(id="3-1")]},
+        ])
+        self.assertTrue(any("3-1" in problem and "category 2" in problem
+                            for problem in self.check(review)))
+
+    def test_rejects_ids_that_skip_a_number(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(id="2-1"), build_finding(id="2-3")]},
+        ])
+        self.assertTrue(any("2-3" in problem and "2-2" in problem
+                            for problem in self.check(review)))
+
+    def test_rejects_a_path_that_is_not_in_the_checkout(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(path="src/missing.ts")]},
+        ])
+        self.assertTrue(any("src/missing.ts" in problem for problem in self.check(review)))
+
+    def test_rejects_an_absolute_path(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(path="/etc/passwd")]},
+        ])
+        self.assertTrue(any("absolute" in problem for problem in self.check(review)))
+
+    def test_rejects_a_line_past_the_end_of_the_file(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security", "findings": [build_finding(line=41)]},
+        ])
+        self.assertTrue(any("41" in problem and "40" in problem
+                            for problem in self.check(review)))
+
+    def test_rejects_a_line_without_a_path(self) -> None:
+        finding = build_finding()
+        del finding["path"]
+        review = build_review(categories=[
+            {"number": 2, "name": "Security", "findings": [finding]},
+        ])
+        self.assertTrue(any("line" in problem and "path" in problem
+                            for problem in self.check(review)))
+
+    def test_rejects_an_unterminated_code_fence(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="```ts\nlet x;")]},
+        ])
+        self.assertTrue(any("fence" in problem for problem in self.check(review)))
+
+    def test_rejects_a_blank_title_or_body(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(title="  ", body="")]},
+        ])
+        problems = self.check(review)
+        self.assertTrue(any("title" in problem for problem in problems))
+        self.assertTrue(any("body" in problem for problem in problems))
+
+    def test_rejects_a_stale_placeholder_title(self) -> None:
+        review = build_review(title="Code Review: [branch description]")
+        self.assertTrue(any("placeholder" in problem for problem in self.check(review)))
+
+
 class WriteReportsTest(unittest.TestCase):
     """write_reports writes both files into the output directory."""
 
@@ -369,15 +457,46 @@ class MainTest(unittest.TestCase):
 
     def test_writes_into_the_output_directory_and_reports_the_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            review_path = pathlib.Path(directory) / "review.json"
+            root = write_checkout(directory, {"src/main/index.ts": "x\n" * 40})
+            review_path = root / "review.json"
             review_path.write_text(json.dumps(build_review()), encoding="utf-8")
             stdout = io.StringIO()
             with contextlib.redirect_stdout(stdout):
-                status = render_review.main([str(review_path), "--output-dir", directory])
+                status = render_review.main(
+                    [str(review_path), "--output-dir", directory, "--root", directory]
+                )
             self.assertEqual(status, 0)
             self.assertTrue((pathlib.Path(directory) / HTML_REPORT_NAME).exists())
             self.assertIn(f"wrote {directory}/{MARKDOWN_REPORT_NAME}", stdout.getvalue())
             self.assertIn("1 finding in 1 category", stdout.getvalue())
+
+    def test_refuses_to_write_when_the_check_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = write_checkout(directory, {})
+            review_path = root / "review.json"
+            review_path.write_text(json.dumps(build_review()), encoding="utf-8")
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                status = render_review.main(
+                    [str(review_path), "--output-dir", directory, "--root", directory]
+                )
+            self.assertEqual(status, 1)
+            self.assertIn("src/main/index.ts", stderr.getvalue())
+            self.assertFalse((root / HTML_REPORT_NAME).exists())
+
+    def test_check_only_reports_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = write_checkout(directory, {"src/main/index.ts": "x\n" * 40})
+            review_path = root / "review.json"
+            review_path.write_text(json.dumps(build_review()), encoding="utf-8")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                status = render_review.main(
+                    [str(review_path), "--check", "--output-dir", directory, "--root", directory]
+                )
+            self.assertEqual(status, 0)
+            self.assertIn("OK", stdout.getvalue())
+            self.assertFalse((root / HTML_REPORT_NAME).exists())
 
 
 if __name__ == "__main__":

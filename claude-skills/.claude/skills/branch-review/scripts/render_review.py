@@ -36,8 +36,15 @@ finding. "path", "line", "pull_request", "stats" and "overall_comments" may be
 left out. Bodies use a markdown subset: paragraphs, fenced code blocks, inline
 code, **bold**, bullet and numbered lists, and > quotes.
 
+Before writing anything the script checks the review for the mistakes a
+schema-valid file can still carry: ids out of sequence, a path that is not in
+the checkout, a line past the end of its file, an unterminated code fence, a
+placeholder left in the title. It refuses to render while any remain, so the
+reports never carry a broken anchor.
+
 Usage:
-    render_review.py review.json                   # write into the repository root
+    render_review.py review.json                   # check, then write into the repository root
+    render_review.py review.json --check           # check only, write nothing
     render_review.py review.json --output-dir DIR  # write somewhere else
 
 Run from anywhere inside the repository checkout.
@@ -146,6 +153,94 @@ def format_location(finding: dict[str, Any]) -> str:
         return ""
     line = finding.get("line")
     return f"{path}:{line}" if line is not None else path
+
+
+def check_review(review: dict[str, Any], root: Path) -> list[str]:
+    """Return the problems a schema-valid review still has, empty when clean.
+
+    root is the checkout the paths are relative to. Every message names the
+    finding it concerns so the author can fix review.json without guessing.
+    """
+    problems = check_title(review["title"])
+    for category in review["categories"]:
+        for index, finding in enumerate(category["findings"], start=1):
+            problems += check_finding_id(category, index, finding)
+            problems += check_finding_text(finding)
+            problems += check_finding_location(finding, root)
+    if has_unterminated_fence(review.get("overall_comments", "")):
+        problems.append("overall_comments has an unterminated ``` fence")
+    return problems
+
+
+def check_title(title: str) -> list[str]:
+    """Return problems with the review title."""
+    if not title.strip():
+        return ["title is blank"]
+    if "[branch description]" in title:
+        return ["title still holds the placeholder '[branch description]'"]
+    return []
+
+
+def check_finding_id(category: dict[str, Any], index: int, finding: dict[str, Any]) -> list[str]:
+    """Return problems with a finding id, which must be <category>-<index>."""
+    expected = f"{category['number']}-{index}"
+    if finding["id"] == expected:
+        return []
+    if not finding["id"].startswith(f"{category['number']}-"):
+        return [
+            f"finding {finding['id']} sits in category {category['number']} "
+            f"({category['name']}); its id must start with '{category['number']}-'"
+        ]
+    return [f"finding {finding['id']} should be {expected}: ids run 1, 2, 3 within a category"]
+
+
+def check_finding_text(finding: dict[str, Any]) -> list[str]:
+    """Return problems with a finding's title and body."""
+    problems: list[str] = []
+    if not finding["title"].strip():
+        problems.append(f"finding {finding['id']}: title is blank")
+    if not finding["body"].strip():
+        problems.append(f"finding {finding['id']}: body is blank")
+    elif has_unterminated_fence(finding["body"]):
+        problems.append(f"finding {finding['id']}: body has an unterminated ``` fence")
+    return problems
+
+
+def check_finding_location(finding: dict[str, Any], root: Path) -> list[str]:
+    """Return problems with a finding's path and line, checked against root."""
+    path = finding.get("path")
+    line = finding.get("line")
+    if path is None:
+        if line is not None:
+            return [f"finding {finding['id']}: line {line} is given without a path"]
+        return []
+    if Path(path).is_absolute():
+        return [
+            f"finding {finding['id']}: path {path} is absolute; "
+            "use a path relative to the repository root"
+        ]
+    file_path = root / path
+    if not file_path.is_file():
+        return [f"finding {finding['id']}: path {path} does not exist in the checkout"]
+    if line is None:
+        return []
+    line_count = count_lines(file_path)
+    if line < 1 or line > line_count:
+        return [
+            f"finding {finding['id']}: line {line} is outside {path} ({line_count} lines)"
+        ]
+    return []
+
+
+def has_unterminated_fence(text: str) -> bool:
+    """Return whether the text opens a ``` fence it never closes."""
+    fence_count = sum(1 for line in text.splitlines() if FENCE_PATTERN.match(line))
+    return fence_count % 2 == 1
+
+
+def count_lines(file_path: Path) -> int:
+    """Return the number of lines in the file, tolerating non-UTF-8 bytes."""
+    return len(file_path.read_text(encoding="utf-8", errors="replace").splitlines())
 
 
 def escape_html(text: Any) -> str:
@@ -417,6 +512,25 @@ def format_count(count: int, singular: str, plural: str) -> str:
     return f"{count} {singular if count == 1 else plural}"
 
 
+def format_summary(review: dict[str, Any]) -> str:
+    """Return "N findings in M categories" for the review."""
+    return (
+        f"{format_count(count_findings(review), 'finding', 'findings')} in "
+        f"{format_count(len(list_nonempty_categories(review)), 'category', 'categories')}"
+    )
+
+
+def report_problems(review_path: Path, problems: Sequence[str]) -> None:
+    """Print the check failures to stderr, one per line."""
+    print(
+        f"error: {review_path} has {format_count(len(problems), 'problem', 'problems')}; "
+        "fix the file and run again:",
+        file=sys.stderr,
+    )
+    for problem in problems:
+        print(f"  - {problem}", file=sys.stderr)
+
+
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     """Parse the command line."""
     parser = argparse.ArgumentParser(
@@ -424,7 +538,14 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("review", help="path to review.json")
     parser.add_argument(
+        "--check", action="store_true", help="check the review and write nothing"
+    )
+    parser.add_argument(
         "--output-dir", help="directory to write into (default: the repository root)"
+    )
+    parser.add_argument(
+        "--root",
+        help="checkout that finding paths are relative to (default: the repository root)",
     )
     parser.add_argument("--template", help=f"HTML template to use (default: {TEMPLATE_PATH})")
     return parser.parse_args(argv)
@@ -435,8 +556,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     generated_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     try:
         review = load_review(Path(args.review))
+        root = Path(args.root) if args.root else find_repository_root()
+        problems = check_review(review, root)
+        if problems:
+            report_problems(Path(args.review), problems)
+            return 1
+        if args.check:
+            print(f"OK: {args.review} passes every check ({format_summary(review)})")
+            return 0
         template_text = read_template(Path(args.template) if args.template else TEMPLATE_PATH)
-        output_dir = Path(args.output_dir) if args.output_dir else find_repository_root()
+        output_dir = Path(args.output_dir) if args.output_dir else root
         written = write_reports(review, output_dir, template_text, generated_at)
     except (ValueError, OSError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)
@@ -444,10 +573,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     for path in written:
         print(f"wrote {path}")
-    print(
-        f"{format_count(count_findings(review), 'finding', 'findings')} in "
-        f"{format_count(len(list_nonempty_categories(review)), 'category', 'categories')}"
-    )
+    print(format_summary(review))
     return 0
 
 
