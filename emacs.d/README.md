@@ -98,6 +98,25 @@ of the list is all it takes to switch.
 Run `M-x my-check-cjk-font-ratio` to check the result: it reports the measured
 full-width/half-width ratio, which should be `2.000`.
 
+## Markdown Preview
+
+`C-c C-c g` in a Markdown buffer toggles `grip-mode`, a live preview rendered
+by GitHub's Markdown API so that it matches github.com. The preview refreshes
+on every edit, without saving. It opens in an xwidget window when Emacs is
+built with xwidgets and in the default browser otherwise.
+
+The preview needs the `grip` command. mise installs it from
+`dotfiles/dot_config/mise/config.toml`:
+
+```sh
+mise install pipx:grip
+```
+
+`my-grip-auth.el` fills grip's GitHub credential from the auth-source entry
+that forge uses (`machine api.github.com login <user>^forge password <token>`),
+because anonymous requests hit GitHub's rate limit within minutes of real-time
+refresh. Without that entry the preview still works, anonymously.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.

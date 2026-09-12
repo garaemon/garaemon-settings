@@ -284,6 +284,7 @@
   (define-key markdown-mode-map (kbd "M-p") nil)
   (define-key markdown-mode-map (kbd "M-n") nil)
   (define-key markdown-mode-map (kbd "C-c m") 'newline)
+  (define-key markdown-mode-map (kbd "C-c C-c g") 'grip-mode)
   ;; do not work?
   (setq markdown-display-remote-images t)
   (setq markdown-max-image-size '(600 . 600))
@@ -300,6 +301,20 @@
   (add-hook 'markdown-mode-hook '(lambda ()
                                    (electric-indent-local-mode -1)))
   )
+
+;; Live preview rendered by GitHub, so the result matches what a README
+;; looks like on github.com.  `C-c C-c g' toggles it.  The `grip' command
+;; comes from dotfiles/dot_config/mise/config.toml (pipx:grip).
+(use-package grip-mode :ensure t
+  :commands grip-mode
+  :custom
+  ;; Refresh on every edit instead of on save, as VS Code does.
+  (grip-real-time-refresh t)
+  :config
+  ;; Reuse forge's api.github.com token; anonymous grip hits GitHub's
+  ;; 60 requests per hour limit within minutes of real-time refresh.
+  (require 'my-grip-auth)
+  (my-grip-auth-apply))
 
 (add-to-list 'load-path "~/.emacs.d/markdown-dnd-images")
 (use-package markdown-dnd-images
