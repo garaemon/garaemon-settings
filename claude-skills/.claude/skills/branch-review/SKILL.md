@@ -556,7 +556,10 @@ Explanation with code snippet.
 ```
 
 When reporting back, tell the user where `REVIEW.html` is so they can open it
-in a browser.
+in a browser. Both reports stay at the repository root as untracked files, so
+when the repository's `.gitignore` does not list `/REVIEW.md` and
+`/REVIEW.html`, suggest adding them; a later `git add` would otherwise commit
+them.
 
 ### Step 5: PR integration
 

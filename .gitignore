@@ -6,3 +6,6 @@ chef/Berksfile.lock
 inventory/
 *.log
 .aider*
+# Reports the branch-review skill writes at the repository root.
+/REVIEW.md
+/REVIEW.html
