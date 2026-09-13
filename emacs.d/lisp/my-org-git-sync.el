@@ -58,6 +58,15 @@ Bounds a push that waits on a network that never comes back.")
   (when file
     (vc-git-root file)))
 
+(defun my-org-git-sync-locate-current-org-repository ()
+  "Return the repository root of the Org file in the current buffer.
+Returns nil for a buffer without a file, a non-Org file, a file outside
+`org-directory', or a file that no Git repository holds."
+  (and (my-org-git-sync-target-file-p
+        buffer-file-name major-mode
+        (and (boundp 'org-directory) org-directory))
+       (my-org-git-sync-locate-repository-root buffer-file-name)))
+
 (defun my-org-git-sync-fetched-today-p (repository-root today dates)
   "Return non-nil when DATES records a fetch of REPOSITORY-ROOT on TODAY."
   (equal (cdr (assoc repository-root dates)) today))
@@ -141,11 +150,7 @@ up to date raises no prompt, which is the reason the fetch runs on its own."
 
 (defun my-org-git-sync-fetch-on-find-file ()
   "Fetch the repository of the Org file being opened, at most once a day."
-  (let ((repository-root
-         (and (my-org-git-sync-target-file-p
-               buffer-file-name major-mode
-               (and (boundp 'org-directory) org-directory))
-              (my-org-git-sync-locate-repository-root buffer-file-name)))
+  (let ((repository-root (my-org-git-sync-locate-current-org-repository))
         (today (format-time-string "%Y-%m-%d")))
     (when (and repository-root
                (not (my-org-git-sync-fetched-today-p
@@ -167,7 +172,7 @@ STATUS-OUTPUT is the whole output of `git status --porcelain'."
               (format-time-string "Auto-commit org changes at %Y-%m-%d %H:%M:%S" time))
         '("push" "--quiet")))
 
-(defun my-org-git-sync-non-interactive-environment (environment)
+(defun my-org-git-sync-make-non-interactive-environment (environment)
   "Return ENVIRONMENT with git told to fail instead of asking for input.
 Without this, a credential or passphrase prompt reads from /dev/tty and
 a background command waits there forever.  ENVIRONMENT stays unchanged."
@@ -192,7 +197,7 @@ command ends.  A command still running after
 as a non-zero status."
   (let* ((default-directory repository-root)
          (process-environment
-          (my-org-git-sync-non-interactive-environment process-environment))
+          (my-org-git-sync-make-non-interactive-environment process-environment))
          (buffer (get-buffer-create my-org-git-sync-buffer-name))
          (output-start (with-current-buffer buffer
                          (goto-char (point-max))
@@ -268,11 +273,7 @@ Does nothing while an earlier chain still runs or when the tree is clean."
   "Commit the repository of the Org file just saved once Emacs goes idle.
 A save before the idle delay passes moves the commit further out, so a
 burst of edits ends up in one commit."
-  (let ((repository-root
-         (and (my-org-git-sync-target-file-p
-               buffer-file-name major-mode
-               (and (boundp 'org-directory) org-directory))
-              (my-org-git-sync-locate-repository-root buffer-file-name))))
+  (let ((repository-root (my-org-git-sync-locate-current-org-repository)))
     (when repository-root
       (when my-org-git-sync-auto-commit-timer
         (cancel-timer my-org-git-sync-auto-commit-timer))

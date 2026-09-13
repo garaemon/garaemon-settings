@@ -134,14 +134,14 @@
 
 (ert-deftest my-org-git-sync-test-non-interactive-environment-disables-prompt ()
   (should (member "GIT_TERMINAL_PROMPT=0"
-                  (my-org-git-sync-non-interactive-environment '("HOME=/home")))))
+                  (my-org-git-sync-make-non-interactive-environment '("HOME=/home")))))
 
 (ert-deftest my-org-git-sync-test-non-interactive-environment-keeps-input-unchanged ()
   (let ((environment '("HOME=/home")))
-    (my-org-git-sync-non-interactive-environment environment)
+    (my-org-git-sync-make-non-interactive-environment environment)
     (should (equal environment '("HOME=/home")))))
 
-(defvar my-org-git-sync-test-recorded nil
+(defvar my-org-git-sync-test-recorded-arguments nil
   "Argument lists the stubbed `my-org-git-sync-start-git' received, in order.")
 
 (defun my-org-git-sync-test-stub-start-git (recorded-arguments failing-arguments)
@@ -154,45 +154,45 @@ and reports exit status 1 for FAILING-ARGUMENTS and 0 for the rest."
     (funcall callback (if (equal arguments failing-arguments) 1 0) "")))
 
 (ert-deftest my-org-git-sync-test-run-git-steps-runs-every-step-in-order ()
-  (let ((my-org-git-sync-test-recorded nil)
+  (let ((my-org-git-sync-test-recorded-arguments nil)
         (result 'unset))
     (cl-letf (((symbol-function 'my-org-git-sync-start-git)
-               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded nil)))
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded-arguments nil)))
       (my-org-git-sync-run-git-steps "/org/" '(("add") ("commit") ("push"))
                                      (lambda (failed-step) (setq result failed-step)))
-      (should (equal my-org-git-sync-test-recorded '(("add") ("commit") ("push"))))
+      (should (equal my-org-git-sync-test-recorded-arguments '(("add") ("commit") ("push"))))
       (should (equal result nil)))))
 
 (ert-deftest my-org-git-sync-test-run-git-steps-stops-after-first-failure ()
-  (let ((my-org-git-sync-test-recorded nil)
+  (let ((my-org-git-sync-test-recorded-arguments nil)
         (result 'unset))
     (cl-letf (((symbol-function 'my-org-git-sync-start-git)
-               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded-arguments
                                                     '("commit"))))
       (my-org-git-sync-run-git-steps "/org/" '(("add") ("commit") ("push"))
                                      (lambda (failed-step) (setq result failed-step)))
-      (should (equal my-org-git-sync-test-recorded '(("add") ("commit"))))
+      (should (equal my-org-git-sync-test-recorded-arguments '(("add") ("commit"))))
       (should (equal result '("commit"))))))
 
 (ert-deftest my-org-git-sync-test-commit-and-push-skips-clean-repository ()
-  (let ((my-org-git-sync-test-recorded nil)
+  (let ((my-org-git-sync-test-recorded-arguments nil)
         (my-org-git-sync-commit-in-progress nil))
     (cl-letf (((symbol-function 'my-org-git-sync-start-git)
-               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded nil)))
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded-arguments nil)))
       (my-org-git-sync-commit-and-push "/org/")
-      (should (equal my-org-git-sync-test-recorded '(("status" "--porcelain")))))))
+      (should (equal my-org-git-sync-test-recorded-arguments '(("status" "--porcelain")))))))
 
 (ert-deftest my-org-git-sync-test-commit-and-push-pushes-dirty-repository ()
-  (let ((my-org-git-sync-test-recorded nil)
+  (let ((my-org-git-sync-test-recorded-arguments nil)
         (my-org-git-sync-commit-in-progress nil))
     (cl-letf (((symbol-function 'my-org-git-sync-start-git)
                (lambda (_repository-root arguments callback)
-                 (push arguments my-org-git-sync-test-recorded)
+                 (push arguments my-org-git-sync-test-recorded-arguments)
                  (funcall callback 0 (if (equal arguments '("status" "--porcelain"))
                                          " M notes.org\n"
                                        "")))))
       (my-org-git-sync-commit-and-push "/org/")
-      (should (equal (car (car my-org-git-sync-test-recorded)) "push")))))
+      (should (equal (car (car my-org-git-sync-test-recorded-arguments)) "push")))))
 
 (ert-deftest my-org-git-sync-test-commit-and-push-releases-guard-when-done ()
   (let ((my-org-git-sync-commit-in-progress nil))
