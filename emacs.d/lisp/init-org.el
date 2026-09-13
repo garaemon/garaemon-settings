@@ -405,6 +405,9 @@ fully configured, not stripped down."))
 (use-package org-tempo :after org
   :ensure nil
   :custom
+  ;; The language-specific src templates spell out `:results output' because
+  ;; org-babel otherwise collects the last value, which drops whatever python
+  ;; or shell writes to stdout.
   (org-structure-template-alist
    '(("A" . "ai")
      ("a" . "ai")
@@ -413,15 +416,18 @@ fully configured, not stripped down."))
      ("c" . "center")
      ("C" . "comment")
      ("cpp" . "src c++")
-     ("py" . "src python")
-     ("el" . "src elisp")
+     ("py" . "src python :results output")
+     ("el" . "src elisp :results output")
      ("e" . "example")
      ("E" . "export")
      ("h" . "export html")
      ("l" . "export latex")
      ("q" . "quote")
+     ;; Leave this one bare. org-tempo places point right after
+     ;; `#+begin_src ' so the language can be typed, but only when the
+     ;; template name is exactly "src".
      ("s" . "src")
-     ("sh" . "src shell")
+     ("sh" . "src shell :results output")
      ("v" . "verse")
      ))
   ;; The keys of org-tempo-keywords-alist and org-structure-template-alist have to be unique.
