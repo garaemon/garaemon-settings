@@ -15,9 +15,10 @@ readonly REPO_ROOT
 # Pinned so a new upstream rule does not turn a green branch red on its own.
 readonly MARKDOWNLINT_CLI2_VERSION="0.23.2"
 
-# project-init templates hold placeholders such as __PROJECT_DESCRIPTION__ that
-# markdownlint reads as malformed prose.
-readonly TEMPLATE_PATH_PREFIX="claude-skills/.claude/skills/project-init/templates/"
+# Skill templates hold placeholders such as __PROJECT_DESCRIPTION__ that
+# markdownlint reads as malformed prose, so every templates/ directory is
+# excluded from the Markdown lint.
+readonly TEMPLATE_DIRECTORY_PATTERN='(^|/)templates/'
 
 readonly ALL_TARGETS="shell markdown yaml python ansible whitespace"
 
@@ -66,7 +67,7 @@ lint_markdown() {
   local file
   while IFS= read -r file; do
     files+=("$file")
-  done < <(git ls-files '*.md' | grep -v "^$TEMPLATE_PATH_PREFIX")
+  done < <(git ls-files '*.md' | grep -Ev "$TEMPLATE_DIRECTORY_PATTERN")
   npx --yes "markdownlint-cli2@$MARKDOWNLINT_CLI2_VERSION" "${files[@]}"
 }
 
