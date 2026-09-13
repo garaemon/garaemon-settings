@@ -370,6 +370,11 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertIn('id="path-filter"', page)
         self.assertIn('id="expand-all"', page)
 
+    def test_keeps_the_copy_button_script_on_the_page(self) -> None:
+        page = self.render(build_review())
+        self.assertIn('className = "copy-button"', page)
+        self.assertIn("navigator.clipboard", page)
+
     def test_omits_the_pull_request_row_when_absent(self) -> None:
         review = build_review()
         del review["pull_request"]

@@ -75,6 +75,23 @@ pre {
   overflow-x: auto;
 }
 pre code { padding: 0; background: none; }
+.code-block { position: relative; margin: 1em 0; }
+.code-block pre { margin: 0; }
+.copy-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.8em;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.code-block:hover .copy-button, .copy-button:focus { opacity: 1; }
 blockquote {
   margin: 8px 0;
   padding: 4px 12px;
@@ -226,6 +243,50 @@ ${sections}
       applyFilters();
     });
   }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    // A page opened over plain http has no clipboard API, so fall back to
+    // selecting the text in a hidden textarea and copying that.
+    var textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      return document.execCommand("copy") ? Promise.resolve() : Promise.reject(new Error("copy refused"));
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  // The button sits in a wrapper rather than in the <pre>, so it stays put
+  // when a wide code block scrolls horizontally.
+  document.querySelectorAll("pre").forEach(function (block) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    block.parentNode.insertBefore(wrapper, block);
+    wrapper.appendChild(block);
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-button";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code block");
+    button.addEventListener("click", function () {
+      var code = block.querySelector("code") || block;
+      copyText(code.textContent).then(function () {
+        button.textContent = "Copied";
+      }, function () {
+        button.textContent = "Copy failed";
+      });
+      window.setTimeout(function () { button.textContent = "Copy"; }, 1500);
+    });
+    wrapper.appendChild(button);
+  });
 
   function setAllOpen(isOpen) {
     document.querySelectorAll("details.finding").forEach(function (card) {
