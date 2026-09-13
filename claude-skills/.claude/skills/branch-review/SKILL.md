@@ -14,7 +14,7 @@ description: |
   when the user asks to review a specific PR by number, or a specific commit range with
   phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
   "review the last commit", "review commits abc123..def456".
-allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*)
+allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py:*)
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"
