@@ -1,0 +1,303 @@
+<!-- scripts/render_review.py fills this file through string.Template.
+     Placeholders: title, lang_attribute, meta_rows, finding_count,
+     category_chips, summary_rows, overall_section, sections, report_state,
+     no_findings_text, generated_at. A literal dollar sign anywhere in this
+     file aborts every render, so write "USD" or "dollar" instead. -->
+<!doctype html>
+<html${lang_attribute}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --surface: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --text: #0b0b0b;
+  --text-2: #5d5d58;
+  --line: #d9d8d2;
+  --accent: #1f5fbf;
+  --accent-text: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #1a1a19;
+    --surface-2: #262625;
+    --text: #ececea;
+    --text-2: #a4a49f;
+    --line: #3a3a38;
+    --accent: #6ea0ec;
+    --accent-text: #0b0b0b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+h1 { font-size: 1.6em; margin: 0 0 8px; line-height: 1.25; }
+h2 { font-size: 1.2em; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h2 .count {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.5em;
+  margin-left: 0.4em;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.75em;
+  text-align: center;
+  vertical-align: middle;
+}
+a { color: var(--accent); }
+code, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+pre {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  overflow-x: auto;
+}
+pre code { padding: 0; background: none; }
+.code-block { position: relative; margin: 1em 0; }
+.code-block pre { margin: 0; }
+.copy-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.8em;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.code-block:hover .copy-button, .copy-button:focus { opacity: 1; }
+blockquote {
+  margin: 8px 0;
+  padding: 4px 12px;
+  border-left: 3px solid var(--line);
+  color: var(--text-2);
+}
+dl.meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 16px;
+  margin: 0;
+  color: var(--text-2);
+}
+dl.meta dt { font-weight: 600; }
+dl.meta dd { margin: 0; overflow-wrap: anywhere; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip, .filters button {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.chip b { font-weight: 600; opacity: 0.8; }
+#path-filter {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+table.summary-table { width: 100%; border-collapse: collapse; }
+table.summary-table th, table.summary-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+table.summary-table th { color: var(--text-2); font-weight: 600; }
+table.summary-table td.location { word-break: break-all; }
+.empty-state, .filter-empty-state { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--text-2); }
+.has-findings .empty-state { display: none; }
+.no-findings .summary-table, .no-findings .filters { display: none; }
+details.finding {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+details.finding summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+details.finding summary .location {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-2);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+details.finding .body { padding: 0 14px 12px; }
+details.finding .body p:first-child { margin-top: 0; }
+[hidden] { display: none !important; }
+footer { margin-top: 40px; color: var(--text-2); font-size: 0.9em; }
+</style>
+</head>
+<body>
+<main class="${report_state}">
+<header>
+<h1>${title}</h1>
+<dl class="meta">
+${meta_rows}
+</dl>
+</header>
+
+<section class="summary">
+<h2>Summary <span class="count">${finding_count}</span></h2>
+<div class="filters">
+<div class="chips">
+${category_chips}
+</div>
+<input id="path-filter" type="search" placeholder="Filter by file path" aria-label="Filter by file path">
+<button type="button" id="expand-all">Expand all</button>
+<button type="button" id="collapse-all">Collapse all</button>
+</div>
+<table class="summary-table">
+<thead><tr><th>ID</th><th>Category</th><th>Location</th><th>Title</th></tr></thead>
+<tbody>
+${summary_rows}
+</tbody>
+</table>
+<p class="empty-state">${no_findings_text}</p>
+<p class="filter-empty-state" hidden>No findings match the current filters.</p>
+</section>
+
+${overall_section}
+
+${sections}
+
+<footer>Generated ${generated_at}</footer>
+</main>
+<script>
+(function () {
+  var selectedCategory = "";
+  var pathQuery = "";
+
+  function matchesFilters(element) {
+    var categoryMatches = selectedCategory === "" ||
+      element.getAttribute("data-category") === selectedCategory;
+    var path = (element.getAttribute("data-path") || "").toLowerCase();
+    var pathMatches = pathQuery === "" || path.indexOf(pathQuery) !== -1;
+    return categoryMatches && pathMatches;
+  }
+
+  function applyFilters() {
+    document.querySelectorAll("tr[data-category], details.finding").forEach(function (element) {
+      element.hidden = !matchesFilters(element);
+    });
+    document.querySelectorAll("section[data-category]").forEach(function (section) {
+      section.hidden = section.querySelectorAll("details.finding:not([hidden])").length === 0;
+    });
+    var visibleRowCount = document.querySelectorAll("tr[data-category]:not([hidden])").length;
+    var filterEmptyState = document.querySelector(".filter-empty-state");
+    if (filterEmptyState) { filterEmptyState.hidden = visibleRowCount !== 0; }
+  }
+
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      selectedCategory = chip.getAttribute("data-category") || "";
+      document.querySelectorAll(".chip").forEach(function (other) {
+        other.classList.toggle("active", other === chip);
+      });
+      applyFilters();
+    });
+  });
+
+  var pathFilter = document.getElementById("path-filter");
+  if (pathFilter) {
+    pathFilter.addEventListener("input", function () {
+      pathQuery = pathFilter.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    // A page opened over plain http has no clipboard API, so fall back to
+    // selecting the text in a hidden textarea and copying that.
+    var textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      return document.execCommand("copy") ? Promise.resolve() : Promise.reject(new Error("copy refused"));
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  // The button sits in a wrapper rather than in the <pre>, so it stays put
+  // when a wide code block scrolls horizontally.
+  document.querySelectorAll("pre").forEach(function (block) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    block.parentNode.insertBefore(wrapper, block);
+    wrapper.appendChild(block);
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-button";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code block");
+    button.addEventListener("click", function () {
+      var code = block.querySelector("code") || block;
+      copyText(code.textContent).then(function () {
+        button.textContent = "Copied";
+      }, function () {
+        button.textContent = "Copy failed";
+      });
+      window.setTimeout(function () { button.textContent = "Copy"; }, 1500);
+    });
+    wrapper.appendChild(button);
+  });
+
+  function setAllOpen(isOpen) {
+    document.querySelectorAll("details.finding").forEach(function (card) {
+      card.open = isOpen;
+    });
+  }
+  var expandAll = document.getElementById("expand-all");
+  var collapseAll = document.getElementById("collapse-all");
+  if (expandAll) { expandAll.addEventListener("click", function () { setAllOpen(true); }); }
+  if (collapseAll) { collapseAll.addEventListener("click", function () { setAllOpen(false); }); }
+})();
+</script>
+</body>
+</html>

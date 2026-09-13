@@ -3,8 +3,9 @@ name: branch-review
 description: |
   Review code changes on the current branch against the branch they merge into
   (the pull request's base branch when one is open, so stacked PRs review only their
-  own changes; the repository default branch otherwise), producing a structured
-  REVIEW.md and posting inline review comments on specific file lines via GitHub API.
+  own changes; the repository default branch otherwise), producing REVIEW.md and
+  REVIEW.html (with a summary of every finding at the top) and posting inline
+  review comments on specific file lines via GitHub API.
   The review can also be scoped to a narrower commit range: the last N commits, one
   commit, or an explicit range.
   Use this skill whenever the user wants a code review, says things like "review",
@@ -13,7 +14,16 @@ description: |
   when the user asks to review a specific PR by number, or a specific commit range with
   phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
   "review the last commit", "review commits abc123..def456".
-allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Edit(REVIEW.md)
+allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py:*)
+# Claude Code expands ${CLAUDE_SKILL_DIR} in the markdown body and in
+# allowed-tools only, never in hook commands, so the hook locates the skill
+# through its install path and does nothing where that path is absent.
+hooks:
+  PostToolUse:
+    - matcher: "Write|Edit"
+      hooks:
+        - type: command
+          command: "skill_dir=\"$HOME/.claude/skills/branch-review\"; [ -d \"$skill_dir\" ] || exit 0; command -v uv >/dev/null 2>&1 || exit 0; uv run --project \"$skill_dir\" \"$skill_dir/scripts/check_review_hook.py\""
 ---
 
 # Code Review Skill
@@ -24,25 +34,14 @@ programming language.
 
 ## Review Philosophy
 
-Good code is **readable, consistent, documented, and tested**. That is the
-standard. Not clever code, not elegant code, not code that shows off a neat
-trick. Code that a new team member can open, understand quickly, and modify
-with confidence.
+The standard is code a new team member can open, understand on first reading,
+and change with confidence: readable, consistent, documented, and tested. Flag
+cleverness rather than praising it; a plain 10-line function beats a dense
+3-line one that takes thought to parse.
 
-When reviewing, ask: "Would a competent developer unfamiliar with this
-codebase understand this code on first reading?" If the answer is no, that
-is a finding -- whether the fix is a better name, a doc comment, a simpler
-structure, or all three.
-
-Do not praise cleverness. Flag it. Clever code is a maintenance burden.
-A straightforward 10-line function is better than a dense 3-line function
-that requires careful thought to parse. Readable code does not need to be
-verbose -- it needs to be clear.
-
-Perfection is not the goal. Start small, ship fast, iterate. A working
-implementation with TODO comments marking known gaps is better than a
-stalled over-engineered one. When reviewing, do not demand that every edge
-case is handled or every abstraction is finalized. Instead, check that:
+Do not demand that every edge case is handled or every abstraction is
+finalized. A working implementation with specific TODO comments marking known
+gaps is fine. Check that:
 
 - The code works for the primary use case
 - Known limitations are marked with TODO comments (not silently ignored)
@@ -55,14 +54,15 @@ the presence of TODOs as a problem.
 ## Scripts
 
 All git and GitHub access goes through these scripts, in `scripts/` next to this
-file. Claude Code expands `${CLAUDE_SKILL_DIR}` below to that directory, in this
-text and in the `allowed-tools` rule alike, so the command matches the rule and
-runs without a permission prompt. Pass it through unchanged rather than
-substituting a path of your own.
+file. Claude Code expands `${CLAUDE_SKILL_DIR}` to that directory in this text
+and in the `allowed-tools` rule alike, so pass it through unchanged and the
+command runs without a permission prompt.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
+| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 1-1.6) |
+| `render_review.py` | Checking `review.json` and rendering it into `REVIEW.md` and `REVIEW.html` (Step 4) |
+| `check_review_hook.py` | PostToolUse hook that checks `review.json` as soon as it is written; not run directly |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |
 | `commands.py` | Shared git/`gh` runners; not run directly |
@@ -83,53 +83,80 @@ you need, say so rather than reaching for a raw command.
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
 
-`--project` is required, not decorative. Without it `uv` searches upward from the
-current directory for a `pyproject.toml` and would attach to **the repository
-being reviewed**, picking up that project's Python version and dependencies.
-Pointing it at the skill directory pins the interpreter to the one in
-`uv.lock` regardless of which repository the review runs in. The working
-directory still has to be inside the checkout under review -- `--project`
-changes dependency resolution, not `cwd`.
-
-The scripts are standard library only, so `uv` resolves them without a network
-fetch after the first run.
-
-Every script takes `--help`. Their unit tests run with:
-
-```bash
-uv run --project ${CLAUDE_SKILL_DIR} -m unittest discover \
-  -s ${CLAUDE_SKILL_DIR}/scripts -t ${CLAUDE_SKILL_DIR}/scripts
-```
+Without `--project`, `uv` walks up from the current directory and attaches to
+the `pyproject.toml` of **the repository being reviewed**, with that project's
+Python and dependencies. The working directory still has to be inside the
+checkout under review; `--project` changes dependency resolution, not `cwd`.
+Every script takes `--help`.
 
 ### GitHub Enterprise
 
-The scripts derive `GH_HOST` from the `origin` remote and pass it to every `gh`
-call, so a GitHub Enterprise checkout works with no setup. Both remote URL forms
-are understood: `git@github.example.com:owner/repo.git` and
-`https://github.example.com/owner/repo.git`.
-
-An inherited `GH_HOST` is deliberately overridden whenever the `origin` remote
-names a host -- the repository under review decides which server to talk to, not
-the ambient environment. With no such remote, an exported `GH_HOST` is left
-alone.
-`gather_review_context.py` prints the host it resolved as `github_host:` in its
-`review range` block; if that line names the wrong server, stop and tell the user
-rather than posting anything.
+The scripts derive the GitHub host from the `origin` remote, so a GitHub
+Enterprise checkout needs no setup. `gather_review_context.py` prints the host
+it resolved as `github_host:` in its `review range` block; if that line names
+the wrong server, stop and tell the user rather than posting anything.
 
 ## Workflow
 
-### Step 0-1: Gather the diff
+### Step 0: Choose the review model
 
-Run the script. It resolves the range, fetches what it needs, and prints the
-range, the review language, the diff size, the changed files, the per-file stat,
-and the commits in one pass:
+The review runs in a subagent so the user can pick the model for it each time.
+Review quality tracks how deeply the model reads, and Claude Fable 5.1 costs
+twice Claude Opus 5 per token, so the choice belongs to the user, per diff.
+
+**Skip this step entirely, and never launch a subagent, when either holds:**
+
+- You are yourself a subagent, launched with the Agent tool. A subagent cannot
+  ask the user anything, so delegating again would only nest another subagent.
+- The prompt that invoked you contains the marker line
+  `branch-review: delegated reviewer`, which the parent (this skill or
+  branch-review-loop) puts first in the prompt.
+
+In either case start at Step 1 and run every step yourself, except Step 5,
+which the parent handles.
+
+Otherwise:
+
+1. Run `gather_review_context.py` first (with the scope flags from Step 1) so
+   the question can quote the diff size. Fix the scope flags here; the subagent
+   receives them verbatim.
+2. Ask one question with AskUserQuestion, quoting the `size` block
+   ("N files, +X / -Y"). Offer these options, with these descriptions:
+   - **Opus 5**: everyday reviews; the baseline price.
+   - **Fable 5.1**: large diffs, or diffs that touch concurrency, security
+     boundaries, or shell execution; twice the price of Opus.
+   - **Sonnet 5**: small, mechanical diffs; 0.4 times the price of Opus.
+   Mark Opus 5 as recommended, except when additions exceed 200 or the changed
+   files include authentication, input boundaries, or shell execution, where
+   Fable 5.1 is the recommendation.
+3. Launch an Agent (general-purpose) with `model` set to the choice (`opus`,
+   `fable`, or `sonnet`) and this prompt, marker line first:
+
+   ```text
+   branch-review: delegated reviewer
+
+   Run the /branch-review skill in {working_directory} with the scope flags:
+   {flags, or "(none: whole branch)"}. Run every review step yourself in
+   this agent. Do NOT post comments to GitHub and do NOT ask about posting.
+   When done, report the path of review.json and the finding count.
+   ```
+
+4. When the subagent finishes, read `REVIEW.md`, summarize the findings to the
+   user, tell them where `REVIEW.html` is, and continue with Step 5 yourself.
+   Build the posting payload from the `review.json` path the subagent reported.
+
+When AskUserQuestion is unavailable or the run is non-interactive, skip the
+question and launch the subagent without `model`, which uses the session's
+model.
+
+### Step 1: Gather the diff
+
+Run the script, read its `review range` block, and confirm the scope is what
+the user asked for before going further. Read every `NOTE` it prints.
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py
 ```
-
-Read its `review range` block and confirm the scope is what the user asked for
-before going further.
 
 #### Scoping the review
 
@@ -147,50 +174,20 @@ would all still describe the wrong span.
 | "developブランチとの差分" | `--base develop` |
 | nothing about scope | (no flag: whole branch) |
 
-```bash
-uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --last 1
-uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --commit abc123
-uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --range abc123..def456
-```
-
-`--commit` reviews that commit's own change (`REV^..REV`), and works on a root
-commit. `--range` also accepts git's three-dot form (`main...HEAD`, meaning
-"since the two diverged") and a bare revision (`abc123`, meaning `abc123..HEAD`).
-
 An endpoint named as `origin/<branch>` is fetched before it is resolved, so
 `--range origin/develop..HEAD` sees the branch as it is on the server. Every
 other endpoint is taken from the local checkout as it stands.
 
-`--last N` and `--commit` step through first parents, so a merge commit among
-those steps widens the span to everything that merge brought in. The script
-prints a `NOTE` naming the real commit count when that happens; read it, and
-reach for `--range` if the wider span is not what the user asked for.
-
 #### How the default base is chosen
 
-With no scope flag, the base is **the branch these changes will actually merge
-into**, which is not always the repository default:
-
-| Situation | Base used |
-| --- | --- |
-| Pull request open for this branch | that PR's base branch |
-| No pull request yet | repository default branch |
-| Neither resolves | local `main` / `master` |
-
-This matters most for **stacked pull requests**, where the PR targets the branch
-below it rather than `main`. Diffing against `main` there pulls in every change
-from the PRs underneath and makes you review work that was already reviewed. If
-the resolved base looks wrong, override it with `--base`.
+With no scope flag the script picks the branch these changes will merge into:
+the open pull request's base branch, else the repository default branch, else
+local `main` / `master`. For a stacked pull request that is the branch below,
+not `main`. If the resolved base looks wrong, override it:
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py --base some-other-branch
 ```
-
-The default range is measured from the merge-base, so commits that landed on the
-base after this branch was cut are excluded. The explicit flags (`--last`,
-`--commit`, `--range`) name their endpoints outright and resolve no base branch.
-The one exception is `--range a...b`, where git's three-dot spelling asks for the
-merge-base of the two revisions you named.
 
 Review the files listed under `files to review`. The script lists deleted files
 separately -- ignore those entirely.
@@ -201,11 +198,9 @@ the Read tool when you need to tell changed code from pre-existing code.
 
 ### Step 1.5: Check PR size
 
-`gather_review_context.py` prints a `NOTE` when additions exceed 200. When it does, flag
-PR size in Overall Comments and suggest splitting into smaller PRs.
-
-When suggesting a split, propose concrete PR boundaries based on the actual
-changes. Good split criteria:
+When the script prints the size `NOTE`, flag PR size in Overall Comments and
+propose concrete split boundaries based on the actual changes, then still
+review in full. Good split criteria:
 
 - **By layer**: config/build changes, backend logic, frontend/UI, tests
 - **By feature**: if multiple independent features are bundled, each becomes
@@ -213,29 +208,11 @@ changes. Good split criteria:
 - **By dependency order**: foundational changes (types, shared utilities) first,
   then code that depends on them
 
-Example suggestion format:
-> This PR has 5,000 lines of additions across 40 files. Consider splitting:
->
-> 1. **PR1: Infrastructure** -- package.json, tsconfig, CI config (5 files)
-> 2. **PR2: Core logic** -- store, file-watcher, window-manager (8 files)
-> 3. **PR3: Editor** -- CodeMirror setup, language support (6 files)
-> 4. **PR4: UI + tests** -- toolbar, settings, unit/e2e tests (12 files)
-
-Still proceed with the full review even if the PR is large -- the user may
-have good reasons for keeping it as one PR. The split suggestion is advisory.
-
 ### Step 1.6: Note the review language
 
-The script reports Claude Code's `language` setting:
-
-```text
-=== review language ===
-language:      japanese
-source:        /home/you/.claude/settings.json
-```
-
-Write REVIEW.md in that language. When it reports `(unset)`, write in the
-language the user is using, defaulting to Japanese.
+Write the review text in `review.json` (Step 4) in the language the
+`review language` block reports. When it says `(unset)`, use the language the
+user is writing in, defaulting to Japanese.
 
 ### Step 2: Read all changed files
 
@@ -243,18 +220,11 @@ Read every added or modified file in full before making any judgments. Do not
 start writing findings until you have read all changed files. This prevents
 shallow or contradictory feedback.
 
-Group files mentally by layer:
-
-- Config / build (package.json, CMakeLists.txt, Makefile, pyproject.toml, etc.)
-- Core logic / backend
-- Frontend / UI
-- Shared types, constants, utilities
-- Tests
-- Documentation
-
 ### Step 3: Review by category
 
-Review the code in this order. Each category has specific things to look for.
+Review the code in this order. Focus on the diff, not pre-existing code the
+branch did not change. Be specific: give a file path, a line number and a code
+snippet for every finding.
 
 #### Category 1: Architecture / Config
 
@@ -295,7 +265,8 @@ regardless of the programming language:
 
 Follow the language's naming conventions for casing (camelCase for JS/TS/Java,
 snake_case for Python/Rust/C, PascalCase for Go exported names, etc.), but
-the rules above about role/context and verbosity apply universally.
+the rules above about role/context and verbosity apply universally. When
+flagging a naming issue, always suggest a concrete better name.
 
 #### Category 4: Documentation / Comments
 
@@ -326,6 +297,8 @@ Check for:
 - **Spec references**: When code implements behavior defined by an external spec
   (e.g., protocol definitions, RFC, language specs), the comment should reference
   the spec section or link.
+
+When flagging a missing comment, briefly describe what the comment should say.
 
 #### Category 5: Logic / Correctness
 
@@ -367,58 +340,103 @@ formatter is configured in the project.
 - Unnecessary allocations in tight loops
 - Missing caching for expensive repeated computations
 
-### Step 4: Write REVIEW.md
+### Step 4: Write review.json and render the reports
 
-Write findings to `REVIEW.md` at the project root, in the language resolved in
-Step 1.6.
+Write the findings to `review.json` in the scratchpad directory, then let the
+script render `REVIEW.md` and `REVIEW.html` at the project root from it:
 
-Structure:
-
-```markdown
-# Code Review: [branch description]
-
-Branch: `branch-name`
-N files changed, X insertions, Y deletions
-
-## Overall Comments
-
-[Cross-cutting concerns that affect the whole codebase.
-Things like "documentation is consistently missing" or
-"naming conventions are not followed" go here, not as
-individual items.]
-
----
-
-## 1. Architecture / Config
-
-### 1-1. [filename:line] Short description
-
-Explanation with code snippet.
-
-### 1-2. ...
-
----
-
-## 2. Security
-...
-
-## 3. Naming
-...
-
-[Continue through all 8 categories. Omit empty categories.]
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py /path/to/scratchpad/review.json
 ```
 
-Do not assign priority levels. Every finding in the review should be
-worth the author's attention. If something is too trivial to act on,
-leave it out entirely instead of marking it "Low".
+The file shape, with the review text in the language resolved in Step 1.6:
+
+```json
+{
+  "title": "Code Review: add color picker",
+  "branch": "feature/color-picker",
+  "range": "whole branch against main (repository default branch)",
+  "pull_request": "https://github.com/octo/repo/pull/12",
+  "language": "en",
+  "stats": {"files": 3, "additions": 120, "deletions": 8},
+  "overall_comments": "Cross-cutting concerns, in markdown.",
+  "categories": [
+    {
+      "number": 2,
+      "name": "Security",
+      "findings": [
+        {
+          "id": "2-1",
+          "title": "IPC color inputs not validated",
+          "path": "src/main/index.ts",
+          "line": 29,
+          "body": "The `UPDATE_COLOR` handler accepts arbitrary strings:\n\n```ts\nipcMain.on(UPDATE_COLOR, (_, color) => setColor(color));\n```\n\nSuggestion: validate against `/^#[0-9A-Fa-f]{6}$/`."
+        }
+      ]
+    }
+  ]
+}
+```
+
+Rules for building the file:
+
+- Copy `branch`, `range` and `pull_request` from the `review range` block and
+  `stats` from the `size` block that `gather_review_context.py` printed. Leave
+  `pull_request` out when the block says `(none for this branch)`.
+- Set `language` to the BCP 47 tag of the review text (`ja` for Japanese, `en`
+  for English) so the HTML page declares the language its fonts and screen
+  readers should use. Leave it out when unsure.
+- `overall_comments` holds cross-cutting concerns that affect the whole
+  codebase, such as "documentation is consistently missing" or "naming
+  conventions are not followed", plus the PR size note from Step 1.5. Those go
+  here, not as individual findings.
+- List the categories in the order of Step 3, numbered 1-8. Empty categories
+  may be listed or left out; the reports omit them either way.
+- Number findings `<category>-<index>` (`2-1`, `2-2`, ...). Ids must be unique.
+- `path` is relative to the repository root and `line` is the line on the HEAD
+  side. Leave both out for a finding that maps to no single line.
+- `body` and `overall_comments` are markdown. The renderer understands
+  paragraphs, fenced code blocks, inline code, `**bold**`, bullet and numbered
+  lists, and `>` quotes; anything else shows up as plain text. Start every
+  fence at column 0, because an indented fence does not open a code block.
+  Keep lists flat: a nested item renders as a sibling in the HTML report
+  while `REVIEW.md` keeps the nesting.
+- Do not assign priority levels. Every finding in the review should be worth
+  the author's attention. If something is too trivial to act on, leave it out
+  entirely instead of marking it "Low".
+
+#### Checking the file
+
+The script checks `review.json` before it writes anything and refuses to
+render while a problem remains; every failure names the finding and what to
+change. A PostToolUse hook declared in this file's frontmatter runs the same
+checks the moment `review.json` is written or edited, so problems can also
+arrive as tool feedback. To run the checks by hand without writing the
+reports:
+
+```bash
+uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py /path/to/scratchpad/review.json --check
+```
+
+Fix `review.json` and run the render command again; do not edit `REVIEW.md`
+or `REVIEW.html` by hand, because the next run overwrites both.
+
+When reporting back, say which range you reviewed and tell the user where
+`REVIEW.html` is so they can open it in a browser. Both reports stay at the
+repository root as untracked files; when the repository's `.gitignore` does
+not list `/REVIEW.md` and `/REVIEW.html`, suggest adding them.
 
 ### Step 5: PR integration
+
+The parent that asked for the model runs this step, because only the parent
+can talk to the user. A delegated reviewer stops after Step 4 and reports the
+`review.json` path.
 
 `gather_review_context.py` already reported whether a pull request exists, in the
 `pull_request` field of its `review range` block. If one exists, ask the user
 in the review language:
 
-> REVIEW.md を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
+> REVIEW.md と REVIEW.html を作成しました。このブランチにPR (#N) があります。PRにインラインレビューコメントを投稿しますか?
 
 If the user confirms, post the review as **inline comments on specific file lines**
 using the GitHub Pull Request Review API. Do NOT post without confirmation.
@@ -431,7 +449,6 @@ Write the file to the scratchpad directory, not the user's project.
 ```json
 {
   "body": "Overall summary: cross-cutting concerns, PR size notes, findings that anchor to no single line.",
-  "event": "COMMENT",
   "comments": [
     {
       "path": "src/main/index.ts",
@@ -449,18 +466,10 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py 
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py findings.json
 ```
 
-The script fills in `"side": "RIGHT"` and defaults `"event"` to `"COMMENT"`, so
-neither belongs in the file. It checks every anchor against the pull request
-diff before sending anything, and refuses to post if any is bad -- **GitHub
-rejects the entire review when a single comment anchors outside the diff**, so
-one wrong line number would otherwise lose every finding. On failure it names
-the offending anchor and the nearest usable line:
-
-```text
-error: refusing to post; GitHub rejects the whole review on a bad anchor
-  Makefile:999 - not in the diff; nearest anchorable line is 68
-  no/such/file.go:1 - file is not in the pull request diff
-```
+`post_review.py` fills in `side` and `event`, checks every anchor against the
+pull request diff, and refuses to post if any is bad, naming the offending
+anchor and the nearest usable line, because GitHub rejects the whole review on
+one bad anchor.
 
 To pick anchors while you are still writing findings, ask which lines are
 available:
@@ -470,47 +479,20 @@ uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentabl
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py --path src/main/index.ts
 ```
 
-Anchorable lines always come from **the pull request's own diff**, whatever range
-you reviewed. That is normally a superset of a narrower range, so a `--last 1`
-review anchors fine. It is not a superset when the reviewed range reaches outside
-the pull request: `--range`, `--commit` and `--base` take any revision, so a span
-that only partly overlaps the PR -- or does not overlap it at all -- leaves
-findings with nowhere to anchor. It is also not a superset for a line that an
-intermediate commit touched and a later commit changed back or removed, which
-does not survive into the PR's net diff. Either way, `post_review.py` names the
-anchors it rejects -- move those findings to the top-level `body` rather than
-forcing an anchor.
+Anchorable lines come from the pull request's own diff, whatever range you
+reviewed: a `--range`, `--commit` or `--base` span that reaches outside the
+pull request, or a line a later commit changed back, has nowhere to anchor.
+Move such findings to the top-level `body`, together with cross-cutting
+concerns such as PR size.
 
 Rules for building the findings file:
 
-- **`path`**: relative to the repo root, NOT an absolute filesystem path.
-- **`line`**: a line on the HEAD side of the diff. Added *and* context lines
+- **`line`**: a line on the HEAD side of the diff; added and context lines
   inside a hunk are both anchorable. If a finding refers to a line outside the
   diff, move it to the nearest changed line in the same file, or to `body`.
-- **`body`**: use the same heading format as REVIEW.md (`### N-N. Short
-  description`), followed by the explanation. Keep each comment self-contained
-  -- reviewers may read them individually, so repeat the context a reader needs
-  rather than referring to "the finding above".
+- **`body`**: use the heading format `### N-N. Short description`, followed by
+  the explanation copied from the finding's `body` in `review.json`. Keep each
+  comment self-contained -- reviewers may read them individually, so repeat
+  the context a reader needs rather than referring to "the finding above".
 - **`event`**: leave it out. Only set `"APPROVE"` or `"REQUEST_CHANGES"` when
   the user explicitly asks for one.
-- Put cross-cutting concerns (PR size, overall architecture notes) and any
-  finding that maps to no single line in the top-level `"body"`.
-
-## Important Rules
-
-- Write REVIEW.md in the language the script reports under `review language`.
-- Use the scripts in `scripts/` for all git and GitHub access. Do not run `git`
-  or `gh` directly.
-- Invoke every script with `uv run --project ${CLAUDE_SKILL_DIR}`, never a bare `python3`.
-- Honour a requested scope. If the user asked for "just the last commit" or a
-  specific range, pass `--last` / `--commit` / `--range` to
-  `gather_review_context.py` rather than reviewing the whole branch and
-  filtering afterwards. Say which range you reviewed when reporting back.
-- Review against the base the branch actually merges into, which for a stacked
-  pull request is the PR's base branch, not the repository default.
-- Read ALL changed files before writing any findings. No exceptions.
-- Do not review deleted files.
-- Focus on the diff, not pre-existing code that was not changed in this branch.
-- Be specific: include file paths, line numbers, and code snippets for every finding.
-- When flagging a naming issue, always suggest a concrete better name.
-- When flagging a missing comment, briefly describe what the comment should say.

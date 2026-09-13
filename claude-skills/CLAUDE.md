@@ -20,8 +20,10 @@ scripts/lint.sh markdown
 ```
 
 The linter feeds markdownlint-cli2 the list of tracked Markdown files, so
-the uncommitted `REVIEW.md` artifact of the branch-review skill never
-reaches it. Files under any `templates/` directory (for example
+the `REVIEW.md` artifact of the branch-review skill, which the root
+`.gitignore` keeps out of git, never reaches it. The `whitespace` target
+runs `git grep`, which likewise skips the ignored `REVIEW.md` and
+`REVIEW.html`. Files under any `templates/` directory (for example
 `project-init`'s per-language scaffolds) are excluded too: they contain
 placeholders such as `__PROJECT_DESCRIPTION__` that are valid only once
 substituted into a generated project.
