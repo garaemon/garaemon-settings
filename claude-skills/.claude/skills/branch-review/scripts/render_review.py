@@ -12,6 +12,7 @@ The review file lists findings grouped by the categories in SKILL.md:
       "branch": "feature/color-picker",
       "range": "whole branch against main",
       "pull_request": "https://github.com/octo/repo/pull/12",
+      "language": "en",
       "stats": {"files": 3, "additions": 120, "deletions": 8},
       "overall_comments": "Cross-cutting concerns, in markdown.",
       "categories": [
@@ -32,9 +33,12 @@ The review file lists findings grouped by the categories in SKILL.md:
     }
 
 "title" and "categories" are required, as are "id", "title" and "body" on every
-finding. "path", "line", "pull_request", "stats" and "overall_comments" may be
-left out. Bodies use a markdown subset: paragraphs, fenced code blocks, inline
-code, **bold**, bullet and numbered lists, and > quotes.
+finding. "path", "line", "pull_request", "language", "stats" and
+"overall_comments" may be left out. "language" is the BCP 47 tag of the review
+text and becomes the lang attribute of the HTML page. Bodies use a markdown
+subset: paragraphs, fenced code blocks, inline code, **bold**, bullet and
+numbered lists, and > quotes. Fences start at column 0, and lists stay flat
+because a nested item renders as a sibling in the HTML.
 
 Before writing anything the script checks the review for the mistakes a
 schema-valid file can still carry: ids out of sequence, a path that is not in
@@ -62,7 +66,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from string import Template
-from typing import Any
+from typing import Any, NamedTuple
 
 from commands import run_command
 
@@ -72,7 +76,11 @@ HTML_REPORT_NAME = "REVIEW.html"
 # branch-review-loop matches this exact sentence to decide the review is clean.
 NO_FINDINGS_TEXT = "No findings."
 
-FENCE_PATTERN = re.compile(r"^```(\w*)\s*$")
+# CommonMark opens a fence with three or more backticks and lets the info
+# string hold anything but a backtick, so `c++` opens a fence and a four
+# backtick fence can quote a three backtick one. The first word is the language.
+FENCE_PATTERN = re.compile(r"^(`{3,})([^`\s]*)[^`]*$")
+INDENTED_FENCE_PATTERN = re.compile(r"^\s+```")
 UNORDERED_ITEM_PATTERN = re.compile(r"^\s*[-*]\s+(.*)$")
 ORDERED_ITEM_PATTERN = re.compile(r"^\s*\d+[.)]\s+(.*)$")
 QUOTE_PATTERN = re.compile(r"^>\s?(.*)$")
@@ -105,6 +113,12 @@ def validate_review(review: Any) -> None:
         raise ValueError("review is missing a string 'title'")
     if not isinstance(review.get("categories"), list):
         raise ValueError("review is missing a 'categories' list")
+    if "language" in review and not isinstance(review["language"], str):
+        raise ValueError("review has a non-string 'language'")
+    if "overall_comments" in review and not isinstance(review["overall_comments"], str):
+        raise ValueError("review has a non-string 'overall_comments'")
+    if "stats" in review and not isinstance(review["stats"], dict):
+        raise ValueError("review has a non-object 'stats'")
     seen_ids: set[str] = set()
     for category in review["categories"]:
         if not isinstance(category, dict):
@@ -167,8 +181,10 @@ def check_review(review: dict[str, Any], root: Path) -> list[str]:
             problems += check_finding_id(category, index, finding)
             problems += check_finding_text(finding)
             problems += check_finding_location(finding, root)
-    if has_unterminated_fence(review.get("overall_comments", "")):
-        problems.append("overall_comments has an unterminated ``` fence")
+    problems += [
+        f"overall_comments {problem}"
+        for problem in describe_fence_problems(review.get("overall_comments", ""))
+    ]
     return problems
 
 
@@ -201,8 +217,11 @@ def check_finding_text(finding: dict[str, Any]) -> list[str]:
         problems.append(f"finding {finding['id']}: title is blank")
     if not finding["body"].strip():
         problems.append(f"finding {finding['id']}: body is blank")
-    elif has_unterminated_fence(finding["body"]):
-        problems.append(f"finding {finding['id']}: body has an unterminated ``` fence")
+    else:
+        problems += [
+            f"finding {finding['id']}: body {problem}"
+            for problem in describe_fence_problems(finding["body"])
+        ]
     return problems
 
 
@@ -220,6 +239,11 @@ def check_finding_location(finding: dict[str, Any], root: Path) -> list[str]:
             "use a path relative to the repository root"
         ]
     file_path = root / path
+    if not file_path.resolve().is_relative_to(root.resolve()):
+        return [
+            f"finding {finding['id']}: path {path} leaves the checkout; "
+            "use a path relative to the repository root"
+        ]
     if not file_path.is_file():
         return [f"finding {finding['id']}: path {path} does not exist in the checkout"]
     if line is None:
@@ -232,10 +256,60 @@ def check_finding_location(finding: dict[str, Any], root: Path) -> list[str]:
     return []
 
 
-def has_unterminated_fence(text: str) -> bool:
-    """Return whether the text opens a ``` fence it never closes."""
-    fence_count = sum(1 for line in text.splitlines() if FENCE_PATTERN.match(line))
-    return fence_count % 2 == 1
+def describe_fence_problems(text: str) -> list[str]:
+    """Return the fence mistakes in the text, each phrased to follow a subject."""
+    scan = scan_fences(text)
+    if scan.has_indented_fence:
+        # An indented opening fence is not counted as one, so its closing
+        # fence reads as an unclosed opening. Report only the real mistake.
+        return ["has an indented ``` fence; start every fence at column 0"]
+    if scan.is_unterminated:
+        return ["has an unterminated ``` fence"]
+    return []
+
+
+def is_fence_close(line: str, opening_length: int) -> bool:
+    """Return whether the line closes a fence opened with opening_length backticks.
+
+    CommonMark closes a fence with a run of backticks at least as long as the
+    opening run, indented by at most three spaces and followed by nothing, so
+    a longer fence can quote a shorter one without ending early.
+    """
+    indent_width = len(line) - len(line.lstrip(" "))
+    trimmed_line = line.strip()
+    return (
+        indent_width <= 3
+        and len(trimmed_line) >= opening_length
+        and set(trimmed_line) == {"`"}
+    )
+
+
+class FenceScan(NamedTuple):
+    """What one pass over the fences of a markdown text found."""
+
+    is_unterminated: bool
+    has_indented_fence: bool
+
+
+def scan_fences(text: str) -> FenceScan:
+    """Return whether the text leaves a fence open or indents one outside a fence.
+
+    An indented ``` line, typically a code block inside a list item, opens no
+    fence for the renderer, which would break the block into inline code spans.
+    """
+    opening_length = 0
+    has_indented_fence = False
+    for line in text.splitlines():
+        if opening_length:
+            if is_fence_close(line, opening_length):
+                opening_length = 0
+            continue
+        fence_match = FENCE_PATTERN.match(line)
+        if fence_match:
+            opening_length = len(fence_match.group(1))
+        elif INDENTED_FENCE_PATTERN.match(line):
+            has_indented_fence = True
+    return FenceScan(is_unterminated=opening_length != 0, has_indented_fence=has_indented_fence)
 
 
 def count_lines(file_path: Path) -> int:
@@ -269,10 +343,11 @@ def collect_fenced_block(lines: Sequence[str], start: int) -> tuple[MarkdownBloc
     An unterminated fence runs to the end of the text rather than raising, so a
     typo in a review body degrades to a long code block instead of no report.
     """
-    language = FENCE_PATTERN.match(lines[start]).group(1)
-    block = MarkdownBlock("code", language=language)
+    fence_match = FENCE_PATTERN.match(lines[start])
+    opening_length = len(fence_match.group(1))
+    block = MarkdownBlock("code", language=fence_match.group(2))
     index = start + 1
-    while index < len(lines) and not FENCE_PATTERN.match(lines[index]):
+    while index < len(lines) and not is_fence_close(lines[index], opening_length):
         block.lines.append(lines[index])
         index += 1
     return block, index + 1
@@ -321,13 +396,15 @@ def split_markdown_blocks(text: str) -> list[MarkdownBlock]:
 def render_markdown_block(block: MarkdownBlock) -> str:
     """Return one block as HTML."""
     if block.kind == "code":
-        class_attribute = f' class="language-{block.language}"' if block.language else ""
-        return f"<pre><code{class_attribute}>{escape_html(chr(10).join(block.lines))}</code></pre>"
+        class_attribute = f' class="language-{escape_html(block.language)}"' if block.language else ""
+        code_text = "\n".join(block.lines)
+        return f"<pre><code{class_attribute}>{escape_html(code_text)}</code></pre>"
     if block.kind in ("ulist", "olist"):
         tag = "ul" if block.kind == "ulist" else "ol"
         items = "\n".join(f"<li>{render_inline_markdown(item)}</li>" for item in block.lines)
         return f"<{tag}>\n{items}\n</{tag}>"
-    paragraph = f"<p>{render_inline_markdown(chr(10).join(block.lines))}</p>"
+    paragraph_text = "\n".join(block.lines)
+    paragraph = f"<p>{render_inline_markdown(paragraph_text)}</p>"
     if block.kind == "quote":
         return f"<blockquote>{paragraph}</blockquote>"
     return paragraph
@@ -348,19 +425,25 @@ def format_finding_heading(finding: dict[str, Any]) -> str:
 def render_markdown_report(review: dict[str, Any]) -> str:
     """Return the REVIEW.md text in the structure SKILL.md describes."""
     parts = [f"# {review['title']}", ""]
+    # A bullet per row keeps the rows apart in rendered Markdown, where
+    # consecutive lines would otherwise merge into one paragraph.
     if review.get("branch"):
-        parts.append(f"Branch: `{review['branch']}`")
+        parts.append(f"- Branch: `{review['branch']}`")
     if review.get("range"):
-        parts.append(f"Range: {review['range']}")
+        parts.append(f"- Range: {review['range']}")
     if review.get("pull_request"):
-        parts.append(f"Pull request: {review['pull_request']}")
+        parts.append(f"- Pull request: {review['pull_request']}")
     stats = review.get("stats")
     if stats:
         parts.append(
-            f"{stats.get('files', 0)} files changed, {stats.get('additions', 0)} "
-            f"insertions, {stats.get('deletions', 0)} deletions"
+            f"- Changes: {stats.get('files', 0)} files changed, "
+            f"{stats.get('additions', 0)} insertions, {stats.get('deletions', 0)} deletions"
         )
-    parts += ["", "## Overall Comments", "", review.get("overall_comments", "").strip(), ""]
+    overall_comments = review.get("overall_comments", "").strip()
+    if overall_comments:
+        parts += ["", "## Overall Comments", "", overall_comments, ""]
+    else:
+        parts.append("")
     categories = list_nonempty_categories(review)
     if not categories:
         parts += ["---", "", NO_FINDINGS_TEXT, ""]
@@ -385,7 +468,10 @@ def render_meta_rows(review: dict[str, Any]) -> str:
         rows.append(("Range", escape_html(review["range"])))
     if review.get("pull_request"):
         url = escape_html(review["pull_request"])
-        rows.append(("Pull request", f'<a href="{url}">{url}</a>'))
+        # Escaping keeps the value inside the attribute but leaves a
+        # javascript: scheme meaningful, so only web URLs become links.
+        is_web_url = review["pull_request"].startswith(("http://", "https://"))
+        rows.append(("Pull request", f'<a href="{url}">{url}</a>' if is_web_url else url))
     stats = review.get("stats")
     if stats:
         rows.append((
@@ -445,6 +531,14 @@ def render_finding_card(category: dict[str, Any], finding: dict[str, Any]) -> st
     )
 
 
+def render_overall_section(review: dict[str, Any]) -> str:
+    """Return the Overall Comments section, or "" when the review has none."""
+    overall_html = render_markdown_subset(review.get("overall_comments", ""))
+    if not overall_html:
+        return ""
+    return f'<section class="overall">\n<h2>Overall Comments</h2>\n{overall_html}\n</section>'
+
+
 def render_sections(review: dict[str, Any]) -> str:
     """Return one <section> per non-empty category, holding its finding cards."""
     sections: list[str] = []
@@ -464,13 +558,16 @@ def render_sections(review: dict[str, Any]) -> str:
 def build_template_values(review: dict[str, Any], generated_at: str) -> dict[str, str]:
     """Return every placeholder the template expects, already escaped."""
     finding_count = count_findings(review)
+    language = review.get("language")
     return {
         "title": escape_html(review["title"]),
+        "lang_attribute": f' lang="{escape_html(language)}"' if language else "",
+        "no_findings_text": escape_html(NO_FINDINGS_TEXT),
         "meta_rows": render_meta_rows(review),
         "finding_count": str(finding_count),
         "category_chips": render_category_chips(review),
         "summary_rows": render_summary_rows(review),
-        "overall_comments": render_markdown_subset(review.get("overall_comments", "")),
+        "overall_section": render_overall_section(review),
         "sections": render_sections(review),
         "report_state": "has-findings" if finding_count else "no-findings",
         "generated_at": escape_html(generated_at),
@@ -496,14 +593,32 @@ def find_repository_root() -> Path:
     return Path(run_command(["git", "rev-parse", "--show-toplevel"]).strip())
 
 
+def resolve_directories(args: argparse.Namespace) -> tuple[Path, Path]:
+    """Return (root, output_dir), each defaulting to the repository root on its own.
+
+    git is consulted only when a default is needed, so a run that names both
+    directories works outside any checkout.
+    """
+    if args.root and args.output_dir:
+        return Path(args.root), Path(args.output_dir)
+    repository_root = find_repository_root()
+    root = Path(args.root) if args.root else repository_root
+    output_dir = Path(args.output_dir) if args.output_dir else repository_root
+    return root, output_dir
+
+
 def write_reports(
     review: dict[str, Any], output_dir: Path, template_text: str, generated_at: str
 ) -> list[Path]:
     """Write REVIEW.md and REVIEW.html into output_dir and return their paths."""
     markdown_path = output_dir / MARKDOWN_REPORT_NAME
     html_path = output_dir / HTML_REPORT_NAME
-    markdown_path.write_text(render_markdown_report(review), encoding="utf-8")
-    html_path.write_text(render_html_report(review, template_text, generated_at), encoding="utf-8")
+    # Render both before writing either, so a template error cannot leave a
+    # fresh REVIEW.md next to a stale REVIEW.html.
+    markdown_text = render_markdown_report(review)
+    html_text = render_html_report(review, template_text, generated_at)
+    markdown_path.write_text(markdown_text, encoding="utf-8")
+    html_path.write_text(html_text, encoding="utf-8")
     return [markdown_path, html_path]
 
 
@@ -556,7 +671,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     generated_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     try:
         review = load_review(Path(args.review))
-        root = Path(args.root) if args.root else find_repository_root()
+        root, output_dir = resolve_directories(args)
         problems = check_review(review, root)
         if problems:
             report_problems(Path(args.review), problems)
@@ -565,7 +680,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"OK: {args.review} passes every check ({format_summary(review)})")
             return 0
         template_text = read_template(Path(args.template) if args.template else TEMPLATE_PATH)
-        output_dir = Path(args.output_dir) if args.output_dir else root
         written = write_reports(review, output_dir, template_text, generated_at)
     except (ValueError, OSError, RuntimeError) as error:
         print(f"error: {error}", file=sys.stderr)

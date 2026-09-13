@@ -12,6 +12,7 @@ import pathlib
 import tempfile
 import unittest
 from typing import Any
+from unittest import mock
 
 import render_review
 from render_review import (
@@ -115,6 +116,18 @@ class ValidateReviewTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "line"):
             validate_review(review)
 
+    def test_rejects_a_non_string_language(self) -> None:
+        with self.assertRaisesRegex(ValueError, "language"):
+            validate_review(build_review(language=["ja"]))
+
+    def test_rejects_a_non_string_overall_comments(self) -> None:
+        with self.assertRaisesRegex(ValueError, "overall_comments"):
+            validate_review(build_review(overall_comments=42))
+
+    def test_rejects_a_non_object_stats(self) -> None:
+        with self.assertRaisesRegex(ValueError, "stats"):
+            validate_review(build_review(stats="3 files"))
+
     def test_rejects_duplicate_finding_ids(self) -> None:
         # Duplicate ids would give two cards the same anchor, so the summary
         # table would silently link both rows to the first card.
@@ -179,6 +192,16 @@ class RenderMarkdownSubsetTest(unittest.TestCase):
             rendered, '<pre><code class="language-ts">const a = 1 &lt; 2;</code></pre>'
         )
 
+    def test_renders_a_fence_whose_info_string_has_symbols(self) -> None:
+        rendered = render_markdown_subset("```c++\nint x = 1;\n```")
+        self.assertEqual(
+            rendered, '<pre><code class="language-c++">int x = 1;</code></pre>'
+        )
+
+    def test_lets_a_four_backtick_fence_quote_a_three_backtick_one(self) -> None:
+        rendered = render_markdown_subset("````\n```ts\nlet x;\n```\n````")
+        self.assertEqual(rendered, "<pre><code>```ts\nlet x;\n```</code></pre>")
+
     def test_keeps_a_dash_line_inside_a_fence_as_code(self) -> None:
         rendered = render_markdown_subset("```\n- not a list\n```")
         self.assertIn("<code>- not a list</code>", rendered)
@@ -218,10 +241,12 @@ class RenderMarkdownReportTest(unittest.TestCase):
         report = render_markdown_report(build_review())
         self.assertTrue(report.startswith("# Code Review: add color picker\n"))
 
-    def test_writes_the_branch_and_stats_lines(self) -> None:
+    def test_lists_the_branch_and_stats_as_bullets(self) -> None:
+        # Consecutive plain lines would merge into one paragraph when the
+        # Markdown is rendered, so each metadata row is its own list item.
         report = render_markdown_report(build_review())
-        self.assertIn("Branch: `feature/color-picker`\n", report)
-        self.assertIn("3 files changed, 120 insertions, 8 deletions\n", report)
+        self.assertIn("- Branch: `feature/color-picker`\n", report)
+        self.assertIn("- Changes: 3 files changed, 120 insertions, 8 deletions\n", report)
 
     def test_numbers_the_category_headings(self) -> None:
         self.assertIn("\n## 2. Security\n", render_markdown_report(build_review()))
@@ -242,8 +267,22 @@ class RenderMarkdownReportTest(unittest.TestCase):
         self.assertIn("### 2-1. IPC color inputs not validated\n",
                       render_markdown_report(review))
 
+    def test_omits_the_line_when_a_finding_names_only_a_path(self) -> None:
+        finding = build_finding()
+        del finding["line"]
+        review = build_review(categories=[
+            {"number": 2, "name": "Security", "findings": [finding]},
+        ])
+        self.assertIn("### 2-1. [src/main/index.ts] IPC color inputs not validated\n",
+                      render_markdown_report(review))
+
     def test_omits_empty_categories(self) -> None:
         self.assertNotIn("Architecture", render_markdown_report(build_review()))
+
+    def test_omits_the_overall_comments_heading_when_absent(self) -> None:
+        review = build_review()
+        del review["overall_comments"]
+        self.assertNotIn("Overall Comments", render_markdown_report(review))
 
     def test_keeps_the_body_markdown_verbatim(self) -> None:
         review = build_review(categories=[
@@ -273,6 +312,13 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertIn('href="#finding-2-1"', page)
         self.assertIn("IPC color inputs not validated", page)
 
+    def test_renders_the_finding_body_inside_its_card(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="```ts\nlet x;\n```")]},
+        ])
+        self.assertIn('<code class="language-ts">let x;</code>', self.render(review))
+
     def test_gives_each_card_the_anchor_the_summary_links_to(self) -> None:
         self.assertIn('id="finding-2-1"', self.render(build_review()))
 
@@ -289,6 +335,16 @@ class RenderHtmlReportTest(unittest.TestCase):
             {"number": 2, "name": "Security", "findings": []},
         ])
         self.assertIn('class="no-findings"', self.render(review))
+
+    def test_shows_the_same_no_findings_text_as_the_markdown_report(self) -> None:
+        review = build_review(categories=[])
+        self.assertIn(f">{NO_FINDINGS_TEXT}<", self.render(review))
+
+    def test_sets_the_lang_attribute_from_language(self) -> None:
+        self.assertIn('<html lang="ja">', self.render(build_review(language="ja")))
+
+    def test_omits_the_lang_attribute_without_language(self) -> None:
+        self.assertIn("<html>", self.render(build_review()))
 
     def test_leaves_no_placeholder_or_dollar_behind(self) -> None:
         # The template may not contain a literal dollar sign, because
@@ -308,6 +364,12 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertNotIn("<b>Security</b>", page)
         self.assertNotIn("<img src=x>", page)
 
+    def test_keeps_the_filter_controls_on_the_page(self) -> None:
+        page = self.render(build_review())
+        self.assertIn('class="filter-empty-state"', page)
+        self.assertIn('id="path-filter"', page)
+        self.assertIn('id="expand-all"', page)
+
     def test_omits_the_pull_request_row_when_absent(self) -> None:
         review = build_review()
         del review["pull_request"]
@@ -319,6 +381,15 @@ class RenderHtmlReportTest(unittest.TestCase):
 
     def test_renders_overall_comments_as_markdown(self) -> None:
         self.assertIn("<strong>missing</strong>", self.render(build_review()))
+
+    def test_omits_the_overall_comments_section_when_absent(self) -> None:
+        review = build_review()
+        del review["overall_comments"]
+        self.assertNotIn("Overall Comments", self.render(review))
+
+    def test_does_not_link_a_pull_request_with_a_script_scheme(self) -> None:
+        page = self.render(build_review(pull_request="javascript:alert(1)"))
+        self.assertNotIn('href="javascript:', page)
 
     def test_uses_the_given_timestamp(self) -> None:
         self.assertIn(GENERATED_AT, self.render(build_review()))
@@ -375,6 +446,14 @@ class CheckReviewTest(unittest.TestCase):
         ])
         self.assertTrue(any("src/missing.ts" in problem for problem in self.check(review)))
 
+    def test_rejects_a_path_that_leaves_the_checkout(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(path="../outside/index.ts")]},
+        ])
+        self.assertTrue(any("leaves the checkout" in problem
+                            for problem in self.check(review)))
+
     def test_rejects_an_absolute_path(self) -> None:
         review = build_review(categories=[
             {"number": 2, "name": "Security",
@@ -405,6 +484,57 @@ class CheckReviewTest(unittest.TestCase):
         ])
         self.assertTrue(any("fence" in problem for problem in self.check(review)))
 
+    def test_accepts_a_fence_whose_info_string_has_symbols(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="```c++\nint x;\n```")]},
+        ])
+        self.assertEqual(self.check(review), [])
+
+    def test_accepts_a_four_backtick_fence_quoting_a_three_backtick_one(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="````\n```ts\nlet x;\n```\n````")]},
+        ])
+        self.assertEqual(self.check(review), [])
+
+    def test_accepts_a_closing_fence_indented_up_to_three_spaces(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="```ts\nlet x;\n   ```")]},
+        ])
+        self.assertEqual(self.check(review), [])
+
+    def test_rejects_an_indented_fence(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="- item:\n  ```ts\n  let x;\n  ```")]},
+        ])
+        self.assertTrue(any("indented" in problem for problem in self.check(review)))
+
+    def test_reports_an_indented_opening_fence_once(self) -> None:
+        # The closing fence of an indented opening looks like an unclosed
+        # opening, which must not surface as a second, misleading problem.
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="   ```ts\nlet x;\n```")]},
+        ])
+        problems = self.check(review)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("indented", problems[0])
+
+    def test_accepts_an_indented_fence_inside_a_code_block(self) -> None:
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(body="```md\n- item:\n  ```ts\n```")]},
+        ])
+        self.assertEqual(self.check(review), [])
+
+    def test_rejects_an_unterminated_fence_in_overall_comments(self) -> None:
+        review = build_review(overall_comments="```\nfoo")
+        self.assertTrue(any("overall_comments" in problem
+                            for problem in self.check(review)))
+
     def test_rejects_a_blank_title_or_body(self) -> None:
         review = build_review(categories=[
             {"number": 2, "name": "Security",
@@ -431,6 +561,15 @@ class WriteReportsTest(unittest.TestCase):
             )
             self.assertTrue((output_dir / MARKDOWN_REPORT_NAME).exists())
             self.assertTrue((output_dir / HTML_REPORT_NAME).exists())
+
+    def test_writes_neither_report_when_the_template_is_broken(self) -> None:
+        # A stale REVIEW.html next to a fresh REVIEW.md would make the two
+        # reports disagree, which the module promises never happens.
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = pathlib.Path(directory)
+            with self.assertRaises(ValueError):
+                write_reports(build_review(), output_dir, "<p>${no_such}</p>", GENERATED_AT)
+            self.assertFalse((output_dir / MARKDOWN_REPORT_NAME).exists())
 
     def test_overwrites_an_existing_report(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -469,6 +608,19 @@ class MainTest(unittest.TestCase):
             self.assertTrue((pathlib.Path(directory) / HTML_REPORT_NAME).exists())
             self.assertIn(f"wrote {directory}/{MARKDOWN_REPORT_NAME}", stdout.getvalue())
             self.assertIn("1 finding in 1 category", stdout.getvalue())
+
+    def test_root_alone_leaves_the_reports_in_the_repository_root(self) -> None:
+        with tempfile.TemporaryDirectory() as checkout, tempfile.TemporaryDirectory() as repository:
+            root = write_checkout(checkout, {"src/main/index.ts": "x\n" * 40})
+            review_path = root / "review.json"
+            review_path.write_text(json.dumps(build_review()), encoding="utf-8")
+            with mock.patch.object(
+                render_review, "find_repository_root", return_value=pathlib.Path(repository)
+            ), contextlib.redirect_stdout(io.StringIO()):
+                status = render_review.main([str(review_path), "--root", checkout])
+            self.assertEqual(status, 0)
+            self.assertTrue((pathlib.Path(repository) / HTML_REPORT_NAME).exists())
+            self.assertFalse((root / HTML_REPORT_NAME).exists())
 
     def test_refuses_to_write_when_the_check_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

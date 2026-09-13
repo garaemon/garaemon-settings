@@ -481,6 +481,9 @@ Rules for building the file:
 - Copy `branch`, `range` and `pull_request` from the `review range` block and
   `stats` from the `size` block that `gather_review_context.py` printed. Leave
   `pull_request` out when the block says `(none for this branch)`.
+- Set `language` to the BCP 47 tag of the review text (`ja` for Japanese, `en`
+  for English) so the HTML page declares the language its fonts and screen
+  readers should use. Leave it out when unsure.
 - `overall_comments` holds cross-cutting concerns that affect the whole
   codebase, such as "documentation is consistently missing" or "naming
   conventions are not followed", plus the PR size note from Step 1.5. Those go
@@ -492,7 +495,10 @@ Rules for building the file:
   side. Leave both out for a finding that maps to no single line.
 - `body` and `overall_comments` are markdown. The renderer understands
   paragraphs, fenced code blocks, inline code, `**bold**`, bullet and numbered
-  lists, and `>` quotes; anything else shows up as plain text.
+  lists, and `>` quotes; anything else shows up as plain text. Start every
+  fence at column 0, because an indented fence does not open a code block.
+  Keep lists flat: a nested item renders as a sibling in the HTML report
+  while `REVIEW.md` keeps the nesting.
 - Do not assign priority levels. Every finding in the review should be worth
   the author's attention. If something is too trivial to act on, leave it out
   entirely instead of marking it "Low".
@@ -507,6 +513,8 @@ mistakes that would break the reports or the later PR posting:
 - a `path` that is absolute or does not exist in the checkout
 - a `line` past the end of its file, or given without a `path`
 - an unterminated ` ``` ` fence in a body or in `overall_comments`
+- an indented ` ``` ` fence, such as a code block inside a list item, which
+  the renderer would break into inline code spans
 - a blank title or body, or the `[branch description]` placeholder left in
   the title
 
@@ -538,8 +546,9 @@ or `REVIEW.html` by hand, because the next run overwrites both.
 ```markdown
 # Code Review: [branch description]
 
-Branch: `branch-name`
-N files changed, X insertions, Y deletions
+- Branch: `branch-name`
+- Range: whole branch against main
+- Changes: N files changed, X insertions, Y deletions
 
 ## Overall Comments
 

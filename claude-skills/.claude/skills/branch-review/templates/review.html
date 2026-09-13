@@ -1,5 +1,10 @@
+<!-- scripts/render_review.py fills this file through string.Template.
+     Placeholders: title, lang_attribute, meta_rows, finding_count,
+     category_chips, summary_rows, overall_section, sections, report_state,
+     no_findings_text, generated_at. A literal dollar sign anywhere in this
+     file aborts every render, so write "USD" or "dollar" instead. -->
 <!doctype html>
-<html lang="en">
+<html${lang_attribute}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -117,7 +122,7 @@ table.summary-table th, table.summary-table td {
 }
 table.summary-table th { color: var(--text-2); font-weight: 600; }
 table.summary-table td.location { word-break: break-all; }
-.empty-state { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--text-2); }
+.empty-state, .filter-empty-state { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--text-2); }
 .has-findings .empty-state { display: none; }
 .no-findings .summary-table, .no-findings .filters { display: none; }
 details.finding {
@@ -169,13 +174,11 @@ ${category_chips}
 ${summary_rows}
 </tbody>
 </table>
-<p class="empty-state">No findings.</p>
+<p class="empty-state">${no_findings_text}</p>
+<p class="filter-empty-state" hidden>No findings match the current filters.</p>
 </section>
 
-<section class="overall">
-<h2>Overall Comments</h2>
-${overall_comments}
-</section>
+${overall_section}
 
 ${sections}
 
@@ -201,6 +204,9 @@ ${sections}
     document.querySelectorAll("section[data-category]").forEach(function (section) {
       section.hidden = section.querySelectorAll("details.finding:not([hidden])").length === 0;
     });
+    var visibleRowCount = document.querySelectorAll("tr[data-category]:not([hidden])").length;
+    var filterEmptyState = document.querySelector(".filter-empty-state");
+    if (filterEmptyState) { filterEmptyState.hidden = visibleRowCount !== 0; }
   }
 
   document.querySelectorAll(".chip").forEach(function (chip) {
