@@ -89,10 +89,24 @@ with its remote without blocking the editor:
 - Saving an Org file schedules a commit and push that run after
   `my-org-git-sync-auto-commit-idle-delay` seconds of idle time (5 minutes).
 
-Every git command runs as an asynchronous process with `GIT_TERMINAL_PROMPT=0`,
-so a slow network or a credential prompt cannot freeze Emacs, and a command that
-outlives `my-org-git-sync-command-timeout` is killed. The output of every
-command lands in the `*org-git-sync*` buffer.
+The fetch and the commit chain run as asynchronous git processes:
+
+- Each process runs on a pipe with `GIT_TERMINAL_PROMPT=0` and ssh in batch
+  mode, so a credential prompt fails instead of freezing Emacs.
+- The `GIT_SSH_COMMAND` the module sets takes precedence over `GIT_SSH` and
+  `core.sshCommand`, so pick a key for the Org remote in `~/.ssh/config`.
+- A command that outlives `my-org-git-sync-command-timeout` gets a SIGINT,
+  and a SIGKILL `my-org-git-sync-kill-grace-period` seconds later.
+- A save that lands while a chain runs starts another chain when that chain
+  ends.
+- Only `git rev-list` and `git merge --ff-only`, behind the merge prompt, run
+  synchronously.
+- The chain stages only the files under `org-directory`, so an Org
+  directory inside a larger repository leaves the rest of that repository
+  alone.
+- The output of every command lands in the `*org-git-sync*` buffer. If auto
+  commits stop and the buffer shows a chain that never reported back,
+  `M-x my-org-git-sync-reset` lets the next save start one again.
 
 ## Fonts
 
