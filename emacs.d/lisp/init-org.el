@@ -178,58 +178,11 @@ If the file is new, it will be populated with a default template."
         (insert (format "#+TITLE: %s\n" title))
         (insert "#+FILETAGS:\n"))))
 
-  ;; Set up for auto commit and pull
-  (defvar my-org-git-pull-done-sessions nil
-    "An alist of (repo-root . date) pairs tracking when git pull was last executed.
-Date format is YYYY-MM-DD.")
-
-  (defun my-org-get-git-root ()
-    "Returns the root directory of the Git repository for the current buffer's file.
-     Returns nil if not found or if it's not a file buffer."
-    (when (buffer-file-name)
-      ;; Prefer vc-git-root (available in Emacs 29+)
-      (if (fboundp 'vc-git-root)
-          (vc-git-root (buffer-file-name))
-        ;; Use locate-dominating-file as a fallback
-        (locate-dominating-file (buffer-file-name) ".git"))))
-
-  (defun my-org-git-pull-interactive (repo-root)
-    "Asks the user whether to run git pull in the specified repository."
-    ;; Confirm with user (yes-or-no-p)
-    (when (yes-or-no-p (format "Run git pull in Org repository (%s)? " repo-root))
-      (message "Org-Git-Sync: Executing git pull in %s..." repo-root)
-      (let ((default-directory repo-root))
-        (condition-case e
-            (shell-command "git pull")
-          (error (message "Org-Git-Sync: git pull failed: %s" e)))
-        (message "Org-Git-Sync: git pull complete."))
-
-      ;; Record today's date for this repository
-      (let ((today (format-time-string "%Y-%m-%d"))
-            (existing (assoc repo-root my-org-git-pull-done-sessions)))
-        (if existing
-            (setcdr existing today)
-          (add-to-list 'my-org-git-pull-done-sessions (cons repo-root today))))))
-
-  (defun my-org-check-for-initial-pull ()
-    "Attempts git pull when opening a Git-managed Org file if not done today."
-    ;; Is this an org-mode buffer?
-    (when (and (eq major-mode 'org-mode)
-               buffer-file-name
-               (boundp 'org-directory)
-               org-directory
-               (string-prefix-p (expand-file-name org-directory)
-                                (expand-file-name buffer-file-name)))
-      ;; Get the Git repository root
-      (let ((git-root (my-org-get-git-root)))
-        (when git-root
-          ;; Check if pull has already been run for this repo today
-          (let ((last-pull-date (cdr (assoc git-root my-org-git-pull-done-sessions)))
-                (today (format-time-string "%Y-%m-%d")))
-            (unless (string= last-pull-date today)
-              (my-org-git-pull-interactive git-root)))))))
-
-  (add-hook 'find-file-hook 'my-org-check-for-initial-pull nil nil)
+  ;; Fetch the Org repository when a file in it is opened.  lisp/my-org-git-sync.el
+  ;; is a local file rather than part of this `use-package' body so that
+  ;; tests/my-org-git-sync-test.el can exercise the merge decision.
+  (require 'my-org-git-sync)
+  (add-hook 'find-file-hook #'my-org-git-sync-fetch-on-find-file)
 
   ;; Auto commit and push for org files
   (defvar my-org-auto-commit-timer nil
