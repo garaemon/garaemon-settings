@@ -5,8 +5,9 @@
 ;; file fetches without asking, and only a repository that actually fell
 ;; behind its upstream produces a merge prompt.
 ;;
-;; No test runs git.  The command output arrives as a string, and the
-;; prompt tests stub `y-or-n-p' and the merge call with `cl-letf'.  Run
+;; Only the hanging-push test runs git.  Everywhere else the command output
+;; arrives as a string, and the prompt and commit tests stub `y-or-n-p',
+;; the merge call, and `my-org-git-sync-start-git' with `cl-letf'.  Run
 ;; with:
 ;;
 ;;   emacs -Q --batch --eval "(package-initialize)" \
@@ -109,6 +110,132 @@
       (my-org-git-sync-ask-merge "/org/" 2)
       (should (string-match-p "2" prompt))
       (should (string-match-p "/org/" prompt)))))
+
+(ert-deftest my-org-git-sync-test-changes-p-accepts-modified-file ()
+  (should (my-org-git-sync-changes-p " M notes.org\n")))
+
+(ert-deftest my-org-git-sync-test-changes-p-rejects-empty-output ()
+  (should-not (my-org-git-sync-changes-p "")))
+
+(ert-deftest my-org-git-sync-test-changes-p-rejects-blank-output ()
+  (should-not (my-org-git-sync-changes-p "\n")))
+
+(ert-deftest my-org-git-sync-test-build-commit-steps-ends-with-push ()
+  (should (equal (car (car (last (my-org-git-sync-build-commit-steps
+                                  (encode-time '(0 0 0 1 1 2026 nil nil t))))))
+                 "push")))
+
+(ert-deftest my-org-git-sync-test-build-commit-steps-stamps-commit-message ()
+  (let* ((steps (my-org-git-sync-build-commit-steps
+                 (encode-time '(5 4 3 2 1 2026 nil nil t))))
+         (commit-step (seq-find (lambda (step) (equal (car step) "commit")) steps))
+         (commit-message (car (last commit-step))))
+    (should (string-match-p "2026-01-02 03:04:05" commit-message))))
+
+(ert-deftest my-org-git-sync-test-non-interactive-environment-disables-prompt ()
+  (should (member "GIT_TERMINAL_PROMPT=0"
+                  (my-org-git-sync-non-interactive-environment '("HOME=/home")))))
+
+(ert-deftest my-org-git-sync-test-non-interactive-environment-keeps-input-unchanged ()
+  (let ((environment '("HOME=/home")))
+    (my-org-git-sync-non-interactive-environment environment)
+    (should (equal environment '("HOME=/home")))))
+
+(defvar my-org-git-sync-test-recorded nil
+  "Argument lists the stubbed `my-org-git-sync-start-git' received, in order.")
+
+(defun my-org-git-sync-test-stub-start-git (recorded-arguments failing-arguments)
+  "Return a `my-org-git-sync-start-git' stand-in that never runs git.
+The stand-in pushes each argument list onto RECORDED-ARGUMENTS, a symbol,
+and reports exit status 1 for FAILING-ARGUMENTS and 0 for the rest."
+  (lambda (_repository-root arguments callback)
+    (set recorded-arguments (append (symbol-value recorded-arguments)
+                                    (list arguments)))
+    (funcall callback (if (equal arguments failing-arguments) 1 0) "")))
+
+(ert-deftest my-org-git-sync-test-run-git-steps-runs-every-step-in-order ()
+  (let ((my-org-git-sync-test-recorded nil)
+        (result 'unset))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded nil)))
+      (my-org-git-sync-run-git-steps "/org/" '(("add") ("commit") ("push"))
+                                     (lambda (failed-step) (setq result failed-step)))
+      (should (equal my-org-git-sync-test-recorded '(("add") ("commit") ("push"))))
+      (should (equal result nil)))))
+
+(ert-deftest my-org-git-sync-test-run-git-steps-stops-after-first-failure ()
+  (let ((my-org-git-sync-test-recorded nil)
+        (result 'unset))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded
+                                                    '("commit"))))
+      (my-org-git-sync-run-git-steps "/org/" '(("add") ("commit") ("push"))
+                                     (lambda (failed-step) (setq result failed-step)))
+      (should (equal my-org-git-sync-test-recorded '(("add") ("commit"))))
+      (should (equal result '("commit"))))))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-skips-clean-repository ()
+  (let ((my-org-git-sync-test-recorded nil)
+        (my-org-git-sync-commit-in-progress nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git 'my-org-git-sync-test-recorded nil)))
+      (my-org-git-sync-commit-and-push "/org/")
+      (should (equal my-org-git-sync-test-recorded '(("status" "--porcelain")))))))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-pushes-dirty-repository ()
+  (let ((my-org-git-sync-test-recorded nil)
+        (my-org-git-sync-commit-in-progress nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (lambda (_repository-root arguments callback)
+                 (push arguments my-org-git-sync-test-recorded)
+                 (funcall callback 0 (if (equal arguments '("status" "--porcelain"))
+                                         " M notes.org\n"
+                                       "")))))
+      (my-org-git-sync-commit-and-push "/org/")
+      (should (equal (car (car my-org-git-sync-test-recorded)) "push")))))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-releases-guard-when-done ()
+  (let ((my-org-git-sync-commit-in-progress nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (lambda (_repository-root _arguments callback)
+                 (funcall callback 0 " M notes.org\n"))))
+      (my-org-git-sync-commit-and-push "/org/")
+      (should-not my-org-git-sync-commit-in-progress))))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-skips-while-in-progress ()
+  (let ((my-org-git-sync-commit-in-progress t))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (lambda (&rest _) (error "Started git during another run"))))
+      (my-org-git-sync-commit-and-push "/org/"))))
+
+(defun my-org-git-sync-test-make-repository-with-hanging-remote ()
+  "Create a git repository whose push blocks, and return its root.
+The remote uses ssh, and `GIT_SSH_COMMAND' sleeps instead of connecting,
+so `git push' hangs the way it does on a network that is down."
+  (let ((root (file-name-as-directory (make-temp-file "org-git-sync" t))))
+    (let ((default-directory root))
+      (call-process "git" nil nil nil "init" "--quiet" "-b" "main")
+      (call-process "git" nil nil nil "config" "user.email" "test@example.com")
+      (call-process "git" nil nil nil "config" "user.name" "Test")
+      (call-process "git" nil nil nil "remote" "add" "origin"
+                    "git@example.invalid:org.git")
+      (with-temp-file (concat root "notes.org") (insert "* Note\n")))
+    root))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-returns-while-push-hangs ()
+  (skip-unless (executable-find "git"))
+  (let* ((root (my-org-git-sync-test-make-repository-with-hanging-remote))
+         (process-environment (cons "GIT_SSH_COMMAND=sleep 30" process-environment))
+         (my-org-git-sync-commit-in-progress nil)
+         (started-at (float-time)))
+    (unwind-protect
+        (progn
+          (my-org-git-sync-commit-and-push root)
+          (should (< (- (float-time) started-at) 1.0)))
+      (dolist (process (process-list))
+        (when (string-prefix-p "my-org-git-sync" (process-name process))
+          (delete-process process)))
+      (delete-directory root t))))
 
 (provide 'my-org-git-sync-test)
 ;;; my-org-git-sync-test.el ends here
