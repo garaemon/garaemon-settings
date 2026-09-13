@@ -72,7 +72,7 @@ substituting a path of your own.
 
 | Script | Use it for |
 | --- | --- |
-| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 0-1.6) |
+| `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 1-1.6) |
 | `render_review.py` | Checking `review.json` and rendering it into `REVIEW.md` and `REVIEW.html` (Step 4) |
 | `check_review_hook.py` | PostToolUse hook that checks `review.json` as soon as it is written; not run directly |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
@@ -136,21 +136,20 @@ The review runs in a subagent so the user can pick the model for it each time.
 Review quality tracks how deeply the model reads, and Claude Fable 5.1 costs
 twice Claude Opus 5 per token, so the choice belongs to the user, per diff.
 
-**Skip this step entirely when the prompt that invoked you contains this
-sentence**, which marks you as the delegated reviewer (or the reviewer inside
-branch-review-loop):
+**Skip this step entirely, and never launch a subagent, when either holds:**
 
-```text
-The review model is already chosen. Do NOT ask about the model and do NOT
-delegate to another agent; run the review steps yourself in this agent.
-```
+- You are yourself a subagent, launched with the Agent tool. A subagent cannot
+  ask the user anything, so delegating again would only nest another subagent.
+- The prompt that invoked you contains the marker line
+  `branch-review: delegated reviewer`, which the parent (this skill or
+  branch-review-loop) puts first in the prompt.
 
-In that case start at Step 0-1 and run every step yourself, except Step 5,
+In either case start at Step 1 and run every step yourself, except Step 5,
 which the parent handles.
 
 Otherwise:
 
-1. Run `gather_review_context.py` first (with the scope flags from Step 0-1) so
+1. Run `gather_review_context.py` first (with the scope flags from Step 1) so
    the question can quote the diff size. Fix the scope flags here; the subagent
    receives them verbatim.
 2. Ask one question with AskUserQuestion, quoting the `size` block
@@ -163,15 +162,14 @@ Otherwise:
    files include authentication, input boundaries, or shell execution, where
    Fable 5.1 is the recommendation.
 3. Launch an Agent (general-purpose) with `model` set to the choice (`opus`,
-   `fable`, or `sonnet`) and this prompt:
+   `fable`, or `sonnet`) and this prompt, marker line first:
 
    ```text
-   Run the /branch-review skill in {working_directory} with the scope flags:
-   {flags, or "(none: whole branch)"}.
+   branch-review: delegated reviewer
 
-   The review model is already chosen. Do NOT ask about the model and do NOT
-   delegate to another agent; run the review steps yourself in this agent.
-   Do NOT post comments to GitHub and do NOT ask about posting.
+   Run the /branch-review skill in {working_directory} with the scope flags:
+   {flags, or "(none: whole branch)"}. Run every review step yourself in
+   this agent. Do NOT post comments to GitHub and do NOT ask about posting.
    When done, report the path of review.json and the finding count.
    ```
 
@@ -181,9 +179,10 @@ Otherwise:
 
 When AskUserQuestion is unavailable or the run is non-interactive, skip the
 question and launch the subagent without `model`, which uses the session's
-model.
+model. The two skip conditions above still apply: a subagent never launches
+another one.
 
-### Step 0-1: Gather the diff
+### Step 1: Gather the diff
 
 Run the script. It resolves the range, fetches what it needs, and prints the
 range, the review language, the diff size, the changed files, the per-file stat,
@@ -456,6 +455,7 @@ The file shape, with the review text in the language resolved in Step 1.6:
   "branch": "feature/color-picker",
   "range": "whole branch against main (repository default branch)",
   "pull_request": "https://github.com/octo/repo/pull/12",
+  "language": "en",
   "stats": {"files": 3, "additions": 120, "deletions": 8},
   "overall_comments": "Cross-cutting concerns, in markdown.",
   "categories": [
@@ -665,8 +665,9 @@ report does not. Deriving one from the other is left as a later improvement.
 - Ask which model reviews on every run (Step 0) and run the review in a
   subagent with that model. Fall back to the session's model only when the
   question cannot be asked.
-- A delegated reviewer (its prompt says the model is already chosen) never
-  asks about the model, never delegates again, and never posts to GitHub.
+- A delegated reviewer (its prompt carries the `branch-review: delegated
+  reviewer` marker, or it is itself a subagent) never asks about the model,
+  never delegates again, and never posts to GitHub.
 - Write the review text in `review.json` in the language the script reports
   under `review language`.
 - Generate `REVIEW.md` and `REVIEW.html` with `render_review.py`. Never edit
