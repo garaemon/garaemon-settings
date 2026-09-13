@@ -15,12 +15,15 @@ description: |
   phrases like "最後のコミットだけレビュー", "直近3コミットをレビュー",
   "review the last commit", "review commits abc123..def456".
 allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/gather_review_context.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/list_commentable_lines.py:*), Bash(uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/post_review.py:*)
+# Claude Code expands ${CLAUDE_SKILL_DIR} in the markdown body and in
+# allowed-tools only, never in hook commands, so the hook locates the skill
+# through its install path and does nothing where that path is absent.
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: "uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/check_review_hook.py"
+          command: "skill_dir=\"$HOME/.claude/skills/branch-review\"; [ -d \"$skill_dir\" ] || exit 0; command -v uv >/dev/null 2>&1 || exit 0; uv run --project \"$skill_dir\" \"$skill_dir/scripts/check_review_hook.py\""
 ---
 
 # Code Review Skill
@@ -509,8 +512,11 @@ mistakes that would break the reports or the later PR posting:
 
 A PostToolUse hook declared in this file's frontmatter runs the same checks
 the moment `review.json` is written or edited, so the problems come back as
-tool feedback before you reach the render command. To run the checks by hand
-without writing the reports:
+tool feedback before you reach the render command. The hook finds the skill
+through `~/.claude/skills/branch-review`, because Claude Code does not expand
+`${CLAUDE_SKILL_DIR}` in hook commands; where that path or `uv` is missing,
+the hook does nothing and the render command is the only check. To run the checks by
+hand without writing the reports:
 
 ```bash
 uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/render_review.py /path/to/scratchpad/review.json --check

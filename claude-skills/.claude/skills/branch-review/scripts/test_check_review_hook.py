@@ -30,7 +30,7 @@ def run_hook(payload: dict[str, Any], root: str) -> tuple[int, str]:
     """Run the hook on the payload and return (exit status, stderr text)."""
     stderr = io.StringIO()
     with contextlib.redirect_stderr(stderr):
-        status = check_review_hook.run(json.dumps(payload), pathlib.Path(root))
+        status = check_review_hook.check_written_review(json.dumps(payload), pathlib.Path(root))
     return status, stderr.getvalue()
 
 
@@ -50,8 +50,8 @@ class SelectReviewPathTest(unittest.TestCase):
         self.assertIsNone(check_review_hook.select_review_path({"tool_input": {}}))
 
 
-class RunTest(unittest.TestCase):
-    """run exits 0 for clean input and 2 with the problems for a bad review."""
+class CheckWrittenReviewTest(unittest.TestCase):
+    """check_written_review exits 0 for clean input and 2 with the problems for a bad review."""
 
     def test_passes_a_file_that_is_not_a_review(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -63,6 +63,15 @@ class RunTest(unittest.TestCase):
             root = write_checkout(directory, {"src/main/index.ts": "x\n" * 40})
             review_path = root / "review.json"
             review_path.write_text(json.dumps(build_review()), encoding="utf-8")
+            status, stderr = run_hook(build_payload(str(review_path)), directory)
+            self.assertEqual((status, stderr), (0, ""))
+
+    def test_ignores_a_review_json_that_is_not_a_review(self) -> None:
+        # A project under review may keep its own review.json; a file without
+        # a "categories" key is not this skill's and must not halt the session.
+        with tempfile.TemporaryDirectory() as directory:
+            review_path = pathlib.Path(directory) / "review.json"
+            review_path.write_text(json.dumps({"reviewers": ["octocat"]}), encoding="utf-8")
             status, stderr = run_hook(build_payload(str(review_path)), directory)
             self.assertEqual((status, stderr), (0, ""))
 
@@ -88,7 +97,7 @@ class RunTest(unittest.TestCase):
         # unreadable input is treated as "nothing to check".
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
-            status = check_review_hook.run("not json", pathlib.Path("/tmp"))
+            status = check_review_hook.check_written_review("not json", pathlib.Path("/tmp"))
         self.assertEqual(status, 0)
 
 

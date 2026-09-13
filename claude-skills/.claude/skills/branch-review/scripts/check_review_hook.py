@@ -3,13 +3,15 @@
 
 Claude Code runs this after every Write or Edit while the branch-review skill
 is active, with the tool call as JSON on stdin. Writes to any file other than
-a review.json are ignored. For a review.json the hook runs the same checks as
+a review.json are ignored, and so is a review.json that does not carry a
+"categories" key, since a project under review may keep a file of that name
+for its own purposes. For a review the hook runs the same checks as
 render_review.py and, when any fail, exits with status 2 and the problems on
 stderr, which Claude Code feeds back to the model so the file gets fixed
 before the reports are rendered.
 
-Usage (from a SKILL.md hooks entry):
-    uv run --project ${CLAUDE_SKILL_DIR} ${CLAUDE_SKILL_DIR}/scripts/check_review_hook.py
+Usage (from a SKILL.md hooks entry, which cannot use ${CLAUDE_SKILL_DIR}):
+    uv run --project $HOME/.claude/skills/branch-review $HOME/.claude/skills/branch-review/scripts/check_review_hook.py
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from commands import run_command
-from render_review import check_review, load_review, report_problems
+from render_review import check_review, report_problems, validate_review
 
 REVIEW_FILE_NAME = "review.json"
 
@@ -36,13 +38,18 @@ def select_review_path(payload: dict[str, Any]) -> Path | None:
     return Path(file_path)
 
 
+def is_review_shaped(document: Any) -> bool:
+    """Return whether the JSON is this skill's review rather than an unrelated file."""
+    return isinstance(document, dict) and "categories" in document
+
+
 def find_checkout_root(fallback: Path) -> Path:
     """Return the git checkout root, or fallback when the cwd is not in one."""
     output = run_command(["git", "rev-parse", "--show-toplevel"], check=False).strip()
     return Path(output) if output else fallback
 
 
-def run(payload_text: str, root: Path) -> int:
+def check_written_review(payload_text: str, root: Path) -> int:
     """Check the review named in the hook payload and return the exit status."""
     try:
         payload = json.loads(payload_text)
@@ -56,8 +63,16 @@ def run(payload_text: str, root: Path) -> int:
     if review_path is None:
         return 0
     try:
-        problems = check_review(load_review(review_path), root)
+        document = json.loads(review_path.read_text(encoding="utf-8"))
     except (ValueError, OSError) as error:
+        print(f"error: {review_path}: {error}", file=sys.stderr)
+        return 2
+    if not is_review_shaped(document):
+        return 0
+    try:
+        validate_review(document)
+        problems = check_review(document, root)
+    except ValueError as error:
         print(f"error: {review_path}: {error}", file=sys.stderr)
         return 2
     if problems:
@@ -67,7 +82,7 @@ def run(payload_text: str, root: Path) -> int:
 
 
 def main() -> int:
-    return run(sys.stdin.read(), find_checkout_root(Path.cwd()))
+    return check_written_review(sys.stdin.read(), find_checkout_root(Path.cwd()))
 
 
 if __name__ == "__main__":
