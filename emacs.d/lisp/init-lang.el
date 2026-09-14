@@ -456,9 +456,12 @@
   ("\\.test$" . xml-mode)
   )
 
+;; Load on demand. `:after treesit-auto' evaluated this package inside
+;; `(require 'treesit-auto)', so any error it signalled landed in use-package's
+;; treesit-auto `:catch' and skipped `global-treesit-auto-mode' below.
 (use-package astro-ts-mode
-  :after treesit-auto
   :ensure nil
+  :mode "\\.astro\\'"
   :vc (:url "https://git.isincredibly.gay/srxl/astro-ts-mode.git" :rev :newest))
 
 (use-package treesit
@@ -467,30 +470,14 @@
   (treesit-font-lock-level 4)
   )
 
-;; Install tree-sitter grammars BEFORE `use-package treesit-auto' is processed.
+;; Install the tree-sitter grammars before `treesit-auto' loads.
+;; `treesit-auto-install' is `prompt', so a grammar that is still missing when
+;; treesit-auto takes over turns the first visit to a matching file into a
+;; question.
 ;;
-;; This must happen up here, not inside `:config' of treesit-auto, because of
-;; the following chain that fires when treesit-auto is loaded:
-;;
-;;   (require 'treesit-auto)
-;;     -> (provide 'treesit-auto) at end of file
-;;        -> `eval-after-load' triggers for `:after treesit-auto' packages
-;;           -> `astro-ts-mode' loads
-;;              -> top-level defvar `astro-ts-mode--font-lock-settings'
-;;                 evaluates `(typescript-ts-mode--font-lock-settings 'tsx)'
-;;                 which compiles tree-sitter queries against the tsx grammar
-;;                 -> `treesit-load-language-error' if tsx grammar is missing
-;;
-;; That error propagates up through use-package's `:catch' handler, which
-;; swallows it silently and skips the rest of `:config' -- meaning any
-;; grammar-installation loop placed inside `:config' never gets a chance to
-;; run. By installing the grammars up here (before treesit-auto is required),
-;; astro-ts-mode's top-level forms succeed and the rest of treesit-auto's
-;; setup runs normally.
-;;
-;; The recipe URLs/revisions duplicate the ones used inside `treesit-auto'
-;; below because we cannot reach `treesit-auto--build-treesit-source-alist'
-;; without loading treesit-auto, which is exactly what we are trying to avoid.
+;; The URLs and revisions below repeat the ones in the `treesit-auto' recipes
+;; because `treesit-auto--build-treesit-source-alist' is reachable only after
+;; treesit-auto loads.
 (require 'treesit)
 ;; `warning-suppress-log-types' silences any residual `treesit' warnings
 ;; emitted during this install loop. The `(treesit-ready-p lang t)' calls
@@ -507,6 +494,7 @@
          (cpp        "https://github.com/tree-sitter/tree-sitter-cpp" "v0.22.0")
          (css        "https://github.com/tree-sitter/tree-sitter-css" "v0.23.2")
          (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.23.4")
+         (html       "https://github.com/tree-sitter/tree-sitter-html" "v0.23.2")
          (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
          (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
@@ -515,7 +503,7 @@
          (json       "https://github.com/tree-sitter/tree-sitter-json" "master")
          (astro      "https://github.com/virchau13/tree-sitter-astro" "master" "src")))
       (warning-suppress-log-types '((treesit))))
-  (dolist (lang '(typescript tsx c cpp python yaml go css bash make json astro))
+  (dolist (lang '(typescript tsx c cpp python yaml go css html bash make json astro))
     ;; The second arg `t' (QUIET) is critical: `treesit-ready-p' with the
     ;; default nil emits a `display-warning' call for every unavailable
     ;; grammar, which is exactly what we are trying to avoid on a fresh
