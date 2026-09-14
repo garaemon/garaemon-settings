@@ -507,6 +507,7 @@
          (cpp        "https://github.com/tree-sitter/tree-sitter-cpp" "v0.22.0")
          (css        "https://github.com/tree-sitter/tree-sitter-css" "v0.23.2")
          (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.23.4")
+         (html       "https://github.com/tree-sitter/tree-sitter-html" "v0.23.2")
          (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
          (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
@@ -515,7 +516,7 @@
          (json       "https://github.com/tree-sitter/tree-sitter-json" "master")
          (astro      "https://github.com/virchau13/tree-sitter-astro" "master" "src")))
       (warning-suppress-log-types '((treesit))))
-  (dolist (lang '(typescript tsx c cpp python yaml go css bash make json astro))
+  (dolist (lang '(typescript tsx c cpp python yaml go css html bash make json astro))
     ;; The second arg `t' (QUIET) is critical: `treesit-ready-p' with the
     ;; default nil emits a `display-warning' call for every unavailable
     ;; grammar, which is exactly what we are trying to avoid on a fresh
