@@ -35,6 +35,14 @@ jobs:
         working-directory: claude-skills/.claude/skills/branch-review
         run: uv run --project . --python 3.9 -m unittest discover -s scripts -t scripts
 
+  voice-diary-tests:
+    name: voice-diary unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run unit tests
+        run: bash .claude/skills/voice-diary/tests/append-diary-entry.test.sh
+
   gws-secure-smoke:
     name: gws-secure smoke test
     runs-on: ubuntu-latest
