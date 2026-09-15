@@ -375,6 +375,22 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertIn('className = "copy-button"', page)
         self.assertIn("navigator.clipboard", page)
 
+    def test_loads_highlight_js_from_the_cdn(self) -> None:
+        page = self.render(build_review())
+        self.assertIn("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/", page)
+        self.assertIn("hljs.highlightAll()", page)
+
+    def test_loads_a_dark_highlight_theme_for_dark_mode(self) -> None:
+        page = self.render(build_review())
+        self.assertIn("github.min.css", page)
+        self.assertIn("github-dark.min.css", page)
+        self.assertIn('media="(prefers-color-scheme: dark)"', page)
+
+    def test_highlights_only_when_the_cdn_script_loaded(self) -> None:
+        # A page opened offline must keep its filters and copy buttons, so
+        # the highlighting call is guarded rather than assumed.
+        self.assertIn("if (window.hljs)", self.render(build_review()))
+
     def test_omits_the_pull_request_row_when_absent(self) -> None:
         review = build_review()
         del review["pull_request"]
