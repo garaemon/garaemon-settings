@@ -192,7 +192,6 @@
               ;; vterm-copy-mode is mapped to C-c C-t originally but C-t is used as tmux prefix
               ;; key.
               ("\C-c [" . vterm-copy-mode) ; like tmux
-              ("\C-c t" . my-vterm-toggle)
               ("<mouse-1>" . my-browse-url-at-point)
               ("\C-k" . my-vterm-kill-line)
               ;; Copy a mouse selection without entering copy mode; both keys
@@ -253,18 +252,19 @@
   :ensure nil
   :bind ("C-c b" . my-vterm-switch-to-buffer))
 
-(use-package vterm-toggle :ensure t
-  :after (vterm)
+;; `C-c t' binds here rather than in a vterm-toggle block: `:bind' autoloads its
+;; command from the block's own package, and vterm-toggle.el does not define the
+;; dispatch.
+(use-package my-vterm-toggle
+  ;; lisp/my-vterm-toggle.el is a local file, so `:ensure' names the package the
+  ;; dispatch needs instead of one of its own.
+  :ensure vterm-toggle
+  :bind ("C-c t" . my-vterm-toggle)
+  ;; vterm-toggle autoloads none of the helpers the dispatch calls. The require
+  ;; lives here, not in my-vterm-toggle.el, which tests/my-vterm-toggle-test.el
+  ;; loads without vterm.
   :config
-  ;; The toggle dispatch lives in lisp/my-vterm-toggle.el so that
-  ;; tests/my-vterm-toggle-test.el can load it without pulling in the whole
-  ;; init.
-  (require 'my-vterm-toggle)
-  :bind
-  ("\C-c t" . my-vterm-toggle)
-  ;; ("\C-c t" . 'vterm-toggle)
-  ;; ("\C-c T" . 'vterm-toggle-cd)
-  )
+  (require 'vterm-toggle))
 
 (use-package string-inflection :ensure t
   :config (global-set-key (kbd "C-c i") 'string-inflection-cycle))

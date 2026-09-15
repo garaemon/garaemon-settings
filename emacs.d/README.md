@@ -44,8 +44,9 @@ Each module is loaded via `(require 'init-*)` in `init.el`.
 
 ### Tests (tests/)
 
-ERT tests for the standalone `my-*.el` modules. CI runs them on every push
-that touches `emacs.d/`:
+ERT tests for the standalone `my-*.el` modules. One test also reads the
+`my-vterm-toggle` block from `lisp/init-prog.el` and checks that it still binds
+`C-c t`. CI runs the tests on every push that touches `emacs.d/`:
 
 ```sh
 emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
