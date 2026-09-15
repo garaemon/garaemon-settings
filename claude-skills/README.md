@@ -81,11 +81,29 @@ The second line runs [`scripts/link-skills.sh`](scripts/README.md#link-skillssh-
 which symlinks one skill at a time because the platform owns
 `~/.claude/skills` in a managed container and puts its own skills there.
 
-Skills that shell out to Docker, 1Password, or `gws-secure` stay unavailable in
-a cloud container, which has none of them. The coding-workflow skills
-(`technical-writing`, `improve-english`, `fix-agent-todo`, `project-init`) run
-there unchanged; `branch-review` and `create-pr` reach GitHub through the `gh`
-CLI, which a cloud container also lacks.
+#### What a cloud container can run
+
+The coding-workflow skills that only read the checkout (`technical-writing`,
+`improve-english`, `fix-agent-todo`, `project-init`) run unchanged.
+
+`branch-review` and `branch-review-loop` need two more things. `uv` is already
+installed; the `gh` CLI is not, so add it in the same setup script:
+
+```bash
+apt-get install -y gh
+```
+
+`gh` then authenticates from the `GH_TOKEN` the environment exports, so
+`gh auth login` is unnecessary. The session proxy allows GitHub's REST API and
+refuses GraphQL, which is why every GitHub read in `branch-review` goes through
+`gh api`.
+
+Two groups stay unavailable:
+
+- Skills that shell out to Docker, 1Password, or `gws-secure`: a cloud
+  container has none of the three.
+- `create-pr`: `gh pr create` is a GraphQL call, which the proxy refuses. Open
+  the pull request from the session's own GitHub tools instead.
 
 ## Tools
 
