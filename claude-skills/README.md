@@ -40,6 +40,8 @@ Python helpers and need `uv` to run them.
 
 ## Installation
 
+### Workstation
+
 `~/.claude/skills` is a symlink to this directory's `.claude/skills`, so all
 skills are available in every directory and editing a skill here takes effect
 immediately. On a new machine, clone the monorepo and point `~/.claude/skills`
@@ -54,6 +56,23 @@ Machine configuration (the thin `~/.claude/CLAUDE.md`, etc.) is managed
 separately by chezmoi; the skills directory is deliberately left out of chezmoi
 (`.claude/skills` is in its `.chezmoiignore`) so this directory is the only
 owner of skill files.
+
+### Claude Code on the web
+
+A cloud container starts from a fresh clone and never runs chezmoi, so the
+`~/.claude/skills` symlink above does not exist there. Two mechanisms cover
+that case.
+
+Sessions **on this repository** need no setup: the repository-root
+`.claude/skills` symlink points at this directory, so Claude Code loads every
+skill as a project skill straight out of the clone. The symlink is committed,
+which is why it survives the clone.
+
+Skills that shell out to Docker, 1Password, or `gws-secure` stay unavailable in
+a cloud container, which has none of them. The coding-workflow skills
+(`technical-writing`, `improve-english`, `fix-agent-todo`, `project-init`) run
+there unchanged; `branch-review` and `create-pr` reach GitHub through the `gh`
+CLI, which a cloud container also lacks.
 
 ## Tools
 
