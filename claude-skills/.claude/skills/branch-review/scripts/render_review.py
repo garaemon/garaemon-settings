@@ -46,6 +46,10 @@ the checkout, a line past the end of its file, an unterminated code fence, a
 placeholder left in the title. It refuses to render while any remain, so the
 reports never carry a broken anchor.
 
+A finding whose body holds no fenced code block is rendered all the same, but
+the script names it in a note, because a finding reads best next to the code
+it concerns and the fix it proposes.
+
 Usage:
     render_review.py review.json                   # check, then write into the repository root
     render_review.py review.json --check           # check only, write nothing
@@ -310,6 +314,25 @@ def scan_fences(text: str) -> FenceScan:
         elif INDENTED_FENCE_PATTERN.match(line):
             has_indented_fence = True
     return FenceScan(is_unterminated=opening_length != 0, has_indented_fence=has_indented_fence)
+
+
+def has_code_block(text: str) -> bool:
+    """Return whether the markdown text opens at least one code fence."""
+    return any(FENCE_PATTERN.match(line) for line in text.splitlines())
+
+
+def list_findings_without_code(review: dict[str, Any]) -> list[str]:
+    """Return the ids of findings whose body shows no fenced code block.
+
+    An inline code span does not count: the reader needs the offending lines
+    and, where one exists, the proposed replacement, not just a name.
+    """
+    return [
+        finding["id"]
+        for category in review["categories"]
+        for finding in category["findings"]
+        if not has_code_block(finding["body"])
+    ]
 
 
 def count_lines(file_path: Path) -> int:
@@ -635,6 +658,17 @@ def format_summary(review: dict[str, Any]) -> str:
     )
 
 
+def report_findings_without_code(review: dict[str, Any]) -> None:
+    """Print a note naming the findings that show no code, if any."""
+    finding_ids = list_findings_without_code(review)
+    if not finding_ids:
+        return
+    print(
+        f"note: {format_count(len(finding_ids), 'finding shows', 'findings show')} "
+        f"no code example: {', '.join(finding_ids)}"
+    )
+
+
 def report_problems(review_path: Path, problems: Sequence[str]) -> None:
     """Print the check failures to stderr, one per line."""
     print(
@@ -678,6 +712,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         if args.check:
             print(f"OK: {args.review} passes every check ({format_summary(review)})")
+            report_findings_without_code(review)
             return 0
         template_text = read_template(Path(args.template) if args.template else TEMPLATE_PATH)
         written = write_reports(review, output_dir, template_text, generated_at)
@@ -688,6 +723,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     for path in written:
         print(f"wrote {path}")
     print(format_summary(review))
+    report_findings_without_code(review)
     return 0
 
 

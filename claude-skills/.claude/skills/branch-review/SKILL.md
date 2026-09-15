@@ -226,6 +226,25 @@ Review the code in this order. Focus on the diff, not pre-existing code the
 branch did not change. Be specific: give a file path, a line number and a code
 snippet for every finding.
 
+#### Show the code
+
+Write every finding around code, not around prose about code. A finding that
+the author can act on without opening the file has two fenced blocks:
+
+1. The lines as they are, quoted from the diff, so the reader sees what the
+   finding is about without scrolling to the file.
+2. The lines as they should be, whenever a concrete fix exists: the renamed
+   identifier, the added guard, the missing doc comment, the assertion the
+   test lacks. Write the replacement in full rather than describing it.
+
+Tag every fence with the language (`ts`, `python`, `elisp`, and so on), because
+`REVIEW.html` colors code through highlight.js and an untagged fence falls back
+to a guess. Skip the second block only when no single fix follows from the
+finding, such as a missing test file or a design question, and say what the
+fix would involve instead. `render_review.py` prints a note naming the
+findings that show no code at all; treat each as a prompt to add the snippet,
+not as an error.
+
 #### Category 1: Architecture / Config
 
 - Dependency placement and management
@@ -370,7 +389,7 @@ The file shape, with the review text in the language resolved in Step 1.6:
           "title": "IPC color inputs not validated",
           "path": "src/main/index.ts",
           "line": 29,
-          "body": "The `UPDATE_COLOR` handler accepts arbitrary strings:\n\n```ts\nipcMain.on(UPDATE_COLOR, (_, color) => setColor(color));\n```\n\nSuggestion: validate against `/^#[0-9A-Fa-f]{6}$/`."
+          "body": "The `UPDATE_COLOR` handler accepts arbitrary strings:\n\n```ts\nipcMain.on(UPDATE_COLOR, (_, color) => setColor(color));\n```\n\nValidate the value before it reaches `setColor`:\n\n```ts\nconst HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;\n\nipcMain.on(UPDATE_COLOR, (_, color) => {\n  if (typeof color !== \"string\" || !HEX_COLOR_PATTERN.test(color)) {\n    return;\n  }\n  setColor(color);\n});\n```"
         }
       ]
     }
@@ -401,6 +420,8 @@ Rules for building the file:
   fence at column 0, because an indented fence does not open a code block.
   Keep lists flat: a nested item renders as a sibling in the HTML report
   while `REVIEW.md` keeps the nesting.
+- Give every finding the current code and the proposed code as fenced blocks
+  tagged with the language, as [Show the code](#show-the-code) describes.
 - Do not assign priority levels. Every finding in the review should be worth
   the author's attention. If something is too trivial to act on, leave it out
   entirely instead of marking it "Low".
