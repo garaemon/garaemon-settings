@@ -68,6 +68,19 @@ Sessions **on this repository** need no setup: the repository-root
 skill as a project skill straight out of the clone. The symlink is committed,
 which is why it survives the clone.
 
+Sessions **on another repository** cannot follow a symlink across repositories.
+Give the environment a setup script that clones this repository and links each
+skill into the personal skills directory:
+
+```bash
+git clone --depth 1 https://github.com/garaemon/garaemon-settings.git ~/garaemon-settings
+~/garaemon-settings/claude-skills/scripts/link-skills.sh
+```
+
+The second line runs [`scripts/link-skills.sh`](scripts/README.md#link-skillssh--per-skill-symlinks-for-managed-containers),
+which symlinks one skill at a time because the platform owns
+`~/.claude/skills` in a managed container and puts its own skills there.
+
 Skills that shell out to Docker, 1Password, or `gws-secure` stay unavailable in
 a cloud container, which has none of them. The coding-workflow skills
 (`technical-writing`, `improve-english`, `fix-agent-todo`, `project-init`) run
