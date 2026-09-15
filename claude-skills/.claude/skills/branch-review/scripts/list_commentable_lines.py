@@ -39,7 +39,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
-from commands import run_gh_command
+from commands import detect_repository, read_open_pull_request, run_gh_command
 
 HUNK_PREFIX = "@@"
 
@@ -94,14 +94,22 @@ def collect_commentable_lines(patch: str) -> set[int]:
 
 def find_pull_request_number() -> int:
     """Return the pull request number for the current branch."""
-    output = run_gh_command(["gh", "pr", "view", "--json", "number"])
-    return json.loads(output)["number"]
+    pull_request = read_open_pull_request()
+    if pull_request is None:
+        raise RuntimeError(
+            "no open pull request for the current branch; pass --pr explicitly"
+        )
+    return pull_request["number"]
 
 
 def find_repository() -> str:
     """Return the current repository as "owner/name"."""
-    output = run_gh_command(["gh", "repo", "view", "--json", "nameWithOwner"])
-    return json.loads(output)["nameWithOwner"]
+    repository = detect_repository()
+    if repository is None:
+        raise RuntimeError(
+            "cannot read the repository from the origin remote; pass --repo explicitly"
+        )
+    return repository
 
 
 def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:

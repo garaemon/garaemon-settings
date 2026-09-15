@@ -40,6 +40,8 @@ Python helpers and need `uv` to run them.
 
 ## Installation
 
+### Workstation
+
 `~/.claude/skills` is a symlink to this directory's `.claude/skills`, so all
 skills are available in every directory and editing a skill here takes effect
 immediately. On a new machine, clone the monorepo and point `~/.claude/skills`
@@ -54,6 +56,54 @@ Machine configuration (the thin `~/.claude/CLAUDE.md`, etc.) is managed
 separately by chezmoi; the skills directory is deliberately left out of chezmoi
 (`.claude/skills` is in its `.chezmoiignore`) so this directory is the only
 owner of skill files.
+
+### Claude Code on the web
+
+A cloud container starts from a fresh clone and never runs chezmoi, so the
+`~/.claude/skills` symlink above does not exist there. Two mechanisms cover
+that case.
+
+Sessions **on this repository** need no setup: the repository-root
+`.claude/skills` symlink points at this directory, so Claude Code loads every
+skill as a project skill straight out of the clone. The symlink is committed,
+which is why it survives the clone.
+
+Sessions **on another repository** cannot follow a symlink across repositories.
+Give the environment a setup script that clones this repository and links each
+skill into the personal skills directory:
+
+```bash
+git clone --depth 1 https://github.com/garaemon/garaemon-settings.git ~/garaemon-settings
+~/garaemon-settings/claude-skills/scripts/link-skills.sh
+```
+
+The second line runs [`scripts/link-skills.sh`](scripts/README.md#link-skillssh--per-skill-symlinks-for-managed-containers),
+which symlinks one skill at a time because the platform owns
+`~/.claude/skills` in a managed container and puts its own skills there.
+
+#### What a cloud container can run
+
+The coding-workflow skills that only read the checkout (`technical-writing`,
+`improve-english`, `fix-agent-todo`, `project-init`) run unchanged.
+
+`branch-review` and `branch-review-loop` need two more things. `uv` is already
+installed; the `gh` CLI is not, so add it in the same setup script:
+
+```bash
+apt-get install -y gh
+```
+
+`gh` then authenticates from the `GH_TOKEN` the environment exports, so
+`gh auth login` is unnecessary. The session proxy allows GitHub's REST API and
+refuses GraphQL, which is why every GitHub read in `branch-review` goes through
+`gh api`.
+
+Two groups stay unavailable:
+
+- Skills that shell out to Docker, 1Password, or `gws-secure`: a cloud
+  container has none of the three.
+- `create-pr`: `gh pr create` is a GraphQL call, which the proxy refuses. Open
+  the pull request from the session's own GitHub tools instead.
 
 ## Tools
 
