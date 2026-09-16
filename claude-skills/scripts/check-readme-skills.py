@@ -12,11 +12,13 @@ Exit codes:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 README_PATH = Path("README.md")
 SKILLS_ROOT = Path("skills")
+COMPONENT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def find_unlinked_skills(readme_text: str) -> list[str]:
@@ -41,13 +43,18 @@ def count_skills() -> int:
 
 
 def main() -> int:
+    # README_PATH and SKILLS_ROOT stay relative because the link text checked
+    # below is relative. Move to the component so they resolve wherever the
+    # caller happens to stand.
+    os.chdir(COMPONENT_ROOT)
+
     if not README_PATH.is_file():
         print(f"error: {README_PATH} not found", file=sys.stderr)
         return 1
 
     if not SKILLS_ROOT.is_dir():
-        print("No skills directory found; nothing to check.")
-        return 0
+        print(f"error: {SKILLS_ROOT} not found under {COMPONENT_ROOT}", file=sys.stderr)
+        return 1
 
     if count_skills() == 0:
         print("No skills with SKILL.md found; nothing to check.")
