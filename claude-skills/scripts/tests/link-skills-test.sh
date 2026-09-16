@@ -9,7 +9,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 readonly LINK_SKILLS="$SCRIPT_DIR/../link-skills.sh"
-readonly SKILLS_DIR="$SCRIPT_DIR/../../skills"
+# Resolved, because link-skills.sh records the resolved path in every link it
+# creates and the tests below compare against it.
+SKILLS_DIR="$(cd "$SCRIPT_DIR/../../skills" && pwd)"
+readonly SKILLS_DIR
 
 WORK_DIR="$(mktemp -d)"
 readonly WORK_DIR
@@ -91,8 +94,34 @@ test_fails_when_nothing_could_be_linked() {
     "linking nothing fails, so an unattended setup notices"
 }
 
+test_removes_a_link_to_a_skill_that_is_gone() {
+  local target="$WORK_DIR/stale"
+  run_link_skills "$target" >/dev/null
+  ln -s "$SKILLS_DIR/removed-skill" "$target/removed-skill"
+  run_link_skills "$target" >/dev/null
+  if [ -L "$target/removed-skill" ]; then
+    report_failure "a link to a skill that no longer exists was left behind"
+  else
+    printf 'ok: a link to a skill that no longer exists is removed\n'
+  fi
+}
+
+test_keeps_a_link_into_another_tree() {
+  local target="$WORK_DIR/other-tree"
+  run_link_skills "$target" >/dev/null
+  ln -s /nowhere/at/all "$target/someone-elses-skill"
+  run_link_skills "$target" >/dev/null
+  if [ -L "$target/someone-elses-skill" ]; then
+    printf 'ok: a dangling link outside this repository is left alone\n'
+  else
+    report_failure "a dangling link outside this repository was removed"
+  fi
+}
+
 test_links_every_skill_into_an_empty_directory
 test_relinks_without_complaint
+test_removes_a_link_to_a_skill_that_is_gone
+test_keeps_a_link_into_another_tree
 test_keeps_a_symlink_pointing_elsewhere
 test_keeps_a_real_directory
 test_fails_when_nothing_could_be_linked

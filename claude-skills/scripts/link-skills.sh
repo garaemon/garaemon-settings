@@ -47,9 +47,30 @@ link_skill() {
   printf 'linked %s\n' "$skill_name"
 }
 
+# Removes the links this script left behind for skills that no longer exist,
+# which a rename or a branch switch leaves dangling. Only links into this
+# repository are considered, so nothing the platform installed is touched.
+remove_stale_links() {
+  local target_dir="$1"
+  local link_path current_target
+  for link_path in "$target_dir"/*; do
+    [ -L "$link_path" ] || continue
+    current_target="$(readlink "$link_path")"
+    case "$current_target" in
+      "$SOURCE_DIR"/*) ;;
+      *) continue ;;
+    esac
+    if [ ! -f "$current_target/SKILL.md" ]; then
+      rm "$link_path"
+      printf 'removed %s, which no longer names a skill\n' "$(basename "$link_path")"
+    fi
+  done
+}
+
 main() {
   local target_dir="${1:-$HOME/.claude/skills}"
   mkdir -p "$target_dir"
+  remove_stale_links "$target_dir"
 
   local skill_path linked_count=0 skipped_count=0
   for skill_path in "$SOURCE_DIR"/*; do
