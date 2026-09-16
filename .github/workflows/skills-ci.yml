@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 scripts/check-readme-skills.py
+      - name: Run the checker's unit tests
+        run: python3 -m unittest discover -s scripts/tests -t scripts/tests
 
   skill-links:
     name: Skill symlinks resolve

@@ -44,6 +44,13 @@ is needed:
 python3 scripts/check-readme-skills.py
 ```
 
+Its own behaviour, including which link shapes count, is covered by
+`scripts/tests/test_check_readme_skills.py`:
+
+```bash
+python3 -m unittest discover -s scripts/tests -t scripts/tests
+```
+
 The script exits non-zero and lists the missing skill names if any skill
 has no link in `README.md`. When you add a new skill, add an entry under
 the `## Skills` section of `README.md` that links to its `SKILL.md`.
@@ -64,6 +71,7 @@ bash scripts/tests/link-skills-test.sh
 ```bash
 ../scripts/lint.sh markdown \
   && python3 scripts/check-readme-skills.py \
+  && python3 -m unittest discover -s scripts/tests -t scripts/tests \
   && bash scripts/tests/link-skills-test.sh
 ```
 
