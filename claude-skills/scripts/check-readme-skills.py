@@ -2,8 +2,8 @@
 """Verify that README.md links to every skill under skills/.
 
 A skill is any directory under skills/ that contains a SKILL.md.
-Each such skill must appear in README.md as a link whose target is the
-relative path `skills/<name>/SKILL.md`.
+Each such skill must appear in README.md as a link whose target is exactly
+the relative path `skills/<name>/SKILL.md`.
 
 Exit codes:
   0: all skills are linked (or no skills exist yet).
@@ -28,7 +28,10 @@ def find_unlinked_skills(readme_text: str) -> list[str]:
         skill_md = skill_dir / "SKILL.md"
         if not skill_md.is_file():
             continue
-        expected_link = str(skill_md)
+        # Match the link target, not a bare path: "skills/x/SKILL.md" is a
+        # substring of the ".claude/skills/x/SKILL.md" this tree used to use,
+        # so a link left behind at the old path would still count as present.
+        expected_link = f"]({skill_md})"
         if expected_link not in readme_text:
             unlinked.append(skill_dir.name)
     return unlinked
