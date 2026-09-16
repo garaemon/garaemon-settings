@@ -69,6 +69,13 @@ Sessions **on this repository** need no setup: the repository-root
 skill as a project skill straight out of the clone. The symlink is committed,
 which is why it survives the clone.
 
+One thing that route does not bring: `branch-review` registers a `PostToolUse`
+hook that checks a `review.json` as soon as it is written, and a `SKILL.md`
+hooks entry cannot name the skill's own directory, so the hook hard-codes
+`$HOME/.claude/skills/branch-review` and exits quietly when that path is
+absent. The review still runs; only the early check of the findings file is
+lost. Running `link-skills.sh` below restores it.
+
 Sessions **on another repository** cannot follow a symlink across repositories.
 Clone this repository into the container instead, and link each skill into the
 personal skills directory:
