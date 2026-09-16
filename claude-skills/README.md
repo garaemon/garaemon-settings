@@ -92,8 +92,10 @@ which symlinks one skill at a time because the platform owns
 The skills fall into three groups.
 
 **Run unchanged**, because they read the checkout or the web and nothing else:
-`technical-writing`, `improve-english`, `fix-agent-todo`, `project-init`, and
-`news-digest`.
+`technical-writing`, `improve-english`, `fix-agent-todo`, and `news-digest`.
+`project-init` also runs, as far as the toolchain the new project needs: it
+calls `npm install`, `go mod tidy`, and `pre-commit install`, and a cloud
+container ships the first two but not `pre-commit`.
 
 **Run once `gh` is installed**: `branch-review` and `branch-review-loop`. `uv`
 is already there; the `gh` CLI is not, so install it alongside the skills:
