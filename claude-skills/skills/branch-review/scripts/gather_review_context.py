@@ -455,9 +455,9 @@ def resolve_branch_range(
     # Only a base that came from the pull request lives on the pull request's
     # base repository. A --base names a branch of the checkout in hand, which
     # is origin even when the pull request sits on the repository it forked.
-    base_repository = pull_request["base_repository"] if pull_request else None
-    if args.base:
-        base_repository = None
+    base_repository = (
+        pull_request["base_repository"] if pull_request and not args.base else None
+    )
     base_revision = resolve_base_revision(
         base_ref, select_remote_for_repository(read_remote_urls(), base_repository)
     )

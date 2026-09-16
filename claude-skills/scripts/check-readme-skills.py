@@ -7,7 +7,8 @@ the relative path `skills/<name>/SKILL.md`.
 
 Exit codes:
   0: all skills are linked (or no skills exist yet).
-  1: at least one skill is missing from README.md, or README.md is absent.
+  1: at least one skill is missing from README.md, or README.md or the skills
+     directory is absent.
 """
 
 from __future__ import annotations
