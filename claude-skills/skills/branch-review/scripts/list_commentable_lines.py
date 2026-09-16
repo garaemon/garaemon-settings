@@ -39,7 +39,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
-from commands import detect_repository, read_open_pull_request, run_gh_command
+from commands import detect_repository, read_open_pull_request, read_paginated_api
 
 HUNK_PREFIX = "@@"
 
@@ -113,16 +113,8 @@ def find_repository() -> str:
 
 
 def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:
-    """Return the pull request's changed files as a list of API objects.
-
-    Uses newline-delimited JSON so pagination works across gh versions.
-    """
-    output = run_gh_command([
-        "gh", "api", "--paginate",
-        f"repos/{repository}/pulls/{pr_number}/files",
-        "--jq", ".[]",
-    ])
-    return [json.loads(line) for line in output.splitlines() if line.strip()]
+    """Return the pull request's changed files as a list of API objects."""
+    return read_paginated_api(f"repos/{repository}/pulls/{pr_number}/files")
 
 
 def build_commentable_index(files: Sequence[dict[str, Any]]) -> dict[str, set[int]]:

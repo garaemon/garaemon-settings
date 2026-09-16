@@ -22,6 +22,11 @@ from urllib.parse import quote, urlsplit
 
 GITHUB_HOST_VARIABLE = "GH_HOST"
 
+# GitHub's own maximum page size, and a stop so that a server answering every
+# page with a full one cannot spin this forever.
+GITHUB_PAGE_SIZE = 100
+MAX_PAGE_COUNT = 100
+
 
 def run_command(
     args: Sequence[str],
@@ -258,3 +263,28 @@ def read_open_pull_request() -> dict[str, Any] | None:
     if parent is None or parent == repository:
         return None
     return query_open_pull_request(parent, owner, branch)
+
+
+def build_page_path(path: str, page: int) -> str:
+    """Return a REST collection path asking for one page of GITHUB_PAGE_SIZE."""
+    separator = "&" if "?" in path else "?"
+    return f"{path}{separator}per_page={GITHUB_PAGE_SIZE}&page={page}"
+
+
+def read_paginated_api(path: str) -> list[Any]:
+    """Return every item of a REST collection, walking the pages by number.
+
+    `gh api --paginate` follows the Link header, whose URLs name the repository
+    by numeric id (repositories/{id}/...). The proxy in front of Claude Code on
+    the web refuses that form, so the first page beyond the cut-off fails there.
+    Asking for page N by number keeps every request on the repos/{owner}/{repo}
+    path that both accept.
+    """
+    items: list[Any] = []
+    for page in range(1, MAX_PAGE_COUNT + 1):
+        output = run_gh_command(["gh", "api", build_page_path(path, page), "--jq", ".[]"])
+        page_items = [json.loads(line) for line in output.splitlines() if line.strip()]
+        items.extend(page_items)
+        if len(page_items) < GITHUB_PAGE_SIZE:
+            return items
+    raise RuntimeError(f"{path}: more than {MAX_PAGE_COUNT} pages; refusing to keep asking")
