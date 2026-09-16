@@ -11,19 +11,17 @@ set -euo pipefail
 # spotify-daily-digest-slack.service: {{ include "dot_config/systemd/user/spotify-daily-digest-slack.service" | sha256sum }}
 # spotify-daily-digest-slack.timer: {{ include "dot_config/systemd/user/spotify-daily-digest-slack.timer" | sha256sum }}
 
-# Dev containers and Codespaces apply these dotfiles without a systemd user
-# session, and the timers are pointless there anyway.
+# chezmoi can apply over an ssh session that reaches no systemd user manager,
+# for example before lingering is enabled. Leave the timers for the next apply.
 if ! command -v systemctl >/dev/null 2>&1 \
   || ! systemctl --user show-environment >/dev/null 2>&1; then
   echo "skip: no systemd --user session, leaving the Slack digest timers alone"
   exit 0
 fi
 
-# systemd's user manager resolved its unit search path from the login user's
-# home when the session started, so a chezmoi apply aimed anywhere else writes
-# units the manager never sees. dotfiles/tests/test_install_sh.py applies to an
-# isolated $HOME while the runner's session bus stays reachable, which made
-# `enable` fail and abort install.sh.
+# A chezmoi apply aimed outside the login home writes units where systemd's
+# user manager never looks. dotfiles/tests/test_install_sh.py does exactly that,
+# and a failed `enable` would abort install.sh.
 readonly login_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
 if [ "{{ .chezmoi.destDir }}" != "${login_home}" ]; then
   echo "skip: applying to {{ .chezmoi.destDir }}, not the login home ${login_home}"

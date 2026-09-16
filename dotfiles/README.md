@@ -125,7 +125,7 @@ when `atuin.syncAddress` is set. On a machine without this local config the
 line is omitted entirely and `chezmoi apply` still succeeds, so atuin simply
 runs without a sync server.
 
-### Slack digest timers (systemd --user, Linux only)
+### Slack digest timers (systemd --user, ax8-max only)
 
 `dot_config/systemd/user/` holds the `systemd --user` timers that post the
 `news-digest`, `spotify-daily-digest`, and `artist-live-digest` skills to
@@ -136,9 +136,16 @@ must be checked out at that path.
 `chezmoi apply` installs the units and then runs
 `.chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl`, which
 reloads systemd and enables the timers. The script embeds a hash of every unit
-file, so chezmoi reruns it whenever a unit changes. The script exits early on
-hosts without a user systemd session, such as dev containers, and
-`.chezmoiignore.tmpl` skips the units entirely on macOS.
+file, so chezmoi reruns it whenever a unit changes.
+
+Only ax8-max runs these digests, so `.chezmoiignore.tmpl` skips both the units
+and the script on every other host. The script itself also exits early in two
+cases:
+
+- No systemd user manager answers, for example over an ssh session before
+  lingering is enabled.
+- chezmoi applies outside the login home, where the manager would never see the
+  units. This case keeps the `install.sh` end-to-end test green on ax8-max.
 
 Inspect or run the jobs by hand:
 
