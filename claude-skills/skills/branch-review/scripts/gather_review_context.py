@@ -48,8 +48,10 @@ from commands import (
     detect_github_host,
     detect_repository,
     read_open_pull_request,
+    read_remote_urls,
     run_command,
     run_gh_command,
+    select_remote_for_repository,
 )
 
 SIZE_THRESHOLD = 200
@@ -75,6 +77,7 @@ def read_pull_request() -> dict[str, Any] | None:
         "number": pull_request["number"],
         "url": pull_request["html_url"],
         "base_ref": pull_request["base"]["ref"],
+        "base_repository": pull_request["base"]["repo"]["full_name"],
     }
 
 
@@ -119,16 +122,20 @@ def resolve_review_base(
     raise RuntimeError("cannot resolve a review base; pass --base explicitly")
 
 
-def resolve_base_revision(base_ref: str) -> str:
+def resolve_base_revision(base_ref: str, remote: str = "origin") -> str:
     """Fetch the base and return the revision to diff against.
 
     Prefers the remote-tracking ref so the review sees the base as it is on the
-    server, and falls back to a local branch when there is no remote.
+    server, and falls back to a local branch when there is no remote. remote is
+    whichever one hosts the base branch: on a fork checkout that is not origin,
+    and fetching origin would diff against a stale copy of the base.
     """
-    run_command(["git", "fetch", "origin", base_ref], check=False)
-    resolved = resolve_existing_revision([f"origin/{base_ref}", base_ref])
+    run_command(["git", "fetch", remote, base_ref], check=False)
+    resolved = resolve_existing_revision([f"{remote}/{base_ref}", base_ref])
     if resolved is None:
-        raise RuntimeError(f"base ref {base_ref!r} does not resolve locally or on origin")
+        raise RuntimeError(
+            f"base ref {base_ref!r} does not resolve locally or on {remote}"
+        )
     return resolved
 
 
@@ -445,7 +452,10 @@ def resolve_branch_range(
 ) -> tuple[str, str, str]:
     """Return (left, right, description) for the default whole-branch review."""
     base_ref, base_source = resolve_review_base(args.base, pull_request)
-    base_revision = resolve_base_revision(base_ref)
+    base_remote = select_remote_for_repository(
+        read_remote_urls(), pull_request["base_repository"] if pull_request else None
+    )
+    base_revision = resolve_base_revision(base_ref, base_remote)
     merge_base = find_merge_base(base_revision)
     return merge_base, "HEAD", f"whole branch against {base_ref} ({base_source})"
 

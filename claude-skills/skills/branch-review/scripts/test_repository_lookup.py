@@ -15,6 +15,7 @@ from commands import (
     parse_repository_from_remote_url,
     read_open_pull_request,
     select_open_pull_request,
+    select_remote_for_repository,
     split_upstream_reference,
 )
 
@@ -247,6 +248,39 @@ class ReadOpenPullRequestTest(unittest.TestCase):
         pull_request, calls = self.run_lookup({"repos/fork/repo": "fork/repo\n"})
         self.assertIsNone(pull_request)
         self.assertEqual(len(calls), 2)
+
+
+class SelectRemoteForRepositoryTest(unittest.TestCase):
+    """select_remote_for_repository names the remote that hosts a repository."""
+
+    FORK_CHECKOUT = {
+        "origin": "https://github.com/contributor/repo.git",
+        "upstream": "git@github.com:owner/repo.git",
+    }
+
+    def test_names_the_remote_holding_the_repository(self) -> None:
+        self.assertEqual(
+            select_remote_for_repository(self.FORK_CHECKOUT, "owner/repo"), "upstream"
+        )
+
+    def test_prefers_origin_when_origin_holds_it(self) -> None:
+        # Two remotes can point at one repository; origin is what the rest of
+        # this module resolves against, so it wins.
+        remotes = {"mirror": "https://github.com/owner/repo", **self.FORK_CHECKOUT}
+        self.assertEqual(
+            select_remote_for_repository(remotes, "contributor/repo"), "origin"
+        )
+
+    def test_falls_back_to_origin_for_an_unknown_repository(self) -> None:
+        self.assertEqual(
+            select_remote_for_repository(self.FORK_CHECKOUT, "someone/else"), "origin"
+        )
+
+    def test_falls_back_to_origin_without_a_repository(self) -> None:
+        self.assertEqual(select_remote_for_repository(self.FORK_CHECKOUT, None), "origin")
+
+    def test_falls_back_to_origin_without_remotes(self) -> None:
+        self.assertEqual(select_remote_for_repository({}, "owner/repo"), "origin")
 
 
 if __name__ == "__main__":

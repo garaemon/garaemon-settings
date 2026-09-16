@@ -183,6 +183,35 @@ def detect_head_reference() -> tuple[str, str] | None:
     return repository.split("/", 1)[0], branch
 
 
+def select_remote_for_repository(
+    remote_urls: Mapping[str, str], repository: str | None
+) -> str:
+    """Return the name of the remote that hosts repository.
+
+    Falls back to origin, which is also what an unknown repository gets: every
+    other caller here already treats origin as the repository under review.
+    """
+    if repository is None:
+        return "origin"
+    if parse_repository_from_remote_url(remote_urls.get("origin")) == repository:
+        return "origin"
+    for name, url in remote_urls.items():
+        if parse_repository_from_remote_url(url) == repository:
+            return name
+    return "origin"
+
+
+def read_remote_urls() -> dict[str, str]:
+    """Return the URL of every git remote, keyed by remote name."""
+    names = run_command(["git", "remote"], check=False).split()
+    urls = {}
+    for name in names:
+        url = run_command(["git", "remote", "get-url", name], check=False).strip()
+        if url:
+            urls[name] = url
+    return urls
+
+
 def build_open_pull_request_path(repository: str, owner: str, branch: str) -> str:
     """Return the REST path listing the open pull requests for a head branch."""
     return f"repos/{repository}/pulls?state=open&head={quote(f'{owner}:{branch}')}"
