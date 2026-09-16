@@ -44,7 +44,15 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, cast
 
-from commands import detect_github_host, run_command, run_gh_command
+from commands import (
+    detect_github_host,
+    detect_repository,
+    read_open_pull_request,
+    read_remote_urls,
+    run_command,
+    run_gh_command,
+    select_remote_for_repository,
+)
 
 SIZE_THRESHOLD = 200
 
@@ -62,16 +70,15 @@ DEFAULT_MANAGED_SETTINGS_PATH = Path("/etc/claude-code/managed-settings.json")
 
 def read_pull_request() -> dict[str, Any] | None:
     """Return the pull request for the current branch, or None if there is none."""
-    output = run_gh_command(
-        ["gh", "pr", "view", "--json", "number,url,baseRefName,headRefName"],
-        check=False,
-    )
-    if not output.strip():
+    pull_request = read_open_pull_request()
+    if pull_request is None:
         return None
-    try:
-        return json.loads(output)
-    except json.JSONDecodeError:
-        return None
+    return {
+        "number": pull_request["number"],
+        "url": pull_request["html_url"],
+        "base_ref": pull_request["base"]["ref"],
+        "base_repository": pull_request["base"]["repo"]["full_name"],
+    }
 
 
 def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
@@ -85,14 +92,14 @@ def resolve_existing_revision(candidates: Sequence[str]) -> str | None:
 
 def read_default_branch() -> str | None:
     """Return the repository default branch, or None when it cannot be read."""
-    output = run_gh_command(
-        ["gh", "repo", "view", "--json", "defaultBranchRef"], check=False
-    )
-    if output.strip():
-        try:
-            return json.loads(output)["defaultBranchRef"]["name"]
-        except (json.JSONDecodeError, KeyError, TypeError):
-            pass
+    repository = detect_repository()
+    if repository:
+        output = run_gh_command(
+            ["gh", "api", f"repos/{repository}", "--jq", ".default_branch"],
+            check=False,
+        ).strip()
+        if output:
+            return output
     # No GitHub remote to ask, so fall back to whichever conventional branch exists.
     existing = resolve_existing_revision(["refs/heads/main", "refs/heads/master"])
     return existing.removeprefix("refs/heads/") if existing else None
@@ -106,7 +113,7 @@ def resolve_review_base(
         return explicit_base, "explicit --base"
     if pull_request:
         return (
-            pull_request["baseRefName"],
+            pull_request["base_ref"],
             f"base branch of pull request #{pull_request['number']}",
         )
     default_branch = read_default_branch()
@@ -115,16 +122,20 @@ def resolve_review_base(
     raise RuntimeError("cannot resolve a review base; pass --base explicitly")
 
 
-def resolve_base_revision(base_ref: str) -> str:
+def resolve_base_revision(base_ref: str, remote: str = "origin") -> str:
     """Fetch the base and return the revision to diff against.
 
     Prefers the remote-tracking ref so the review sees the base as it is on the
-    server, and falls back to a local branch when there is no remote.
+    server, and falls back to a local branch when there is no remote. remote is
+    whichever one hosts the base branch: on a fork checkout that is not origin,
+    and fetching origin would diff against a stale copy of the base.
     """
-    run_command(["git", "fetch", "origin", base_ref], check=False)
-    resolved = resolve_existing_revision([f"origin/{base_ref}", base_ref])
+    run_command(["git", "fetch", remote, base_ref], check=False)
+    resolved = resolve_existing_revision([f"{remote}/{base_ref}", base_ref])
     if resolved is None:
-        raise RuntimeError(f"base ref {base_ref!r} does not resolve locally or on origin")
+        raise RuntimeError(
+            f"base ref {base_ref!r} does not resolve locally or on {remote}"
+        )
     return resolved
 
 
@@ -441,7 +452,15 @@ def resolve_branch_range(
 ) -> tuple[str, str, str]:
     """Return (left, right, description) for the default whole-branch review."""
     base_ref, base_source = resolve_review_base(args.base, pull_request)
-    base_revision = resolve_base_revision(base_ref)
+    # Only a base that came from the pull request lives on the pull request's
+    # base repository. A --base names a branch of the checkout in hand, which
+    # is origin even when the pull request sits on the repository it forked.
+    base_repository = (
+        pull_request["base_repository"] if pull_request and not args.base else None
+    )
+    base_revision = resolve_base_revision(
+        base_ref, select_remote_for_repository(read_remote_urls(), base_repository)
+    )
     merge_base = find_merge_base(base_revision)
     return merge_base, "HEAD", f"whole branch against {base_ref} ({base_source})"
 
