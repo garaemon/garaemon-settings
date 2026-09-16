@@ -44,18 +44,19 @@ Python helpers and need `uv` to run them.
 
 `~/.claude/skills` is a symlink to this directory's `skills`, so all
 skills are available in every directory and editing a skill here takes effect
-immediately. On a new machine, clone the monorepo and point `~/.claude/skills`
-at it:
+immediately. chezmoi creates that symlink from
+`dotfiles/dot_claude/symlink_skills.tmpl`, so a machine that applies the
+dotfiles needs no further setup.
+
+Without chezmoi, clone the monorepo and create the symlink by hand:
 
 ```bash
 git clone git@github.com:garaemon/garaemon-settings.git ~/ghq/github.com/garaemon/garaemon-settings
 ln -s ~/ghq/github.com/garaemon/garaemon-settings/claude-skills/skills ~/.claude/skills
 ```
 
-Machine configuration (the thin `~/.claude/CLAUDE.md`, etc.) is managed
-separately by chezmoi; the skills directory is deliberately left out of chezmoi
-(`.claude/skills` is in its `.chezmoiignore`) so this directory is the only
-owner of skill files.
+Either way this directory owns every skill file. chezmoi stores the symlink and
+never the files behind it, so a skill is edited here and nowhere else.
 
 ### Claude Code on the web
 
@@ -88,11 +89,14 @@ which symlinks one skill at a time because the platform owns
 
 #### What a cloud container can run
 
-The coding-workflow skills that only read the checkout (`technical-writing`,
-`improve-english`, `fix-agent-todo`, `project-init`) run unchanged.
+The skills fall into three groups.
 
-`branch-review` and `branch-review-loop` need two more things. `uv` is already
-installed; the `gh` CLI is not, so install it alongside the skills:
+**Run unchanged**, because they read the checkout or the web and nothing else:
+`technical-writing`, `improve-english`, `fix-agent-todo`, `project-init`, and
+`news-digest`.
+
+**Run once `gh` is installed**: `branch-review` and `branch-review-loop`. `uv`
+is already there; the `gh` CLI is not, so install it alongside the skills:
 
 ```bash
 apt-get install -y gh
@@ -103,12 +107,12 @@ apt-get install -y gh
 refuses GraphQL, which is why every GitHub read in `branch-review` goes through
 `gh api`.
 
-Two groups stay unavailable:
-
-- Skills that shell out to Docker, 1Password, or `gws-secure`: a cloud
-  container has none of the three.
-- `create-pr`: `gh pr create` is a GraphQL call, which the proxy refuses. Open
-  the pull request from the session's own GitHub tools instead.
+**Stay unavailable**: `create-pr`, because `gh pr create` is a GraphQL call that
+the proxy refuses, so open the pull request from the session's own GitHub tools
+instead; and the skills that shell out to Docker, 1Password, or `gws-secure`,
+none of which a cloud container has — `add-paper-from-url`,
+`artist-live-digest`, `daily-wrapup`, `morning-brief`, `pdf2zh`, `slack-post`,
+`spotify-daily-digest`, and `spotify-sheets`.
 
 ## Tools
 
