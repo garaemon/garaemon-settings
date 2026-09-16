@@ -38,7 +38,12 @@ link_skill() {
     esac
   fi
 
-  ln -sfn "$skill_path" "$link_path"
+  # main calls this from an `if`, which switches `set -e` off for the whole
+  # body, so a failing ln has to be caught here or the skill counts as linked.
+  if ! ln -sfn "$skill_path" "$link_path"; then
+    printf 'failed to link %s into %s\n' "$skill_name" "$target_dir" >&2
+    return 1
+  fi
   printf 'linked %s\n' "$skill_name"
 }
 
