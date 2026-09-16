@@ -40,6 +40,8 @@ Python helpers and need `uv` to run them.
 
 ## Installation
 
+### Workstation
+
 `~/.claude/skills` is a symlink to this directory's `skills`, so all
 skills are available in every directory and editing a skill here takes effect
 immediately. chezmoi creates that symlink from
@@ -55,6 +57,76 @@ ln -s ~/ghq/github.com/garaemon/garaemon-settings/claude-skills/skills ~/.claude
 
 Either way this directory owns every skill file. chezmoi stores the symlink and
 never the files behind it, so a skill is edited here and nowhere else.
+
+### Claude Code on the web
+
+A cloud container starts from a fresh clone and never runs chezmoi, so the
+`~/.claude/skills` symlink above does not exist there. Two mechanisms cover
+that case.
+
+Sessions **on this repository** need no setup: the repository-root
+`.claude/skills` symlink points at this directory, so Claude Code loads every
+skill as a project skill straight out of the clone. The symlink is committed,
+which is why it survives the clone.
+
+One thing that route does not bring: `branch-review` registers a `PostToolUse`
+hook that checks a `review.json` as soon as it is written, and a `SKILL.md`
+hooks entry cannot name the skill's own directory, so the hook hard-codes
+`$HOME/.claude/skills/branch-review` and exits quietly when that path is
+absent. The review still runs; only the early check of the findings file is
+lost. To get the hook as well, link the skills into that path from the clone
+the session already has:
+
+```bash
+claude-skills/scripts/link-skills.sh
+```
+
+Sessions **on another repository** cannot follow a symlink across repositories.
+Clone this repository into the container instead, and link each skill into the
+personal skills directory:
+
+```bash
+git clone --depth 1 https://github.com/garaemon/garaemon-settings.git ~/garaemon-settings
+~/garaemon-settings/claude-skills/scripts/link-skills.sh
+```
+
+Run both commands in the session that needs the skills. Claude Code rescans
+`~/.claude/skills` while a session runs, so a skill linked halfway through
+becomes available without restarting the session. An environment that defines a
+setup script can run the same two commands there instead, once per container.
+
+The second line runs [`scripts/link-skills.sh`](scripts/README.md#link-skillssh--per-skill-symlinks-for-managed-containers),
+which symlinks one skill at a time because the platform owns
+`~/.claude/skills` in a managed container and puts its own skills there.
+
+#### What a cloud container can run
+
+The skills fall into three groups.
+
+**Run unchanged**, because they read the checkout or the web and nothing else:
+`technical-writing`, `improve-english`, `fix-agent-todo`, and `news-digest`.
+`project-init` also runs, as far as the toolchain the new project needs: it
+calls `npm install`, `go mod tidy`, and `pre-commit install`, and a cloud
+container ships the first two but not `pre-commit`.
+
+**Run once `gh` is installed**: `branch-review` and `branch-review-loop`. `uv`
+is already there; the `gh` CLI is not, so install it alongside the skills:
+
+```bash
+apt-get install -y gh
+```
+
+`gh` then authenticates from the `GH_TOKEN` the environment exports, so
+`gh auth login` is unnecessary. The session proxy allows GitHub's REST API and
+refuses GraphQL, which is why every GitHub read in `branch-review` goes through
+`gh api`.
+
+**Stay unavailable**: `create-pr`, because `gh pr create` is a GraphQL call that
+the proxy refuses, so open the pull request from the session's own GitHub tools
+instead; and the skills that shell out to Docker, 1Password, or `gws-secure`,
+none of which a cloud container has — `add-paper-from-url`,
+`artist-live-digest`, `daily-wrapup`, `morning-brief`, `pdf2zh`, `slack-post`,
+`spotify-daily-digest`, and `spotify-sheets`.
 
 ## Tools
 
