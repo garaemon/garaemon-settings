@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLAUDE_BIN="${CLAUDE_BIN:-$HOME/.local/bin/claude}"
 
 if [[ ! -x "$CLAUDE_BIN" ]]; then
@@ -31,7 +31,7 @@ cd "$PROJECT_DIR"
 # broad Bash patterns: Read/Write/Edit fully cover the file IO the skill does,
 # and the model carries today's date in its context, so `cat`/`echo`/`date`
 # etc. are unnecessary.
-SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
+SLACK_RUN_SH="${PROJECT_DIR}/skills/slack-post/run.sh"
 # The literal `~` is passed through to claude, which expands it per
 # gitignore-style permission pattern semantics. Do not let the shell expand it.
 # shellcheck disable=SC2088

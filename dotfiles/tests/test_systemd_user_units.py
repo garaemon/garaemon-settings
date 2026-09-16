@@ -14,6 +14,8 @@ import pytest
 
 
 DOTFILES_ROOT = Path(__file__).resolve().parent.parent
+MONOREPO_ROOT = DOTFILES_ROOT.parent
+MONOREPO_PREFIX = "ghq/github.com/garaemon/garaemon-settings/"
 UNIT_DIR = DOTFILES_ROOT / "dot_config" / "systemd" / "user"
 ENABLE_SCRIPT = (
     DOTFILES_ROOT
@@ -21,6 +23,7 @@ ENABLE_SCRIPT = (
     / "run_onchange_after_enable-slack-digest-timers.sh.tmpl"
 )
 CHEZMOIIGNORE = DOTFILES_ROOT / ".chezmoiignore.tmpl"
+SKILLS_SYMLINK_TEMPLATE = DOTFILES_ROOT / "dot_claude" / "symlink_skills.tmpl"
 # chezmoi strips the domain suffix, so the ax8-max.local box reports "ax8-max".
 DIGEST_HOST = "ax8-max"
 SLACK_TIMER_NAMES = [
@@ -55,9 +58,19 @@ def test_should_point_service_at_monorepo_wrapper_script(timer_name):
     match = re.search(r"^ExecStart=%h/(.+)$", service_text, re.MULTILINE)
     assert match, "ExecStart must start with %h so the unit works on any machine"
     wrapper_relative_to_home = match.group(1)
-    assert wrapper_relative_to_home.startswith(
-        "ghq/github.com/garaemon/garaemon-settings/claude-skills/"
-    )
+    assert wrapper_relative_to_home.startswith(MONOREPO_PREFIX + "claude-skills/")
+    # Resolve the rest against this checkout: a prefix check alone passes a
+    # unit left pointing at a script that has since been renamed or moved.
+    wrapper = MONOREPO_ROOT / wrapper_relative_to_home[len(MONOREPO_PREFIX):]
+    assert wrapper.is_file(), f"{wrapper_relative_to_home} is not in this checkout"
+
+
+def test_should_point_claude_skills_symlink_at_the_monorepo_skills():
+    target = SKILLS_SYMLINK_TEMPLATE.read_text().strip()
+    _, _, relative_to_home = target.partition("}}/")
+    assert relative_to_home.startswith(MONOREPO_PREFIX)
+    skills_dir = MONOREPO_ROOT / relative_to_home[len(MONOREPO_PREFIX):]
+    assert skills_dir.is_dir(), f"{relative_to_home} is not in this checkout"
 
 
 def test_should_place_enable_script_under_chezmoiscripts():

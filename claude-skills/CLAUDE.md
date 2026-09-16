@@ -35,7 +35,7 @@ rule set but disables `MD013` (line length), `MD033` (inline HTML), and
 ### README skills-link check
 
 Run the Python script that verifies every skill under
-`.claude/skills/<name>/SKILL.md` is linked from `README.md`. The script
+`skills/<name>/SKILL.md` is linked from `README.md`. The script
 uses only the Python 3 standard library, so no virtualenv or pip install
 is needed:
 
@@ -43,14 +43,23 @@ is needed:
 python3 scripts/check-readme-skills.py
 ```
 
+Its own behaviour, including which link shapes count, is covered by
+`scripts/tests/test_check_readme_skills.py`:
+
+```bash
+python3 -m unittest discover -s scripts/tests -t scripts/tests
+```
+
 The script exits non-zero and lists the missing skill names if any skill
 has no link in `README.md`. When you add a new skill, add an entry under
 the `## Skills` section of `README.md` that links to its `SKILL.md`.
 
-### Run both checks together
+### Run every check together
 
 ```bash
-../scripts/lint.sh markdown && python3 scripts/check-readme-skills.py
+../scripts/lint.sh markdown \
+  && python3 scripts/check-readme-skills.py \
+  && python3 -m unittest discover -s scripts/tests -t scripts/tests
 ```
 
 ## Run skill scripts inside Docker
@@ -92,7 +101,7 @@ make an equally strong, written argument here.
 ### Skill layout
 
 ```text
-.claude/skills/<name>/
+skills/<name>/
 ├── SKILL.md            # Skill definition; allowed-tools points at run.sh
 ├── Dockerfile          # Builds the execution image
 ├── package.json        # (or requirements.txt, go.mod, ...) pinned deps
@@ -220,7 +229,7 @@ npm-audit:
       with:
         node-version: '22'
     - name: Audit production dependencies
-      working-directory: .claude/skills/spotify-sheets
+      working-directory: skills/spotify-sheets
       run: npm audit --omit=dev --audit-level=high
 ```
 
@@ -253,7 +262,7 @@ rather than a per-skill audit job:
   ignore list hand-maintained in a workflow file.
 - The reachability argument belongs in the skill's own documentation, so
   it is version-controlled and reviewed. See
-  [.claude/skills/pdf2zh/SECURITY.md](.claude/skills/pdf2zh/SECURITY.md), kept
+  [skills/pdf2zh/SECURITY.md](skills/pdf2zh/SECURITY.md), kept
   out of `SKILL.md` so it does not load into context on every skill run.
 
 Keep the blocking CI job when the fix *is* actionable, as it is for the

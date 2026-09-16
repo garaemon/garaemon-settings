@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLAUDE_BIN="${CLAUDE_BIN:-$HOME/.local/bin/claude}"
 
 if [[ ! -x "$CLAUDE_BIN" ]]; then
@@ -35,8 +35,8 @@ fi
 # (followed-artist list) and web search/fetch. The wrapper additionally
 # allows the slack-post run.sh so the model can post the rendered digest.
 # History reads/writes are scoped to the cache glob.
-SPOTIFY_RUN_SH="${PROJECT_DIR}/.claude/skills/spotify-sheets/run.sh"
-SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
+SPOTIFY_RUN_SH="${PROJECT_DIR}/skills/spotify-sheets/run.sh"
+SLACK_RUN_SH="${PROJECT_DIR}/skills/slack-post/run.sh"
 # The literal `~` is passed through to claude, which expands it per
 # gitignore-style permission pattern semantics. Do not let the shell expand it.
 # shellcheck disable=SC2088
