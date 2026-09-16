@@ -19,6 +19,17 @@ if ! command -v systemctl >/dev/null 2>&1 \
   exit 0
 fi
 
+# systemd's user manager resolved its unit search path from the login user's
+# home when the session started, so a chezmoi apply aimed anywhere else writes
+# units the manager never sees. dotfiles/tests/test_install_sh.py applies to an
+# isolated $HOME while the runner's session bus stays reachable, which made
+# `enable` fail and abort install.sh.
+readonly login_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
+if [ "{{ .chezmoi.destDir }}" != "${login_home}" ]; then
+  echo "skip: applying to {{ .chezmoi.destDir }}, not the login home ${login_home}"
+  exit 0
+fi
+
 systemctl --user daemon-reload
 systemctl --user enable --now \
   artist-live-digest-slack.timer \

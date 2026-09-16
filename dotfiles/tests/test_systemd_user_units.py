@@ -104,3 +104,10 @@ def test_should_ignore_enable_script_on_darwin():
         and ".chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl"
         in darwin_block.group(1)
     )
+
+
+def test_should_skip_enable_script_when_destination_is_not_the_login_home():
+    assert re.search(
+        r'\[ "\{\{ \.chezmoi\.destDir \}\}" != "\$\{login_home\}" \]',
+        read_enable_script(),
+    )
