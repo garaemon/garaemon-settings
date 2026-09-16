@@ -69,7 +69,7 @@ failure path (no network, 1Password, or browser needed). The OAuth and
 
 ## `link-skills.sh` — per-skill symlinks for managed containers
 
-`link-skills.sh` symlinks every skill under `.claude/skills` into a Claude Code
+`link-skills.sh` symlinks every skill under `skills` into a Claude Code
 personal skills directory, one symlink per skill:
 
 ```bash
@@ -83,6 +83,12 @@ Claude Code on the web does: the platform installs its own skills into
 `~/.claude/skills`, so replacing that directory with a symlink would hide them.
 Linking skill by skill leaves the platform's skills in place.
 
-The script never deletes anything it did not create. A name already taken by a
-real directory is reported and skipped, so a future platform skill that shares a
-name with one here survives the run.
+The script replaces only a symlink that already points into this repository.
+Every other name is reported and skipped, whether it holds a real directory or a
+symlink the platform installed, so a future platform skill that shares a name
+with one here survives the run.
+
+The run ends with a `N skills linked, M skipped` line, and exits non-zero when
+it linked nothing. A setup script that calls it unattended reads nobody's
+terminal, so that exit status is what tells it about a container left with none
+of these skills.

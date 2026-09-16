@@ -14,22 +14,28 @@ set -euo pipefail
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills" && pwd)"
 readonly SOURCE_DIR
 
-# Symlinks one skill directory into "$target_dir" unless the name is taken by
-# something this script did not create.
+# Symlinks one skill directory into "$target_dir". Returns non-zero when the
+# name is taken by anything this script did not create: a managed container
+# installs its own skills, and one sharing a name with a skill here has to
+# survive the run, whether it sits there as a directory or as a symlink of the
+# platform's own.
 link_skill() {
   local skill_path="$1"
   local target_dir="$2"
-  local skill_name link_path
+  local skill_name link_path current_target
   skill_name="$(basename "$skill_path")"
   link_path="$target_dir/$skill_name"
 
-  if [ ! -f "$skill_path/SKILL.md" ]; then
-    return 0
-  fi
-  if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
-    printf 'skipped %s: %s exists and is not a symlink\n' \
-      "$skill_name" "$link_path" >&2
-    return 0
+  if [ -e "$link_path" ] || [ -L "$link_path" ]; then
+    current_target="$(readlink "$link_path" || true)"
+    case "$current_target" in
+      "$SOURCE_DIR"/*) ;;
+      *)
+        printf 'skipped %s: %s is not a link into this repository\n' \
+          "$skill_name" "$link_path" >&2
+        return 1
+        ;;
+    esac
   fi
 
   ln -sfn "$skill_path" "$link_path"
@@ -40,10 +46,24 @@ main() {
   local target_dir="${1:-$HOME/.claude/skills}"
   mkdir -p "$target_dir"
 
-  local skill_path
+  local skill_path linked_count=0 skipped_count=0
   for skill_path in "$SOURCE_DIR"/*; do
-    link_skill "$skill_path" "$target_dir"
+    [ -f "$skill_path/SKILL.md" ] || continue
+    if link_skill "$skill_path" "$target_dir"; then
+      linked_count=$((linked_count + 1))
+    else
+      skipped_count=$((skipped_count + 1))
+    fi
   done
+
+  printf '%d skills linked, %d skipped\n' "$linked_count" "$skipped_count"
+  # A setup script runs this unattended, where nobody reads the skipped lines
+  # above. Fail so that a container holding none of these skills is not
+  # reported as a successful setup.
+  if [ "$linked_count" -eq 0 ]; then
+    printf 'no skill was linked into %s\n' "$target_dir" >&2
+    return 1
+  fi
 }
 
 main "$@"
