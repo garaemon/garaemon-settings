@@ -11,7 +11,7 @@ set -euo pipefail
 #
 # Usage: link-skills.sh [target-directory]   (default: ~/.claude/skills)
 
-SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.claude/skills" && pwd)"
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills" && pwd)"
 readonly SOURCE_DIR
 
 # Symlinks one skill directory into "$target_dir" unless the name is taken by

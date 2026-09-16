@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=%h/ghq/github.com/garaemon/garaemon-settings/claude-skills/.claude/skills/news-digest/daily-digest-to-slack.sh
+ExecStart=%h/ghq/github.com/garaemon/garaemon-settings/claude-skills/skills/news-digest/daily-digest-to-slack.sh
 # Keep PATH small but include the user local bin where claude lives.
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 # Run with low priority so the morning job does not fight interactive apps.

@@ -82,10 +82,10 @@ Paperpile uploader) can find the files without additional configuration.
 
 ```bash
 # Translate a single PDF with defaults (en→ja, Gemini 3.1 Flash-Lite preview).
-.claude/skills/pdf2zh/run.sh ~/Downloads/paper.pdf
+skills/pdf2zh/run.sh ~/Downloads/paper.pdf
 
 # Pick a specific model and pages, write into a project-local directory.
-.claude/skills/pdf2zh/run.sh ~/Downloads/paper.pdf \
+skills/pdf2zh/run.sh ~/Downloads/paper.pdf \
   --output ./translations \
   --model gemini-2.5-pro \
   --pages 1-5

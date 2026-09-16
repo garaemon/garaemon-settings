@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Verify that README.md links to every skill under .claude/skills/.
+"""Verify that README.md links to every skill under skills/.
 
-A skill is any directory under .claude/skills/ that contains a SKILL.md.
+A skill is any directory under skills/ that contains a SKILL.md.
 Each such skill must appear in README.md as a link whose target is the
-relative path `.claude/skills/<name>/SKILL.md`.
+relative path `skills/<name>/SKILL.md`.
 
 Exit codes:
   0: all skills are linked (or no skills exist yet).
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 README_PATH = Path("README.md")
-SKILLS_ROOT = Path(".claude/skills")
+SKILLS_ROOT = Path("skills")
 
 
 def find_unlinked_skills(readme_text: str) -> list[str]:
