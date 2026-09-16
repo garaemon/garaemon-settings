@@ -8,8 +8,9 @@ Linters live at the monorepo root and run per language, not per
 subdirectory: `.github/workflows/lint.yml` calls `scripts/lint.sh` for
 shell, Markdown, YAML, Python, Ansible, and trailing whitespace.
 Skill-specific jobs (Docker image builds, smoke tests, dependency audits,
-the README skills-link check) stay in `.github/workflows/skills-ci.yml`.
-Run both locally before creating a pull request and fix any failures.
+the README skills-link check, the skill-symlink check) stay in
+`.github/workflows/skills-ci.yml`. Run both locally before creating a pull
+request and fix any failures.
 
 ### Markdown lint
 
@@ -47,10 +48,23 @@ The script exits non-zero and lists the missing skill names if any skill
 has no link in `README.md`. When you add a new skill, add an entry under
 the `## Skills` section of `README.md` that links to its `SKILL.md`.
 
-### Run both checks together
+### Skill symlink check
+
+`scripts/tests/link-skills-test.sh` covers `link-skills.sh`: which names it
+replaces, which it leaves alone, and the exit status an unattended setup script
+reads. The `skill-links` job runs it, and also checks that the
+repository-root `.claude/skills` symlink still resolves.
 
 ```bash
-../scripts/lint.sh markdown && python3 scripts/check-readme-skills.py
+bash scripts/tests/link-skills-test.sh
+```
+
+### Run every check together
+
+```bash
+../scripts/lint.sh markdown \
+  && python3 scripts/check-readme-skills.py \
+  && bash scripts/tests/link-skills-test.sh
 ```
 
 ## Run skill scripts inside Docker
