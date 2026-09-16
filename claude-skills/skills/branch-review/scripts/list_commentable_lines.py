@@ -39,7 +39,13 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
-from commands import detect_repository, read_open_pull_request, read_paginated_api
+from commands import (
+    detect_head_reference,
+    detect_repository,
+    query_open_pull_request,
+    read_open_pull_request,
+    read_paginated_api,
+)
 
 HUNK_PREFIX = "@@"
 
@@ -97,29 +103,41 @@ def resolve_pull_request_target(
 ) -> tuple[str, int]:
     """Return the (repository, number) naming the pull request to read.
 
-    Both values come from one lookup so they always describe the same pull
-    request. A checkout whose origin is a fork finds its pull request on the
-    repository the fork was made from, which the origin remote does not name.
+    The two always describe the same pull request. With neither given, one
+    lookup supplies both, which matters on a fork checkout: the pull request
+    sits on the repository the fork was made from, not the one origin names.
+    An override narrows that lookup rather than being paired with it, so
+    --pr alone never reaches for another repository's pull request.
     """
     if repository_override is not None and number_override is not None:
         return repository_override, number_override
 
-    pull_request = read_open_pull_request()
-    repository = repository_override or (
-        pull_request["base"]["repo"]["full_name"]
-        if pull_request
-        else detect_repository()
-    )
-    number = number_override or (pull_request["number"] if pull_request else None)
-    if repository is None:
-        raise RuntimeError(
-            "cannot read the repository from the origin remote; pass --repo explicitly"
+    if number_override is not None:
+        repository = detect_repository()
+        if repository is None:
+            raise RuntimeError(
+                "cannot read the repository from the origin remote; pass --repo explicitly"
+            )
+        return repository, number_override
+
+    if repository_override is not None:
+        head = detect_head_reference()
+        pull_request = (
+            query_open_pull_request(repository_override, *head) if head else None
         )
-    if number is None:
+        if pull_request is None:
+            raise RuntimeError(
+                f"no open pull request for the current branch on {repository_override}; "
+                "pass --pr explicitly"
+            )
+        return repository_override, pull_request["number"]
+
+    pull_request = read_open_pull_request()
+    if pull_request is None:
         raise RuntimeError(
             "no open pull request for the current branch; pass --pr explicitly"
         )
-    return repository, number
+    return pull_request["base"]["repo"]["full_name"], pull_request["number"]
 
 
 def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:
