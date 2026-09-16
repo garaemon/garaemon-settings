@@ -20,6 +20,7 @@ from render_review import (
     MARKDOWN_REPORT_NAME,
     NO_FINDINGS_TEXT,
     check_review,
+    list_findings_without_code,
     load_review,
     read_template,
     render_html_report,
@@ -375,6 +376,22 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertIn('className = "copy-button"', page)
         self.assertIn("navigator.clipboard", page)
 
+    def test_loads_highlight_js_from_the_cdn(self) -> None:
+        page = self.render(build_review())
+        self.assertIn("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/", page)
+        self.assertIn("hljs.highlightAll()", page)
+
+    def test_loads_a_dark_highlight_theme_for_dark_mode(self) -> None:
+        page = self.render(build_review())
+        self.assertIn("github.min.css", page)
+        self.assertIn("github-dark.min.css", page)
+        self.assertIn('media="(prefers-color-scheme: dark)"', page)
+
+    def test_highlights_only_when_the_cdn_script_loaded(self) -> None:
+        # A page opened offline must keep its filters and copy buttons, so
+        # the highlighting call is guarded rather than assumed.
+        self.assertIn("if (window.hljs)", self.render(build_review()))
+
     def test_omits_the_pull_request_row_when_absent(self) -> None:
         review = build_review()
         del review["pull_request"]
@@ -554,6 +571,36 @@ class CheckReviewTest(unittest.TestCase):
         self.assertTrue(any("placeholder" in problem for problem in self.check(review)))
 
 
+class ListFindingsWithoutCodeTest(unittest.TestCase):
+    """list_findings_without_code names the findings that show no code."""
+
+    def test_returns_the_ids_of_findings_whose_body_has_no_fence(self) -> None:
+        review = build_review(categories=[
+            {"number": 3, "name": "Naming", "findings": [
+                build_finding(id="3-1", body="Rename `data`."),
+                build_finding(id="3-2", body="Before:\n\n```py\ndata = 1\n```"),
+                build_finding(id="3-3", body="Prose only."),
+            ]},
+        ])
+        self.assertEqual(list_findings_without_code(review), ["3-1", "3-3"])
+
+    def test_returns_nothing_when_every_finding_shows_code(self) -> None:
+        review = build_review(categories=[
+            {"number": 3, "name": "Naming", "findings": [
+                build_finding(id="3-1", body="```py\nx = 1\n```"),
+            ]},
+        ])
+        self.assertEqual(list_findings_without_code(review), [])
+
+    def test_ignores_an_inline_code_span(self) -> None:
+        review = build_review(categories=[
+            {"number": 3, "name": "Naming", "findings": [
+                build_finding(id="3-1", body="Rename `data` to `review`."),
+            ]},
+        ])
+        self.assertEqual(list_findings_without_code(review), ["3-1"])
+
+
 class WriteReportsTest(unittest.TestCase):
     """write_reports writes both files into the output directory."""
 
@@ -640,6 +687,35 @@ class MainTest(unittest.TestCase):
             self.assertEqual(status, 1)
             self.assertIn("src/main/index.ts", stderr.getvalue())
             self.assertFalse((root / HTML_REPORT_NAME).exists())
+
+    def test_notes_the_findings_without_a_code_example(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = write_checkout(directory, {"src/main/index.ts": "x\n" * 40})
+            review_path = root / "review.json"
+            review_path.write_text(json.dumps(build_review()), encoding="utf-8")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                status = render_review.main(
+                    [str(review_path), "--output-dir", directory, "--root", directory]
+                )
+            self.assertEqual(status, 0)
+            self.assertIn("note: 1 finding shows no code example: 2-1", stdout.getvalue())
+
+    def test_stays_quiet_when_every_finding_shows_code(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = write_checkout(directory, {"src/main/index.ts": "x\n" * 40})
+            review_path = root / "review.json"
+            review = build_review(categories=[
+                {"number": 2, "name": "Security",
+                 "findings": [build_finding(body="```ts\nlet x;\n```")]},
+            ])
+            review_path.write_text(json.dumps(review), encoding="utf-8")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                render_review.main(
+                    [str(review_path), "--output-dir", directory, "--root", directory]
+                )
+            self.assertNotIn("code example", stdout.getvalue())
 
     def test_check_only_reports_and_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

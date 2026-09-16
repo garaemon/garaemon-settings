@@ -9,6 +9,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
+<!-- highlight.js colors the fenced code blocks. Both stylesheets carry the
+     same selectors, so the dark one wins only when its media query matches.
+     Offline the page keeps working; the highlighting call below is guarded. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<!-- The common bundle above has no Lisp, and Emacs Lisp reviews are frequent here. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/lisp.min.js"></script>
 <style>
 :root {
   color-scheme: light dark;
@@ -75,6 +83,8 @@ pre {
   overflow-x: auto;
 }
 pre code { padding: 0; background: none; }
+/* The theme paints its own panel; keep the one the page already draws. */
+pre code.hljs { padding: 0; background: none; }
 .code-block { position: relative; margin: 1em 0; }
 .code-block pre { margin: 0; }
 .copy-button {
@@ -286,6 +296,17 @@ ${sections}
       window.setTimeout(function () { button.textContent = "Copy"; }, 1500);
     });
     wrapper.appendChild(button);
+  });
+
+  // Deferred scripts have run by DOMContentLoaded, so hljs is either
+  // loaded or never coming. A missing CDN leaves the blocks uncolored.
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.hljs) {
+      if (window.hljs.getLanguage("lisp")) {
+        window.hljs.registerAliases(["elisp", "emacs-lisp"], { languageName: "lisp" });
+      }
+      window.hljs.highlightAll();
+    }
   });
 
   function setAllOpen(isOpen) {
