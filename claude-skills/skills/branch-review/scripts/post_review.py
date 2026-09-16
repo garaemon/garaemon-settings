@@ -144,12 +144,20 @@ def main() -> int:
 
     try:
         review = submit_review(repository, pr_number, findings)
-        posted = count_posted_comments(repository, pr_number)
     except (RuntimeError, json.JSONDecodeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
     print(f"\nposted {review['state']} review: {review['html_url']}")
+
+    # The count is a courtesy. The review is already on GitHub, so reporting a
+    # failure here would invite a rerun that posts every comment a second time.
+    try:
+        posted = count_posted_comments(repository, pr_number)
+    except (RuntimeError, json.JSONDecodeError) as error:
+        print(f"could not count the comments on #{pr_number}: {error}", file=sys.stderr)
+        return 0
+
     print(f"inline comments now on #{pr_number}: {posted}")
     return 0
 
