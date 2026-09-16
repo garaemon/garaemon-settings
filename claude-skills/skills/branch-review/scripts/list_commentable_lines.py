@@ -39,7 +39,13 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
-from commands import run_gh_command
+from commands import (
+    detect_head_reference,
+    detect_repository,
+    query_open_pull_request,
+    read_open_pull_request,
+    read_paginated_api,
+)
 
 HUNK_PREFIX = "@@"
 
@@ -92,29 +98,51 @@ def collect_commentable_lines(patch: str) -> set[int]:
     return commentable
 
 
-def find_pull_request_number() -> int:
-    """Return the pull request number for the current branch."""
-    output = run_gh_command(["gh", "pr", "view", "--json", "number"])
-    return json.loads(output)["number"]
+def resolve_pull_request_target(
+    repository_override: str | None, number_override: int | None
+) -> tuple[str, int]:
+    """Return the (repository, number) naming the pull request to read.
 
+    The two always describe the same pull request. With neither given, one
+    lookup supplies both, which matters on a fork checkout: the pull request
+    sits on the repository the fork was made from, not the one origin names.
+    An override narrows that lookup rather than being paired with it, so
+    --pr alone never reaches for another repository's pull request.
+    """
+    if repository_override is not None and number_override is not None:
+        return repository_override, number_override
 
-def find_repository() -> str:
-    """Return the current repository as "owner/name"."""
-    output = run_gh_command(["gh", "repo", "view", "--json", "nameWithOwner"])
-    return json.loads(output)["nameWithOwner"]
+    if number_override is not None:
+        repository = detect_repository()
+        if repository is None:
+            raise RuntimeError(
+                "cannot read the repository from the origin remote; pass --repo explicitly"
+            )
+        return repository, number_override
+
+    if repository_override is not None:
+        head = detect_head_reference()
+        pull_request = (
+            query_open_pull_request(repository_override, *head) if head else None
+        )
+        if pull_request is None:
+            raise RuntimeError(
+                f"no open pull request for the current branch on {repository_override}; "
+                "pass --pr explicitly"
+            )
+        return repository_override, pull_request["number"]
+
+    pull_request = read_open_pull_request()
+    if pull_request is None:
+        raise RuntimeError(
+            "no open pull request for the current branch; pass --pr explicitly"
+        )
+    return pull_request["base"]["repo"]["full_name"], pull_request["number"]
 
 
 def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:
-    """Return the pull request's changed files as a list of API objects.
-
-    Uses newline-delimited JSON so pagination works across gh versions.
-    """
-    output = run_gh_command([
-        "gh", "api", "--paginate",
-        f"repos/{repository}/pulls/{pr_number}/files",
-        "--jq", ".[]",
-    ])
-    return [json.loads(line) for line in output.splitlines() if line.strip()]
+    """Return the pull request's changed files as a list of API objects."""
+    return read_paginated_api(f"repos/{repository}/pulls/{pr_number}/files")
 
 
 def build_commentable_index(files: Sequence[dict[str, Any]]) -> dict[str, set[int]]:
@@ -188,8 +216,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        repository = args.repo or find_repository()
-        pr_number = args.pr or find_pull_request_number()
+        repository, pr_number = resolve_pull_request_target(args.repo, args.pr)
         files = fetch_pull_request_files(repository, pr_number)
     except RuntimeError as error:
         print(f"error: {error}", file=sys.stderr)

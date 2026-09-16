@@ -33,13 +33,12 @@ import json
 import sys
 from typing import Any
 
-from commands import run_gh_command
+from commands import read_paginated_api, run_gh_command
 from list_commentable_lines import (
     build_commentable_index,
     fetch_pull_request_files,
     find_nearest_line,
-    find_pull_request_number,
-    find_repository,
+    resolve_pull_request_target,
 )
 
 VALID_EVENTS = ("COMMENT", "APPROVE", "REQUEST_CHANGES")
@@ -101,12 +100,7 @@ def submit_review(
 
 def count_posted_comments(repository: str, pr_number: int) -> int:
     """Return how many inline comments the pull request now carries."""
-    output = run_gh_command([
-        "gh", "api", "--paginate",
-        f"repos/{repository}/pulls/{pr_number}/comments",
-        "--jq", ".[].path",
-    ])
-    return len([line for line in output.splitlines() if line.strip()])
+    return len(read_paginated_api(f"repos/{repository}/pulls/{pr_number}/comments"))
 
 
 def main() -> int:
@@ -124,8 +118,7 @@ def main() -> int:
 
     try:
         findings = load_findings(args.findings)
-        repository = args.repo or find_repository()
-        pr_number = args.pr or find_pull_request_number()
+        repository, pr_number = resolve_pull_request_target(args.repo, args.pr)
         index = build_commentable_index(fetch_pull_request_files(repository, pr_number))
     except (RuntimeError, ValueError, json.JSONDecodeError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
@@ -151,12 +144,20 @@ def main() -> int:
 
     try:
         review = submit_review(repository, pr_number, findings)
-        posted = count_posted_comments(repository, pr_number)
     except (RuntimeError, json.JSONDecodeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
     print(f"\nposted {review['state']} review: {review['html_url']}")
+
+    # The count is a courtesy. The review is already on GitHub, so reporting a
+    # failure here would invite a rerun that posts every comment a second time.
+    try:
+        posted = count_posted_comments(repository, pr_number)
+    except (RuntimeError, json.JSONDecodeError) as error:
+        print(f"could not count the comments on #{pr_number}: {error}", file=sys.stderr)
+        return 0
+
     print(f"inline comments now on #{pr_number}: {posted}")
     return 0
 
