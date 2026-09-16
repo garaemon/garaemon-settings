@@ -38,8 +38,7 @@ from list_commentable_lines import (
     build_commentable_index,
     fetch_pull_request_files,
     find_nearest_line,
-    find_pull_request_number,
-    find_repository,
+    resolve_pull_request_target,
 )
 
 VALID_EVENTS = ("COMMENT", "APPROVE", "REQUEST_CHANGES")
@@ -119,8 +118,7 @@ def main() -> int:
 
     try:
         findings = load_findings(args.findings)
-        repository = args.repo or find_repository()
-        pr_number = args.pr or find_pull_request_number()
+        repository, pr_number = resolve_pull_request_target(args.repo, args.pr)
         index = build_commentable_index(fetch_pull_request_files(repository, pr_number))
     except (RuntimeError, ValueError, json.JSONDecodeError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)

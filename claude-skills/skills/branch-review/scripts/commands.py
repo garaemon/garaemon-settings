@@ -197,7 +197,10 @@ def carries_review_fields(candidate: Any) -> bool:
     if not isinstance(candidate.get("html_url"), str):
         return False
     base = candidate.get("base")
-    return isinstance(base, dict) and isinstance(base.get("ref"), str)
+    if not isinstance(base, dict) or not isinstance(base.get("ref"), str):
+        return False
+    repository = base.get("repo")
+    return isinstance(repository, dict) and isinstance(repository.get("full_name"), str)
 
 
 def select_open_pull_request(output: str) -> dict[str, Any] | None:

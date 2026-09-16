@@ -7,9 +7,13 @@ from __future__ import annotations
 
 import unittest
 
+from unittest import mock
+
+import commands
 from commands import (
     build_open_pull_request_path,
     parse_repository_from_remote_url,
+    read_open_pull_request,
     select_open_pull_request,
     split_upstream_reference,
 )
@@ -20,11 +24,11 @@ def build_payload(*pull_requests: str) -> str:
     return f"[{', '.join(pull_requests)}]"
 
 
-def build_pull_request(number: int) -> str:
+def build_pull_request(number: int, repository: str = "owner/repo") -> str:
     """Return one complete pull request object as JSON."""
     return (
         f'{{"number": {number}, "html_url": "https://example/{number}", '
-        f'"base": {{"ref": "main"}}}}'
+        f'"base": {{"ref": "main", "repo": {{"full_name": "{repository}"}}}}}}'
     )
 
 
@@ -174,8 +178,75 @@ class SelectOpenPullRequestTest(unittest.TestCase):
     def test_returns_none_when_every_entry_is_incomplete(self) -> None:
         self.assertIsNone(select_open_pull_request('[{"number": 9}]'))
 
+    def test_drops_a_pull_request_that_does_not_name_its_base_repository(self) -> None:
+        # list_commentable_lines reads base.repo.full_name to stay on the
+        # repository that actually holds the pull request.
+        payload = (
+            '[{"number": 9, "html_url": "https://example/9", '
+            '"base": {"ref": "main"}}]'
+        )
+        self.assertIsNone(select_open_pull_request(payload))
+
     def test_returns_none_for_a_list_of_non_objects(self) -> None:
         self.assertIsNone(select_open_pull_request("[1, 2]"))
+
+
+class ReadOpenPullRequestTest(unittest.TestCase):
+    """read_open_pull_request asks origin first, then the fork's parent."""
+
+    def run_lookup(self, responses: dict[str, str]) -> tuple[object, list[str]]:
+        """Run the lookup against canned `gh api` output, returning the calls."""
+        calls: list[str] = []
+
+        def fake_run_gh_command(args, check=True, input_text=None):
+            # args is ["gh", "api", <path>, ...], so the path is the third item
+            # whether or not the call adds a --jq filter after it.
+            calls.append(args[2])
+            return responses.get(args[2], "")
+
+        with mock.patch.object(commands, "run_gh_command", fake_run_gh_command), \
+                mock.patch.object(commands, "detect_repository", lambda: "fork/repo"), \
+                mock.patch.object(
+                    commands, "detect_head_reference", lambda: ("fork", "feature")
+                ):
+            return read_open_pull_request(), calls
+
+    def test_returns_the_pull_request_the_origin_repository_lists(self) -> None:
+        origin_path = build_open_pull_request_path("fork/repo", "fork", "feature")
+        pull_request, calls = self.run_lookup(
+            {origin_path: build_payload(build_pull_request(7, "fork/repo"))}
+        )
+        self.assertEqual(pull_request["number"], 7)
+
+    def test_does_not_ask_for_a_parent_when_origin_answers(self) -> None:
+        # The parent lookup costs another API round trip, so it only runs when
+        # the first query comes back empty.
+        origin_path = build_open_pull_request_path("fork/repo", "fork", "feature")
+        _, calls = self.run_lookup(
+            {origin_path: build_payload(build_pull_request(7, "fork/repo"))}
+        )
+        self.assertEqual(calls, [origin_path])
+
+    def test_falls_back_to_the_repository_the_fork_was_made_from(self) -> None:
+        parent_path = build_open_pull_request_path("upstream/repo", "fork", "feature")
+        pull_request, _ = self.run_lookup(
+            {
+                "repos/fork/repo": "upstream/repo\n",
+                parent_path: build_payload(build_pull_request(12, "upstream/repo")),
+            }
+        )
+        self.assertEqual(pull_request["base"]["repo"]["full_name"], "upstream/repo")
+
+    def test_returns_none_when_the_repository_is_no_fork(self) -> None:
+        pull_request, calls = self.run_lookup({})
+        self.assertIsNone(pull_request)
+        self.assertEqual(len(calls), 2)
+
+    def test_stops_when_the_parent_is_the_repository_itself(self) -> None:
+        # Querying the same repository again would only repeat the empty answer.
+        pull_request, calls = self.run_lookup({"repos/fork/repo": "fork/repo\n"})
+        self.assertIsNone(pull_request)
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == "__main__":

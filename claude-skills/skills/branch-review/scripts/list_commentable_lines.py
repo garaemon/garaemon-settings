@@ -92,24 +92,34 @@ def collect_commentable_lines(patch: str) -> set[int]:
     return commentable
 
 
-def find_pull_request_number() -> int:
-    """Return the pull request number for the current branch."""
+def resolve_pull_request_target(
+    repository_override: str | None, number_override: int | None
+) -> tuple[str, int]:
+    """Return the (repository, number) naming the pull request to read.
+
+    Both values come from one lookup so they always describe the same pull
+    request. A checkout whose origin is a fork finds its pull request on the
+    repository the fork was made from, which the origin remote does not name.
+    """
+    if repository_override is not None and number_override is not None:
+        return repository_override, number_override
+
     pull_request = read_open_pull_request()
-    if pull_request is None:
-        raise RuntimeError(
-            "no open pull request for the current branch; pass --pr explicitly"
-        )
-    return pull_request["number"]
-
-
-def find_repository() -> str:
-    """Return the current repository as "owner/name"."""
-    repository = detect_repository()
+    repository = repository_override or (
+        pull_request["base"]["repo"]["full_name"]
+        if pull_request
+        else detect_repository()
+    )
+    number = number_override or (pull_request["number"] if pull_request else None)
     if repository is None:
         raise RuntimeError(
             "cannot read the repository from the origin remote; pass --repo explicitly"
         )
-    return repository
+    if number is None:
+        raise RuntimeError(
+            "no open pull request for the current branch; pass --pr explicitly"
+        )
+    return repository, number
 
 
 def fetch_pull_request_files(repository: str, pr_number: int) -> list[dict[str, Any]]:
@@ -188,8 +198,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        repository = args.repo or find_repository()
-        pr_number = args.pr or find_pull_request_number()
+        repository, pr_number = resolve_pull_request_target(args.repo, args.pr)
         files = fetch_pull_request_files(repository, pr_number)
     except RuntimeError as error:
         print(f"error: {error}", file=sys.stderr)
