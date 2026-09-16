@@ -21,6 +21,8 @@ ENABLE_SCRIPT = (
     / "run_onchange_after_enable-slack-digest-timers.sh.tmpl"
 )
 CHEZMOIIGNORE = DOTFILES_ROOT / ".chezmoiignore.tmpl"
+# chezmoi strips the domain suffix, so the ax8-max.local box reports "ax8-max".
+DIGEST_HOST = "ax8-max"
 SLACK_TIMER_NAMES = [
     "artist-live-digest-slack.timer",
     "news-digest-slack.timer",
@@ -86,21 +88,31 @@ def test_should_skip_enable_script_when_no_user_systemd_session():
     assert "systemctl --user show-environment" in read_enable_script()
 
 
-def test_should_ignore_units_on_darwin():
-    ignore_text = CHEZMOIIGNORE.read_text()
-    darwin_block = re.search(
-        r'{{ if eq \.chezmoi\.os "darwin" }}(.*?){{ end }}', ignore_text, re.DOTALL
+def read_non_digest_host_ignore_block():
+    """Return the .chezmoiignore body that applies to every host but the one
+    running the Slack digest timers, or None when the guard is missing.
+    """
+    match = re.search(
+        rf'{{{{ if ne \.chezmoi\.hostname "{DIGEST_HOST}" }}}}(.*?){{{{ end }}}}',
+        CHEZMOIIGNORE.read_text(),
+        re.DOTALL,
     )
-    assert darwin_block and "dot_config/systemd" in darwin_block.group(1)
+    return match.group(1) if match else None
 
 
-def test_should_ignore_enable_script_on_darwin():
-    ignore_text = CHEZMOIIGNORE.read_text()
-    darwin_block = re.search(
-        r'{{ if eq \.chezmoi\.os "darwin" }}(.*?){{ end }}', ignore_text, re.DOTALL
-    )
+def test_should_ignore_units_off_the_digest_host():
+    assert "dot_config/systemd" in (read_non_digest_host_ignore_block() or "")
+
+
+def test_should_ignore_enable_script_off_the_digest_host():
     assert (
-        darwin_block
-        and ".chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl"
-        in darwin_block.group(1)
+        ".chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl"
+        in (read_non_digest_host_ignore_block() or "")
+    )
+
+
+def test_should_skip_enable_script_when_destination_is_not_the_login_home():
+    assert re.search(
+        r'\[ "\{\{ \.chezmoi\.destDir \}\}" != "\$\{login_home\}" \]',
+        read_enable_script(),
     )

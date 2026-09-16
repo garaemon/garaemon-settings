@@ -6,10 +6,10 @@ install.sh
 dot_config/private_karabiner
 private_Library
 {{ end }}
-# Every path in this file is skipped, so a path inside the darwin block is
-# installed everywhere except macOS. macOS has no systemd, so the Slack digest
-# timers and the script that enables them stay Linux-only.
-{{ if eq .chezmoi.os "darwin" }}
+# Every path in this file is skipped, so the block below installs the Slack
+# digest timers on ax8-max alone. No other machine runs the digests, and
+# chezmoi strips the domain suffix, so ax8-max.local reports "ax8-max".
+{{ if ne .chezmoi.hostname "ax8-max" }}
 dot_config/systemd
 .chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl
 {{ end }}
