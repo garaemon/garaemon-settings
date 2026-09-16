@@ -69,13 +69,18 @@ skill as a project skill straight out of the clone. The symlink is committed,
 which is why it survives the clone.
 
 Sessions **on another repository** cannot follow a symlink across repositories.
-Give the environment a setup script that clones this repository and links each
-skill into the personal skills directory:
+Clone this repository into the container instead, and link each skill into the
+personal skills directory:
 
 ```bash
 git clone --depth 1 https://github.com/garaemon/garaemon-settings.git ~/garaemon-settings
 ~/garaemon-settings/claude-skills/scripts/link-skills.sh
 ```
+
+Run both commands in the session that needs the skills. Claude Code rescans
+`~/.claude/skills` while a session runs, so a skill linked halfway through
+becomes available without restarting the session. An environment that defines a
+setup script can run the same two commands there instead, once per container.
 
 The second line runs [`scripts/link-skills.sh`](scripts/README.md#link-skillssh--per-skill-symlinks-for-managed-containers),
 which symlinks one skill at a time because the platform owns
@@ -87,7 +92,7 @@ The coding-workflow skills that only read the checkout (`technical-writing`,
 `improve-english`, `fix-agent-todo`, `project-init`) run unchanged.
 
 `branch-review` and `branch-review-loop` need two more things. `uv` is already
-installed; the `gh` CLI is not, so add it in the same setup script:
+installed; the `gh` CLI is not, so install it alongside the skills:
 
 ```bash
 apt-get install -y gh
