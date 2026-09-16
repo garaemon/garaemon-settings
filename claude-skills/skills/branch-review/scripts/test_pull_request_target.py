@@ -8,7 +8,6 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-import commands
 import list_commentable_lines
 from list_commentable_lines import resolve_pull_request_target
 
