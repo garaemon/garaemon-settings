@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'dotfiles/**'
+      - 'claude-skills/**'
       - '.github/workflows/dotfiles-test.yml'
   pull_request:
     branches: [main]
     paths:
       - 'dotfiles/**'
+      - 'claude-skills/**'
       - '.github/workflows/dotfiles-test.yml'
 
 jobs:

@@ -7,7 +7,7 @@ Monorepo for garaemon's environment setup.
 - **ansible/**: Ansible playbooks and roles that provision the interactive
   desktop environment (packages, fonts, keyboard, editor toolchain).
 - **claude-skills/**: Claude Code skills. `~/.claude/skills` is a symlink to
-  `claude-skills/.claude/skills`. See [claude-skills/README.md](claude-skills/README.md).
+  `claude-skills/skills`. See [claude-skills/README.md](claude-skills/README.md).
 - **dotfiles/**: chezmoi source for shell, git, editor, and terminal
   configuration. The root-level `.chezmoiroot` file points chezmoi at this
   subdirectory, so chezmoi commands need no `--source` flag. The root-level

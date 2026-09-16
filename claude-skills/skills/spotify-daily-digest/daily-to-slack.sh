@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLAUDE_BIN="${CLAUDE_BIN:-$HOME/.local/bin/claude}"
 
 if [[ ! -x "$CLAUDE_BIN" ]]; then
@@ -36,8 +36,8 @@ fi
 # scope on /tmp lets the model stage the digest body in /tmp/spotify-daily-
 # digest-body.md and pass it via slack-post --text-file, which avoids the
 # Bash arg validator rejecting long markdown bodies inlined into --text.
-SPOTIFY_RUN_SH="${PROJECT_DIR}/.claude/skills/spotify-sheets/run.sh"
-SLACK_RUN_SH="${PROJECT_DIR}/.claude/skills/slack-post/run.sh"
+SPOTIFY_RUN_SH="${PROJECT_DIR}/skills/spotify-sheets/run.sh"
+SLACK_RUN_SH="${PROJECT_DIR}/skills/slack-post/run.sh"
 allowed_tools=(
   WebSearch
   WebFetch

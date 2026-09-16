@@ -4,7 +4,7 @@ This is my private set of Claude Code skills, hosted in the `claude-skills/`
 directory of the garaemon-settings monorepo.
 
 This directory is the single source of truth for my skills: `~/.claude/skills`
-is a symlink to `.claude/skills` here, so every skill is available globally and
+is a symlink to `skills` here, so every skill is available globally and
 edits are live (no copy/sync step). See [Installation](#installation) below.
 
 ## Skills
@@ -14,15 +14,15 @@ edits are live (no copy/sync step). See [Installation](#installation) below.
 These skills are designed and implemented with the intent of being used from the
 Claude app on smartphones or desktop via Claude Code's `/remote-control`.
 
-- [add-paper-from-url](.claude/skills/add-paper-from-url/SKILL.md) — Add a paper to Paperpile from a PDF URL and attach a Japanese Ochiai-format summary as a note via the [`paperpile`](https://github.com/garaemon/paperpile) CLI.
-- [spotify-sheets](.claude/skills/spotify-sheets/SKILL.md) — Search and browse the user's Spotify library (liked songs, followed artists) exported to Google Sheets. Runs in a hardened Docker container with a read-only service-account key mount.
-- [spotify-daily-digest](.claude/skills/spotify-daily-digest/SKILL.md) — Produce a morning digest of the songs liked in the last 24 hours, enriched with web-searched background for each track and artist.
-- [slack-post](.claude/skills/slack-post/SKILL.md) — Post a message to a Slack channel (or DM) via the Slack Web API. Runs in a hardened Docker container with the bot token mounted read-only; designed for scheduled jobs like a daily morning digest.
-- [news-digest](.claude/skills/news-digest/SKILL.md) — Produce a morning news digest for a configured topic (AI, software, NBA, …) with web-searched headlines, category grouping, and cross-day deduplication against a persistent history file. Topics are markdown configs under `topics/`, so adding a new topic requires no code change.
-- [pdf2zh](.claude/skills/pdf2zh/SKILL.md) — Translate a PDF to Japanese via the `pdf2zh` (PDFMathTranslate) CLI using Gemini. Runs in a hardened Docker container with a read-only Gemini API key file mount.
-- [artist-live-digest](.claude/skills/artist-live-digest/SKILL.md) — Produce a Japanese digest of upcoming live concerts in a configured city (default: Los Angeles) for the user's followed Spotify artists. Delegates the artist list to `spotify-sheets`, enriches via web search within a configurable day window, and dedupes against a persistent history file. A Friday-morning systemd timer, managed by chezmoi in `dotfiles/`, posts via `slack-post`.
-- [morning-brief](.claude/skills/morning-brief/SKILL.md) — Produce a Japanese morning brief of today's Google Calendar events (across all calendars), today's unread inbox mail, and the GitHub items needing attention (review requests, recent own PRs, recently-active assigned issues), triaged and rendered directly in the chat so the user engages with it rather than receiving a hands-off digest. Reads Calendar and Gmail via the `gws-secure` wrapper and GitHub via `gh search`; Slack posting is opt-in.
-- [daily-wrapup](.claude/skills/daily-wrapup/SKILL.md) — Wrap up the user's day (the end-of-day counterpart to `morning-brief`): write a Japanese summary of the user's GitHub activity for a day (pull requests and issues they touched, commits they authored, grouped by repository) plus the day's events from their own (primary) Google Calendar into their org-roam daily note as a Claude-generated, unreviewed subtree, then commit and push the org repo after the user confirms, and open the note in Emacs when a server is reachable. Reads GitHub with `gh search` and the calendar through the `gws-secure` wrapper.
+- [add-paper-from-url](skills/add-paper-from-url/SKILL.md) — Add a paper to Paperpile from a PDF URL and attach a Japanese Ochiai-format summary as a note via the [`paperpile`](https://github.com/garaemon/paperpile) CLI.
+- [spotify-sheets](skills/spotify-sheets/SKILL.md) — Search and browse the user's Spotify library (liked songs, followed artists) exported to Google Sheets. Runs in a hardened Docker container with a read-only service-account key mount.
+- [spotify-daily-digest](skills/spotify-daily-digest/SKILL.md) — Produce a morning digest of the songs liked in the last 24 hours, enriched with web-searched background for each track and artist.
+- [slack-post](skills/slack-post/SKILL.md) — Post a message to a Slack channel (or DM) via the Slack Web API. Runs in a hardened Docker container with the bot token mounted read-only; designed for scheduled jobs like a daily morning digest.
+- [news-digest](skills/news-digest/SKILL.md) — Produce a morning news digest for a configured topic (AI, software, NBA, …) with web-searched headlines, category grouping, and cross-day deduplication against a persistent history file. Topics are markdown configs under `topics/`, so adding a new topic requires no code change.
+- [pdf2zh](skills/pdf2zh/SKILL.md) — Translate a PDF to Japanese via the `pdf2zh` (PDFMathTranslate) CLI using Gemini. Runs in a hardened Docker container with a read-only Gemini API key file mount.
+- [artist-live-digest](skills/artist-live-digest/SKILL.md) — Produce a Japanese digest of upcoming live concerts in a configured city (default: Los Angeles) for the user's followed Spotify artists. Delegates the artist list to `spotify-sheets`, enriches via web search within a configurable day window, and dedupes against a persistent history file. A Friday-morning systemd timer, managed by chezmoi in `dotfiles/`, posts via `slack-post`.
+- [morning-brief](skills/morning-brief/SKILL.md) — Produce a Japanese morning brief of today's Google Calendar events (across all calendars), today's unread inbox mail, and the GitHub items needing attention (review requests, recent own PRs, recently-active assigned issues), triaged and rendered directly in the chat so the user engages with it rather than receiving a hands-off digest. Reads Calendar and Gmail via the `gws-secure` wrapper and GitHub via `gh search`; Slack posting is opt-in.
+- [daily-wrapup](skills/daily-wrapup/SKILL.md) — Wrap up the user's day (the end-of-day counterpart to `morning-brief`): write a Japanese summary of the user's GitHub activity for a day (pull requests and issues they touched, commits they authored, grouped by repository) plus the day's events from their own (primary) Google Calendar into their org-roam daily note as a Claude-generated, unreviewed subtree, then commit and push the org repo after the user confirms, and open the note in Emacs when a server is reachable. Reads GitHub with `gh search` and the calendar through the `gws-secure` wrapper.
 
 ### Local development workflow
 
@@ -30,30 +30,31 @@ These are general-purpose coding-workflow skills, used in any repository. They
 carry no network access or credentials of their own beyond `gh`/`git`. Some ship
 Python helpers and need `uv` to run them.
 
-- [branch-review](.claude/skills/branch-review/SKILL.md) — Review changes on the current branch against the branch they merge into — the pull request's own base branch when one is open, so a stacked PR reviews only its own changes — or against a narrower commit range. Asks which model should review (Opus 5, Fable 5.1, or Sonnet 5) and runs the review in a subagent on it. Produces a structured `REVIEW.md` plus a `REVIEW.html` page that opens with a summary of every finding and highlights the code in each one, and posts inline comments via the GitHub API, on github.com or GitHub Enterprise.
-- [branch-review-loop](.claude/skills/branch-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `branch-review` skill via a subagent (the user picks the model for the first pass; later passes run on the cheaper of that choice and Opus 5), fix every reported issue, then re-review until no findings remain (up to 5 iterations).
-- [create-pr](.claude/skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
-- [fix-agent-todo](.claude/skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
-- [improve-english](.claude/skills/improve-english/SKILL.md) — Improve English in changes bound for a PR: fix spelling in identifiers, smooth comment grammar, and translate Japanese comments into English, scoped to the diff against `origin/main`.
-- [technical-writing](.claude/skills/technical-writing/SKILL.md) — Checklist for applying Google's Technical Writing style to prose: README files, design docs, PR descriptions, commit messages, and comments.
-- [project-init](.claude/skills/project-init/SKILL.md) — Scaffold a new project from a language-specific template (Python, TypeScript/Node, Go), wiring up linters, formatters, git pre-commit hooks, a Claude Code `SessionStart` hook, and a GitHub Actions CI workflow so the project is lint-clean and CI-green from the first commit. New languages are added by dropping a directory under `templates/`.
+- [branch-review](skills/branch-review/SKILL.md) — Review changes on the current branch against the branch they merge into — the pull request's own base branch when one is open, so a stacked PR reviews only its own changes — or against a narrower commit range. Asks which model should review (Opus 5, Fable 5.1, or Sonnet 5) and runs the review in a subagent on it. Produces a structured `REVIEW.md` plus a `REVIEW.html` page that opens with a summary of every finding and highlights the code in each one, and posts inline comments via the GitHub API, on github.com or GitHub Enterprise.
+- [branch-review-loop](skills/branch-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `branch-review` skill via a subagent (the user picks the model for the first pass; later passes run on the cheaper of that choice and Opus 5), fix every reported issue, then re-review until no findings remain (up to 5 iterations).
+- [create-pr](skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
+- [fix-agent-todo](skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
+- [improve-english](skills/improve-english/SKILL.md) — Improve English in changes bound for a PR: fix spelling in identifiers, smooth comment grammar, and translate Japanese comments into English, scoped to the diff against `origin/main`.
+- [technical-writing](skills/technical-writing/SKILL.md) — Checklist for applying Google's Technical Writing style to prose: README files, design docs, PR descriptions, commit messages, and comments.
+- [project-init](skills/project-init/SKILL.md) — Scaffold a new project from a language-specific template (Python, TypeScript/Node, Go), wiring up linters, formatters, git pre-commit hooks, a Claude Code `SessionStart` hook, and a GitHub Actions CI workflow so the project is lint-clean and CI-green from the first commit. New languages are added by dropping a directory under `templates/`.
 
 ## Installation
 
-`~/.claude/skills` is a symlink to this directory's `.claude/skills`, so all
+`~/.claude/skills` is a symlink to this directory's `skills`, so all
 skills are available in every directory and editing a skill here takes effect
-immediately. On a new machine, clone the monorepo and point `~/.claude/skills`
-at it:
+immediately. chezmoi creates that symlink from
+`dotfiles/dot_claude/symlink_skills.tmpl`, so a machine that applies the
+dotfiles needs no further setup.
+
+Without chezmoi, clone the monorepo and create the symlink by hand:
 
 ```bash
 git clone git@github.com:garaemon/garaemon-settings.git ~/ghq/github.com/garaemon/garaemon-settings
-ln -s ~/ghq/github.com/garaemon/garaemon-settings/claude-skills/.claude/skills ~/.claude/skills
+ln -s ~/ghq/github.com/garaemon/garaemon-settings/claude-skills/skills ~/.claude/skills
 ```
 
-Machine configuration (the thin `~/.claude/CLAUDE.md`, etc.) is managed
-separately by chezmoi; the skills directory is deliberately left out of chezmoi
-(`.claude/skills` is in its `.chezmoiignore`) so this directory is the only
-owner of skill files.
+Either way this directory owns every skill file. chezmoi stores the symlink and
+never the files behind it, so a skill is edited here and nowhere else.
 
 ## Tools
 
