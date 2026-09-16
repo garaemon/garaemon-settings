@@ -140,6 +140,19 @@ def detect_repository() -> str | None:
     return parse_repository_from_remote_url(url)
 
 
+def split_upstream_reference(upstream: str, local_branch: str) -> tuple[str, str]:
+    """Return the (remote, branch) an `@{upstream}` value names.
+
+    A value without a slash comes from `branch.<name>.remote = .`, a branch that
+    tracks another local branch and so names no remote. That case and an unset
+    upstream both fall back to origin and the local branch name.
+    """
+    remote, separator, remote_branch = upstream.partition("/")
+    if not separator:
+        return "origin", local_branch
+    return remote, remote_branch or local_branch
+
+
 @lru_cache(maxsize=None)
 def detect_head_reference() -> tuple[str, str] | None:
     """Return (owner, branch) naming where the current branch lives on GitHub.
@@ -148,23 +161,21 @@ def detect_head_reference() -> tuple[str, str] | None:
     because create-pr pushes a fork branch while origin stays the upstream
     repository. Returns None on a detached HEAD or a remote-less checkout.
     """
-    branch = run_command(
+    local_branch = run_command(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False
     ).strip()
-    if not branch or branch == "HEAD":
+    if not local_branch or local_branch == "HEAD":
         return None
     upstream = run_command(
         ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
         check=False,
     ).strip()
-    remote, _, remote_branch = upstream.partition("/")
-    url = run_command(
-        ["git", "remote", "get-url", remote or "origin"], check=False
-    ).strip()
+    remote, branch = split_upstream_reference(upstream, local_branch)
+    url = run_command(["git", "remote", "get-url", remote], check=False).strip()
     repository = parse_repository_from_remote_url(url)
     if repository is None:
         return None
-    return repository.split("/", 1)[0], remote_branch or branch
+    return repository.split("/", 1)[0], branch
 
 
 def build_open_pull_request_path(repository: str, owner: str, branch: str) -> str:
@@ -172,21 +183,58 @@ def build_open_pull_request_path(repository: str, owner: str, branch: str) -> st
     return f"repos/{repository}/pulls?state=open&head={quote(f'{owner}:{branch}')}"
 
 
+def carries_review_fields(candidate: Any) -> bool:
+    """Return whether a REST list entry holds every field the review reads."""
+    if not isinstance(candidate, dict):
+        return False
+    if not isinstance(candidate.get("number"), int):
+        return False
+    if not isinstance(candidate.get("html_url"), str):
+        return False
+    base = candidate.get("base")
+    return isinstance(base, dict) and isinstance(base.get("ref"), str)
+
+
 def select_open_pull_request(output: str) -> dict[str, Any] | None:
     """Return one pull request from a REST list response, or None.
 
-    GitHub can list several open pull requests for one head branch. The highest
-    number is the most recently opened, which is the branch's current review.
+    Entries missing a field the review reads are dropped here, so a caller can
+    index the result rather than repeat the same guards. GitHub can list several
+    open pull requests for one head branch; the highest number is the most
+    recently opened, which is the branch's current review.
     """
     if not output.strip():
         return None
     try:
-        pull_requests = json.loads(output)
+        payload = json.loads(output)
     except json.JSONDecodeError:
         return None
-    if not isinstance(pull_requests, list) or not pull_requests:
+    if not isinstance(payload, list):
         return None
-    return max(pull_requests, key=lambda pull_request: pull_request.get("number", 0))
+    pull_requests = [entry for entry in payload if carries_review_fields(entry)]
+    if not pull_requests:
+        return None
+    return max(pull_requests, key=lambda pull_request: pull_request["number"])
+
+
+def query_open_pull_request(
+    repository: str, owner: str, branch: str
+) -> dict[str, Any] | None:
+    """Return the open pull request one repository lists for a head branch."""
+    output = run_gh_command(
+        ["gh", "api", build_open_pull_request_path(repository, owner, branch)],
+        check=False,
+    )
+    return select_open_pull_request(output)
+
+
+def read_parent_repository(repository: str) -> str | None:
+    """Return the repository a fork was made from, or None when it is no fork."""
+    parent = run_gh_command(
+        ["gh", "api", f"repos/{repository}", "--jq", ".parent.full_name // empty"],
+        check=False,
+    ).strip()
+    return parent or None
 
 
 def read_open_pull_request() -> dict[str, Any] | None:
@@ -201,8 +249,12 @@ def read_open_pull_request() -> dict[str, Any] | None:
     if repository is None or head is None:
         return None
     owner, branch = head
-    output = run_gh_command(
-        ["gh", "api", build_open_pull_request_path(repository, owner, branch)],
-        check=False,
-    )
-    return select_open_pull_request(output)
+    pull_request = query_open_pull_request(repository, owner, branch)
+    if pull_request is not None:
+        return pull_request
+    # A checkout whose origin is the fork lists no pull request of its own: the
+    # pull request sits on the repository the fork was made from.
+    parent = read_parent_repository(repository)
+    if parent is None or parent == repository:
+        return None
+    return query_open_pull_request(parent, owner, branch)

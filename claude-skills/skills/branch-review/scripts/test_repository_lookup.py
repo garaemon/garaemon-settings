@@ -11,7 +11,21 @@ from commands import (
     build_open_pull_request_path,
     parse_repository_from_remote_url,
     select_open_pull_request,
+    split_upstream_reference,
 )
+
+
+def build_payload(*pull_requests: str) -> str:
+    """Return a REST list response carrying the given JSON objects."""
+    return f"[{', '.join(pull_requests)}]"
+
+
+def build_pull_request(number: int) -> str:
+    """Return one complete pull request object as JSON."""
+    return (
+        f'{{"number": {number}, "html_url": "https://example/{number}", '
+        f'"base": {{"ref": "main"}}}}'
+    )
 
 
 class ParseRepositoryFromRemoteUrlTest(unittest.TestCase):
@@ -101,11 +115,35 @@ class BuildOpenPullRequestPathTest(unittest.TestCase):
         )
 
 
+class SplitUpstreamReferenceTest(unittest.TestCase):
+    """split_upstream_reference reads the remote and branch out of @{upstream}."""
+
+    def test_splits_a_remote_tracking_branch(self) -> None:
+        self.assertEqual(
+            split_upstream_reference("origin/feature", "feature"), ("origin", "feature")
+        )
+
+    def test_keeps_slashes_in_the_branch_name(self) -> None:
+        self.assertEqual(
+            split_upstream_reference("fork/claude/fix-1", "claude/fix-1"),
+            ("fork", "claude/fix-1"),
+        )
+
+    def test_falls_back_to_origin_when_no_upstream_is_set(self) -> None:
+        self.assertEqual(split_upstream_reference("", "feature"), ("origin", "feature"))
+
+    def test_falls_back_to_origin_for_a_local_tracking_branch(self) -> None:
+        # `branch.<name>.remote = .` tracks another local branch, so @{upstream}
+        # is a bare branch name. Reading it as a remote would ask git for the
+        # URL of a remote named "main".
+        self.assertEqual(split_upstream_reference("main", "feature"), ("origin", "feature"))
+
+
 class SelectOpenPullRequestTest(unittest.TestCase):
     """select_open_pull_request reads one pull request out of a REST response."""
 
     def test_returns_the_only_pull_request(self) -> None:
-        payload = '[{"number": 7, "html_url": "https://example/7"}]'
+        payload = build_payload(build_pull_request(7))
         self.assertEqual(select_open_pull_request(payload)["number"], 7)
 
     def test_returns_none_for_an_empty_list(self) -> None:
@@ -124,8 +162,20 @@ class SelectOpenPullRequestTest(unittest.TestCase):
     def test_prefers_the_newest_pull_request(self) -> None:
         # GitHub can list more than one open pull request for a head branch;
         # the most recently opened one is the branch's current review.
-        payload = '[{"number": 3}, {"number": 9}]'
+        payload = build_payload(build_pull_request(3), build_pull_request(9))
         self.assertEqual(select_open_pull_request(payload)["number"], 9)
+
+    def test_drops_a_pull_request_missing_a_field_the_review_reads(self) -> None:
+        # The caller indexes html_url and base.ref, so an entry without them
+        # must not be selected.
+        payload = build_payload('{"number": 9}', build_pull_request(3))
+        self.assertEqual(select_open_pull_request(payload)["number"], 3)
+
+    def test_returns_none_when_every_entry_is_incomplete(self) -> None:
+        self.assertIsNone(select_open_pull_request('[{"number": 9}]'))
+
+    def test_returns_none_for_a_list_of_non_objects(self) -> None:
+        self.assertIsNone(select_open_pull_request("[1, 2]"))
 
 
 if __name__ == "__main__":
