@@ -66,3 +66,29 @@ All optional, via environment variables:
 `scripts/tests/gws-secure-smoke.sh` covers the deterministic dependency-check
 failure path (no network, 1Password, or browser needed). The OAuth and
 1Password paths are verified live during bootstrap and first use.
+
+## `link-skills.sh` — per-skill symlinks for managed containers
+
+`link-skills.sh` symlinks every skill under `skills` into a Claude Code
+personal skills directory, one symlink per skill:
+
+```bash
+scripts/link-skills.sh            # links into ~/.claude/skills
+scripts/link-skills.sh /some/dir  # links into another directory
+```
+
+A workstation does not need this script, because chezmoi points the whole
+`~/.claude/skills` directory at this repository. A managed container such as
+Claude Code on the web does: the platform installs its own skills into
+`~/.claude/skills`, so replacing that directory with a symlink would hide them.
+Linking skill by skill leaves the platform's skills in place.
+
+The script replaces only a symlink that already points into this repository.
+Every other name is reported and skipped, whether it holds a real directory or a
+symlink the platform installed, so a future platform skill that shares a name
+with one here survives the run.
+
+The run ends with a `N skills linked, M skipped` line, and exits non-zero when
+it linked nothing. A setup script that calls it unattended reads nobody's
+terminal, so that exit status is what tells it about a container left with none
+of these skills.

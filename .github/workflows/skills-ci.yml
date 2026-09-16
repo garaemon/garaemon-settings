@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'claude-skills/**'
+      - '.claude/skills'
       - '.github/workflows/skills-ci.yml'
   push:
     branches: [main]
     paths:
       - 'claude-skills/**'
+      - '.claude/skills'
       - '.github/workflows/skills-ci.yml'
 
 defaults:
@@ -24,6 +26,17 @@ jobs:
       - run: python3 scripts/check-readme-skills.py
       - name: Run the checker's unit tests
         run: python3 -m unittest discover -s scripts/tests -t scripts/tests
+
+  skill-links:
+    name: Skill symlinks resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the repository-root symlink
+        working-directory: ${{ github.workspace }}
+        run: test -f .claude/skills/branch-review/SKILL.md
+      - name: Run link-skills.sh tests
+        run: bash scripts/tests/link-skills-test.sh
 
   branch-review-tests:
     name: branch-review unit tests
