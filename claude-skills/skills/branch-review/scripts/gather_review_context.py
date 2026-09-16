@@ -452,10 +452,15 @@ def resolve_branch_range(
 ) -> tuple[str, str, str]:
     """Return (left, right, description) for the default whole-branch review."""
     base_ref, base_source = resolve_review_base(args.base, pull_request)
-    base_remote = select_remote_for_repository(
-        read_remote_urls(), pull_request["base_repository"] if pull_request else None
+    # Only a base that came from the pull request lives on the pull request's
+    # base repository. A --base names a branch of the checkout in hand, which
+    # is origin even when the pull request sits on the repository it forked.
+    base_repository = pull_request["base_repository"] if pull_request else None
+    if args.base:
+        base_repository = None
+    base_revision = resolve_base_revision(
+        base_ref, select_remote_for_repository(read_remote_urls(), base_repository)
     )
-    base_revision = resolve_base_revision(base_ref, base_remote)
     merge_base = find_merge_base(base_revision)
     return merge_base, "HEAD", f"whole branch against {base_ref} ({base_source})"
 
