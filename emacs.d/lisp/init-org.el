@@ -610,6 +610,50 @@ Skip when the cached SVG is already newer than FILE."
 (use-package outshine :ensure t
   :hook (outline-minor-mode . outshine-hook-function))
 
+;; Slide shows straight from an Org buffer: `M-x org-present' on the first
+;; heading, left and right arrows to move between top-level headings, and
+;; `C-c C-q' to quit.  The buffer styling lives in lisp/my-org-present.el so
+;; that tests/my-org-present-test.el can run it without this package.
+(use-package org-present :ensure t
+  :after org
+  :preface (require 'my-org-present)
+  :custom
+  ;; `org-present-big' applies this many `text-scale-increase' steps on top
+  ;; of the face remapping in my-org-present.el.  The default 5 fits only a
+  ;; handful of lines on a slide.
+  (org-present-text-scale 2)
+  :hook ((org-present-mode . my-org-present-start)
+         (org-present-mode-quit . my-org-present-quit))
+  :config
+  (add-hook 'org-present-after-navigate-functions #'my-org-present-after-navigate)
+  ;; The helpers that the org-present README recommends: bigger text, no
+  ;; cursor on the slide, and a read-only buffer so that a stray key during
+  ;; the show does not edit the deck.
+  (dolist (start-function '(org-present-big
+                            org-present-hide-cursor
+                            org-present-read-only))
+    (add-hook 'org-present-mode-hook start-function))
+  (dolist (quit-function '(org-present-small
+                           org-present-show-cursor
+                           org-present-read-write))
+    (add-hook 'org-present-mode-quit-hook quit-function)))
+
+;; Centers each slide in a column narrow enough to read from across a room.
+(use-package visual-fill-column :ensure t
+  :commands visual-fill-column-mode
+  :custom
+  (visual-fill-column-width 70)
+  (visual-fill-column-center-text t)
+  ;; Since Emacs 29 the package measures the window with `window-width' and
+  ;; its REMAP argument, which already reflects the `text-scale-mode' remap
+  ;; of `org-present-big'.  Version 2.7.1 then divides by the text scale a
+  ;; second time, so the scaled 70 columns no longer fit and the margins
+  ;; collapse to zero.  Emacs 28 has no REMAP argument and needs the option.
+  (visual-fill-column-adjust-for-text-scale (< emacs-major-version 29)))
+
+(use-package hide-mode-line :ensure t
+  :commands hide-mode-line-mode)
+
 (use-package calfw :ensure t :defer t)
 
 (provide 'init-org)

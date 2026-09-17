@@ -109,6 +109,27 @@ The fetch and the commit chain run as asynchronous git processes:
   commits stop and the buffer shows a chain that never reported back,
   `M-x my-org-git-sync-reset` lets the next save start one again.
 
+## Slide Shows
+
+`org-present` turns an Org file into a slide show, one top-level heading per
+slide. Run `M-x org-present` on the first heading, move with the left and
+right arrow keys, and quit with `C-c C-q`.
+
+`my-org-present.el` styles the buffer for the show and undoes the styling on
+quit:
+
+- Larger text, with the level-1 heading scaled further than the body.
+- A blank header line that pads the top of every slide.
+- A 70-column centered text column through `visual-fill-column`.
+- No mode line, line numbers, or fill-column indicator.
+- Only the direct sub headings of a slide unfolded when the show lands on it.
+
+`init-org.el` adds the helpers from org-present itself on top: the text
+scaling of `org-present-big`, a hidden cursor, and a read-only buffer.
+
+The face attributes live in `my-org-present-face-remappings` and the padding
+in `my-org-present-top-padding-height`. Colors are left to the active theme.
+
 ## Fonts
 
 `init-ui.el` picks the default face from `my-font-candidates`, taking the first
