@@ -18,6 +18,7 @@
 ;;; Code:
 
 (require 'display-fill-column-indicator)
+(require 'face-remap)
 (require 'display-line-numbers)
 (require 'org)
 (require 'org-fold)
@@ -30,18 +31,20 @@
   :group 'org)
 
 (defcustom my-org-present-face-remappings
-  '((default (:height 1.2) default)
-    (org-level-1 (:height 1.5) org-level-1)
-    (org-block-begin-line (:height 0) org-block-begin-line)
-    (org-block-end-line (:height 0) org-block-end-line)
-    (header-line (:inherit default) header-line))
-  "Face remappings installed for the duration of a slide show.
+  '((default :height 1.2)
+    (org-level-1 :height 1.5)
+    (org-block-begin-line :height 0)
+    (org-block-end-line :height 0)
+    (header-line :inherit default))
+  "Relative face attributes applied for the duration of a slide show.
+Each entry is (FACE . ATTRIBUTES), added with `face-remap-add-relative'
+so that the text scaling of `org-present-big' stays in effect.
 Heights are relative to the face, so 1.2 scales the text by 20%.
 The zero height hides the #+begin_src and #+end_src lines while the
 block body stays visible.  The header line inherits the default
 face so that the top padding does not show up as a bar in themes
 that give `header-line' its own background."
-  :type '(repeat (list face plist face)))
+  :type '(alist :key-type face :value-type plist))
 
 (defcustom my-org-present-top-padding-height 300
   "Height of the blank header line that pads the top of every slide.
@@ -51,6 +54,21 @@ The value is an absolute face height in units of 1/10 point."
 (defvar-local my-org-present--saved-settings nil
   "Buffer settings captured by `my-org-present-start' for the quit hook.
 An alist of (SYMBOL . VALUE) for the variables the show overrides.")
+
+(defvar-local my-org-present--face-cookies nil
+  "Cookies from `face-remap-add-relative' that the quit hook removes.")
+
+(defun my-org-present--remap-faces ()
+  "Apply `my-org-present-face-remappings' to the current buffer."
+  (setq my-org-present--face-cookies
+        (mapcar (lambda (entry)
+                  (face-remap-add-relative (car entry) (cdr entry)))
+                my-org-present-face-remappings)))
+
+(defun my-org-present--unmap-faces ()
+  "Remove the face remappings added by `my-org-present--remap-faces'."
+  (mapc #'face-remap-remove-relative my-org-present--face-cookies)
+  (setq my-org-present--face-cookies nil))
 
 (defun my-org-present--set-minor-modes (arg)
   "Toggle every presentation minor mode with ARG, 1 or -1."
@@ -79,7 +97,7 @@ An alist of (SYMBOL . VALUE) for the variables the show overrides.")
   "Style the current buffer as a slide show.
 Intended for `org-present-mode-hook'."
   (my-org-present--save-settings)
-  (setq-local face-remapping-alist (copy-tree my-org-present-face-remappings))
+  (my-org-present--remap-faces)
   (setq-local header-line-format
               (propertize " " 'face `(:height ,my-org-present-top-padding-height)))
   ;; Org starts every buffer truncated here (see `org-startup-truncated' in
@@ -94,7 +112,7 @@ Intended for `org-present-mode-hook'."
 (defun my-org-present-quit ()
   "Undo the styling of `my-org-present-start'.
 Intended for `org-present-mode-quit-hook'."
-  (setq-local face-remapping-alist nil)
+  (my-org-present--unmap-faces)
   (setq-local header-line-format nil)
   (my-org-present--set-minor-modes -1)
   (my-org-present--restore-settings))

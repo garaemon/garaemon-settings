@@ -15,6 +15,7 @@
 
 (require 'ert)
 (require 'cl-lib)
+(require 'face-remap)
 (require 'org)
 (require 'my-org-present)
 
@@ -122,6 +123,28 @@ Return the symbol `unset' when CALLS holds no call to MODE."
     (display-line-numbers-mode 1)
     (my-org-present-start)
     (should (null display-line-numbers-mode))))
+
+(defun my-org-present-test--default-face-spec-count ()
+  "Return how many relative specs remap the default face in this buffer.
+An entry of `face-remapping-alist' reads (FACE SPEC... FACE)."
+  (- (length (assq 'default face-remapping-alist)) 2))
+
+(ert-deftest my-org-present-test-start-keeps-text-scale ()
+  "Starting a show adds to the text scaling instead of replacing it.
+`org-present-big' scales the buffer through `text-scale-mode', which
+records its own entry in `face-remapping-alist'."
+  (my-org-present-test--with-slides
+    (text-scale-set 1)
+    (my-org-present-start)
+    (should (= (my-org-present-test--default-face-spec-count) 2))))
+
+(ert-deftest my-org-present-test-quit-keeps-text-scale ()
+  "Quitting a show leaves the text scaling for `org-present-small' to undo."
+  (my-org-present-test--with-slides
+    (text-scale-set 1)
+    (my-org-present-start)
+    (my-org-present-quit)
+    (should (= (my-org-present-test--default-face-spec-count) 1))))
 
 (ert-deftest my-org-present-test-quit-drops-face-remappings ()
   "Quitting a show removes every face remapping the start installed."
