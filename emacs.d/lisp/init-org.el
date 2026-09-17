@@ -643,7 +643,13 @@ Skip when the cached SVG is already newer than FILE."
   :commands visual-fill-column-mode
   :custom
   (visual-fill-column-width 70)
-  (visual-fill-column-center-text t))
+  (visual-fill-column-center-text t)
+  ;; Since Emacs 29 the package measures the window with `window-width' and
+  ;; its REMAP argument, which already reflects the `text-scale-mode' remap
+  ;; of `org-present-big'.  Version 2.7.1 then divides by the text scale a
+  ;; second time, so the scaled 70 columns no longer fit and the margins
+  ;; collapse to zero.  Emacs 28 has no REMAP argument and needs the option.
+  (visual-fill-column-adjust-for-text-scale (< emacs-major-version 29)))
 
 (use-package hide-mode-line :ensure t
   :commands hide-mode-line-mode)
