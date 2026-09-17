@@ -618,13 +618,25 @@ Skip when the cached SVG is already newer than FILE."
   :after org
   :preface (require 'my-org-present)
   :custom
-  ;; This scale multiplies the face remapping in my-org-present.el.  The
-  ;; default 5 fits only a handful of lines on a slide.
+  ;; `org-present-big' applies this many `text-scale-increase' steps on top
+  ;; of the face remapping in my-org-present.el.  The default 5 fits only a
+  ;; handful of lines on a slide.
   (org-present-text-scale 2)
   :hook ((org-present-mode . my-org-present-start)
          (org-present-mode-quit . my-org-present-quit))
   :config
-  (add-hook 'org-present-after-navigate-functions #'my-org-present-after-navigate))
+  (add-hook 'org-present-after-navigate-functions #'my-org-present-after-navigate)
+  ;; The helpers that the org-present README recommends: bigger text, no
+  ;; cursor on the slide, and a read-only buffer so that a stray key during
+  ;; the show does not edit the deck.
+  (dolist (start-function '(org-present-big
+                            org-present-hide-cursor
+                            org-present-read-only))
+    (add-hook 'org-present-mode-hook start-function))
+  (dolist (quit-function '(org-present-small
+                           org-present-show-cursor
+                           org-present-read-write))
+    (add-hook 'org-present-mode-quit-hook quit-function)))
 
 ;; Centers each slide in a column narrow enough to read from across a room.
 (use-package visual-fill-column :ensure t

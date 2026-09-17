@@ -124,8 +124,11 @@ quit:
 - No mode line, line numbers, or fill-column indicator.
 - Only the direct sub headings of a slide unfolded when the show lands on it.
 
-The face heights live in `my-org-present-face-remappings` and the padding in
-`my-org-present-top-padding-height`. Colors are left to the active theme.
+`init-org.el` adds the helpers from org-present itself on top: the text
+scaling of `org-present-big`, a hidden cursor, and a read-only buffer.
+
+The face attributes live in `my-org-present-face-remappings` and the padding
+in `my-org-present-top-padding-height`. Colors are left to the active theme.
 
 ## Fonts
 
