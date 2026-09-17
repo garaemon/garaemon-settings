@@ -33,11 +33,14 @@
   '((default (:height 1.2) default)
     (org-level-1 (:height 1.5) org-level-1)
     (org-block-begin-line (:height 0) org-block-begin-line)
-    (org-block-end-line (:height 0) org-block-end-line))
+    (org-block-end-line (:height 0) org-block-end-line)
+    (header-line (:inherit default) header-line))
   "Face remappings installed for the duration of a slide show.
 Heights are relative to the face, so 1.2 scales the text by 20%.
 The zero height hides the #+begin_src and #+end_src lines while the
-block body stays visible."
+block body stays visible.  The header line inherits the default
+face so that the top padding does not show up as a bar in themes
+that give `header-line' its own background."
   :type '(repeat (list face plist face)))
 
 (defcustom my-org-present-top-padding-height 300

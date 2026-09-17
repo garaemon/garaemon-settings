@@ -90,6 +90,13 @@ Return the symbol `unset' when CALLS holds no call to MODE."
     (my-org-present-start)
     (should (stringp header-line-format))))
 
+(ert-deftest my-org-present-test-start-blends-header-line-into-background ()
+  "Starting a show gives the header line the background of the default face."
+  (my-org-present-test--with-slides
+    (my-org-present-start)
+    (should (equal (plist-get (cadr (assq 'header-line face-remapping-alist)) :inherit)
+                   'default))))
+
 (ert-deftest my-org-present-test-start-centers-text ()
   "Starting a show turns on visual-fill-column with centering."
   (my-org-present-test--with-slides
