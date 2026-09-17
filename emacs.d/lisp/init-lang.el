@@ -302,7 +302,7 @@
                       :inherit 'default)
   (set-face-attribute 'markdown-inline-code-face nil
                       :inherit 'default
-                      :foreground (face-attribute font-lock-type-face :foreground))
+                      :foreground (face-attribute 'font-lock-type-face :foreground))
   ;; For emacs 24
   (add-hook 'markdown-mode-hook '(lambda ()
                                    (electric-indent-local-mode -1)))
