@@ -610,6 +610,32 @@ Skip when the cached SVG is already newer than FILE."
 (use-package outshine :ensure t
   :hook (outline-minor-mode . outshine-hook-function))
 
+;; Slide shows straight from an Org buffer: `M-x org-present' on the first
+;; heading, left and right arrows to move between top-level headings, and
+;; `C-c C-q' to quit.  The buffer styling lives in lisp/my-org-present.el so
+;; that tests/my-org-present-test.el can run it without this package.
+(use-package org-present :ensure t
+  :after org
+  :preface (require 'my-org-present)
+  :custom
+  ;; This scale multiplies the face remapping in my-org-present.el.  The
+  ;; default 5 fits only a handful of lines on a slide.
+  (org-present-text-scale 2)
+  :hook ((org-present-mode . my-org-present-start)
+         (org-present-mode-quit . my-org-present-quit))
+  :config
+  (add-hook 'org-present-after-navigate-functions #'my-org-present-after-navigate))
+
+;; Centers each slide in a column narrow enough to read from across a room.
+(use-package visual-fill-column :ensure t
+  :commands visual-fill-column-mode
+  :custom
+  (visual-fill-column-width 70)
+  (visual-fill-column-center-text t))
+
+(use-package hide-mode-line :ensure t
+  :commands hide-mode-line-mode)
+
 (use-package calfw :ensure t :defer t)
 
 (provide 'init-org)
