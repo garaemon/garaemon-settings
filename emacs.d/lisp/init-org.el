@@ -400,12 +400,12 @@ fully configured, not stripped down."))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
 
   ;; Show freshly generated images after a src block runs so the user does not
-  ;; need to call `C-c C-x C-v' manually. The `refresh' arg replaces existing
-  ;; overlays so regenerated files (mermaid keeps the same path) actually show
-  ;; their new contents instead of the cached previous image.
+  ;; need to call `C-c C-x C-v' manually. `org-link-preview-refresh' replaces
+  ;; existing overlays so regenerated files (mermaid keeps the same path)
+  ;; actually show their new contents instead of the cached previous image.
   (defun my-refresh-org-inline-images-after-babel ()
     (when (derived-mode-p 'org-mode)
-      (org-display-inline-images nil t)))
+      (org-link-preview-refresh)))
   (add-hook 'org-babel-after-execute-hook
             #'my-refresh-org-inline-images-after-babel)
 
@@ -539,11 +539,11 @@ Skip when the cached SVG is already newer than FILE."
       (dolist (window (window-list nil 'no-mini))
         (with-current-buffer (window-buffer window)
           (when (and (derived-mode-p 'org-mode)
-                     org-inline-image-overlays
+                     org-link-preview-overlays
                      (save-excursion
                        (goto-char (point-min))
                        (re-search-forward "\\[\\[excalidraw:" nil t)))
-            (org-redisplay-inline-images))))))
+            (org-link-preview-refresh))))))
 
   (add-function :after after-focus-change-function
                 #'my-org-excalidraw-redisplay-on-focus)

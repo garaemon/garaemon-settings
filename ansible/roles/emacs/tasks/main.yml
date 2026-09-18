@@ -398,7 +398,6 @@
           command: >
               ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
               --with-pgtk --with-native-compilation=aot --without-compress-install
-              --with-tree-sitter --with-mailutilsroot
           args:
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
           environment:
