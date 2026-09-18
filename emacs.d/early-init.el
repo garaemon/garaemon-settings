@@ -9,6 +9,14 @@
 ;; Disable package.el in favor of manual control
 (setq package-enable-at-startup nil)
 
+;; Work around older GCC/libgccjit versions incorrectly inferring the macOS
+;; deployment target from the Darwin kernel version. Use the actual macOS
+;; version instead, while preserving any explicitly configured target.
+(when (and (eq system-type 'darwin)
+           (not (getenv "MACOSX_DEPLOYMENT_TARGET")))
+  (setenv "MACOSX_DEPLOYMENT_TARGET"
+          (car (process-lines "/usr/bin/sw_vers" "-productVersion"))))
+
 ;; Prefer the newer of .el / .elc when loading, so a forgotten stale .elc
 ;; never overrides edits to the source. The default `nil' silently uses the
 ;; older byte-compiled file (only warning), which has bitten us before.
