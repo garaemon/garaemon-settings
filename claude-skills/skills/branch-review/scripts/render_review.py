@@ -77,8 +77,10 @@ from commands import run_command
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "templates" / "review.html"
 MARKDOWN_REPORT_NAME = "REVIEW.md"
 HTML_REPORT_NAME = "REVIEW.html"
-# branch-review-loop matches this exact sentence to decide the review is clean.
+# branch-review-loop matches this exact sentence, in REVIEW.md and in the
+# output of render_review_loop.py, to decide that a review pass is clean.
 NO_FINDINGS_TEXT = "No findings."
+SUMMARY_HEADER_CELLS = "<th>ID</th><th>Category</th><th>Location</th><th>Title</th>"
 
 # CommonMark opens a fence with three or more backticks and lets the info
 # string hold anything but a backtick, so `c++` opens a fence and a four
@@ -506,16 +508,26 @@ def render_meta_rows(review: dict[str, Any]) -> str:
     return "\n".join(f"<dt>{label}</dt><dd>{value}</dd>" for label, value in rows)
 
 
+def render_chip(filter_key: str, filter_value: Any, label: str, count: int) -> str:
+    """Return one filter chip; an empty filter_value is the group's "All" chip.
+
+    The page script keeps one selected value per filter_key, so chips of one
+    group toggle among themselves and never disturb another group.
+    """
+    class_attribute = "chip active" if filter_value == "" else "chip"
+    return (
+        f'<button type="button" class="{class_attribute}" data-filter-key="{filter_key}" '
+        f'data-filter-value="{escape_html(filter_value)}">'
+        f"{escape_html(label)} <b>{count}</b></button>"
+    )
+
+
 def render_category_chips(review: dict[str, Any]) -> str:
     """Return one filter chip per non-empty category, preceded by an "All" chip."""
-    chips = [
-        '<button type="button" class="chip active" data-category="">'
-        f"All <b>{count_findings(review)}</b></button>"
-    ]
+    chips = [render_chip("category", "", "All", count_findings(review))]
     for category in list_nonempty_categories(review):
         chips.append(
-            f'<button type="button" class="chip" data-category="{category["number"]}">'
-            f"{escape_html(category['name'])} <b>{len(category['findings'])}</b></button>"
+            render_chip("category", category["number"], category["name"], len(category["findings"]))
         )
     return "\n".join(chips)
 
@@ -589,6 +601,9 @@ def build_template_values(review: dict[str, Any], generated_at: str) -> dict[str
         "meta_rows": render_meta_rows(review),
         "finding_count": str(finding_count),
         "category_chips": render_category_chips(review),
+        # Iterations exist only on the review loop page, which fills these itself.
+        "iteration_chips": "",
+        "summary_header": SUMMARY_HEADER_CELLS,
         "summary_rows": render_summary_rows(review),
         "overall_section": render_overall_section(review),
         "sections": render_sections(review),
