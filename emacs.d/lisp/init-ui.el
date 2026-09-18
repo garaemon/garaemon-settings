@@ -232,14 +232,13 @@ face height changes; `text-scale+' and friends below do that."
   ;; (load-theme 'base16-solarized-dark t)
   )
 
-(use-package solarized-theme :ensure t
+;; ef-elea-dark keeps every face above the WCAG AA contrast ratio (4.5:1),
+;; whereas solarized-dark leaves comments, line numbers and Org timestamps
+;; near 2.8:1.
+(use-package ef-themes :ensure t
   :if (display-graphic-p)
-  :custom
-  (solarized-scale-org-headlines nil)
-  (solarized-scale-outline-headlines nil)
   :config
-  (load-theme 'solarized-dark t)
-  )
+  (load-theme 'ef-elea-dark t))
 
 (use-package diff-hl :ensure t
   :custom
