@@ -136,13 +136,15 @@ def format_anchor(iteration: Iteration, finding: dict[str, Any]) -> str:
 def render_iteration_markdown(iteration: Iteration) -> list[str]:
     """Return the REVIEW.md lines of one iteration, headings nested one level down."""
     review = iteration.review
-    if iteration.status == STATUS_CLEAN:
-        return [f"## Iteration {iteration.number} (clean)", "", NO_FINDINGS_TEXT, ""]
-    finding_count = format_count(count_findings(review), "finding", "findings")
-    lines = [
-        f"## Iteration {iteration.number} ({finding_count}, {STATUS_PHRASES[iteration.status]})",
-        "",
-    ]
+    is_clean = iteration.status == STATUS_CLEAN
+    if is_clean:
+        heading_detail = STATUS_PHRASES[STATUS_CLEAN]
+    else:
+        finding_count = format_count(count_findings(review), "finding", "findings")
+        heading_detail = f"{finding_count}, {STATUS_PHRASES[iteration.status]}"
+    lines = [f"## Iteration {iteration.number} ({heading_detail})", ""]
+    if is_clean:
+        lines += [NO_FINDINGS_TEXT, ""]
     overall_comments = review.get("overall_comments", "").strip()
     if overall_comments:
         lines += ["### Overall Comments", "", overall_comments, ""]

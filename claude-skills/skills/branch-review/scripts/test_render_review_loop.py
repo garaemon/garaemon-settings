@@ -62,11 +62,12 @@ def build_review(**overrides: Any) -> dict[str, Any]:
 
 def build_clean_review(**overrides: Any) -> dict[str, Any]:
     """Return a review whose every category is empty."""
-    return build_review(
+    review = build_review(
         categories=[{"number": 2, "name": "Security", "findings": []}],
         overall_comments="",
-        **overrides,
     )
+    review.update(overrides)
+    return review
 
 
 def build_second_review(**overrides: Any) -> dict[str, Any]:
@@ -160,6 +161,15 @@ class RenderLoopMarkdownReportTest(unittest.TestCase):
     def test_should_say_no_findings_for_a_clean_iteration(self) -> None:
         report = self.render([build_review(), build_clean_review()])
         self.assertIn(f"## Iteration 2 (clean)\n\n{NO_FINDINGS_TEXT}\n", report)
+
+    def test_should_keep_the_overall_comments_of_a_clean_iteration(self) -> None:
+        # branch-review always writes the PR size note into overall_comments,
+        # so the final clean iteration still carries the review's last word.
+        report = self.render([
+            build_review(),
+            build_clean_review(overall_comments="PR size: split this in four."),
+        ])
+        self.assertIn("PR size: split this in four.", report)
 
     def test_should_keep_the_finding_body_verbatim(self) -> None:
         review = build_review(categories=[
