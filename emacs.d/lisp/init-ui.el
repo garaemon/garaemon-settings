@@ -253,8 +253,16 @@ face height changes; `text-scale+' and friends below do that."
               (when diff-hl-mode
                 (run-with-idle-timer 0.3 nil #'diff-hl-update)))))
 
-(use-package dired-icon :ensure t
-  :hook (dired-mode-hook . dired-icon-mode))
+;; all-the-icons draws its glyphs from the fonts that
+;; `all-the-icons-install-fonts' installs, and a terminal frame cannot reach
+;; them, so a tty dired buffer would show tofu instead of icons.
+(use-package all-the-icons-dired :ensure t
+  :if (display-graphic-p)
+  :custom
+  ;; Keep one color per file type.  The package default repaints every icon
+  ;; in the color of the surrounding text, which erases that distinction.
+  (all-the-icons-dired-monochrome nil)
+  :hook (dired-mode . all-the-icons-dired-mode))
 
 (use-package hl-line
   ;; It is difficult to disable hl-line mode for specific modes if we use (global-hl-line-mode).
@@ -263,8 +271,8 @@ face height changes; `text-scale+' and friends below do that."
   ;; Instead, we enable hl-line-mode for all the text modes and prog modes.
   ;; https://emacsredux.com/blog/2020/11/21/disable-global-hl-line-mode-for-specific-modes/
   :hook
-  (prog-mode-hook . hl-line-mode)
-  (text-mode-hook . hl-line-mode)
+  (prog-mode . hl-line-mode)
+  (text-mode . hl-line-mode)
   )
 
 (use-package emoji
