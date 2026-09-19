@@ -39,10 +39,20 @@ def run_command(
     Raises RuntimeError when check is true and the command fails; returns an
     empty string when check is false, so optional lookups can fall through.
     input_text, when given, is written to the command's stdin.
+
+    An executable that is not installed counts as a failure rather than a
+    crash: Claude Code on the web ships no `gh`, and an optional pull request
+    lookup there must fall through instead of ending the review in a
+    FileNotFoundError traceback, which the callers do not catch.
     """
-    completed = subprocess.run(
-        args, capture_output=True, text=True, env=env, input=input_text
-    )
+    try:
+        completed = subprocess.run(
+            args, capture_output=True, text=True, env=env, input=input_text
+        )
+    except FileNotFoundError:
+        if not check:
+            return ""
+        raise RuntimeError(f"{args[0]} is not installed") from None
     if completed.returncode != 0:
         if not check:
             return ""
