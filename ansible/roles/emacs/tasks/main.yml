@@ -372,11 +372,29 @@
               - libtool-bin # for libvterm
           become: true
           when: ansible_facts.distribution_version == '24.04'
+        - name: Set the path of the stamp that records the built Emacs version
+          set_fact:
+            emacs_build_stamp_path:
+              "{{ ghq_root_path }}/github.com/emacs-mirror/emacs/.ansible-built-version"
         - name: Clone and checkout specific version of emacs
           ansible.builtin.git:
             repo: https://github.com/emacs-mirror/emacs
             dest: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
             version: "{{ emacs_version }}"
+        - name: Read the Emacs version that the last successful build left behind
+          ansible.builtin.slurp:
+            src: "{{ emacs_build_stamp_path }}"
+          register: emacs_build_stamp
+          failed_when: false
+        # make reuses the .elc and .eln files left in the tree, and artifacts
+        # from another Emacs version make the native compiler load a stale .eln
+        # and abort with "Recursive load". A half-finished build leaves no stamp.
+        - name: Remove build artifacts left by another Emacs version
+          command: git clean -xdf
+          args:
+            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+          when: emacs_build_stamp.content is not defined or
+                (emacs_build_stamp.content | b64decode | trim) != emacs_version
         - name: Get GCC version
           command: gcc -dumpversion
           register: emacs_gcc_version_output
@@ -424,3 +442,8 @@
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
             LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
+        - name: Record the Emacs version that this build installed
+          copy:
+            content: "{{ emacs_version }}\n"
+            dest: "{{ emacs_build_stamp_path }}"
+            mode: "0644"
