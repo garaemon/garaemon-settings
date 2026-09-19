@@ -205,7 +205,8 @@ def render_loop_category_chips(iterations: Sequence[Iteration]) -> str:
 
 def render_iteration_chips(iterations: Sequence[Iteration]) -> str:
     """Return a second chip group that narrows the page to one iteration."""
-    chips = [render_chip("iteration", "", "All iterations", len(iterations))]
+    total_findings = sum(count_findings(iteration.review) for iteration in iterations)
+    chips = [render_chip("iteration", "", "All iterations", total_findings)]
     chips += [
         render_chip("iteration", iteration.number, f"Iteration {iteration.number}",
                     count_findings(iteration.review))

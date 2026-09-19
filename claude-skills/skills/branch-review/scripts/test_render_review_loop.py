@@ -190,6 +190,12 @@ class RenderLoopHtmlReportTest(unittest.TestCase):
         self.assertIn('data-filter-key="iteration" data-filter-value="1"', page)
         self.assertIn('data-filter-key="iteration" data-filter-value="2"', page)
 
+    def test_should_count_findings_not_iterations_on_the_all_iterations_chip(self) -> None:
+        # Every other chip counts findings, so an iteration count here would
+        # read as a finding count.
+        page = self.render([build_review(), build_second_review(), build_clean_review()])
+        self.assertIn('data-filter-value="">All iterations <b>2</b>', page)
+
     def test_should_count_findings_across_iterations_on_the_category_chips(self) -> None:
         page = self.render([build_review(), build_review()])
         self.assertIn("Security <b>2</b>", page)
