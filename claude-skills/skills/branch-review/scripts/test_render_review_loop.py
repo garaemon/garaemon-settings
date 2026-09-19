@@ -307,6 +307,22 @@ class WriteLoopReportsTest(unittest.TestCase):
             self.assertIn("finding-i1-2-1", (output_dir / HTML_REPORT_NAME).read_text())
 
 
+    def test_should_write_neither_report_when_the_template_is_broken(self) -> None:
+        # A stale REVIEW.html beside a fresh REVIEW.md would make the two
+        # reports disagree, which write_report_pair leaves to its callers.
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = pathlib.Path(directory)
+            with self.assertRaises(ValueError):
+                write_loop_reports(
+                    build_iterations([build_review()]),
+                    output_dir,
+                    "<p>${no_such_placeholder}</p>",
+                    GENERATED_AT,
+                )
+            self.assertFalse((output_dir / MARKDOWN_REPORT_NAME).exists())
+            self.assertFalse((output_dir / HTML_REPORT_NAME).exists())
+
+
 class MainTest(unittest.TestCase):
     """main renders the files named on the command line and reports each iteration."""
 
