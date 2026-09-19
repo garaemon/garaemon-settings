@@ -38,8 +38,7 @@
         - not (
                 emacs_stat.stat.exists and
                 emacs_installed_emacs_version is defined and
-                emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=') and
-                ansible_facts.distribution != 'Ubuntu'
+                emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=')
               )
         - emacs_build_emacs | bool
       block:
