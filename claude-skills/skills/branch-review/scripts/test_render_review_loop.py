@@ -212,11 +212,13 @@ class RenderLoopHtmlReportTest(unittest.TestCase):
         page = self.render([build_review(), build_second_review(), build_clean_review()])
         self.assertIn('data-filter-value="">All iterations <b>2</b>', page)
 
-    def test_should_open_a_collapsed_card_the_summary_table_links_to(self) -> None:
+    def test_should_ship_the_script_that_opens_a_fragment_target(self) -> None:
         # The browser opens the ancestors of a fragment target, never the
-        # target itself, so a link to a fixed card would scroll to a closed one.
+        # target itself, so a link to a collapsed card needs this script.
+        # Confirming that it runs needs a browser; this checks it is there.
         page = self.render([build_review(), build_second_review()])
-        self.assertIn('addEventListener("hashchange"', page)
+        self.assertIn('window.addEventListener("hashchange", openTargetedFinding);', page)
+        self.assertIn("target.open = true;", page)
 
     def test_should_count_findings_across_iterations_on_the_category_chips(self) -> None:
         page = self.render([build_review(), build_review()])
