@@ -23,8 +23,12 @@
 
 ;; Package system setup
 (require 'package)
+;; NonGNU ELPA is part of the Emacs default and carries dependencies that
+;; neither GNU ELPA nor MELPA serves, such as treesit-fold, which tsx-mode
+;; requires.  Dropping it here left tsx-mode unable to activate.
 (setq package-archives
       '(("gnu" . "https://elpa.gnu.org/packages/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")
         ("melpa" . "https://melpa.org/packages/")))
 (package-initialize)
 
