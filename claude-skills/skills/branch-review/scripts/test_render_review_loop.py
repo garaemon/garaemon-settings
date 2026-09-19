@@ -151,6 +151,12 @@ class RenderLoopMarkdownReportTest(unittest.TestCase):
         report = self.render([build_review()])
         self.assertIn("\n### Overall Comments\n\nDocumentation is **missing** throughout.", report)
 
+    def test_should_tabulate_every_iteration_with_its_count_and_status(self) -> None:
+        report = self.render([build_review(), build_clean_review()])
+        self.assertIn("| Iteration | Findings | Status |\n", report)
+        self.assertIn("| 1 | 1 | Fixed |\n", report)
+        self.assertIn("| 2 | 0 | Clean |\n", report)
+
     def test_should_say_no_findings_for_a_clean_iteration(self) -> None:
         report = self.render([build_review(), build_clean_review()])
         self.assertIn(f"## Iteration 2 (clean)\n\n{NO_FINDINGS_TEXT}\n", report)
