@@ -46,8 +46,10 @@
 
 (use-package yasnippet :ensure t
   :config
-  (setq yas-snippet-dirs '("~/.emacs.d/snippets"
-                           "~/.emacs.d/yasnippet-snippets/snippets"))
+  ;; `yas-global-mode' warns for every entry that is not a directory, and the
+  ;; hand-cloned yasnippet-snippets checkout this list used to name is gone.
+  (setq yas-snippet-dirs
+        (list (expand-file-name "snippets" user-emacs-directory)))
   (yas-global-mode 1)
 
   ;; insert new snippet

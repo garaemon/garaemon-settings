@@ -2,6 +2,29 @@
 
 my private emacs setting
 
+## Requirements
+
+Emacs 31.1 or later. An older Emacs does not run this configuration:
+`init-org.el` calls the link preview API that Org added in 9.8
+(`org-link-preview-refresh`, `org-link-preview-overlays`). Emacs 30 bundles
+Org 9.7.11, which has neither, so every inline image refresh fails with
+`void-function`.
+
+The pinned version lives in two places, and both name 31.1:
+
+- `ansible/roles/emacs/defaults/main.yml` builds `emacs-31.1` on a host whose
+  Emacs is older.
+- `.github/workflows/emacs-test.yml` runs the tests on 31.1.
+
+Check the Emacs in use:
+
+```sh
+emacs --version | head -1
+```
+
+Recompile the installed packages after every Emacs upgrade. See
+[Troubleshooting](#troubleshooting).
+
 ## Configuration Structure
 
 This configuration follows a modular structure for better organization and maintainability.
@@ -276,3 +299,27 @@ Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs
   ```sh
   python scripts/latest_directory_timestamp.py <root-directory>
   ```
+
+## Troubleshooting
+
+### `void-function compat--seconds-to-string` after an Emacs upgrade
+
+A major Emacs upgrade leaves every `.elc` in `elpa/` compiled for the old
+Emacs. Macros that pick their expansion from the Emacs version then call
+helpers the new build no longer defines. Marginalia shows this as
+`void-function compat--seconds-to-string` on every completion, which in turn
+leaves `vertico-posframe--minibuffer-exit-hook` with no posframe to hide and
+signals `wrong-type-argument stringp nil`.
+
+Recompile the installed packages, then restart Emacs:
+
+```sh
+rm -rf ~/.emacs.d/eln-cache
+emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize) (package-recompile-all))'
+```
+
+### Community yasnippet snippets
+
+`yas-snippet-dirs` names only `~/.emacs.d/snippets`. Install the
+`yasnippet-snippets` package to add the community collection; it appends its
+own directory to the list.
