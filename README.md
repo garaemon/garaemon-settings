@@ -18,8 +18,9 @@ Monorepo for garaemon's environment setup.
   `install.sh` is a shim for GitHub Codespaces and Dev Containers that
   delegates to `dotfiles/install.sh`. See
   [dotfiles/README.md](dotfiles/README.md).
-- **emacs.d/**: Emacs configuration. `~/.emacs.d` is a symlink to this
-  directory, managed by chezmoi (`dotfiles/symlink_dot_emacs.d.tmpl`). See
+- **emacs.d/**: Emacs configuration, which requires Emacs 31.1 or later.
+  `~/.emacs.d` is a symlink to this directory, managed by chezmoi
+  (`dotfiles/symlink_dot_emacs.d.tmpl`). See
   [emacs.d/README.md](emacs.d/README.md).
 
 ## Lint
