@@ -37,7 +37,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from string import Template
 from typing import Any
 
 from render_review import (
@@ -51,6 +50,7 @@ from render_review import (
     format_count,
     format_finding_heading,
     format_location,
+    format_metadata_bullets,
     format_summary,
     list_nonempty_categories,
     load_review,
@@ -58,6 +58,7 @@ from render_review import (
     render_chip,
     render_markdown_subset,
     render_meta_rows,
+    substitute_template,
 )
 
 STATUS_FIXED = "fixed"
@@ -151,18 +152,7 @@ def render_loop_markdown_report(iterations: Sequence[Iteration]) -> str:
     """Return the REVIEW.md text covering every iteration, latest metadata first."""
     latest = iterations[-1].review
     parts = [f"# {latest['title']}", ""]
-    if latest.get("branch"):
-        parts.append(f"- Branch: `{latest['branch']}`")
-    if latest.get("range"):
-        parts.append(f"- Range: {latest['range']}")
-    if latest.get("pull_request"):
-        parts.append(f"- Pull request: {latest['pull_request']}")
-    stats = latest.get("stats")
-    if stats:
-        parts.append(
-            f"- Changes: {stats.get('files', 0)} files changed, "
-            f"{stats.get('additions', 0)} insertions, {stats.get('deletions', 0)} deletions"
-        )
+    parts += format_metadata_bullets(latest)
     parts += [f"- Iterations: {len(iterations)}", ""]
     parts += ["## Iterations", "", "| Iteration | Findings | Status |", "| --- | --- | --- |"]
     for iteration in iterations:
@@ -318,13 +308,7 @@ def build_loop_template_values(
 def render_loop_html_report(iterations: Sequence[Iteration], template_text: str,
                             generated_at: str) -> str:
     """Return the HTML page with every iteration injected into the shared template."""
-    try:
-        values = build_loop_template_values(iterations, generated_at)
-        return Template(template_text).substitute(values)
-    except KeyError as error:
-        raise ValueError(f"template references an unknown placeholder: {error.args[0]}") from error
-    except ValueError as error:
-        raise ValueError(f"template has a stray '$': {error}") from error
+    return substitute_template(template_text, build_loop_template_values(iterations, generated_at))
 
 
 def write_loop_reports(iterations: Sequence[Iteration], output_dir: Path,

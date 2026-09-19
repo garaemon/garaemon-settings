@@ -447,23 +447,32 @@ def format_finding_heading(finding: dict[str, Any]) -> str:
     return f"### {finding['id']}. {location_text}{finding['title']}"
 
 
-def render_markdown_report(review: dict[str, Any]) -> str:
-    """Return the REVIEW.md text in the structure SKILL.md describes."""
-    parts = [f"# {review['title']}", ""]
-    # A bullet per row keeps the rows apart in rendered Markdown, where
-    # consecutive lines would otherwise merge into one paragraph.
+def format_metadata_bullets(review: dict[str, Any]) -> list[str]:
+    """Return the branch, range, pull request and change size as REVIEW.md bullets.
+
+    A bullet per row keeps the rows apart in rendered Markdown, where
+    consecutive lines would otherwise merge into one paragraph.
+    """
+    bullets: list[str] = []
     if review.get("branch"):
-        parts.append(f"- Branch: `{review['branch']}`")
+        bullets.append(f"- Branch: `{review['branch']}`")
     if review.get("range"):
-        parts.append(f"- Range: {review['range']}")
+        bullets.append(f"- Range: {review['range']}")
     if review.get("pull_request"):
-        parts.append(f"- Pull request: {review['pull_request']}")
+        bullets.append(f"- Pull request: {review['pull_request']}")
     stats = review.get("stats")
     if stats:
-        parts.append(
+        bullets.append(
             f"- Changes: {stats.get('files', 0)} files changed, "
             f"{stats.get('additions', 0)} insertions, {stats.get('deletions', 0)} deletions"
         )
+    return bullets
+
+
+def render_markdown_report(review: dict[str, Any]) -> str:
+    """Return the REVIEW.md text in the structure SKILL.md describes."""
+    parts = [f"# {review['title']}", ""]
+    parts += format_metadata_bullets(review)
     overall_comments = review.get("overall_comments", "").strip()
     if overall_comments:
         parts += ["", "## Overall Comments", "", overall_comments, ""]
@@ -612,18 +621,23 @@ def build_template_values(review: dict[str, Any], generated_at: str) -> dict[str
     }
 
 
-def render_html_report(review: dict[str, Any], template_text: str, generated_at: str) -> str:
-    """Return the HTML page with the review injected into the template.
+def substitute_template(template_text: str, values: dict[str, str]) -> str:
+    """Return the template filled with values, naming what made it fail.
 
     Substitution is strict: an unknown placeholder or a stray "$" in the
     template raises ValueError instead of leaving a half-rendered page.
     """
     try:
-        return Template(template_text).substitute(build_template_values(review, generated_at))
+        return Template(template_text).substitute(values)
     except KeyError as error:
         raise ValueError(f"template references an unknown placeholder: {error.args[0]}") from error
     except ValueError as error:
         raise ValueError(f"template has a stray '$': {error}") from error
+
+
+def render_html_report(review: dict[str, Any], template_text: str, generated_at: str) -> str:
+    """Return the HTML page with the review injected into the template."""
+    return substitute_template(template_text, build_template_values(review, generated_at))
 
 
 def find_repository_root() -> Path:
