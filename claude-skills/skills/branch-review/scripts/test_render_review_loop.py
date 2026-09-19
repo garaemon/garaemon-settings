@@ -259,6 +259,16 @@ class RenderLoopHtmlReportTest(unittest.TestCase):
     def test_should_leave_no_placeholder_or_dollar_behind(self) -> None:
         self.assertNotIn("$", self.render([build_review(), build_second_review()]))
 
+    def test_should_escape_a_finding_id_that_breaks_out_of_the_anchor(self) -> None:
+        # The loop renderer skips check_review, which is what checks the id
+        # format, so a hand-edited review.json reaches the attribute as is.
+        review = build_review(categories=[
+            {"number": 2, "name": "Security",
+             "findings": [build_finding(id='2-1" onclick="alert(1)')]},
+        ])
+        page = self.render([review])
+        self.assertNotIn('onclick="alert(1)"', page)
+
     def test_should_escape_html_in_the_title_and_category_name(self) -> None:
         review = build_review(
             title="<script>alert(1)</script>",

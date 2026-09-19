@@ -124,8 +124,13 @@ def describe_iteration(iteration: Iteration) -> str:
 
 
 def format_anchor(iteration: Iteration, finding: dict[str, Any]) -> str:
-    """Return the page anchor of a finding, unique across iterations."""
-    return f"finding-i{iteration.number}-{finding['id']}"
+    """Return the page anchor of a finding, unique across iterations.
+
+    The value goes straight into an id and an href attribute, and this script
+    skips check_review, which is what checks the id format, so escaping here
+    keeps a hand-edited review.json from breaking out of the attribute.
+    """
+    return escape_html(f"finding-i{iteration.number}-{finding['id']}")
 
 
 def render_iteration_markdown(iteration: Iteration) -> list[str]:
