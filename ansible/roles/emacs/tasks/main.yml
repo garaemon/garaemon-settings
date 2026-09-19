@@ -393,9 +393,9 @@
             emacs_tree_needs_clean:
               "{{ emacs_build_stamp.content is not defined or
                   (emacs_build_stamp.content | b64decode | trim) != emacs_version }}"
-        # make reuses the .elc and .eln files left in the tree, and artifacts
-        # from another Emacs version make the native compiler load a stale .eln
-        # and abort with "Recursive load".
+        # make reuses the .elc and .eln files left in the tree. Artifacts from
+        # another Emacs version make the native compiler load a stale .eln and
+        # abort with "Recursive load".
         - name: Remove build artifacts left by another Emacs version
           command: git clean -xdf
           args:
