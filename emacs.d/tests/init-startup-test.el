@@ -2,7 +2,7 @@
 
 ;;; Commentary:
 ;; Startup failures this suite pins down, all reported as errors in
-;; *Messages* on a fresh Emacs 30 start:
+;; *Messages* on a fresh Emacs 31 start:
 ;;
 ;; - `tsx-mode' cannot activate while `treesit-fold' stays uninstallable,
 ;;   which happens when `package-archives' drops the NonGNU ELPA entry that
