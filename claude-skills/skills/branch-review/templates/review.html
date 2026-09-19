@@ -233,7 +233,7 @@ ${sections}
 (function () {
   // One selected value per chip group. A page rendered from a single review
   // has only the category group; a review loop page adds an iteration group.
-  var selectedValues = { category: "", iteration: "" };
+  const selectedValues = { category: "", iteration: "" };
   var pathQuery = "";
 
   function matchesFilters(element) {
@@ -266,7 +266,7 @@ ${sections}
 
   document.querySelectorAll(".chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
-      var filterKey = chip.getAttribute("data-filter-key");
+      const filterKey = chip.getAttribute("data-filter-key");
       selectedValues[filterKey] = chip.getAttribute("data-filter-value") || "";
       document.querySelectorAll('.chip[data-filter-key="' + filterKey + '"]').forEach(function (other) {
         other.classList.toggle("active", other === chip);
@@ -342,7 +342,7 @@ ${sections}
   // itself, so a summary-table link to a collapsed finding card would scroll
   // to a card showing nothing but its own heading.
   function openTargetedFinding() {
-    var target = document.getElementById(window.location.hash.slice(1));
+    const target = document.getElementById(window.location.hash.slice(1));
     if (target && target.tagName === "DETAILS") { target.open = true; }
   }
   window.addEventListener("hashchange", openTargetedFinding);
