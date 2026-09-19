@@ -199,7 +199,11 @@ class RenderLoopHtmlReportTest(unittest.TestCase):
     def test_should_tag_rows_and_cards_with_their_iteration(self) -> None:
         page = self.render([build_review(), build_second_review()])
         self.assertIn('<tr data-category="3" data-iteration="2"', page)
-        self.assertIn('data-category="3" data-iteration="2" data-path="src/main/index.ts"', page)
+        self.assertIn(
+            '<details class="finding" id="finding-i2-3-1" '
+            'data-category="3" data-iteration="2"',
+            page,
+        )
 
     def test_should_offer_one_chip_per_iteration(self) -> None:
         page = self.render([build_review(), build_second_review()])
