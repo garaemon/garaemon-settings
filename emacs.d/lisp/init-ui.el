@@ -271,8 +271,8 @@ face height changes; `text-scale+' and friends below do that."
   ;; Instead, we enable hl-line-mode for all the text modes and prog modes.
   ;; https://emacsredux.com/blog/2020/11/21/disable-global-hl-line-mode-for-specific-modes/
   :hook
-  (prog-mode-hook . hl-line-mode)
-  (text-mode-hook . hl-line-mode)
+  (prog-mode . hl-line-mode)
+  (text-mode . hl-line-mode)
   )
 
 (use-package emoji
