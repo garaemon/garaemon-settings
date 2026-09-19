@@ -40,8 +40,6 @@ from pathlib import Path
 from typing import Any
 
 from render_review import (
-    HTML_REPORT_NAME,
-    MARKDOWN_REPORT_NAME,
     NO_FINDINGS_TEXT,
     TEMPLATE_PATH,
     count_findings,
@@ -59,6 +57,7 @@ from render_review import (
     render_markdown_subset,
     render_meta_rows,
     substitute_template,
+    write_report_pair,
 )
 
 STATUS_FIXED = "fixed"
@@ -325,15 +324,11 @@ def render_loop_html_report(iterations: Sequence[Iteration], template_text: str,
 def write_loop_reports(iterations: Sequence[Iteration], output_dir: Path,
                        template_text: str, generated_at: str) -> list[Path]:
     """Write REVIEW.md and REVIEW.html into output_dir and return their paths."""
-    markdown_path = output_dir / MARKDOWN_REPORT_NAME
-    html_path = output_dir / HTML_REPORT_NAME
-    # Render both before writing either, so a template error cannot leave a
-    # fresh REVIEW.md next to a stale REVIEW.html.
-    markdown_text = render_loop_markdown_report(iterations)
-    html_text = render_loop_html_report(iterations, template_text, generated_at)
-    markdown_path.write_text(markdown_text, encoding="utf-8")
-    html_path.write_text(html_text, encoding="utf-8")
-    return [markdown_path, html_path]
+    return write_report_pair(
+        render_loop_markdown_report(iterations),
+        render_loop_html_report(iterations, template_text, generated_at),
+        output_dir,
+    )
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:

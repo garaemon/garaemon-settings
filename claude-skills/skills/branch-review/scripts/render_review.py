@@ -659,19 +659,28 @@ def resolve_directories(args: argparse.Namespace) -> tuple[Path, Path]:
     return root, output_dir
 
 
+def write_report_pair(markdown_text: str, html_text: str, output_dir: Path) -> list[Path]:
+    """Write the two rendered texts as REVIEW.md and REVIEW.html, and return their paths.
+
+    The caller renders both before calling, so a template error cannot leave a
+    fresh REVIEW.md next to a stale REVIEW.html.
+    """
+    markdown_path = output_dir / MARKDOWN_REPORT_NAME
+    html_path = output_dir / HTML_REPORT_NAME
+    markdown_path.write_text(markdown_text, encoding="utf-8")
+    html_path.write_text(html_text, encoding="utf-8")
+    return [markdown_path, html_path]
+
+
 def write_reports(
     review: dict[str, Any], output_dir: Path, template_text: str, generated_at: str
 ) -> list[Path]:
     """Write REVIEW.md and REVIEW.html into output_dir and return their paths."""
-    markdown_path = output_dir / MARKDOWN_REPORT_NAME
-    html_path = output_dir / HTML_REPORT_NAME
-    # Render both before writing either, so a template error cannot leave a
-    # fresh REVIEW.md next to a stale REVIEW.html.
-    markdown_text = render_markdown_report(review)
-    html_text = render_html_report(review, template_text, generated_at)
-    markdown_path.write_text(markdown_text, encoding="utf-8")
-    html_path.write_text(html_text, encoding="utf-8")
-    return [markdown_path, html_path]
+    return write_report_pair(
+        render_markdown_report(review),
+        render_html_report(review, template_text, generated_at),
+        output_dir,
+    )
 
 
 def format_count(count: int, singular: str, plural: str) -> str:
