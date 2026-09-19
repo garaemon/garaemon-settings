@@ -337,6 +337,16 @@ ${sections}
     }
   });
 
+  // The browser opens the ancestors of a fragment target, never the target
+  // itself, so a summary-table link to a collapsed finding card would scroll
+  // to a card showing nothing but its own heading.
+  function openTargetedFinding() {
+    var target = document.getElementById(window.location.hash.slice(1));
+    if (target && target.tagName === "DETAILS") { target.open = true; }
+  }
+  window.addEventListener("hashchange", openTargetedFinding);
+  openTargetedFinding();
+
   function setAllOpen(isOpen) {
     document.querySelectorAll("details.finding").forEach(function (card) {
       card.open = isOpen;
