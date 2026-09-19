@@ -207,7 +207,13 @@ def render_loop_category_chips(iterations: Sequence[Iteration]) -> str:
 
 
 def render_iteration_chips(iterations: Sequence[Iteration]) -> str:
-    """Return a second chip group that narrows the page to one iteration."""
+    """Return a second chip group, wrapper included, narrowing the page to one iteration.
+
+    The category chips leave their <div class="chips"> to the template, but
+    this group carries its own: a single-review page fills iteration_chips
+    with "", and a wrapper in the template would leave an empty flex item and
+    its gap beside the category chips.
+    """
     total_findings = sum(count_findings(iteration.review) for iteration in iterations)
     chips = [render_chip("iteration", "", "All iterations", total_findings)]
     chips += [

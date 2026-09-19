@@ -2,8 +2,10 @@
      file through string.Template. Placeholders: title, lang_attribute,
      meta_rows, finding_count, category_chips, iteration_chips,
      summary_header, summary_rows, overall_section, sections, report_state,
-     no_findings_text, generated_at. A literal dollar sign anywhere in this
-     file aborts every render, so write "USD" or "dollar" instead. -->
+     no_findings_text, generated_at. category_chips holds bare chips and is
+     wrapped below; iteration_chips brings its own wrapper, or is empty. A
+     literal dollar sign anywhere in this file aborts every render, so write
+     "USD" or "dollar" instead. -->
 <!doctype html>
 <html${lang_attribute}>
 <head>
