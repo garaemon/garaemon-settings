@@ -30,6 +30,10 @@
       '(("gnu" . "https://elpa.gnu.org/packages/")
         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
         ("melpa" . "https://melpa.org/packages/")))
+;; Load treesit before the activation pass below.  Emacs does not preload it,
+;; so an autoload file that calls `treesit-ready-p' at top level aborts with
+;; "Error loading autoloads: (void-function treesit-ready-p)".
+(require 'treesit nil t)
 (package-initialize)
 
 ;; Install use-package if not already installed

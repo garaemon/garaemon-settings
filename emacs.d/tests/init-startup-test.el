@@ -8,6 +8,10 @@
 ;;   which happens when `package-archives' drops the NonGNU ELPA entry that
 ;;   Emacs ships by default.
 ;;
+;; - Package autoload files that call `treesit-ready-p' at top level fail
+;;   with `void-function' unless treesit is loaded before the activation
+;;   pass of `package-initialize'.
+;;
 ;; The tests read the init files instead of loading them, because loading
 ;; them reaches for the package archives.  Run with:
 ;;
@@ -80,6 +84,25 @@
                        archives)))
       ;; Assert
       (should (null plain-http)))))
+
+(ert-deftest init-should-load-treesit-before-package-initialize ()
+  ;; Arrange
+  (let ((forms (init-startup-test--read-forms "init.el")))
+    ;; Act
+    (let ((treesit-position
+           (init-startup-test--form-position
+            forms
+            (lambda (form)
+              (and (eq (car-safe form) 'require)
+                   (equal (cadr form) '(quote treesit))))))
+          (initialize-position
+           (init-startup-test--form-position
+            forms
+            (lambda (form) (eq (car-safe form) 'package-initialize)))))
+      ;; Assert
+      (should treesit-position)
+      (should initialize-position)
+      (should (< treesit-position initialize-position)))))
 
 (provide 'init-startup-test)
 ;;; init-startup-test.el ends here
