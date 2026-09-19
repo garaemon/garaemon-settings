@@ -62,6 +62,7 @@ command runs without a permission prompt.
 | --- | --- |
 | `gather_review_context.py` | Resolving the review range, the review language, and printing the diff (Steps 1-1.6) |
 | `render_review.py` | Checking `review.json` and rendering it into `REVIEW.md` and `REVIEW.html` (Step 4) |
+| `render_review_loop.py` | Rendering the `review.json` of every branch-review-loop iteration into one `REVIEW.md` and `REVIEW.html`; run by that skill, not by this one |
 | `check_review_hook.py` | PostToolUse hook that checks `review.json` as soon as it is written; not run directly |
 | `list_commentable_lines.py` | Finding which lines can take an inline comment (Step 5) |
 | `post_review.py` | Validating and posting the review (Step 5) |

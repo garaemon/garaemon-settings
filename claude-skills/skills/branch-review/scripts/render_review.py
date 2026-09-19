@@ -77,8 +77,10 @@ from commands import run_command
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "templates" / "review.html"
 MARKDOWN_REPORT_NAME = "REVIEW.md"
 HTML_REPORT_NAME = "REVIEW.html"
-# branch-review-loop matches this exact sentence to decide the review is clean.
+# branch-review-loop matches this exact sentence, in REVIEW.md and in the
+# output of render_review_loop.py, to decide that a review pass is clean.
 NO_FINDINGS_TEXT = "No findings."
+SUMMARY_HEADER_LABELS = ("ID", "Category", "Location", "Title")
 
 # CommonMark opens a fence with three or more backticks and lets the info
 # string hold anything but a backtick, so `c++` opens a fence and a four
@@ -345,6 +347,14 @@ def escape_html(text: Any) -> str:
     return html.escape(str(text), quote=True)
 
 
+def format_summary_header(*labels: str) -> str:
+    """Return the <th> cells of the summary table, in column order."""
+    return "".join(f"<th>{escape_html(label)}</th>" for label in labels)
+
+
+SUMMARY_HEADER_CELLS = format_summary_header(*SUMMARY_HEADER_LABELS)
+
+
 def render_inline_markdown(text: str) -> str:
     """Return one line of text as HTML with code spans and bold applied.
 
@@ -445,23 +455,32 @@ def format_finding_heading(finding: dict[str, Any]) -> str:
     return f"### {finding['id']}. {location_text}{finding['title']}"
 
 
-def render_markdown_report(review: dict[str, Any]) -> str:
-    """Return the REVIEW.md text in the structure SKILL.md describes."""
-    parts = [f"# {review['title']}", ""]
-    # A bullet per row keeps the rows apart in rendered Markdown, where
-    # consecutive lines would otherwise merge into one paragraph.
+def format_metadata_bullets(review: dict[str, Any]) -> list[str]:
+    """Return the branch, range, pull request and change size as REVIEW.md bullets.
+
+    A bullet per row keeps the rows apart in rendered Markdown, where
+    consecutive lines would otherwise merge into one paragraph.
+    """
+    bullets: list[str] = []
     if review.get("branch"):
-        parts.append(f"- Branch: `{review['branch']}`")
+        bullets.append(f"- Branch: `{review['branch']}`")
     if review.get("range"):
-        parts.append(f"- Range: {review['range']}")
+        bullets.append(f"- Range: {review['range']}")
     if review.get("pull_request"):
-        parts.append(f"- Pull request: {review['pull_request']}")
+        bullets.append(f"- Pull request: {review['pull_request']}")
     stats = review.get("stats")
     if stats:
-        parts.append(
+        bullets.append(
             f"- Changes: {stats.get('files', 0)} files changed, "
             f"{stats.get('additions', 0)} insertions, {stats.get('deletions', 0)} deletions"
         )
+    return bullets
+
+
+def render_markdown_report(review: dict[str, Any]) -> str:
+    """Return the REVIEW.md text in the structure SKILL.md describes."""
+    parts = [f"# {review['title']}", ""]
+    parts += format_metadata_bullets(review)
     overall_comments = review.get("overall_comments", "").strip()
     if overall_comments:
         parts += ["", "## Overall Comments", "", overall_comments, ""]
@@ -506,16 +525,26 @@ def render_meta_rows(review: dict[str, Any]) -> str:
     return "\n".join(f"<dt>{label}</dt><dd>{value}</dd>" for label, value in rows)
 
 
+def render_chip(filter_key: str, filter_value: Any, label: str, count: int) -> str:
+    """Return one filter chip; an empty filter_value is the group's "All" chip.
+
+    The page script keeps one selected value per filter_key, so chips of one
+    group toggle among themselves and never disturb another group.
+    """
+    class_attribute = "chip active" if filter_value == "" else "chip"
+    return (
+        f'<button type="button" class="{class_attribute}" data-filter-key="{filter_key}" '
+        f'data-filter-value="{escape_html(filter_value)}">'
+        f"{escape_html(label)} <b>{count}</b></button>"
+    )
+
+
 def render_category_chips(review: dict[str, Any]) -> str:
     """Return one filter chip per non-empty category, preceded by an "All" chip."""
-    chips = [
-        '<button type="button" class="chip active" data-category="">'
-        f"All <b>{count_findings(review)}</b></button>"
-    ]
+    chips = [render_chip("category", "", "All", count_findings(review))]
     for category in list_nonempty_categories(review):
         chips.append(
-            f'<button type="button" class="chip" data-category="{category["number"]}">'
-            f"{escape_html(category['name'])} <b>{len(category['findings'])}</b></button>"
+            render_chip("category", category["number"], category["name"], len(category["findings"]))
         )
     return "\n".join(chips)
 
@@ -589,6 +618,9 @@ def build_template_values(review: dict[str, Any], generated_at: str) -> dict[str
         "meta_rows": render_meta_rows(review),
         "finding_count": str(finding_count),
         "category_chips": render_category_chips(review),
+        # Iterations exist only on the review loop page, which fills these itself.
+        "iteration_chips": "",
+        "summary_header": SUMMARY_HEADER_CELLS,
         "summary_rows": render_summary_rows(review),
         "overall_section": render_overall_section(review),
         "sections": render_sections(review),
@@ -597,18 +629,23 @@ def build_template_values(review: dict[str, Any], generated_at: str) -> dict[str
     }
 
 
-def render_html_report(review: dict[str, Any], template_text: str, generated_at: str) -> str:
-    """Return the HTML page with the review injected into the template.
+def substitute_template(template_text: str, values: dict[str, str]) -> str:
+    """Return the template filled with values, naming what made it fail.
 
     Substitution is strict: an unknown placeholder or a stray "$" in the
     template raises ValueError instead of leaving a half-rendered page.
     """
     try:
-        return Template(template_text).substitute(build_template_values(review, generated_at))
+        return Template(template_text).substitute(values)
     except KeyError as error:
         raise ValueError(f"template references an unknown placeholder: {error.args[0]}") from error
     except ValueError as error:
         raise ValueError(f"template has a stray '$': {error}") from error
+
+
+def render_html_report(review: dict[str, Any], template_text: str, generated_at: str) -> str:
+    """Return the HTML page with the review injected into the template."""
+    return substitute_template(template_text, build_template_values(review, generated_at))
 
 
 def find_repository_root() -> Path:
@@ -630,19 +667,28 @@ def resolve_directories(args: argparse.Namespace) -> tuple[Path, Path]:
     return root, output_dir
 
 
+def write_report_pair(markdown_text: str, html_text: str, output_dir: Path) -> list[Path]:
+    """Write the two rendered texts as REVIEW.md and REVIEW.html, and return their paths.
+
+    The caller renders both before calling, so a template error cannot leave a
+    fresh REVIEW.md next to a stale REVIEW.html.
+    """
+    markdown_path = output_dir / MARKDOWN_REPORT_NAME
+    html_path = output_dir / HTML_REPORT_NAME
+    markdown_path.write_text(markdown_text, encoding="utf-8")
+    html_path.write_text(html_text, encoding="utf-8")
+    return [markdown_path, html_path]
+
+
 def write_reports(
     review: dict[str, Any], output_dir: Path, template_text: str, generated_at: str
 ) -> list[Path]:
     """Write REVIEW.md and REVIEW.html into output_dir and return their paths."""
-    markdown_path = output_dir / MARKDOWN_REPORT_NAME
-    html_path = output_dir / HTML_REPORT_NAME
-    # Render both before writing either, so a template error cannot leave a
-    # fresh REVIEW.md next to a stale REVIEW.html.
-    markdown_text = render_markdown_report(review)
-    html_text = render_html_report(review, template_text, generated_at)
-    markdown_path.write_text(markdown_text, encoding="utf-8")
-    html_path.write_text(html_text, encoding="utf-8")
-    return [markdown_path, html_path]
+    return write_report_pair(
+        render_markdown_report(review),
+        render_html_report(review, template_text, generated_at),
+        output_dir,
+    )
 
 
 def format_count(count: int, singular: str, plural: str) -> str:
