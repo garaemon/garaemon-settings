@@ -1,8 +1,11 @@
-<!-- scripts/render_review.py fills this file through string.Template.
-     Placeholders: title, lang_attribute, meta_rows, finding_count,
-     category_chips, summary_rows, overall_section, sections, report_state,
-     no_findings_text, generated_at. A literal dollar sign anywhere in this
-     file aborts every render, so write "USD" or "dollar" instead. -->
+<!-- scripts/render_review.py and scripts/render_review_loop.py fill this
+     file through string.Template. Placeholders: title, lang_attribute,
+     meta_rows, finding_count, category_chips, iteration_chips,
+     summary_header, summary_rows, overall_section, sections, report_state,
+     no_findings_text, generated_at. category_chips holds bare chips and is
+     wrapped below; iteration_chips brings its own wrapper, or is empty. A
+     literal dollar sign anywhere in this file aborts every render, so write
+     "USD" or "dollar" instead. -->
 <!doctype html>
 <html${lang_attribute}>
 <head>
@@ -53,7 +56,8 @@ main {
 }
 h1 { font-size: 1.6em; margin: 0 0 8px; line-height: 1.25; }
 h2 { font-size: 1.2em; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-h2 .count {
+h3 { font-size: 1.05em; margin: 24px 0 8px; }
+h2 .count, h3 .count {
   display: inline-block;
   min-width: 1.6em;
   padding: 0 0.5em;
@@ -130,6 +134,19 @@ dl.meta dd { margin: 0; overflow-wrap: anywhere; }
 }
 .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .chip b { font-weight: 600; opacity: 0.8; }
+.status {
+  display: inline-block;
+  padding: 0 0.5em;
+  margin-left: 0.4em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8em;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.status-open { border-color: var(--accent); color: var(--accent); }
 #path-filter {
   flex: 1 1 160px;
   min-width: 0;
@@ -149,7 +166,7 @@ table.summary-table th, table.summary-table td {
 }
 table.summary-table th { color: var(--text-2); font-weight: 600; }
 table.summary-table td.location { word-break: break-all; }
-.empty-state, .filter-empty-state { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--text-2); }
+.empty-state, .filter-empty-state, .clean-iteration { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; color: var(--text-2); }
 .has-findings .empty-state { display: none; }
 .no-findings .summary-table, .no-findings .filters { display: none; }
 details.finding {
@@ -191,12 +208,13 @@ ${meta_rows}
 <div class="chips">
 ${category_chips}
 </div>
+${iteration_chips}
 <input id="path-filter" type="search" placeholder="Filter by file path" aria-label="Filter by file path">
 <button type="button" id="expand-all">Expand all</button>
 <button type="button" id="collapse-all">Collapse all</button>
 </div>
 <table class="summary-table">
-<thead><tr><th>ID</th><th>Category</th><th>Location</th><th>Title</th></tr></thead>
+<thead><tr>${summary_header}</tr></thead>
 <tbody>
 ${summary_rows}
 </tbody>
@@ -213,23 +231,33 @@ ${sections}
 </main>
 <script>
 (function () {
-  var selectedCategory = "";
+  // One selected value per chip group. A page rendered from a single review
+  // has only the category group; a review loop page adds an iteration group.
+  const selectedValues = { category: "", iteration: "" };
   var pathQuery = "";
 
   function matchesFilters(element) {
-    var categoryMatches = selectedCategory === "" ||
-      element.getAttribute("data-category") === selectedCategory;
     var path = (element.getAttribute("data-path") || "").toLowerCase();
-    var pathMatches = pathQuery === "" || path.indexOf(pathQuery) !== -1;
-    return categoryMatches && pathMatches;
+    if (pathQuery !== "" && path.indexOf(pathQuery) === -1) { return false; }
+    return Object.keys(selectedValues).every(function (key) {
+      return selectedValues[key] === "" ||
+        element.getAttribute("data-" + key) === selectedValues[key];
+    });
   }
 
   function applyFilters() {
     document.querySelectorAll("tr[data-category], details.finding").forEach(function (element) {
       element.hidden = !matchesFilters(element);
     });
-    document.querySelectorAll("section[data-category]").forEach(function (section) {
-      section.hidden = section.querySelectorAll("details.finding:not([hidden])").length === 0;
+    // A clean iteration has no finding to filter, so its section follows the
+    // iteration chip alone and never disappears on a category or path filter.
+    document.querySelectorAll("section[data-category], section[data-iteration]").forEach(function (section) {
+      if (section.querySelector("details.finding")) {
+        section.hidden = section.querySelectorAll("details.finding:not([hidden])").length === 0;
+      } else {
+        section.hidden = selectedValues.iteration !== "" &&
+          section.getAttribute("data-iteration") !== selectedValues.iteration;
+      }
     });
     var visibleRowCount = document.querySelectorAll("tr[data-category]:not([hidden])").length;
     var filterEmptyState = document.querySelector(".filter-empty-state");
@@ -238,8 +266,9 @@ ${sections}
 
   document.querySelectorAll(".chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
-      selectedCategory = chip.getAttribute("data-category") || "";
-      document.querySelectorAll(".chip").forEach(function (other) {
+      const filterKey = chip.getAttribute("data-filter-key");
+      selectedValues[filterKey] = chip.getAttribute("data-filter-value") || "";
+      document.querySelectorAll('.chip[data-filter-key="' + filterKey + '"]').forEach(function (other) {
         other.classList.toggle("active", other === chip);
       });
       applyFilters();
@@ -308,6 +337,16 @@ ${sections}
       window.hljs.highlightAll();
     }
   });
+
+  // The browser opens the ancestors of a fragment target, never the target
+  // itself, so a summary-table link to a collapsed finding card would scroll
+  // to a card showing nothing but its own heading.
+  function openTargetedFinding() {
+    const target = document.getElementById(window.location.hash.slice(1));
+    if (target && target.tagName === "DETAILS") { target.open = true; }
+  }
+  window.addEventListener("hashchange", openTargetedFinding);
+  openTargetedFinding();
 
   function setAllOpen(isOpen) {
     document.querySelectorAll("details.finding").forEach(function (card) {

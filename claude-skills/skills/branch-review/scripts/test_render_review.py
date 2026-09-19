@@ -328,6 +328,17 @@ class RenderHtmlReportTest(unittest.TestCase):
         self.assertIn('data-category="2"', page)
         self.assertIn("Security <b>1</b>", page)
 
+    def test_groups_the_chips_under_the_category_filter_key(self) -> None:
+        page = self.render(build_review())
+        self.assertIn('data-filter-key="category" data-filter-value=""', page)
+        self.assertIn('data-filter-key="category" data-filter-value="2"', page)
+
+    def test_offers_no_iteration_chip_or_column_for_a_single_review(self) -> None:
+        page = self.render(build_review())
+        self.assertNotIn('data-filter-key="iteration"', page)
+        self.assertNotIn("<th>Iteration</th>", page)
+        self.assertIn("<th>ID</th><th>Category</th><th>Location</th><th>Title</th>", page)
+
     def test_marks_the_page_as_having_findings(self) -> None:
         self.assertIn('class="has-findings"', self.render(build_review()))
 
