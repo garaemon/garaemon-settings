@@ -80,7 +80,7 @@ HTML_REPORT_NAME = "REVIEW.html"
 # branch-review-loop matches this exact sentence, in REVIEW.md and in the
 # output of render_review_loop.py, to decide that a review pass is clean.
 NO_FINDINGS_TEXT = "No findings."
-SUMMARY_HEADER_CELLS = "<th>ID</th><th>Category</th><th>Location</th><th>Title</th>"
+SUMMARY_HEADER_LABELS = ("ID", "Category", "Location", "Title")
 
 # CommonMark opens a fence with three or more backticks and lets the info
 # string hold anything but a backtick, so `c++` opens a fence and a four
@@ -345,6 +345,14 @@ def count_lines(file_path: Path) -> int:
 def escape_html(text: Any) -> str:
     """Return the text with HTML metacharacters, quotes included, escaped."""
     return html.escape(str(text), quote=True)
+
+
+def format_summary_header(*labels: str) -> str:
+    """Return the <th> cells of the summary table, in column order."""
+    return "".join(f"<th>{escape_html(label)}</th>" for label in labels)
+
+
+SUMMARY_HEADER_CELLS = format_summary_header(*SUMMARY_HEADER_LABELS)
 
 
 def render_inline_markdown(text: str) -> str:

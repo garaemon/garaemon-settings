@@ -41,6 +41,7 @@ from typing import Any
 
 from render_review import (
     NO_FINDINGS_TEXT,
+    SUMMARY_HEADER_LABELS,
     TEMPLATE_PATH,
     count_findings,
     escape_html,
@@ -50,6 +51,7 @@ from render_review import (
     format_location,
     format_metadata_bullets,
     format_summary,
+    format_summary_header,
     list_nonempty_categories,
     load_review,
     read_template,
@@ -79,9 +81,10 @@ STATUS_PHRASES = {
     STATUS_CLEAN: "clean",
 }
 
-LOOP_SUMMARY_HEADER_CELLS = (
-    "<th>ID</th><th>Iteration</th><th>Category</th><th>Location</th><th>Title</th>"
-    "<th>Status</th>"
+ID_LABEL, *FINDING_LABELS = SUMMARY_HEADER_LABELS
+# The loop table inserts the iteration after the id and appends the fix status.
+LOOP_SUMMARY_HEADER_CELLS = format_summary_header(
+    ID_LABEL, "Iteration", *FINDING_LABELS, "Status"
 )
 
 
