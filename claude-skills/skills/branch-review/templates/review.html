@@ -234,10 +234,10 @@ ${sections}
   // One selected value per chip group. A page rendered from a single review
   // has only the category group; a review loop page adds an iteration group.
   const selectedValues = { category: "", iteration: "" };
-  var pathQuery = "";
+  let pathQuery = "";
 
   function matchesFilters(element) {
-    var path = (element.getAttribute("data-path") || "").toLowerCase();
+    const path = (element.getAttribute("data-path") || "").toLowerCase();
     if (pathQuery !== "" && path.indexOf(pathQuery) === -1) { return false; }
     return Object.keys(selectedValues).every(function (key) {
       return selectedValues[key] === "" ||
@@ -259,8 +259,8 @@ ${sections}
           section.getAttribute("data-iteration") !== selectedValues.iteration;
       }
     });
-    var visibleRowCount = document.querySelectorAll("tr[data-category]:not([hidden])").length;
-    var filterEmptyState = document.querySelector(".filter-empty-state");
+    const visibleRowCount = document.querySelectorAll("tr[data-category]:not([hidden])").length;
+    const filterEmptyState = document.querySelector(".filter-empty-state");
     if (filterEmptyState) { filterEmptyState.hidden = visibleRowCount !== 0; }
   }
 
@@ -275,7 +275,7 @@ ${sections}
     });
   });
 
-  var pathFilter = document.getElementById("path-filter");
+  const pathFilter = document.getElementById("path-filter");
   if (pathFilter) {
     pathFilter.addEventListener("input", function () {
       pathQuery = pathFilter.value.trim().toLowerCase();
@@ -289,7 +289,7 @@ ${sections}
     }
     // A page opened over plain http has no clipboard API, so fall back to
     // selecting the text in a hidden textarea and copying that.
-    var textarea = document.createElement("textarea");
+    const textarea = document.createElement("textarea");
     textarea.value = text;
     textarea.setAttribute("readonly", "");
     textarea.style.position = "fixed";
@@ -306,17 +306,17 @@ ${sections}
   // The button sits in a wrapper rather than in the <pre>, so it stays put
   // when a wide code block scrolls horizontally.
   document.querySelectorAll("pre").forEach(function (block) {
-    var wrapper = document.createElement("div");
+    const wrapper = document.createElement("div");
     wrapper.className = "code-block";
     block.parentNode.insertBefore(wrapper, block);
     wrapper.appendChild(block);
-    var button = document.createElement("button");
+    const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-button";
     button.textContent = "Copy";
     button.setAttribute("aria-label", "Copy code block");
     button.addEventListener("click", function () {
-      var code = block.querySelector("code") || block;
+      const code = block.querySelector("code") || block;
       copyText(code.textContent).then(function () {
         button.textContent = "Copied";
       }, function () {
@@ -353,8 +353,8 @@ ${sections}
       card.open = isOpen;
     });
   }
-  var expandAll = document.getElementById("expand-all");
-  var collapseAll = document.getElementById("collapse-all");
+  const expandAll = document.getElementById("expand-all");
+  const collapseAll = document.getElementById("collapse-all");
   if (expandAll) { expandAll.addEventListener("click", function () { setAllOpen(true); }); }
   if (collapseAll) { collapseAll.addEventListener("click", function () { setAllOpen(false); }); }
 })();
