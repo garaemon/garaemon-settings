@@ -74,13 +74,13 @@
  '(package-selected-packages
    '(all-the-icons anzu apheleia auth-source-1password auto-highlight-symbol backup-each-save
                base16-theme bm browse-at-remote buffer-move calfw cape clang-format cmake-mode
-               coffee-mode corfu cov diff-hl docker dockerfile-mode elpy embark-consult expreg
+               coffee-mode corfu cov diff-hl docker dockerfile-mode ef-themes elpy embark-consult expreg
                fill-column-indicator flycheck forge gist go-mode google-c-style google-this gptel
                graphviz-dot-mode imenus jinja2-mode jinx json-mode lsp-sourcekit lsp-ui lua-mode
                marginalia minuet modern-cpp-font-lock multi-vterm multiple-cursors nix-mode
                ob-mermaid orderless org-ai org-download org-excalidraw org-modern org-roam outshine
                php-mode projectile protobuf-mode puppet-mode py-yapf qml-mode recentf-ext rust-mode
-               smartrep solarized-theme sqlite3 string-inflection swift-mode swiper switch-window
+               smartrep sqlite3 string-inflection swift-mode swiper switch-window
                systemd terraform-mode thingopt treemacs-magit treesit-auto tsx-mode typescript-mode
                udev-mode undo-tree vertico-posframe vterm-toggle vundo yaml-mode yasnippet-capf
                yatemplate))

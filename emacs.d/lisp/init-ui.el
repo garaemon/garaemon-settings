@@ -232,14 +232,13 @@ face height changes; `text-scale+' and friends below do that."
   ;; (load-theme 'base16-solarized-dark t)
   )
 
-(use-package solarized-theme :ensure t
+;; ef-elea-dark keeps every face above the WCAG AA contrast ratio (4.5:1),
+;; whereas solarized-dark leaves comments, line numbers and Org timestamps
+;; near 2.8:1.
+(use-package ef-themes :ensure t
   :if (display-graphic-p)
-  :custom
-  (solarized-scale-org-headlines nil)
-  (solarized-scale-outline-headlines nil)
   :config
-  (load-theme 'solarized-dark t)
-  )
+  (load-theme 'ef-elea-dark t))
 
 (use-package diff-hl :ensure t
   :custom
@@ -248,11 +247,6 @@ face height changes; `text-scale+' and friends below do that."
   :config
   (global-diff-hl-mode)
   (diff-hl-flydiff-mode)
-  ;; Use more vivid fringe colors for better visibility on solarized-dark
-  ;; foreground = fringe bar, background = fringe area behind the bar
-  (set-face-attribute 'diff-hl-change nil :foreground "#E8890C" :background "#7A4C00")
-  (set-face-attribute 'diff-hl-insert nil :foreground "#73D936" :background "#2B5000")
-  (set-face-attribute 'diff-hl-delete nil :foreground "#FF6B6B" :background "#6B1E24")
   ;; Workaround: diff-hl sometimes misses the initial update on file open
   (add-hook 'diff-hl-mode-hook
             (lambda ()
