@@ -8,7 +8,7 @@
   block:
     - name: Set required Emacs version variable
       ansible.builtin.set_fact:
-        emacs_required_emacs_version: "31.1"
+        emacs_required_emacs_version: "{{ emacs_version | regex_replace('^emacs-', '') }}"
         emacs_install_path: "{{ ansible_facts.user_dir }}/.local/bin/emacs"
 
     - name: Check if target Emacs exists
@@ -371,7 +371,7 @@
               - libtool-bin # for libvterm
           become: true
           when: ansible_facts.distribution_version == '24.04'
-        - name: Set the path of the stamp that records the built Emacs version
+        - name: Set the path of the stamp that records which version the tree holds
           set_fact:
             emacs_build_stamp_path:
               "{{ ghq_root_path }}/github.com/emacs-mirror/emacs/.ansible-built-version"
@@ -380,20 +380,36 @@
             repo: https://github.com/emacs-mirror/emacs
             dest: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
             version: "{{ emacs_version }}"
-        - name: Read the Emacs version that the last successful build left behind
+        # The stamp is missing before the first build, and slurp fails on a
+        # missing file. Any other read error also leaves the content undefined,
+        # which forces the clean below and is the safe direction.
+        - name: Read the Emacs version that the build tree holds artifacts for
           ansible.builtin.slurp:
             src: "{{ emacs_build_stamp_path }}"
           register: emacs_build_stamp
           failed_when: false
+        - name: Decide whether the build tree holds another Emacs version
+          set_fact:
+            emacs_tree_needs_clean:
+              "{{ emacs_build_stamp.content is not defined or
+                  (emacs_build_stamp.content | b64decode | trim) != emacs_version }}"
         # make reuses the .elc and .eln files left in the tree, and artifacts
         # from another Emacs version make the native compiler load a stale .eln
-        # and abort with "Recursive load". A half-finished build leaves no stamp.
+        # and abort with "Recursive load".
         - name: Remove build artifacts left by another Emacs version
           command: git clean -xdf
           args:
             chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
-          when: emacs_build_stamp.content is not defined or
-                (emacs_build_stamp.content | b64decode | trim) != emacs_version
+          when: emacs_tree_needs_clean | bool
+        # Stamp the tree before building it, not after installing. The tree now
+        # holds artifacts of this version alone, so a build that dies halfway
+        # resumes incrementally instead of cleaning and starting over.
+        - name: Record the Emacs version that the clean tree builds
+          copy:
+            content: "{{ emacs_version }}\n"
+            dest: "{{ emacs_build_stamp_path }}"
+            mode: "0644"
+          when: emacs_tree_needs_clean | bool
         - name: Get GCC version
           command: gcc -dumpversion
           register: emacs_gcc_version_output
@@ -441,8 +457,3 @@
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
             LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
-        - name: Record the Emacs version that this build installed
-          copy:
-            content: "{{ emacs_version }}\n"
-            dest: "{{ emacs_build_stamp_path }}"
-            mode: "0644"
