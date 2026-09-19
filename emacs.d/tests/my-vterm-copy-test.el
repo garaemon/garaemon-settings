@@ -148,5 +148,35 @@ copied text in `kill-ring' (all in reverse order of invocation)."
       (my-vterm-copy-region-or-send-key))
     (should (equal kill-ring '()))))
 
+;;; my-vterm-quit-copy-mode: leaving copy mode never widens the copy.
+
+(ert-deftest my-vterm-quit-copy-mode-should-copy-the-active-region ()
+  (my-vterm-copy-test--with-terminal (:region (3 . 6))
+    (my-vterm-quit-copy-mode)
+    (should (equal (car kill-ring) "rst"))))
+
+(ert-deftest my-vterm-quit-copy-mode-should-leave-copy-mode-with-a-region ()
+  (my-vterm-copy-test--with-terminal (:region (3 . 6))
+    (my-vterm-quit-copy-mode)
+    (should (equal copy-mode-calls '(-1)))))
+
+(ert-deftest my-vterm-quit-copy-mode-should-not-copy-without-a-region ()
+  (my-vterm-copy-test--with-terminal (:region nil)
+    (my-vterm-quit-copy-mode)
+    (should (equal kill-ring '()))))
+
+(ert-deftest my-vterm-quit-copy-mode-should-leave-copy-mode-without-a-region ()
+  (my-vterm-copy-test--with-terminal (:region nil)
+    (my-vterm-quit-copy-mode)
+    (should (equal copy-mode-calls '(-1)))))
+
+(ert-deftest my-vterm-quit-copy-mode-should-keep-an-earlier-region-copy ()
+  ;; `C-w' then `RET' is the tmux habit that let the line copy of
+  ;; `vterm-copy-mode-done' overwrite the region copy.
+  (my-vterm-copy-test--with-terminal (:region (3 . 6))
+    (my-vterm-copy-region)
+    (my-vterm-quit-copy-mode)
+    (should (equal kill-ring '("rst")))))
+
 (provide 'my-vterm-copy-test)
 ;;; my-vterm-copy-test.el ends here

@@ -206,6 +206,10 @@
               ;; region only and stay in copy mode.
               ("C-w" . my-vterm-copy-region)
               ("M-w" . my-vterm-copy-region)
+              ;; Displace `vterm-copy-mode-done' so that the RET after a C-w
+              ;; quits copy mode without overwriting the copy with the line.
+              ("RET" . my-vterm-quit-copy-mode)
+              ("<return>" . my-vterm-quit-copy-mode)
               )
   :custom
   (vterm-max-scrollback  10000)
