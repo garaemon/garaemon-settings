@@ -20,11 +20,19 @@
 ;; anything when no region is active.  Unlike the tmux `C-w' this
 ;; configuration imitates, they stay in `vterm-copy-mode' so that a
 ;; single visit to copy mode can yield several copies.
+;;
+;; Leaving copy mode needs the same treatment.  `RET' runs
+;; `vterm-copy-mode-done', which copies the whole line whenever no region
+;; is active.  A region copied with `C-w' leaves the mark inactive, so the
+;; `RET' that follows out of tmux habit overwrites that copy with the
+;; line.  `my-vterm-quit-copy-mode' takes over `RET' and never copies more
+;; than the region.
 
 ;;; Code:
 
 (declare-function vterm-send-key "vterm"
                   (key &optional shift meta ctrl accept-proc-output))
+(declare-function vterm-copy-mode "vterm" (&optional arg))
 
 (defun my-vterm-copy-region ()
   "Copy the active region to the kill ring, staying in `vterm-copy-mode'.
@@ -50,6 +58,16 @@ triggers the readline `unix-word-rubout'."
                       (and (memq 'meta modifiers) t)
                       (and (memq 'control modifiers) t)
                       t))))
+
+(defun my-vterm-quit-copy-mode ()
+  "Copy the active region, if any, then leave `vterm-copy-mode'.
+Replaces `vterm-copy-mode-done' on `RET' so that quitting copy mode
+without a region leaves the kill ring alone instead of adding the whole
+current line."
+  (interactive)
+  (when (use-region-p)
+    (my-vterm-copy-region))
+  (vterm-copy-mode -1))
 
 (provide 'my-vterm-copy)
 ;;; my-vterm-copy.el ends here
