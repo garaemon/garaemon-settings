@@ -1,0 +1,12 @@
+{
+  "name": "garaemon-settings",
+  "private": true,
+  "description": "Development dependencies for the javascript target of scripts/lint.sh.",
+  "//": "Do not raise eslint or @eslint/js to 10.x. eslint-plugin-html patches Linter internals that 10.x made private, so every lint run dies with 'Cannot read private member #ruleDefinitions'. Raise them once the plugin supports 10.",
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "eslint-plugin-html": "8.2.0",
+    "globals": "17.12.0"
+  }
+}

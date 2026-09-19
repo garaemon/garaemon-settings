@@ -6,6 +6,11 @@ chef/Berksfile.lock
 inventory/
 *.log
 .aider*
+# Installed by npm ci for the javascript target of scripts/lint.sh.
+node_modules/
+# ansible-lint installs the collections of ansible/requirements.yml here, so
+# the ansible target of scripts/lint.sh leaves 31 MB of upstream files behind.
+ansible/.ansible/
 # Reports the branch-review skill writes at the repository root.
 /REVIEW.md
 /REVIEW.html

@@ -33,11 +33,28 @@ per language, and every job calls the same script:
 scripts/lint.sh
 ```
 
-Pass targets to narrow the run: `shell`, `markdown`, `yaml`, `python`,
-`ansible`, `whitespace`. Rule configuration lives at the repository root
-(`.markdownlint.yaml`, `.yamllint.yaml`, `ruff.toml`), except where one dialect
-needs its own: `dotfiles/.shellcheckrc` covers the zsh startup files, and
-`ansible/.ansible-lint` covers the playbooks.
+A linter also holds a coding agent to the conventions in `CLAUDE.md`. An agent
+reads an instruction once and drifts; a failing check stops the branch. Prefer
+encoding a rule as a lint rule whenever the linter can express it.
+
+Pass targets to narrow the run: `shell`, `markdown`, `javascript`, `yaml`,
+`python`, `ansible`, `whitespace`. Rule configuration lives at the repository
+root (`.markdownlint.yaml`, `eslint.config.mjs`, `.yamllint.yaml`, `ruff.toml`),
+except where one dialect needs its own: `dotfiles/.shellcheckrc` covers the zsh
+startup files, and `ansible/.ansible-lint` covers the playbooks.
+
+Every target but `javascript` fetches its linter on demand. ESLint instead reads
+its plugins from this repository's `node_modules`, so install them once before
+the first run:
+
+```sh
+npm ci
+```
+
+ESLint covers `.js`, `.mjs`, `.cjs`, and the JavaScript inlined in `.html`,
+which `eslint-plugin-html` extracts. Beyond the recommended rule set it enforces
+`no-var` and `prefer-const`; both are auto-fixable with
+`npx eslint --fix <file>`.
 
 Tests stay with the component they exercise (`dotfiles-test.yml`,
 `emacs-test.yml`, `skills-ci.yml`, `ansible.yml`).

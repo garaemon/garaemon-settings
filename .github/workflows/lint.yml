@@ -35,6 +35,19 @@ jobs:
       - name: Run markdownlint
         run: scripts/lint.sh markdown
 
+  javascript:
+    name: JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install ESLint
+        run: npm ci
+      - name: Run ESLint
+        run: scripts/lint.sh javascript
+
   yaml:
     name: YAML
     runs-on: ubuntu-latest
