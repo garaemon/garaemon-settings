@@ -2,6 +2,29 @@
 
 my private emacs setting
 
+## Requirements
+
+Emacs 31.1 or later. An older Emacs does not run this configuration:
+`init-org.el` calls the link preview API that Org added in 9.8
+(`org-link-preview-refresh`, `org-link-preview-overlays`). Emacs 30 bundles
+Org 9.7.11, which has neither, so every inline image refresh fails with
+`void-function`.
+
+The pinned version lives in two places, and both name 31.1:
+
+- `ansible/roles/emacs/defaults/main.yml` builds `emacs-31.1` on a host whose
+  Emacs is older.
+- `.github/workflows/emacs-test.yml` runs the tests on 31.1.
+
+Check the Emacs in use:
+
+```sh
+emacs --version | head -1
+```
+
+Recompile the installed packages after every Emacs upgrade. See
+[Troubleshooting](#troubleshooting).
+
 ## Configuration Structure
 
 This configuration follows a modular structure for better organization and maintainability.
