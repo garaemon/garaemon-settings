@@ -276,3 +276,27 @@ Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs
   ```sh
   python scripts/latest_directory_timestamp.py <root-directory>
   ```
+
+## Troubleshooting
+
+### `void-function compat--seconds-to-string` after an Emacs upgrade
+
+A major Emacs upgrade leaves every `.elc` in `elpa/` compiled for the old
+Emacs. Macros that pick their expansion from the Emacs version then call
+helpers the new build no longer defines. Marginalia shows this as
+`void-function compat--seconds-to-string` on every completion, which in turn
+leaves `vertico-posframe--minibuffer-exit-hook` with no posframe to hide and
+signals `wrong-type-argument stringp nil`.
+
+Recompile the installed packages, then restart Emacs:
+
+```sh
+rm -rf ~/.emacs.d/eln-cache
+emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize) (package-recompile-all))'
+```
+
+### Community yasnippet snippets
+
+`yas-snippet-dirs` names only `~/.emacs.d/snippets`. Install the
+`yasnippet-snippets` package to add the community collection; it appends its
+own directory to the list.
