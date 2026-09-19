@@ -374,11 +374,11 @@
         - name: Set the path of the stamp that records which version the tree holds
           set_fact:
             emacs_build_stamp_path:
-              "{{ ghq_root_path }}/github.com/emacs-mirror/emacs/.ansible-built-version"
+              "{{ emacs_source_path }}/.ansible-built-version"
         - name: Clone and checkout specific version of emacs
           ansible.builtin.git:
             repo: https://github.com/emacs-mirror/emacs
-            dest: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            dest: "{{ emacs_source_path }}"
             version: "{{ emacs_version }}"
         # The stamp is missing before the first build, and slurp fails on a
         # missing file. Any other read error also leaves the content undefined,
@@ -399,7 +399,7 @@
         - name: Remove build artifacts left by another Emacs version
           command: git clean -xdf
           args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ emacs_source_path }}"
           when: emacs_tree_needs_clean | bool
         # Stamp the tree before building it, not after installing. The tree now
         # holds artifacts of this version alone, so a build that dies halfway
@@ -426,13 +426,13 @@
         - name: Prepare configure for the latest emacs
           command: ./autogen.sh
           args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ emacs_source_path }}"
         - name: Configure the latest emacs
           command: >
               ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
               --with-pgtk --with-native-compilation=aot --without-compress-install
           args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ emacs_source_path }}"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
             LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
@@ -446,14 +446,14 @@
         - name: Build the latest emacs
           command: make CC="ccache gcc" CXX="ccache g++" -j {{ emacs_build_parallel_jobs }}
           args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ emacs_source_path }}"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
             LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
         - name: Install the latest emacs
           command: make install
           args:
-            chdir: "{{ ghq_root_path }}/github.com/emacs-mirror/emacs"
+            chdir: "{{ emacs_source_path }}"
           environment:
             LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
             LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
