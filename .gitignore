@@ -6,6 +6,8 @@ chef/Berksfile.lock
 inventory/
 *.log
 .aider*
+# Installed by npm ci for the javascript target of scripts/lint.sh.
+node_modules/
 # Reports the branch-review skill writes at the repository root.
 /REVIEW.md
 /REVIEW.html

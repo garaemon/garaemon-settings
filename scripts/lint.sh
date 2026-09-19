@@ -7,7 +7,8 @@ set -euo pipefail
 # script, so CI and a local run report the same violations.
 #
 # Usage: scripts/lint.sh [target ...]
-# Targets: shell markdown yaml python ansible whitespace (default: all)
+# Targets: shell markdown javascript yaml python ansible whitespace
+# (default: all)
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly REPO_ROOT
@@ -20,7 +21,7 @@ readonly MARKDOWNLINT_CLI2_VERSION="0.23.2"
 # excluded from the Markdown lint.
 readonly TEMPLATE_DIRECTORY_PATTERN='(^|/)templates/'
 
-readonly ALL_TARGETS="shell markdown yaml python ansible whitespace"
+readonly ALL_TARGETS="shell markdown javascript yaml python ansible whitespace"
 
 require_command() {
   local command_name="$1"
@@ -69,6 +70,26 @@ lint_markdown() {
     files+=("$file")
   done < <(git ls-files '*.md' | grep -Ev "$TEMPLATE_DIRECTORY_PATTERN")
   npx --yes "markdownlint-cli2@$MARKDOWNLINT_CLI2_VERSION" "${files[@]}"
+}
+
+lint_javascript() {
+  # ESLint loads eslint-plugin-html through Node's module lookup from
+  # eslint.config.mjs, so the plugin has to sit in this repository's own
+  # node_modules. npx installs the CLI alone and the config then fails to
+  # resolve the plugin, which is why this target needs an explicit npm ci.
+  local eslint="$REPO_ROOT/node_modules/.bin/eslint"
+  if [ ! -x "$eslint" ]; then
+    echo "error: ESLint is not installed; run npm ci" >&2
+    return 1
+  fi
+  local -a files=()
+  local file
+  while IFS= read -r file; do
+    files+=("$file")
+  done < <(git ls-files '*.js' '*.mjs' '*.cjs' '*.html')
+  # eslint.config.mjs holds the only ignore list, so the scaffolds it skips
+  # still reach ESLint here and would otherwise warn once per file.
+  "$eslint" --no-warn-ignored "${files[@]}"
 }
 
 lint_yaml() {
