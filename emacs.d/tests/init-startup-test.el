@@ -7,10 +7,11 @@
 ;; - `tsx-mode' cannot activate while `treesit-fold' stays uninstallable,
 ;;   which happens when `package-archives' drops the NonGNU ELPA entry that
 ;;   Emacs ships by default.
-;;
 ;; - Package autoload files that call `treesit-ready-p' at top level fail
 ;;   with `void-function' unless treesit is loaded before the activation
 ;;   pass of `package-initialize'.
+;; - `yas-global-mode' warns once for every entry of `yas-snippet-dirs' that
+;;   is not a directory.
 ;;
 ;; The tests read the init files instead of loading them, because loading
 ;; them reaches for the package archives.  Run with:
@@ -103,6 +104,19 @@
       (should treesit-position)
       (should initialize-position)
       (should (< treesit-position initialize-position)))))
+
+(ert-deftest init-prog-should-keep-snippet-dirs-under-user-emacs-directory ()
+  ;; Arrange
+  (let* ((forms (init-startup-test--read-forms "lisp/init-prog.el"))
+         (dirs-form (init-startup-test--setq-value forms 'yas-snippet-dirs))
+         (user-emacs-directory "/tmp/init-startup-test-emacs.d/"))
+    ;; Act
+    (let ((dirs (eval dirs-form t)))
+      ;; Assert
+      (should dirs)
+      (should (cl-every (lambda (dir)
+                          (string-prefix-p user-emacs-directory dir))
+                        dirs)))))
 
 (provide 'init-startup-test)
 ;;; init-startup-test.el ends here
