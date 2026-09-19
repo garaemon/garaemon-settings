@@ -310,7 +310,6 @@ class WriteLoopReportsTest(unittest.TestCase):
             self.assertIn("## Iteration 1", (output_dir / MARKDOWN_REPORT_NAME).read_text())
             self.assertIn("finding-i1-2-1", (output_dir / HTML_REPORT_NAME).read_text())
 
-
     def test_should_write_neither_report_when_the_template_is_broken(self) -> None:
         # A stale REVIEW.html beside a fresh REVIEW.md would make the two
         # reports disagree, which write_report_pair leaves to its callers.
