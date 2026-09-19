@@ -33,6 +33,10 @@ per language, and every job calls the same script:
 scripts/lint.sh
 ```
 
+A linter also holds a coding agent to the conventions in `CLAUDE.md`. An agent
+reads an instruction once and drifts; a failing check stops the branch. Prefer
+encoding a rule as a lint rule whenever the linter can express it.
+
 Pass targets to narrow the run: `shell`, `markdown`, `javascript`, `yaml`,
 `python`, `ansible`, `whitespace`. Rule configuration lives at the repository
 root (`.markdownlint.yaml`, `eslint.config.mjs`, `.yamllint.yaml`, `ruff.toml`),
