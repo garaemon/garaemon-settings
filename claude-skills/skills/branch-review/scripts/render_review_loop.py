@@ -179,16 +179,20 @@ def render_loop_meta_rows(iterations: Sequence[Iteration]) -> str:
 
 def render_loop_category_chips(iterations: Sequence[Iteration]) -> str:
     """Return one chip per category, counting findings across every iteration."""
-    counts: dict[int, int] = {}
-    names: dict[int, str] = {}
+    finding_counts: dict[int, int] = {}
+    category_names: dict[int, str] = {}
     for iteration in iterations:
         for category in list_nonempty_categories(iteration.review):
-            number = category["number"]
-            counts[number] = counts.get(number, 0) + len(category["findings"])
-            names.setdefault(number, category["name"])
-    chips = [render_chip("category", "", "All", sum(counts.values()))]
+            category_number = category["number"]
+            finding_counts[category_number] = (
+                finding_counts.get(category_number, 0) + len(category["findings"])
+            )
+            category_names.setdefault(category_number, category["name"])
+    chips = [render_chip("category", "", "All", sum(finding_counts.values()))]
     chips += [
-        render_chip("category", number, names[number], counts[number]) for number in sorted(counts)
+        render_chip("category", category_number, category_names[category_number],
+                    finding_counts[category_number])
+        for category_number in sorted(finding_counts)
     ]
     return "\n".join(chips)
 
