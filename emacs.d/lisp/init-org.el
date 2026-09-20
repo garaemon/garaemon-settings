@@ -567,17 +567,20 @@ Skip when the cached SVG is already newer than FILE."
       (make-directory org-roam-directory t))
   (org-roam-db-autosync-mode)
   (add-to-list 'org-agenda-files org-roam-directory)
-  ;; Why do we need this? Without this require, (use-package org-roam-dailies) does not load the
-  ;; configuration.
-  (require 'org-roam-dailies)
+  ;; The daily notes join the agenda here rather than from the org-roam-dailies
+  ;; block below, which loads only when `C-c n d' asks for it.
+  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :bind
   (("C-c n f" . org-roam-node-find)
    ("C-c n i" . org-roam-node-insert))
   )
 
+;; The block carries no `:after org-roam'. use-package installs the keys of an
+;; `:after' block only once the named package loads, and the org-roam block
+;; defers as well, so `C-c n d' stayed undefined until `C-c n f' or another key
+;; pulled org-roam in.
 (use-package org-roam-dailies
   :ensure nil
-  :after org-roam
   :custom
   (org-roam-dailies-capture-templates
    ;; Insert timestamp automatically for org-agenda
@@ -585,8 +588,6 @@ Skip when the cached SVG is already newer than FILE."
       "* %T %?\n "
       :target (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n")
       :jump-to-captured t)))
-  :config
-  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :bind-keymap ("C-c n d" . org-roam-dailies-map)
   )
 

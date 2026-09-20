@@ -67,9 +67,11 @@ Each module is loaded via `(require 'init-*)` in `init.el`.
 
 ### Tests (tests/)
 
-ERT tests for the standalone `my-*.el` modules. One test also reads the
-`my-vterm-toggle` block from `lisp/init-prog.el` and checks that it still binds
-`C-c t`. CI runs the tests on every push that touches `emacs.d/`:
+ERT tests for the standalone `my-*.el` modules. Two tests also read a
+`use-package` block back out of the init files and check that the block still
+binds its key before the package loads: `my-vterm-toggle` on `C-c t` from
+`lisp/init-prog.el`, and `org-roam-dailies` on `C-c n d` from
+`lisp/init-org.el`. CI runs the tests on every push that touches `emacs.d/`:
 
 ```sh
 emacs -Q --batch --eval '(progn (require (quote package)) (package-initialize))' \
