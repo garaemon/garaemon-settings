@@ -8,9 +8,13 @@
 ;; lands while the page is still reloading from the previous one gets
 ;; dropped, so the preview stays one edit behind until the next change.
 ;;
-;; `my-grip-refresh-defer' wraps `grip--refresh' and writes once after
-;; Emacs has been idle for `my-grip-refresh-idle-delay' seconds.  Two
-;; writes are then far enough apart for the page to reconnect in between.
+;; `my-grip-refresh-defer' wraps `grip--refresh' and writes once
+;; `my-grip-refresh-delay' seconds after the last change.  Two writes are
+;; then far enough apart for the page to reconnect in between.
+;;
+;; The delay runs on an ordinary timer, not an idle timer.  An idle timer
+;; set while Emacs is already idle waits for the next key press, so an
+;; auto-revert after an external edit would never reach the preview.
 
 ;;; Code:
 
@@ -18,26 +22,26 @@
   "Debounced preview refresh for grip-mode."
   :group 'grip)
 
-(defcustom my-grip-refresh-idle-delay 0.5
-  "Seconds of idle time before the preview file is rewritten.
+(defcustom my-grip-refresh-delay 0.5
+  "Seconds after the last change before the preview file is rewritten.
 A local go-grip page reconnects in roughly 300 ms, so values below
 that bring back the dropped reloads."
   :type 'number
   :group 'my-grip-refresh)
 
 (defvar-local my-grip-refresh--timer nil
-  "Idle timer that runs the pending preview refresh of this buffer.")
+  "Timer that runs the pending preview refresh of this buffer.")
 
 (defun my-grip-refresh-defer (refresh &rest args)
-  "Postpone REFRESH with ARGS until Emacs goes idle.
+  "Postpone REFRESH with ARGS until the buffer stops changing.
 Meant as `:around' advice for `grip--refresh'.  A new call replaces
 the refresh that the current buffer still has pending."
   (when (timerp my-grip-refresh--timer)
     (cancel-timer my-grip-refresh--timer))
   (setq my-grip-refresh--timer
-        (run-with-idle-timer my-grip-refresh-idle-delay nil
-                             #'my-grip-refresh--run
-                             (current-buffer) refresh args)))
+        (run-at-time my-grip-refresh-delay nil
+                     #'my-grip-refresh--run
+                     (current-buffer) refresh args)))
 
 (defun my-grip-refresh--run (buffer refresh args)
   "Apply REFRESH to ARGS in BUFFER if its preview is still running."

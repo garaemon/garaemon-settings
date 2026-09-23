@@ -199,8 +199,12 @@ mise install go:github.com/chrishrb/go-grip
 
 go-grip drops a reload that arrives while the page is still reloading from the
 previous one. A write on every keystroke therefore leaves the preview one edit
-behind. `my-grip-refresh.el` writes the preview file only after
-`my-grip-refresh-idle-delay` seconds (0.5) of idle time.
+behind. `my-grip-refresh.el` writes the preview file once,
+`my-grip-refresh-delay` seconds (0.5) after the last change.
+
+go-grip serves a copy of the buffer, not the file on disk. An edit from another
+program, such as Claude Code, reaches the preview only after
+`global-auto-revert-mode` reloads the buffer.
 
 ## Local AI Models
 

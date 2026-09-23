@@ -6,8 +6,8 @@
 ;; last reload of a typing burst and left the browser one edit behind.
 ;;
 ;; The tests call the advice with a recording stub in place of
-;; `grip--refresh' and fire the pending idle timer by hand, so neither
-;; grip-mode nor a real idle period is needed.  Run with:
+;; `grip--refresh' and mostly fire the pending timer by hand, so
+;; grip-mode is not needed.  Run with:
 ;;
 ;;   emacs -Q --batch -L lisp -l ert -l tests/my-grip-refresh-test.el \
 ;;     -f ert-run-tests-batch-and-exit
@@ -39,12 +39,12 @@ pass `record-refresh' to the advice as the original function."
     (cancel-timer timer)
     (apply (timer--function timer) (timer--args timer))))
 
-(ert-deftest my-grip-refresh-should-defer-refresh-until-idle ()
+(ert-deftest my-grip-refresh-should-defer-refresh-until-changes-stop ()
   (my-grip-refresh-test--with-buffer
     (my-grip-refresh-defer record-refresh)
     (should (= refresh-count 0))))
 
-(ert-deftest my-grip-refresh-should-schedule-an-idle-timer ()
+(ert-deftest my-grip-refresh-should-schedule-a-timer ()
   (my-grip-refresh-test--with-buffer
     (my-grip-refresh-defer record-refresh)
     (should (timerp my-grip-refresh--timer))))
@@ -81,6 +81,15 @@ pass `record-refresh' to the advice as the original function."
     (kill-buffer buffer)
     (apply (timer--function timer) (timer--args timer))
     (should (= refresh-count 0))))
+
+(ert-deftest my-grip-refresh-should-refresh-without-user-input ()
+  ;; An external writer such as an AI agent changes the file while Emacs sits
+  ;; idle.  The refresh that auto-revert triggers must not wait for a key.
+  (my-grip-refresh-test--with-buffer
+    (let ((my-grip-refresh-delay 0.05))
+      (my-grip-refresh-defer record-refresh)
+      (sleep-for 0.3)
+      (should (= refresh-count 1)))))
 
 (provide 'my-grip-refresh-test)
 
