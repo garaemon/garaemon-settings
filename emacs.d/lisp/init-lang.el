@@ -318,7 +318,13 @@
   ;; the page drifts from GitHub's look and needs an API token besides.
   (grip-command 'go-grip)
   ;; Refresh on every edit instead of on save, as VS Code does.
-  (grip-real-time-refresh t))
+  (grip-real-time-refresh t)
+  :config
+  ;; Batch the per-keystroke preview writes.  go-grip drops a reload that
+  ;; arrives while the page is still reloading, which leaves the preview one
+  ;; edit behind.  See lisp/my-grip-refresh.el.
+  (require 'my-grip-refresh)
+  (advice-add 'grip--refresh :around #'my-grip-refresh-defer))
 
 (use-package modern-cpp-font-lock :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
