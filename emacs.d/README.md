@@ -185,8 +185,8 @@ full-width/half-width ratio, which should be `2.000`.
 ## Markdown Preview
 
 `C-c C-c g` in a Markdown buffer toggles `grip-mode`, a live preview in
-GitHub's Markdown style. The preview refreshes on every edit, without saving.
-It opens in an xwidget window when Emacs is built with xwidgets and in the
+GitHub's Markdown style. The preview refreshes shortly after you stop typing,
+without saving. It opens in an xwidget window when Emacs is built with xwidgets and in the
 default browser otherwise.
 
 The preview needs the `go-grip` command, which renders locally with GitHub's
@@ -196,6 +196,11 @@ stylesheet and needs no GitHub token. mise installs it from
 ```sh
 mise install go:github.com/chrishrb/go-grip
 ```
+
+go-grip drops a reload that arrives while the page is still reloading from the
+previous one. A write on every keystroke therefore leaves the preview one edit
+behind. `my-grip-refresh.el` writes the preview file only after
+`my-grip-refresh-idle-delay` seconds (0.5) of idle time.
 
 ## Local AI Models
 
