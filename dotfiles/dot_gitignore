@@ -4,3 +4,6 @@
 *.elc
 
 **/.claude/settings.local.json
+REVIEW.md
+REVIEW.html
+pylsp.log
