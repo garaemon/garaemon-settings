@@ -52,7 +52,8 @@ class TestMainArguments:
     """main() argument parsing, with every step replaced by an echo."""
 
     HARNESS = (
-        "install_prerequisites() { echo PREREQ; }\n"
+        "has_root_access() { return 0; }\n"
+        'install_prerequisites() { echo "PREREQ:$*"; }\n'
         "clone_repository() { echo CLONE; }\n"
         "apply_dotfiles() { echo DOTFILES; }\n"
         "install_ansible() { echo ANSIBLE; }\n"
@@ -81,7 +82,8 @@ class TestMainArguments:
             if not line.startswith("[bootstrap]")
         ]
         assert steps == [
-            "PREREQ", "CLONE", "DOTFILES", "ANSIBLE", "PLAYBOOK:main",
+            "PREREQ:true true", "CLONE", "DOTFILES", "ANSIBLE",
+            "PLAYBOOK:main",
         ]
 
     def test_should_accept_minimal_playbook(self, tmp_path):
@@ -111,6 +113,106 @@ class TestMainArguments:
     def test_should_skip_dotfiles_when_requested(self, tmp_path):
         result = self.run_main("--skip-dotfiles", tmp_path)
         assert "DOTFILES" not in result.stdout
+
+    def test_should_skip_playbook_for_no_sudo(self, tmp_path):
+        result = self.run_main("--no-sudo", tmp_path)
+        assert "PLAYBOOK" not in result.stdout
+
+    def test_should_still_apply_dotfiles_for_no_sudo(self, tmp_path):
+        result = self.run_main("--no-sudo", tmp_path)
+        assert "DOTFILES" in result.stdout
+
+    def test_should_not_probe_root_for_no_sudo(self, tmp_path):
+        result = source_and_run(
+            f"{self.HARNESS}has_root_access() {{ echo PROBED; }}\n"
+            "main --no-sudo",
+            tmp_path,
+        )
+        assert "PROBED" not in result.stdout
+
+    def test_should_skip_playbook_without_root_access(self, tmp_path):
+        result = source_and_run(
+            f"{self.HARNESS}has_root_access() {{ return 1; }}\nmain",
+            tmp_path,
+        )
+        assert "PLAYBOOK" not in result.stdout
+
+    def test_should_pass_no_root_to_prerequisites(self, tmp_path):
+        result = source_and_run(
+            f"{self.HARNESS}has_root_access() {{ return 1; }}\nmain",
+            tmp_path,
+        )
+        assert "PREREQ:false false" in result.stdout
+
+    def test_should_not_need_python_when_ansible_skipped(self, tmp_path):
+        result = self.run_main("--skip-ansible", tmp_path)
+        assert "PREREQ:true false" in result.stdout
+
+
+class TestHasRootAccess:
+    @pytest.mark.skipif(os.geteuid() == 0, reason="root always has access")
+    def test_should_deny_root_when_sudo_is_missing(self, tmp_path, stub_dir):
+        result = source_and_run(
+            f'PATH="{stub_dir}" has_root_access', tmp_path
+        )
+        assert result.returncode == 1
+
+    def test_should_grant_root_when_sudo_exists(self, tmp_path, stub_dir):
+        write_stub(stub_dir, "sudo", "exit 0")
+        result = source_and_run(
+            f'PATH="{stub_dir}" has_root_access', tmp_path
+        )
+        assert result.returncode == 0
+
+
+class TestInstallDebianPrerequisites:
+    """Runs with PATH limited to stub_dir, so only stubbed commands exist."""
+
+    def run_install(self, arguments, home, stub_dir):
+        return source_and_run(
+            f'PATH="{stub_dir}" install_debian_prerequisites {arguments}',
+            home,
+        )
+
+    def write_tool_stubs(self, stub_dir, names):
+        for name in names:
+            write_stub(stub_dir, name, "exit 0")
+
+    def test_should_install_missing_packages_with_root(
+        self, tmp_path, stub_dir
+    ):
+        self.write_tool_stubs(stub_dir, ["curl", "python3"])
+        write_stub(stub_dir, "sudo", '"$@"')
+        write_stub(stub_dir, "apt-get", 'echo "APT $*"')
+        result = self.run_install("true true", tmp_path, stub_dir)
+        assert "APT install -y git" in result.stdout
+
+    def test_should_fail_without_root_when_git_is_missing(
+        self, tmp_path, stub_dir
+    ):
+        self.write_tool_stubs(stub_dir, ["curl", "python3"])
+        result = self.run_install("false true", tmp_path, stub_dir)
+        assert result.returncode == 1
+
+    def test_should_not_call_apt_without_root(self, tmp_path, stub_dir):
+        self.write_tool_stubs(stub_dir, ["curl", "python3"])
+        write_stub(stub_dir, "apt-get", "echo APT_CALLED")
+        result = self.run_install("false true", tmp_path, stub_dir)
+        assert "APT_CALLED" not in result.stdout
+
+    def test_should_name_missing_packages_without_root(
+        self, tmp_path, stub_dir
+    ):
+        self.write_tool_stubs(stub_dir, ["curl", "python3"])
+        result = self.run_install("false true", tmp_path, stub_dir)
+        assert "git" in result.stderr
+
+    def test_should_skip_python_check_when_not_needed(
+        self, tmp_path, stub_dir
+    ):
+        self.write_tool_stubs(stub_dir, ["git", "curl"])
+        result = self.run_install("false false", tmp_path, stub_dir)
+        assert result.returncode == 0
 
 
 class TestCloneRepository:
