@@ -1,0 +1,34 @@
+name: Bootstrap Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bootstrap.sh'
+      - 'tests/**'
+      - '.github/workflows/bootstrap-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'bootstrap.sh'
+      - 'tests/**'
+      - '.github/workflows/bootstrap-test.yml'
+
+jobs:
+  pytest:
+    name: Pytest (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macOS runs the script under its bash 3.2, which bootstrap.sh must
+        # support before Homebrew installs a newer bash.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run tests
+        run: python -m pytest tests/ -v
