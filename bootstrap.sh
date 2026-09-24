@@ -29,6 +29,12 @@ warn() {
     printf '[bootstrap] ERROR: %s\n' "$*" >&2
 }
 
+# Succeeds when run_as_root can work: the user is root, or sudo is installed.
+# A sudo that asks for a password still counts, because the prompt can succeed.
+has_root_access() {
+    [[ "${EUID}" -eq 0 ]] || command -v sudo >/dev/null 2>&1
+}
+
 # Runs a command as root, directly when already root (e.g. in a container
 # without sudo) and through sudo otherwise.
 run_as_root() {
@@ -52,15 +58,26 @@ activate_homebrew() {
     return 1
 }
 
+# Usage: install_debian_prerequisites <has_root> <needs_python>
+# Only Ansible needs python3 and its venv module. Without root the function
+# cannot install anything, so it exits when a package is missing.
 install_debian_prerequisites() {
+    local has_root="$1"
+    local needs_python="$2"
     local -a missing_packages=()
     command -v git >/dev/null 2>&1 || missing_packages+=(git)
     command -v curl >/dev/null 2>&1 || missing_packages+=(curl)
-    command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
-    python3 -c 'import ensurepip' >/dev/null 2>&1 || missing_packages+=(python3-venv)
+    if [[ "${needs_python}" == true ]]; then
+        command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
+        python3 -c 'import ensurepip' >/dev/null 2>&1 || missing_packages+=(python3-venv)
+    fi
     if [[ "${#missing_packages[@]}" -eq 0 ]]; then
         log "Prerequisites already installed"
         return 0
+    fi
+    if [[ "${has_root}" != true ]]; then
+        warn "missing ${missing_packages[*]}, and installing them needs root. Ask an administrator to install them, then rerun this script."
+        exit 1
     fi
     log "Installing prerequisites: ${missing_packages[*]}"
     run_as_root apt-get update
@@ -84,6 +101,7 @@ install_macos_prerequisites() {
     fi
 }
 
+# Usage: install_prerequisites <has_root> <needs_python>
 install_prerequisites() {
     case "$(uname -s)" in
         Linux)
@@ -91,7 +109,7 @@ install_prerequisites() {
                 warn "only Debian-based Linux is supported (apt-get not found)"
                 exit 1
             fi
-            install_debian_prerequisites
+            install_debian_prerequisites "$@"
             ;;
         Darwin) install_macos_prerequisites ;;
         *)
@@ -191,7 +209,7 @@ run_playbook() {
 usage() {
     cat <<'EOF'
 Usage: bootstrap.sh [--playbook main|minimal|ax8-max] [--skip-dotfiles]
-                    [--skip-ansible] [-h|--help]
+                    [--skip-ansible] [--no-sudo] [-h|--help]
 
 Sets up this machine from nothing:
   1. Installs the prerequisites (git, curl, python3-venv; Homebrew bash on macOS).
@@ -201,10 +219,15 @@ Sets up this machine from nothing:
 
 Every step skips work that is already done, so rerunning is safe.
 
+Without root (no sudo command, or --no-sudo), the script runs steps 2 and 3
+only. Steps 1 and 4 install system packages, so the script fails when a
+prerequisite is missing and skips the playbook.
+
 Options:
   --playbook NAME   Playbook under ansible/ to run (default: main).
   --skip-dotfiles   Skip step 3.
   --skip-ansible    Skip step 4.
+  --no-sudo         Never use sudo, even when it is installed.
   -h, --help        Show this help and exit.
 EOF
 }
@@ -223,6 +246,7 @@ main() {
     local playbook_name="main"
     local should_apply_dotfiles=true
     local should_run_ansible=true
+    local is_sudo_allowed=true
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --playbook)
@@ -236,6 +260,7 @@ main() {
             --playbook=*) playbook_name="${1#*=}" ;;
             --skip-dotfiles) should_apply_dotfiles=false ;;
             --skip-ansible) should_run_ansible=false ;;
+            --no-sudo) is_sudo_allowed=false ;;
             -h|--help)
                 usage
                 exit 0
@@ -250,16 +275,26 @@ main() {
     done
     assert_allowed_playbook "${playbook_name}"
 
+    local has_root=false
+    if [[ "${is_sudo_allowed}" == true ]] && has_root_access; then
+        has_root=true
+    fi
+    local will_run_ansible="${should_run_ansible}"
+    if [[ "${has_root}" != true && "${should_run_ansible}" == true ]]; then
+        log "Skipping Ansible: running without root, and the playbooks install system packages"
+        will_run_ansible=false
+    fi
+
     # The mise Ansible role runs `which mise` and reinstalls mise when the
     # binary that install.sh put in ~/.local/bin is not on PATH.
     export PATH="${HOME}/.local/bin:${PATH}"
 
-    install_prerequisites
+    install_prerequisites "${has_root}" "${will_run_ansible}"
     clone_repository
     if [[ "${should_apply_dotfiles}" == true ]]; then
         apply_dotfiles
     fi
-    if [[ "${should_run_ansible}" == true ]]; then
+    if [[ "${will_run_ansible}" == true ]]; then
         install_ansible
         run_playbook "${playbook_name}"
     fi
