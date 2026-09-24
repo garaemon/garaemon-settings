@@ -2,6 +2,67 @@
 
 Monorepo for garaemon's environment setup.
 
+## INSTALL
+
+Run one command on a fresh machine. The command needs only `bash` and `curl`:
+
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)"
+```
+
+You do not need ghq, chezmoi, or Ansible beforehand. `bootstrap.sh` runs these
+steps, and each step skips work that is already done:
+
+1. Installs the prerequisites: `git`, `curl`, and `python3-venv` through apt on
+   Debian-based Linux, or bash 4+ through Homebrew on macOS.
+1. Clones this repository with plain `git` into
+   `~/ghq/github.com/garaemon/garaemon-settings`. The `~/.emacs.d` and
+   `~/.claude/skills` symlinks point at this path, so the checkout must live
+   there.
+1. Adds `sourceDir` to `~/.config/chezmoi/chezmoi.toml`, then runs
+   `dotfiles/install.sh --tools`. That script applies the dotfiles with a
+   pinned chezmoi and installs the minimal CLI tools, ghq among them, through
+   a pinned mise.
+1. Installs Ansible into a virtualenv under
+   `~/.local/share/garaemon-settings/ansible-venv` and runs
+   `ansible/main.yml`. The playbook prompts for the sudo password unless sudo
+   works without one.
+
+Pass arguments after a placeholder `$0` such as `bootstrap`:
+
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
+  bootstrap --playbook minimal
+```
+
+The script accepts these options:
+
+- `--playbook main|minimal|ax8-max`: selects the playbook. The default is
+  `main`.
+- `--skip-dotfiles`: skips step 3.
+- `--skip-ansible`: skips step 4.
+
+Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
+the sudo and Ansible password prompts cannot read the keyboard.
+
+On macOS, install the Xcode Command Line Tools (`xcode-select --install`) and
+[Homebrew](https://brew.sh) first. The script stops with a message when either
+is missing.
+
+The clone uses HTTPS because a fresh machine has no GitHub SSH key yet. After
+you register a key, switch the remote:
+
+```sh
+git -C ~/ghq/github.com/garaemon/garaemon-settings remote set-url origin \
+  git@github.com:garaemon/garaemon-settings.git
+```
+
+To rerun a playbook later from the checkout, call the script directly:
+
+```sh
+~/ghq/github.com/garaemon/garaemon-settings/bootstrap.sh --skip-dotfiles --playbook minimal
+```
+
 ## Layout
 
 - **ansible/**: Ansible playbooks and roles that provision the interactive
@@ -75,67 +136,6 @@ The boundary is the concern, not the machine:
 
 Device- and login-oriented settings (for example the MAFP fingerprint reader on
 `ax8-max`) belong here, not in `private-server-config`.
-
-## INSTALL
-
-Run one command on a fresh machine. The command needs only `bash` and `curl`:
-
-```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)"
-```
-
-You do not need ghq, chezmoi, or Ansible beforehand. `bootstrap.sh` runs these
-steps, and each step skips work that is already done:
-
-1. Installs the prerequisites: `git`, `curl`, and `python3-venv` through apt on
-   Debian-based Linux, or bash 4+ through Homebrew on macOS.
-1. Clones this repository with plain `git` into
-   `~/ghq/github.com/garaemon/garaemon-settings`. The `~/.emacs.d` and
-   `~/.claude/skills` symlinks point at this path, so the checkout must live
-   there.
-1. Adds `sourceDir` to `~/.config/chezmoi/chezmoi.toml`, then runs
-   `dotfiles/install.sh --tools`. That script applies the dotfiles with a
-   pinned chezmoi and installs the minimal CLI tools, ghq among them, through
-   a pinned mise.
-1. Installs Ansible into a virtualenv under
-   `~/.local/share/garaemon-settings/ansible-venv` and runs
-   `ansible/main.yml`. The playbook prompts for the sudo password unless sudo
-   works without one.
-
-Pass arguments after a placeholder `$0` such as `bootstrap`:
-
-```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
-  bootstrap --playbook minimal
-```
-
-The script accepts these options:
-
-- `--playbook main|minimal|ax8-max`: selects the playbook. The default is
-  `main`.
-- `--skip-dotfiles`: skips step 3.
-- `--skip-ansible`: skips step 4.
-
-Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
-the sudo and Ansible password prompts cannot read the keyboard.
-
-On macOS, install the Xcode Command Line Tools (`xcode-select --install`) and
-[Homebrew](https://brew.sh) first. The script stops with a message when either
-is missing.
-
-The clone uses HTTPS because a fresh machine has no GitHub SSH key yet. After
-you register a key, switch the remote:
-
-```sh
-git -C ~/ghq/github.com/garaemon/garaemon-settings remote set-url origin \
-  git@github.com:garaemon/garaemon-settings.git
-```
-
-To rerun a playbook later from the checkout, call the script directly:
-
-```sh
-~/ghq/github.com/garaemon/garaemon-settings/bootstrap.sh --skip-dotfiles --playbook minimal
-```
 
 ## Dotfiles
 
