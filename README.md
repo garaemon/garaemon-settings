@@ -2,80 +2,6 @@
 
 Monorepo for garaemon's environment setup.
 
-## Layout
-
-- **ansible/**: Ansible playbooks and roles that provision the interactive
-  desktop environment (packages, fonts, keyboard, editor toolchain).
-- **claude-skills/**: Claude Code skills. `~/.claude/skills` is a symlink to
-  `claude-skills/skills`, and the repository-root `.claude/skills` is a
-  second, committed symlink to the same directory. The committed one survives a
-  fresh clone, so a container that never runs chezmoi, such as Claude Code on
-  the web, still loads every skill.
-  See [claude-skills/README.md](claude-skills/README.md).
-- **dotfiles/**: chezmoi source for shell, git, editor, and terminal
-  configuration. The root-level `.chezmoiroot` file points chezmoi at this
-  subdirectory, so chezmoi commands need no `--source` flag. The root-level
-  `install.sh` is a shim for GitHub Codespaces and Dev Containers that
-  delegates to `dotfiles/install.sh`. See
-  [dotfiles/README.md](dotfiles/README.md).
-- **emacs.d/**: Emacs configuration, which requires Emacs 31.1 or later.
-  `~/.emacs.d` is a symlink to this directory, managed by chezmoi
-  (`dotfiles/symlink_dot_emacs.d.tmpl`). See
-  [emacs.d/README.md](emacs.d/README.md).
-
-## Lint
-
-Lint runs per language, not per subdirectory, so a file gets the same checks
-wherever it lives in the monorepo. `.github/workflows/lint.yml` starts one job
-per language, and every job calls the same script:
-
-```sh
-scripts/lint.sh
-```
-
-A linter also holds a coding agent to the conventions in `CLAUDE.md`. An agent
-reads an instruction once and drifts; a failing check stops the branch. Prefer
-encoding a rule as a lint rule whenever the linter can express it.
-
-Pass targets to narrow the run: `shell`, `markdown`, `javascript`, `yaml`,
-`python`, `ansible`, `whitespace`. Rule configuration lives at the repository
-root (`.markdownlint.yaml`, `eslint.config.mjs`, `.yamllint.yaml`, `ruff.toml`),
-except where one dialect needs its own: `dotfiles/.shellcheckrc` covers the zsh
-startup files, and `ansible/.ansible-lint` covers the playbooks.
-
-Every target but `javascript` fetches its linter on demand. ESLint instead reads
-its plugins from this repository's `node_modules`, so install them once before
-the first run:
-
-```sh
-npm ci
-```
-
-ESLint covers `.js`, `.mjs`, `.cjs`, and the JavaScript inlined in `.html`,
-which `eslint-plugin-html` extracts. Beyond the recommended rule set it enforces
-`no-var` and `prefer-const`; both are auto-fixable with
-`npx eslint --fix <file>`.
-
-Tests stay with the component they exercise (`dotfiles-test.yml`,
-`emacs-test.yml`, `skills-ci.yml`, `ansible.yml`).
-
-## Scope
-
-This repository configures the **interactive desktop environment** of a host,
-set up locally (editor, shell, keyboard, fonts, fingerprint reader, etc.). Some
-machines, such as `ax8-max`, are also configured in
-[`private-server-config`](https://github.com/garaemon/private-server-config).
-The boundary is the concern, not the machine:
-
-- **garaemon-settings** (this repo): the interactive desktop environment of a
-  host that is set up locally.
-- **private-server-config**: headless server services for a host, managed
-  remotely over SSH (Docker, Prometheus, Jenkins, Jupyter, Plex, Tailscale,
-  etc.).
-
-Device- and login-oriented settings (for example the MAFP fingerprint reader on
-`ax8-max`) belong here, not in `private-server-config`.
-
 ## INSTALL
 
 Run one command on a fresh machine. The command needs only `bash` and `curl`:
@@ -149,6 +75,80 @@ To rerun a playbook later from the checkout, call the script directly:
 ```sh
 ~/ghq/github.com/garaemon/garaemon-settings/bootstrap.sh --skip-dotfiles --playbook minimal
 ```
+
+## Layout
+
+- **ansible/**: Ansible playbooks and roles that provision the interactive
+  desktop environment (packages, fonts, keyboard, editor toolchain).
+- **claude-skills/**: Claude Code skills. `~/.claude/skills` is a symlink to
+  `claude-skills/skills`, and the repository-root `.claude/skills` is a
+  second, committed symlink to the same directory. The committed one survives a
+  fresh clone, so a container that never runs chezmoi, such as Claude Code on
+  the web, still loads every skill.
+  See [claude-skills/README.md](claude-skills/README.md).
+- **dotfiles/**: chezmoi source for shell, git, editor, and terminal
+  configuration. The root-level `.chezmoiroot` file points chezmoi at this
+  subdirectory, so chezmoi commands need no `--source` flag. The root-level
+  `install.sh` is a shim for GitHub Codespaces and Dev Containers that
+  delegates to `dotfiles/install.sh`. See
+  [dotfiles/README.md](dotfiles/README.md).
+- **emacs.d/**: Emacs configuration, which requires Emacs 31.1 or later.
+  `~/.emacs.d` is a symlink to this directory, managed by chezmoi
+  (`dotfiles/symlink_dot_emacs.d.tmpl`). See
+  [emacs.d/README.md](emacs.d/README.md).
+
+## Lint
+
+Lint runs per language, not per subdirectory, so a file gets the same checks
+wherever it lives in the monorepo. `.github/workflows/lint.yml` starts one job
+per language, and every job calls the same script:
+
+```sh
+scripts/lint.sh
+```
+
+A linter also holds a coding agent to the conventions in `CLAUDE.md`. An agent
+reads an instruction once and drifts; a failing check stops the branch. Prefer
+encoding a rule as a lint rule whenever the linter can express it.
+
+Pass targets to narrow the run: `shell`, `markdown`, `javascript`, `yaml`,
+`python`, `ansible`, `whitespace`. Rule configuration lives at the repository
+root (`.markdownlint.yaml`, `eslint.config.mjs`, `.yamllint.yaml`, `ruff.toml`),
+except where one dialect needs its own: `dotfiles/.shellcheckrc` covers the zsh
+startup files, and `ansible/.ansible-lint` covers the playbooks.
+
+Every target but `javascript` fetches its linter on demand. ESLint instead reads
+its plugins from this repository's `node_modules`, so install them once before
+the first run:
+
+```sh
+npm ci
+```
+
+ESLint covers `.js`, `.mjs`, `.cjs`, and the JavaScript inlined in `.html`,
+which `eslint-plugin-html` extracts. Beyond the recommended rule set it enforces
+`no-var` and `prefer-const`; both are auto-fixable with
+`npx eslint --fix <file>`.
+
+Tests stay with the component they exercise (`dotfiles-test.yml`,
+`emacs-test.yml`, `skills-ci.yml`, `ansible.yml`).
+
+## Scope
+
+This repository configures the **interactive desktop environment** of a host,
+set up locally (editor, shell, keyboard, fonts, fingerprint reader, etc.). Some
+machines, such as `ax8-max`, are also configured in
+[`private-server-config`](https://github.com/garaemon/private-server-config).
+The boundary is the concern, not the machine:
+
+- **garaemon-settings** (this repo): the interactive desktop environment of a
+  host that is set up locally.
+- **private-server-config**: headless server services for a host, managed
+  remotely over SSH (Docker, Prometheus, Jenkins, Jupyter, Plex, Tailscale,
+  etc.).
+
+Device- and login-oriented settings (for example the MAFP fingerprint reader on
+`ax8-max`) belong here, not in `private-server-config`.
 
 ## Dotfiles
 
