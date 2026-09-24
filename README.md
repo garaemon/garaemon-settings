@@ -115,6 +115,19 @@ The script accepts these options:
   `main`.
 - `--skip-dotfiles`: skips step 3.
 - `--skip-ansible`: skips step 4.
+- `--no-sudo`: never uses sudo, even when it is installed.
+
+The script also runs without root, for example in a container that has no
+`sudo` command, or with `--no-sudo`. In that case it runs these steps only:
+
+- It clones the repository (step 2).
+- It applies the dotfiles and installs the CLI tools under `~/.local` (step 3).
+
+Steps 1 and 4 install system packages, so the script handles them this way:
+
+- Step 1 fails with the list of missing packages when `git` or `curl` is
+  missing. Ask an administrator to install them.
+- Step 4 is skipped, because every playbook installs packages as root.
 
 Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
 the sudo and Ansible password prompts cannot read the keyboard.
