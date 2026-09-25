@@ -177,11 +177,12 @@ if which starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
-if command -v ghq > /dev/null 2>&1; then
-  if [[ -e $(ghq root)/github.com/rupa/z ]]; then
-    source $(ghq root)/github.com/rupa/z/z.sh
-    compctl -U -K _z_zsh_tab_completion z
-  fi
+# chezmoi clones z and dircolors-solarized under ~/.local/share (see
+# .chezmoiexternal.toml), so neither path depends on ghq.
+Z_SCRIPT=$HOME/.local/share/zsh/plugins/z/z.sh
+if [[ -f ${Z_SCRIPT} ]]; then
+  source ${Z_SCRIPT}
+  compctl -U -K _z_zsh_tab_completion z
 fi
 
 if command -v ghq > /dev/null 2>&1; then
@@ -190,7 +191,7 @@ else
   GHQ_ROOT=$HOME/ghq
 fi
 
-DIRCOLORS_FILE=${GHQ_ROOT}/github.com/seebi/dircolors-solarized/dircolors.ansi-light
+DIRCOLORS_FILE=$HOME/.local/share/dircolors-solarized/dircolors.ansi-light
 
 if [ $(uname) != Darwin ]; then
   if [ -f ${DIRCOLORS_FILE} ]; then

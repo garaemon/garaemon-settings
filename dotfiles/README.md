@@ -100,19 +100,21 @@ against an embedded sha256 checksum (`MISE_VERSION` and `MISE_CHECKSUMS` in
 
 #### Shell plugin repositories (`.chezmoiexternal.toml`)
 
-`dot_zshrc` sources two repositories from the ghq tree:
+`dot_zshrc` sources two repositories:
 
 - [rupa/z](https://github.com/rupa/z) for the `z` command.
 - [seebi/dircolors-solarized](https://github.com/seebi/dircolors-solarized)
   for the `ls` colors.
 
-`.chezmoiexternal.toml` clones both into `~/ghq/github.com/` on
-`chezmoi apply`. The clone needs no sudo, so machines that skip the Ansible
-playbooks get them too. chezmoi leaves an existing clone alone. To pull
+`.chezmoiexternal.toml` clones both under `~/.local/share/` on
+`chezmoi apply`. The clone needs neither sudo nor ghq, so machines that skip
+the Ansible playbooks get them too. Keeping them out of `~/ghq` also keeps
+them out of `ghq list`. chezmoi leaves an existing clone alone. To pull
 updates, run:
 
 ```bash
-chezmoi apply --refresh-externals ~/ghq
+chezmoi apply --refresh-externals \
+  ~/.local/share/zsh/plugins/z ~/.local/share/dircolors-solarized
 ```
 
 ### Machine-local configuration (atuin sync)
