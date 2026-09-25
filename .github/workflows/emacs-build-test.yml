@@ -1,0 +1,71 @@
+name: Build Emacs Without Root
+
+# Runs emacs.d/scripts/build_emacs.py end to end as a user without sudo, on a
+# host that lacks makeinfo and tree-sitter. The Ansible workflow builds Emacs
+# only after apt has installed every dependency, so it never exercises the
+# path this script exists for.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'emacs.d/scripts/build_emacs.py'
+      - '.github/workflows/emacs-build-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'emacs.d/scripts/build_emacs.py'
+      - '.github/workflows/emacs-build-test.yml'
+
+jobs:
+  build:
+    name: Build as a user without sudo
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUILD_USER: emacs-builder
+      BUILD_LOG: /tmp/build-emacs.log
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      # An administrator provides the ncurses headers, which the script
+      # cannot build. makeinfo and tree-sitter are removed so that the script
+      # has to build them into ~/.local.
+      - name: Prepare a host without makeinfo and tree-sitter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncurses-dev
+          for package_name in texinfo libtree-sitter-dev; do
+            if dpkg -s "$package_name" >/dev/null 2>&1; then
+              sudo apt-get purge -y "$package_name"
+            fi
+          done
+          ! command -v makeinfo
+          ! pkg-config --exists tree-sitter
+
+      - name: Create a user without sudo
+        run: |
+          sudo useradd --create-home "$BUILD_USER"
+          ! sudo -u "$BUILD_USER" sudo -n true
+          install -m 0755 emacs.d/scripts/build_emacs.py /tmp/build_emacs.py
+
+      - name: Build Emacs
+        run: |
+          sudo -u "$BUILD_USER" -H python3 /tmp/build_emacs.py --gui none \
+            2>&1 | tee "$BUILD_LOG"
+
+      - name: Check that the script built makeinfo and tree-sitter itself
+        run: |
+          grep -F '[build-emacs] Building texinfo' "$BUILD_LOG"
+          grep -F '[build-emacs] Building tree-sitter' "$BUILD_LOG"
+
+      - name: Check that the installed Emacs runs with tree-sitter
+        run: |
+          sudo -u "$BUILD_USER" -H bash -c \
+            '~/.local/bin/emacs --batch --eval "(progn (princ (format \"%s\n\" emacs-version)) (kill-emacs (if (treesit-available-p) 0 1)))"'
+
+      - name: Check that a second run skips the build
+        run: sudo -u "$BUILD_USER" -H python3 /tmp/build_emacs.py --check

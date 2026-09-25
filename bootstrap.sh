@@ -58,17 +58,21 @@ activate_homebrew() {
     return 1
 }
 
-# Usage: install_debian_prerequisites <has_root> <needs_python>
-# Only Ansible needs python3 and its venv module. Without root the function
-# cannot install anything, so it exits when a package is missing.
+# Usage: install_debian_prerequisites <has_root> <needs_python> <needs_venv>
+# Ansible needs python3 and its venv module, and build_emacs.py needs python3
+# alone. Without root the function cannot install anything, so it exits when
+# a package is missing.
 install_debian_prerequisites() {
     local has_root="$1"
     local needs_python="$2"
+    local needs_venv="$3"
     local -a missing_packages=()
     command -v git >/dev/null 2>&1 || missing_packages+=(git)
     command -v curl >/dev/null 2>&1 || missing_packages+=(curl)
     if [[ "${needs_python}" == true ]]; then
         command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
+    fi
+    if [[ "${needs_venv}" == true ]]; then
         python3 -c 'import ensurepip' >/dev/null 2>&1 || missing_packages+=(python3-venv)
     fi
     if [[ "${#missing_packages[@]}" -eq 0 ]]; then
@@ -101,7 +105,7 @@ install_macos_prerequisites() {
     fi
 }
 
-# Usage: install_prerequisites <has_root> <needs_python>
+# Usage: install_prerequisites <has_root> <needs_python> <needs_venv>
 install_prerequisites() {
     case "$(uname -s)" in
         Linux)
@@ -206,10 +210,18 @@ run_playbook() {
     )
 }
 
+# Builds Emacs from source under ~/.local. The script needs no root, so this
+# step also runs on a host where the playbooks cannot.
+build_emacs() {
+    log "Building Emacs with emacs.d/scripts/build_emacs.py"
+    python3 "${CHECKOUT_DIR}/emacs.d/scripts/build_emacs.py"
+}
+
 usage() {
     cat <<'EOF'
 Usage: bootstrap.sh [--playbook main|minimal|ax8-max] [--skip-dotfiles]
-                    [--skip-ansible] [--no-sudo] [-h|--help]
+                    [--skip-ansible] [--no-sudo] [--build-emacs]
+                    [-h|--help]
 
 Sets up this machine from nothing:
   1. Installs the prerequisites (git, curl, python3-venv; Homebrew bash on macOS).
@@ -228,6 +240,8 @@ Options:
   --skip-dotfiles   Skip step 3.
   --skip-ansible    Skip step 4.
   --no-sudo         Never use sudo, even when it is installed.
+  --build-emacs     Build Emacs from source into ~/.local as a last step.
+                    The build needs no root. Linux only.
   -h, --help        Show this help and exit.
 EOF
 }
@@ -247,6 +261,7 @@ main() {
     local should_apply_dotfiles=true
     local should_run_ansible=true
     local is_sudo_allowed=true
+    local should_build_emacs=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --playbook)
@@ -261,6 +276,7 @@ main() {
             --skip-dotfiles) should_apply_dotfiles=false ;;
             --skip-ansible) should_run_ansible=false ;;
             --no-sudo) is_sudo_allowed=false ;;
+            --build-emacs) should_build_emacs=true ;;
             -h|--help)
                 usage
                 exit 0
@@ -274,6 +290,11 @@ main() {
         shift
     done
     assert_allowed_playbook "${playbook_name}"
+    # build_emacs.py probes Debian library paths and names Debian packages.
+    if [[ "${should_build_emacs}" == true && "$(uname -s)" != Linux ]]; then
+        warn "--build-emacs supports Linux only"
+        exit 2
+    fi
 
     local has_root=false
     if [[ "${is_sudo_allowed}" == true ]] && has_root_access; then
@@ -289,7 +310,11 @@ main() {
     # binary that install.sh put in ~/.local/bin is not on PATH.
     export PATH="${HOME}/.local/bin:${PATH}"
 
-    install_prerequisites "${has_root}" "${will_run_ansible}"
+    local needs_python="${will_run_ansible}"
+    if [[ "${should_build_emacs}" == true ]]; then
+        needs_python=true
+    fi
+    install_prerequisites "${has_root}" "${needs_python}" "${will_run_ansible}"
     clone_repository
     if [[ "${should_apply_dotfiles}" == true ]]; then
         apply_dotfiles
@@ -297,6 +322,9 @@ main() {
     if [[ "${will_run_ansible}" == true ]]; then
         install_ansible
         run_playbook "${playbook_name}"
+    fi
+    if [[ "${should_build_emacs}" == true ]]; then
+        build_emacs
     fi
     log "Done. Open a new login shell to pick up the dotfiles."
 }
