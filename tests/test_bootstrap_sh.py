@@ -59,6 +59,8 @@ class TestMainArguments:
         "install_ansible() { echo ANSIBLE; }\n"
         'run_playbook() { echo "PLAYBOOK:$1"; }\n'
         "build_emacs() { echo BUILD_EMACS; }\n"
+        # --build-emacs is Linux only, and CI also runs this suite on macOS.
+        "uname() { echo Linux; }\n"
     )
 
     def run_main(self, args, home):
