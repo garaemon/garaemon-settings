@@ -1,6 +1,6 @@
 # Set the variable true if you want to build emacs from source.
+# emacs.d/scripts/build-emacs.sh pins the Emacs version to build.
 emacs_build_emacs: false
-emacs_version: emacs-31.1
 
 # Directory the Emacs source is cloned into and built in.
 emacs_source_path: >-

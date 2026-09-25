@@ -12,8 +12,8 @@ Org 9.7.11, which has neither, so every inline image refresh fails with
 
 The pinned version lives in two places, and both name 31.1:
 
-- `ansible/roles/emacs/defaults/main.yml` builds `emacs-31.1` on a host whose
-  Emacs is older.
+- `scripts/build-emacs.sh` builds `emacs-31.1` on a host whose Emacs is
+  older. See [Building Emacs](#building-emacs).
 - `.github/workflows/emacs-test.yml` runs the tests on 31.1.
 
 Check the Emacs in use:
@@ -280,6 +280,38 @@ The report has these sections:
 Run `M-x my-keybind-stats-flush` to write the pending counts before building a
 report from the command line, and `M-x my-keybind-stats-mode` to pause the
 recorder.
+
+## Building Emacs
+
+`scripts/build-emacs.sh` builds Emacs from
+[emacs-mirror](https://github.com/emacs-mirror/emacs) and installs it under
+`~/.local`. The script needs no root, so it also works on a shared host
+without sudo:
+
+```sh
+scripts/build-emacs.sh
+```
+
+The Ansible `emacs` role runs the same script. The role first installs the
+build dependencies with apt, so a host with sudo gets every feature.
+
+The script skips the build when `~/.local/bin/emacs` is already the pinned
+version or newer. Pass `--force` to rebuild anyway, and `--help` for the
+other options.
+
+Without root, the script adapts to the host in these ways:
+
+- It builds m4, autoconf, makeinfo, and tree-sitter into `~/.local` when
+  they are missing. Their sources are cached under `~/.cache/build-emacs`.
+- It builds the pgtk GUI when the GTK 3 headers are installed, and a
+  terminal-only Emacs otherwise. `--gui none` forces a terminal-only build.
+- It turns off native compilation when libgccjit is missing.
+- It builds without GnuTLS when the GnuTLS headers are missing. package.el
+  then cannot reach the https archives, so the script prints a warning.
+
+The script stops and lists the Debian packages to ask an administrator for
+when it lacks a requirement that it cannot build: git, a C compiler, make,
+pkg-config, perl, curl, xz, or the ncurses development files.
 
 ## Scripts
 

@@ -4,43 +4,25 @@
 
 # Only for ubuntu
 - name: Build emacs for Debian
-  when: ansible_facts.os_family == "Debian"
+  when:
+    - ansible_facts.os_family == "Debian"
+    - emacs_build_emacs | bool
   block:
-    - name: Set required Emacs version variable
+    - name: Set the path of the build script
       ansible.builtin.set_fact:
-        emacs_required_emacs_version: "{{ emacs_version | regex_replace('^emacs-', '') }}"
-        emacs_install_path: "{{ ansible_facts.user_dir }}/.local/bin/emacs"
+        emacs_build_script: "{{ role_path }}/../../../emacs.d/scripts/build-emacs.sh"
 
-    - name: Check if target Emacs exists
-      ansible.builtin.stat:
-        path: "{{ emacs_install_path }}"
-      register: emacs_stat
-
-    - name: Get installed Emacs version if it exists
+    # The script exits with 10 when the Emacs under ~/.local is missing or
+    # older than the version that the script builds.
+    - name: Check whether Emacs needs a build
       ansible.builtin.command:
-        cmd: "{{ emacs_install_path }} --batch --eval \"(message emacs-version)\""
-      register: emacs_version_output
-      when: emacs_stat.stat.exists
+        cmd: "{{ emacs_build_script }} --check"
+      register: emacs_build_check
       changed_when: false
-      failed_when: false
-
-    - name: Parse installed Emacs version
-      ansible.builtin.set_fact:
-        emacs_installed_emacs_version: "{{ emacs_version_output.stderr | trim }}"
-      when:
-        - emacs_stat.stat.exists
-        - emacs_version_output.rc == 0
-        - emacs_version_output.stderr is defined
-        - emacs_version_output.stderr != ""
+      failed_when: emacs_build_check.rc not in [0, 10]
 
     - name: Build Emacs if not already installed or version is too old
-      when:
-        - not (
-                emacs_stat.stat.exists and
-                emacs_installed_emacs_version is defined and
-                emacs_installed_emacs_version is version(emacs_required_emacs_version, '>=')
-              )
-        - emacs_build_emacs | bool
+      when: emacs_build_check.rc == 10
       block:
       # Refer to https://github.com/KarimAziev/build-emacs/blob/main/build-emacs.sh
         - name: Install packages to build emacs (Ubuntu 22.04)
@@ -371,89 +353,6 @@
               - libtool-bin # for libvterm
           become: true
           when: ansible_facts.distribution_version == '24.04'
-        - name: Set the path of the stamp that records which version the tree holds
-          set_fact:
-            emacs_build_stamp_path:
-              "{{ emacs_source_path }}/.ansible-built-version"
-        - name: Clone and checkout specific version of emacs
-          ansible.builtin.git:
-            repo: https://github.com/emacs-mirror/emacs
-            dest: "{{ emacs_source_path }}"
-            version: "{{ emacs_version }}"
-        # The stamp is missing before the first build, and slurp fails on a
-        # missing file. Any other read error also leaves the content undefined,
-        # which forces the clean below and is the safe direction.
-        - name: Read the Emacs version that the build tree holds artifacts for
-          ansible.builtin.slurp:
-            src: "{{ emacs_build_stamp_path }}"
-          register: emacs_build_stamp
-          failed_when: false
-        - name: Decide whether the build tree holds another Emacs version
-          set_fact:
-            emacs_tree_needs_clean:
-              "{{ emacs_build_stamp.content is not defined or
-                  (emacs_build_stamp.content | b64decode | trim) != emacs_version }}"
-        # make reuses the .elc and .eln files left in the tree. Artifacts from
-        # another Emacs version make the native compiler load a stale .eln and
-        # abort with "Recursive load".
-        - name: Remove build artifacts left by another Emacs version
-          command: git clean -xdf
-          args:
-            chdir: "{{ emacs_source_path }}"
-          when: emacs_tree_needs_clean | bool
-        # Stamp the tree before building it, not after installing. The tree now
-        # holds artifacts of this version alone, so a build that dies halfway
-        # resumes incrementally instead of cleaning and starting over.
-        - name: Record the Emacs version that the clean tree builds
-          copy:
-            content: "{{ emacs_version }}\n"
-            dest: "{{ emacs_build_stamp_path }}"
-            mode: "0644"
-          when: emacs_tree_needs_clean | bool
-        - name: Get GCC version
-          command: gcc -dumpversion
-          register: emacs_gcc_version_output
-          changed_when: false
-        - name: Set GCC version variable
-          set_fact:
-            emacs_gcc_version: "{{ emacs_gcc_version_output.stdout }}"
-        - name: Set GCC architecture
-          set_fact:
-            emacs_gcc_arch: "{{ 'aarch64' if ansible_facts.architecture == 'aarch64' else 'x86_64' }}"
-        - name: Set GCC library path
-          set_fact:
-            emacs_gccjit_lib_path: "/usr/lib/gcc/{{ emacs_gcc_arch }}-linux-gnu/{{ emacs_gcc_version }}"
-        - name: Prepare configure for the latest emacs
-          command: ./autogen.sh
-          args:
-            chdir: "{{ emacs_source_path }}"
-        - name: Configure the latest emacs
-          command: >
-              ./configure --prefix=$HOME/.local --with-tree-sitter --with-sqlite3=yes
-              --with-pgtk --with-native-compilation=aot --without-compress-install
-          args:
-            chdir: "{{ emacs_source_path }}"
-          environment:
-            LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
-        - name: Decide parallel job numbers
-          set_fact:
-            emacs_build_parallel_jobs:
-              "{{ [ansible_facts.processor_threads_per_core * ansible_facts.processor_cores, 4] | min }}"
-        - name: Display Emacs build parallel jobs
-          debug:
-            msg: "make builds emacs with -j {{ emacs_build_parallel_jobs }}"
-        - name: Build the latest emacs
-          command: make CC="ccache gcc" CXX="ccache g++" -j {{ emacs_build_parallel_jobs }}
-          args:
-            chdir: "{{ emacs_source_path }}"
-          environment:
-            LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
-        - name: Install the latest emacs
-          command: make install
-          args:
-            chdir: "{{ emacs_source_path }}"
-          environment:
-            LIBRARY_PATH: "{{ emacs_gccjit_lib_path }}"
-            LDFLAGS: "-L{{ emacs_gccjit_lib_path }}"
+        - name: Build and install Emacs
+          ansible.builtin.command:
+            cmd: "{{ emacs_build_script }} --source-dir {{ emacs_source_path | quote }}"
