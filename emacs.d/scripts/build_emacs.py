@@ -24,17 +24,22 @@ import tarfile
 import tempfile
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, NoReturn, Optional
 
 DEFAULT_EMACS_VERSION = "emacs-31.1"
 EMACS_REPOSITORY_URL = "https://github.com/emacs-mirror/emacs"
 TREE_SITTER_REPOSITORY_URL = "https://github.com/tree-sitter/tree-sitter"
 TREE_SITTER_VERSION = "v0.25.9"
+# A tag can be moved, so the clone must resolve to this commit of the tag.
+TREE_SITTER_COMMIT = "a467ea8502d95562171f97953a6dc5b2a8622609"
 GNU_MIRROR_URL = "https://ftp.gnu.org/gnu"
 BUILD_STAMP_NAME = ".built-emacs-version"
 # --check exits with this status when a build is due, so that a caller can
 # tell "build needed" apart from a failure of the script itself.
 EXIT_CODE_BUILD_NEEDED = 10
+# Seconds without data before a download is abandoned. urlopen otherwise
+# waits forever on a mirror that accepts the connection and then stalls.
+DOWNLOAD_TIMEOUT_SECONDS = 60
 
 
 class GnuRelease(NamedTuple):
@@ -62,7 +67,7 @@ def warn(message: str) -> None:
     print(f"[build-emacs] WARNING: {message}", file=sys.stderr, flush=True)
 
 
-def die(message: str) -> None:
+def die(message: str) -> NoReturn:
     sys.exit(f"[build-emacs] ERROR: {message}")
 
 
@@ -121,6 +126,19 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
         "--gui", choices=("auto", "pgtk", "none"), default="auto",
         help="auto picks pgtk when the GTK 3 headers exist (default: auto)")
     parser.add_argument(
+        "--gnutls", choices=("auto", "yes"), default="auto",
+        help="auto builds without GnuTLS when its headers are missing, and "
+             "yes makes configure fail instead (default: auto)")
+    parser.add_argument(
+        "--sqlite", choices=("auto", "yes"), default="auto",
+        help="auto builds without SQLite when its headers are missing, and "
+             "yes stops before the build instead (default: auto)")
+    parser.add_argument(
+        "--native-compilation", choices=("auto", "aot", "no"),
+        default="auto",
+        help="auto compiles ahead of time when libgccjit links, and aot "
+             "makes configure fail without it (default: auto)")
+    parser.add_argument(
         "--force", action="store_true",
         help="build even when the installed Emacs is current")
     parser.add_argument(
@@ -173,7 +191,7 @@ def is_installed_emacs_current(options: argparse.Namespace) -> bool:
     return is_version_at_least(installed_version, required_version)
 
 
-def has_terminal_library() -> bool:
+def has_terminal_library(compiler_path: str) -> bool:
     """Return whether the linker finds a library that provides tputs.
 
     The linker finds one only when the -dev package installs the unversioned
@@ -183,9 +201,14 @@ def has_terminal_library() -> bool:
         source_path = Path(work_dir) / "probe.c"
         source_path.write_text("int main(void) { return 0; }\n")
         return any(
-            succeeds(["cc", str(source_path), f"-l{library_name}",
+            succeeds([compiler_path, str(source_path), f"-l{library_name}",
                       "-o", str(Path(work_dir) / "probe")])
             for library_name in ("tinfo", "ncurses", "curses", "termcap"))
+
+
+def find_c_compiler() -> Optional[str]:
+    """Return the path of cc, or of gcc on a host without the cc link."""
+    return shutil.which("cc") or shutil.which("gcc")
 
 
 def list_missing_requirements() -> List[str]:
@@ -196,9 +219,10 @@ def list_missing_requirements() -> List[str]:
             ("git", "git"), ("make", "make"), ("pkg-config", "pkg-config"),
             ("perl", "perl"))
         if shutil.which(command_name) is None]
-    if shutil.which("cc") is None and shutil.which("gcc") is None:
+    compiler_path = find_c_compiler()
+    if compiler_path is None:
         missing_packages.insert(0, "gcc")
-    elif not has_terminal_library():
+    elif not has_terminal_library(compiler_path):
         missing_packages.append("libncurses-dev")
     return missing_packages
 
@@ -236,22 +260,33 @@ def build_environment(prefix: Path) -> Dict[str, str]:
     return env
 
 
-def download_cache_dir() -> Path:
+def get_download_cache_dir() -> Path:
     cache_home = os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")
     return Path(cache_home) / "build-emacs"
 
 
 def fetch_url(url: str, destination: Path) -> None:
-    with urllib.request.urlopen(url) as response, \
-            destination.open("wb") as output:
+    with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) \
+            as response, destination.open("wb") as output:
         shutil.copyfileobj(response, output)
+
+
+def compute_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def download_verified(url: str, expected_sha256: str,
                       destination: Path) -> None:
-    """Download url to destination, and stop when its SHA-256 differs."""
+    """Download url to destination unless a verified copy is already there.
+
+    Stops the script when the downloaded file has another SHA-256, after
+    deleting the file so that the next run downloads it again.
+    """
+    if destination.is_file() and \
+            compute_sha256(destination) == expected_sha256:
+        return
     fetch_url(url, destination)
-    actual_sha256 = hashlib.sha256(destination.read_bytes()).hexdigest()
+    actual_sha256 = compute_sha256(destination)
     if actual_sha256 != expected_sha256:
         destination.unlink()
         die(f"checksum mismatch for {url}: got {actual_sha256}")
@@ -270,7 +305,7 @@ def extract_tarball(archive_path: Path, destination: Path) -> None:
 def install_gnu_package(release: GnuRelease, prefix: Path, jobs: int,
                         env: Dict[str, str]) -> None:
     """Build a GNU package from its release tarball into prefix."""
-    cache_dir = download_cache_dir()
+    cache_dir = get_download_cache_dir()
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive_name = f"{release.name}-{release.version}.tar.xz"
     archive_path = cache_dir / archive_name
@@ -298,15 +333,25 @@ def ensure_build_tools(prefix: Path, jobs: int, env: Dict[str, str]) -> None:
             install_gnu_package(release, prefix, jobs, env)
 
 
+def read_head_commit(repository: Path) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True).stdout.strip()
+
+
 def ensure_tree_sitter(prefix: Path, jobs: int, env: Dict[str, str]) -> None:
     if succeeds(["pkg-config", "--exists", "tree-sitter"], env=env):
         return
-    tree_sitter_dir = download_cache_dir() / \
+    tree_sitter_dir = get_download_cache_dir() / \
         f"tree-sitter-{TREE_SITTER_VERSION}"
     log(f"Building tree-sitter {TREE_SITTER_VERSION} into {prefix}")
     if not tree_sitter_dir.is_dir():
         run(["git", "clone", "--depth", "1", "--branch", TREE_SITTER_VERSION,
              TREE_SITTER_REPOSITORY_URL, str(tree_sitter_dir)])
+    head_commit = read_head_commit(tree_sitter_dir)
+    if head_commit != TREE_SITTER_COMMIT:
+        die(f"{tree_sitter_dir} is at {head_commit}, not the pinned "
+            f"{TREE_SITTER_COMMIT}. Remove the directory and rerun.")
     run(["make", "-C", str(tree_sitter_dir), "-j", str(jobs),
          f"PREFIX={prefix}"], env=env)
     run(["make", "-C", str(tree_sitter_dir), f"PREFIX={prefix}", "install"],
@@ -358,6 +403,12 @@ def has_gtk3(env: Dict[str, str]) -> bool:
 
 
 def has_usable_libgccjit(env: Dict[str, str]) -> bool:
+    """Return whether gcc links a program against libgccjit.
+
+    libgccjit ships no pkg-config file, and Debian installs the .so in the
+    private GCC directory. Only a link probe with the LIBRARY_PATH and
+    LDFLAGS from build_environment tells whether Emacs can use it.
+    """
     with tempfile.TemporaryDirectory() as work_dir:
         source_path = Path(work_dir) / "probe.c"
         source_path.write_text(
@@ -367,34 +418,74 @@ def has_usable_libgccjit(env: Dict[str, str]) -> bool:
                          "-o", str(Path(work_dir) / "probe")], env=env)
 
 
+def has_sqlite3(env: Dict[str, str]) -> bool:
+    with tempfile.TemporaryDirectory() as work_dir:
+        source_path = Path(work_dir) / "probe.c"
+        source_path.write_text(
+            "#include <sqlite3.h>\n"
+            "int main(void) { return sqlite3_libversion_number() == 0; }\n")
+        return succeeds([find_c_compiler() or "cc", str(source_path),
+                         "-lsqlite3",
+                         "-o", str(Path(work_dir) / "probe")], env=env)
+
+
+def assert_required_features(options: argparse.Namespace,
+                             env: Dict[str, str]) -> None:
+    """Stop when a feature requested as required has no library.
+
+    configure drops SQLite without an error even for --with-sqlite3=yes, so
+    the script probes for the library itself before building.
+    """
+    if options.sqlite == "yes" and not has_sqlite3(env):
+        die("SQLite was required, but sqlite3.h or libsqlite3 is missing. "
+            "Install libsqlite3-dev.")
+
+
 def build_configure_arguments(options: argparse.Namespace,
                               env: Dict[str, str]) -> List[str]:
     """Return the configure arguments.
 
-    Features whose libraries may be missing on a host without root use
-    "ifavailable", so configure drops them instead of failing.
+    A feature left on "auto" uses "ifavailable" or a probe, so configure
+    drops it when its library is missing on a host without root. An explicit
+    request makes configure fail instead.
     """
+    gnutls_mode = "ifavailable" if options.gnutls == "auto" else "yes"
     arguments = [f"--prefix={options.prefix}", "--with-tree-sitter",
-                 "--with-gnutls=ifavailable", "--without-compress-install"]
+                 f"--with-gnutls={gnutls_mode}", "--without-compress-install"]
     gui_mode = options.gui
     if gui_mode == "auto":
         gui_mode = "pgtk" if has_gtk3(env) else "none"
-    if gui_mode == "pgtk":
-        arguments += ["--with-pgtk"] + [
-            f"--with-{image_format}=ifavailable"
-            for image_format in ("xpm", "jpeg", "png", "gif", "tiff")]
-    else:
+    if gui_mode == "none":
         arguments.append("--without-x")
-    native_compilation = "aot" if has_usable_libgccjit(env) else "no"
+    else:
+        arguments.append("--with-pgtk")
+    if gui_mode == "pgtk" and options.gui == "auto":
+        arguments += [f"--with-{image_format}=ifavailable"
+                      for image_format in ("xpm", "jpeg", "png", "gif",
+                                           "tiff")]
+    native_compilation = options.native_compilation
+    if native_compilation == "auto":
+        native_compilation = "aot" if has_usable_libgccjit(env) else "no"
     arguments.append(f"--with-native-compilation={native_compilation}")
     return arguments
+
+
+def build_make_variables() -> List[str]:
+    """Return make variables that route the compiler through ccache.
+
+    list_missing_requirements accepts a host with cc alone, so the wrapper
+    falls back to cc when gcc is missing.
+    """
+    if shutil.which("ccache") is None:
+        return []
+    compiler_name = "gcc" if shutil.which("gcc") else "cc"
+    return [f"CC=ccache {compiler_name}"]
 
 
 def build_and_install_emacs(options: argparse.Namespace,
                             env: Dict[str, str]) -> None:
     configure_arguments = build_configure_arguments(options, env)
-    make_variables = ["CC=ccache gcc", "CXX=ccache g++"] \
-        if shutil.which("ccache") else []
+    make_variables = build_make_variables()
     log(f"Configuring Emacs: {' '.join(configure_arguments)}")
     run(["./autogen.sh"], cwd=options.source_dir, env=env)
     run(["./configure", *configure_arguments], cwd=options.source_dir,
@@ -414,6 +505,9 @@ def warn_about_missing_features(prefix: Path) -> None:
     if "GNUTLS" not in emacs_features:
         warn("no GnuTLS: package.el cannot reach https archives. "
              "Install libgnutls28-dev to enable it.")
+    if "SQLITE3" not in emacs_features:
+        warn("no SQLite: org-roam and other emacsql users cannot open "
+             "databases. Install libsqlite3-dev to enable it.")
     if "NATIVE_COMP" not in emacs_features:
         warn("no native compilation. "
              "Install libgccjit-<gcc version>-dev to enable it.")
@@ -434,6 +528,7 @@ def main(argv: List[str]) -> int:
     env = build_environment(options.prefix)
     ensure_build_tools(options.prefix, options.jobs, env)
     ensure_tree_sitter(options.prefix, options.jobs, env)
+    assert_required_features(options, env)
     checkout_emacs_source(options.source_dir, options.version)
     clean_stale_build_tree(options.source_dir, options.version)
     build_and_install_emacs(options, env)
@@ -447,3 +542,6 @@ if __name__ == "__main__":
     except subprocess.CalledProcessError as error:
         die(f"command failed with status {error.returncode}: "
             f"{' '.join(map(str, error.cmd))}")
+    except OSError as error:
+        # URLError and socket timeouts from a download are OSError too.
+        die(str(error))

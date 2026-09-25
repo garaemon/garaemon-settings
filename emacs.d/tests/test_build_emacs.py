@@ -4,6 +4,7 @@ Functions that would clone Emacs, run a compiler, or reach the network are
 replaced with monkeypatch, so no test builds anything.
 """
 
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -45,6 +46,10 @@ class TestArguments:
 
     def test_should_exit_2_for_unknown_gui(self):
         result = run_script(["--gui", "motif"])
+        assert result.returncode == 2
+
+    def test_should_exit_2_for_unknown_native_compilation(self):
+        result = run_script(["--native-compilation", "jit"])
         assert result.returncode == 2
 
     def test_should_default_prefix_to_home_local(self, monkeypatch, tmp_path):
@@ -195,6 +200,35 @@ class TestConfigureArguments:
         arguments = self.build_arguments(monkeypatch)
         assert "--with-gnutls=ifavailable" in arguments
 
+    def test_should_require_libgccjit_when_aot_is_requested(
+        self, monkeypatch
+    ):
+        arguments = self.build_arguments(
+            monkeypatch, argv=["--native-compilation", "aot"], gccjit=False
+        )
+        assert "--with-native-compilation=aot" in arguments
+
+    def test_should_tolerate_missing_images_for_auto_gui(self, monkeypatch):
+        arguments = self.build_arguments(monkeypatch, gtk3=True)
+        assert "--with-xpm=ifavailable" in arguments
+
+    def test_should_require_images_for_explicit_pgtk(self, monkeypatch):
+        arguments = self.build_arguments(monkeypatch, argv=["--gui", "pgtk"])
+        assert not any(
+            argument.endswith("=ifavailable") and "gnutls" not in argument
+            for argument in arguments
+        )
+
+    def test_should_require_gnutls_when_requested(self, monkeypatch):
+        arguments = self.build_arguments(monkeypatch, argv=["--gnutls", "yes"])
+        assert "--with-gnutls=yes" in arguments
+
+    def test_should_skip_native_compilation_when_disabled(self, monkeypatch):
+        arguments = self.build_arguments(
+            monkeypatch, argv=["--native-compilation", "no"], gccjit=True
+        )
+        assert "--with-native-compilation=no" in arguments
+
 
 class TestCleanStaleBuildTree:
     @pytest.fixture
@@ -238,33 +272,276 @@ class TestMissingRequirements:
             "which",
             lambda name: None if name in missing_commands else f"/bin/{name}",
         )
+        probed_compilers = []
+
+        def probe_terminal_library(compiler_path):
+            probed_compilers.append(compiler_path)
+            return has_terminal_library
+
         monkeypatch.setattr(
-            build_emacs,
-            "has_terminal_library",
-            lambda: has_terminal_library,
+            build_emacs, "has_terminal_library", probe_terminal_library
         )
-        return build_emacs.list_missing_requirements()
+        return build_emacs.list_missing_requirements(), probed_compilers
 
     def test_should_report_missing_compiler(self, monkeypatch):
-        missing = self.list_missing(monkeypatch, missing_commands=("cc", "gcc"))
+        missing, _ = self.list_missing(
+            monkeypatch, missing_commands=("cc", "gcc")
+        )
         assert missing == ["gcc"]
 
     def test_should_report_missing_terminal_library(self, monkeypatch):
-        missing = self.list_missing(monkeypatch, has_terminal_library=False)
+        missing, _ = self.list_missing(
+            monkeypatch, has_terminal_library=False
+        )
         assert missing == ["libncurses-dev"]
 
     def test_should_report_nothing_when_all_present(self, monkeypatch):
-        assert self.list_missing(monkeypatch) == []
+        missing, _ = self.list_missing(monkeypatch)
+        assert missing == []
+
+    def test_should_probe_with_gcc_when_cc_is_missing(self, monkeypatch):
+        _, probed_compilers = self.list_missing(
+            monkeypatch, missing_commands=("cc",)
+        )
+        assert probed_compilers == ["/bin/gcc"]
 
 
 class TestDownload:
-    def test_should_reject_checksum_mismatch(self, monkeypatch, tmp_path):
+    URL = "https://example.invalid/a.tar.xz"
+    CONTENT = b"release"
+    CONTENT_SHA256 = hashlib.sha256(CONTENT).hexdigest()
+
+    @pytest.fixture
+    def fetched_urls(self, monkeypatch):
+        urls = []
+
+        def fake_fetch_url(url, destination):
+            urls.append(url)
+            destination.write_bytes(self.CONTENT)
+
+        monkeypatch.setattr(build_emacs, "fetch_url", fake_fetch_url)
+        return urls
+
+    def test_should_reject_checksum_mismatch(self, tmp_path, fetched_urls):
+        with pytest.raises(SystemExit):
+            build_emacs.download_verified(self.URL, "0" * 64, tmp_path / "a")
+
+    def test_should_remove_file_on_checksum_mismatch(
+        self, tmp_path, fetched_urls
+    ):
+        destination = tmp_path / "a"
+        with pytest.raises(SystemExit):
+            build_emacs.download_verified(self.URL, "0" * 64, destination)
+        assert not destination.exists()
+
+    def test_should_keep_file_when_checksum_matches(
+        self, tmp_path, fetched_urls
+    ):
+        destination = tmp_path / "a"
+        build_emacs.download_verified(
+            self.URL, self.CONTENT_SHA256, destination
+        )
+        assert destination.read_bytes() == self.CONTENT
+
+    def test_should_reuse_verified_cached_file(self, tmp_path, fetched_urls):
+        destination = tmp_path / "a"
+        destination.write_bytes(self.CONTENT)
+        build_emacs.download_verified(
+            self.URL, self.CONTENT_SHA256, destination
+        )
+        assert fetched_urls == []
+
+    def test_should_refetch_corrupt_cached_file(self, tmp_path, fetched_urls):
+        destination = tmp_path / "a"
+        destination.write_bytes(b"truncated")
+        build_emacs.download_verified(
+            self.URL, self.CONTENT_SHA256, destination
+        )
+        assert fetched_urls == [self.URL]
+
+
+class TestCheckoutEmacsSource:
+    @pytest.fixture
+    def git_calls(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(
+            build_emacs, "run", lambda command, **kwargs: calls.append(command)
+        )
+        return calls
+
+    def stub_shallow_answer(self, monkeypatch, answer):
+        monkeypatch.setattr(
+            build_emacs.subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(
+                args, 0, stdout=f"{answer}\n"
+            ),
+        )
+
+    def test_should_clone_shallowly_when_source_is_missing(
+        self, tmp_path, git_calls
+    ):
+        build_emacs.checkout_emacs_source(tmp_path / "emacs", "emacs-31.1")
+        assert git_calls[0][:5] == [
+            "git", "clone", "--depth", "1", "--branch"
+        ]
+
+    def test_should_keep_full_clone_history(
+        self, monkeypatch, tmp_path, git_calls
+    ):
+        (tmp_path / ".git").mkdir()
+        self.stub_shallow_answer(monkeypatch, "false")
+        build_emacs.checkout_emacs_source(tmp_path, "emacs-31.1")
+        assert "--depth" not in git_calls[0]
+
+    def test_should_keep_shallow_clone_shallow(
+        self, monkeypatch, tmp_path, git_calls
+    ):
+        (tmp_path / ".git").mkdir()
+        self.stub_shallow_answer(monkeypatch, "true")
+        build_emacs.checkout_emacs_source(tmp_path, "emacs-31.1")
+        assert "--depth" in git_calls[0]
+
+    def test_should_check_out_fetched_revision(
+        self, monkeypatch, tmp_path, git_calls
+    ):
+        (tmp_path / ".git").mkdir()
+        self.stub_shallow_answer(monkeypatch, "false")
+        build_emacs.checkout_emacs_source(tmp_path, "emacs-31.1")
+        assert git_calls[1][-3:] == ["checkout", "--detach", "FETCH_HEAD"]
+
+
+class TestMakeVariables:
+    def build_variables(self, monkeypatch, available_commands):
+        monkeypatch.setattr(
+            build_emacs.shutil,
+            "which",
+            lambda name: f"/bin/{name}" if name in available_commands else None,
+        )
+        return build_emacs.build_make_variables()
+
+    def test_should_wrap_gcc_with_ccache(self, monkeypatch):
+        variables = self.build_variables(monkeypatch, ("ccache", "gcc", "cc"))
+        assert variables == ["CC=ccache gcc"]
+
+    def test_should_wrap_cc_when_gcc_is_missing(self, monkeypatch):
+        variables = self.build_variables(monkeypatch, ("ccache", "cc"))
+        assert variables == ["CC=ccache cc"]
+
+    def test_should_leave_compiler_alone_without_ccache(self, monkeypatch):
+        variables = self.build_variables(monkeypatch, ("gcc", "cc"))
+        assert variables == []
+
+
+class TestEnsureTreeSitter:
+    @pytest.fixture
+    def commands(self, monkeypatch, tmp_path):
+        calls = []
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+        monkeypatch.setattr(build_emacs, "succeeds", lambda command, **kw: False)
+        monkeypatch.setattr(
+            build_emacs, "run", lambda command, **kwargs: calls.append(command)
+        )
+        return calls
+
+    def ensure(self, monkeypatch, head_commit):
+        monkeypatch.setattr(
+            build_emacs, "read_head_commit", lambda repository: head_commit
+        )
+        build_emacs.ensure_tree_sitter(Path("/opt/e"), 2, env={})
+
+    def test_should_install_pinned_commit(self, monkeypatch, commands):
+        self.ensure(monkeypatch, build_emacs.TREE_SITTER_COMMIT)
+        assert commands[-1][-1] == "install"
+
+    def test_should_stop_on_unexpected_commit(self, monkeypatch, commands):
+        with pytest.raises(SystemExit):
+            self.ensure(monkeypatch, "0" * 40)
+
+    def test_should_not_build_unexpected_commit(self, monkeypatch, commands):
+        with pytest.raises(SystemExit):
+            self.ensure(monkeypatch, "0" * 40)
+        assert all(command[0] != "make" for command in commands)
+
+
+class TestBuildEnvironment:
+    GCC_LIBRARY_DIR = "/usr/lib/gcc/x86_64-linux-gnu/13"
+
+    @pytest.fixture
+    def env(self, monkeypatch):
+        monkeypatch.setattr(
+            build_emacs.shutil, "which", lambda name: f"/usr/bin/{name}"
+        )
+        monkeypatch.setattr(
+            build_emacs.subprocess,
+            "run",
+            lambda *args, **kwargs: subprocess.CompletedProcess(
+                args, 0, stdout=f"{self.GCC_LIBRARY_DIR}/libgcc.a\n"
+            ),
+        )
+        monkeypatch.delenv("LIBRARY_PATH", raising=False)
+        monkeypatch.delenv("LDFLAGS", raising=False)
+        return build_emacs.build_environment(Path("/opt/e"))
+
+    def test_should_put_prefix_bin_first_on_path(self, env):
+        assert env["PATH"].split(":")[0] == "/opt/e/bin"
+
+    def test_should_search_prefix_pkgconfig(self, env):
+        assert env["PKG_CONFIG_PATH"].split(":")[0] == "/opt/e/lib/pkgconfig"
+
+    def test_should_embed_prefix_lib_as_runtime_path(self, env):
+        assert "-Wl,-rpath,/opt/e/lib" in env["LDFLAGS"].split()
+
+    def test_should_add_gcc_library_dir_to_library_path(self, env):
+        assert env["LIBRARY_PATH"] == self.GCC_LIBRARY_DIR
+
+    def test_should_link_against_gcc_library_dir(self, env):
+        assert f"-L{self.GCC_LIBRARY_DIR}" in env["LDFLAGS"].split()
+
+
+class TestEnsureBuildTools:
+    def ensure(self, monkeypatch, missing_commands):
+        installed_packages = []
+        monkeypatch.setattr(
+            build_emacs.shutil,
+            "which",
+            lambda name, path=None:
+                None if name in missing_commands else f"/usr/bin/{name}",
+        )
         monkeypatch.setattr(
             build_emacs,
-            "fetch_url",
-            lambda url, destination: destination.write_bytes(b"tampered"),
+            "install_gnu_package",
+            lambda release, prefix, jobs, env:
+                installed_packages.append(release.name),
         )
+        build_emacs.ensure_build_tools(Path("/opt/e"), 2, env={"PATH": ""})
+        return installed_packages
+
+    def test_should_build_m4_before_autoconf_before_texinfo(
+        self, monkeypatch
+    ):
+        installed = self.ensure(monkeypatch, ("m4", "autoconf", "makeinfo"))
+        assert installed == ["m4", "autoconf", "texinfo"]
+
+    def test_should_build_nothing_when_tools_exist(self, monkeypatch):
+        assert self.ensure(monkeypatch, ()) == []
+
+    def test_should_build_texinfo_for_missing_makeinfo(self, monkeypatch):
+        assert self.ensure(monkeypatch, ("makeinfo",)) == ["texinfo"]
+
+
+class TestRequiredFeatures:
+    def assert_features(self, monkeypatch, argv, sqlite3):
+        monkeypatch.setattr(build_emacs, "has_sqlite3", lambda env: sqlite3)
+        options = build_emacs.parse_arguments(argv)
+        build_emacs.assert_required_features(options, env={})
+
+    def test_should_stop_when_required_sqlite_is_missing(self, monkeypatch):
         with pytest.raises(SystemExit):
-            build_emacs.download_verified(
-                "https://example.invalid/a.tar.xz", "0" * 64, tmp_path / "a"
-            )
+            self.assert_features(monkeypatch, ["--sqlite", "yes"], False)
+
+    def test_should_pass_when_required_sqlite_exists(self, monkeypatch):
+        self.assert_features(monkeypatch, ["--sqlite", "yes"], True)
+
+    def test_should_tolerate_missing_sqlite_by_default(self, monkeypatch):
+        self.assert_features(monkeypatch, [], False)
