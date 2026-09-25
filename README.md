@@ -137,7 +137,7 @@ which `eslint-plugin-html` extracts. Beyond the recommended rule set it enforces
 `npx eslint --fix <file>`.
 
 Tests stay with the component they exercise (`dotfiles-test.yml`,
-`emacs-test.yml`, `skills-ci.yml`, `ansible.yml`).
+`emacs-test.yml`, `emacs-build-test.yml`, `skills-ci.yml`, `ansible.yml`).
 
 ## Scope
 

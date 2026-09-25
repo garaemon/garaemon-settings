@@ -322,6 +322,10 @@ The script stops and lists the Debian packages to ask an administrator for
 when it lacks a requirement that it cannot build: git, a C compiler, make,
 pkg-config, perl, or the ncurses development files.
 
+`.github/workflows/emacs-build-test.yml` runs the script end to end as a user
+without sudo, on a runner without makeinfo and tree-sitter, whenever the
+script changes.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.
