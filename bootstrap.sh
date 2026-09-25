@@ -241,7 +241,7 @@ Options:
   --skip-ansible    Skip step 4.
   --no-sudo         Never use sudo, even when it is installed.
   --build-emacs     Build Emacs from source into ~/.local as a last step.
-                    The build needs no root.
+                    The build needs no root. Linux only.
   -h, --help        Show this help and exit.
 EOF
 }
@@ -290,6 +290,11 @@ main() {
         shift
     done
     assert_allowed_playbook "${playbook_name}"
+    # build_emacs.py probes Debian library paths and names Debian packages.
+    if [[ "${should_build_emacs}" == true && "$(uname -s)" != Linux ]]; then
+        warn "--build-emacs supports Linux only"
+        exit 2
+    fi
 
     local has_root=false
     if [[ "${is_sudo_allowed}" == true ]] && has_root_access; then

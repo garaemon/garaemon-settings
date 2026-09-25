@@ -43,7 +43,7 @@ The script accepts these options:
 - `--skip-ansible`: skips step 4.
 - `--no-sudo`: never uses sudo, even when it is installed.
 - `--build-emacs`: builds Emacs from source into `~/.local` after the other
-  steps. The build needs no root. See
+  steps. The build needs no root and runs on Linux only. See
   [Building Emacs](emacs.d/README.md#building-emacs).
 
 The script also runs without root, for example in a container that has no

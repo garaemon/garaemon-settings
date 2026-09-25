@@ -161,6 +161,20 @@ class TestMainArguments:
         result = self.run_main("--no-sudo --build-emacs", tmp_path)
         assert "PREREQ:false true false" in result.stdout
 
+    def test_should_refuse_to_build_emacs_outside_linux(self, tmp_path):
+        result = source_and_run(
+            f"{self.HARNESS}uname() {{ echo Darwin; }}\nmain --build-emacs",
+            tmp_path,
+        )
+        assert result.returncode == 2
+
+    def test_should_refuse_before_any_step_outside_linux(self, tmp_path):
+        result = source_and_run(
+            f"{self.HARNESS}uname() {{ echo Darwin; }}\nmain --build-emacs",
+            tmp_path,
+        )
+        assert "CLONE" not in result.stdout
+
     def test_should_build_emacs_after_playbook(self, tmp_path):
         result = self.run_main("--build-emacs", tmp_path)
         steps = [
