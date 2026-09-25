@@ -98,6 +98,25 @@ Like chezmoi, the mise version is pinned and the release tarball is verified
 against an embedded sha256 checksum (`MISE_VERSION` and `MISE_CHECKSUMS` in
 `install.sh`); bump them from the release's `SHASUMS256.txt`.
 
+#### Shell plugin repositories (`.chezmoiexternal.toml`)
+
+`dot_zshrc` sources two repositories:
+
+- [rupa/z](https://github.com/rupa/z) for the `z` command.
+- [seebi/dircolors-solarized](https://github.com/seebi/dircolors-solarized)
+  for the `ls` colors.
+
+`.chezmoiexternal.toml` clones both under `~/.local/share/` on
+`chezmoi apply`. The clone needs neither sudo nor ghq, so machines that skip
+the Ansible playbooks get them too. Keeping them out of `~/ghq` also keeps
+them out of `ghq list`. chezmoi leaves an existing clone alone. To pull
+updates, run:
+
+```bash
+chezmoi apply --refresh-externals \
+  ~/.local/share/zsh/plugins/z ~/.local/share/dircolors-solarized
+```
+
 ### Machine-local configuration (atuin sync)
 
 Some settings are personal and must not be committed to this public repository
