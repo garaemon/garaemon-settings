@@ -58,6 +58,7 @@ class TestMainArguments:
         "apply_dotfiles() { echo DOTFILES; }\n"
         "install_ansible() { echo ANSIBLE; }\n"
         'run_playbook() { echo "PLAYBOOK:$1"; }\n'
+        "build_emacs() { echo BUILD_EMACS; }\n"
     )
 
     def run_main(self, args, home):
@@ -147,6 +148,22 @@ class TestMainArguments:
     def test_should_not_need_python_when_ansible_skipped(self, tmp_path):
         result = self.run_main("--skip-ansible", tmp_path)
         assert "PREREQ:true false" in result.stdout
+
+    def test_should_not_build_emacs_by_default(self, tmp_path):
+        result = self.run_main("", tmp_path)
+        assert "BUILD_EMACS" not in result.stdout
+
+    def test_should_build_emacs_without_root(self, tmp_path):
+        result = self.run_main("--no-sudo --build-emacs", tmp_path)
+        assert "BUILD_EMACS" in result.stdout
+
+    def test_should_build_emacs_after_playbook(self, tmp_path):
+        result = self.run_main("--build-emacs", tmp_path)
+        steps = [
+            line for line in result.stdout.splitlines()
+            if not line.startswith("[bootstrap]")
+        ]
+        assert steps[-2:] == ["PLAYBOOK:main", "BUILD_EMACS"]
 
 
 class TestHasRootAccess:

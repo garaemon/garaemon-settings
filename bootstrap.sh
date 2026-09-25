@@ -206,10 +206,18 @@ run_playbook() {
     )
 }
 
+# Builds Emacs from source under ~/.local. The script needs no root, so this
+# step also runs on a host where the playbooks cannot.
+build_emacs() {
+    log "Building Emacs with emacs.d/scripts/build-emacs.sh"
+    "${CHECKOUT_DIR}/emacs.d/scripts/build-emacs.sh"
+}
+
 usage() {
     cat <<'EOF'
 Usage: bootstrap.sh [--playbook main|minimal|ax8-max] [--skip-dotfiles]
-                    [--skip-ansible] [--no-sudo] [-h|--help]
+                    [--skip-ansible] [--no-sudo] [--build-emacs]
+                    [-h|--help]
 
 Sets up this machine from nothing:
   1. Installs the prerequisites (git, curl, python3-venv; Homebrew bash on macOS).
@@ -228,6 +236,8 @@ Options:
   --skip-dotfiles   Skip step 3.
   --skip-ansible    Skip step 4.
   --no-sudo         Never use sudo, even when it is installed.
+  --build-emacs     Build Emacs from source into ~/.local as a last step.
+                    The build needs no root.
   -h, --help        Show this help and exit.
 EOF
 }
@@ -247,6 +257,7 @@ main() {
     local should_apply_dotfiles=true
     local should_run_ansible=true
     local is_sudo_allowed=true
+    local should_build_emacs=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --playbook)
@@ -261,6 +272,7 @@ main() {
             --skip-dotfiles) should_apply_dotfiles=false ;;
             --skip-ansible) should_run_ansible=false ;;
             --no-sudo) is_sudo_allowed=false ;;
+            --build-emacs) should_build_emacs=true ;;
             -h|--help)
                 usage
                 exit 0
@@ -297,6 +309,9 @@ main() {
     if [[ "${will_run_ansible}" == true ]]; then
         install_ansible
         run_playbook "${playbook_name}"
+    fi
+    if [[ "${should_build_emacs}" == true ]]; then
+        build_emacs
     fi
     log "Done. Open a new login shell to pick up the dotfiles."
 }

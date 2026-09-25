@@ -42,6 +42,9 @@ The script accepts these options:
 - `--skip-dotfiles`: skips step 3.
 - `--skip-ansible`: skips step 4.
 - `--no-sudo`: never uses sudo, even when it is installed.
+- `--build-emacs`: builds Emacs from source into `~/.local` after the other
+  steps. The build needs no root. See
+  [Building Emacs](emacs.d/README.md#building-emacs).
 
 The script also runs without root, for example in a container that has no
 `sudo` command, or with `--no-sudo`. In that case it runs these steps only:
@@ -54,6 +57,9 @@ Steps 1 and 4 install system packages, so the script handles them this way:
 - Step 1 fails with the list of missing packages when `git` or `curl` is
   missing. Ask an administrator to install them.
 - Step 4 is skipped, because every playbook installs packages as root.
+
+Pass `--build-emacs` to get Emacs on such a host, because the playbook that
+normally builds it does not run there.
 
 Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
 the sudo and Ansible password prompts cannot read the keyboard.
