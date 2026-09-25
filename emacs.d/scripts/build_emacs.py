@@ -526,9 +526,9 @@ def main(argv: List[str]) -> int:
         die("missing requirements. Ask an administrator to install: "
             f"{' '.join(missing_packages)}")
     env = build_environment(options.prefix)
+    assert_required_features(options, env)
     ensure_build_tools(options.prefix, options.jobs, env)
     ensure_tree_sitter(options.prefix, options.jobs, env)
-    assert_required_features(options, env)
     checkout_emacs_source(options.source_dir, options.version)
     clean_stale_build_tree(options.source_dir, options.version)
     build_and_install_emacs(options, env)

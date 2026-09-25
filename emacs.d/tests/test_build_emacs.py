@@ -545,3 +545,29 @@ class TestRequiredFeatures:
 
     def test_should_tolerate_missing_sqlite_by_default(self, monkeypatch):
         self.assert_features(monkeypatch, [], False)
+
+
+class TestMainOrder:
+    def test_should_check_required_features_before_building_tools(
+        self, monkeypatch, tmp_path
+    ):
+        steps = []
+        monkeypatch.setattr(
+            build_emacs, "is_installed_emacs_current", lambda options: False
+        )
+        monkeypatch.setattr(build_emacs, "list_missing_requirements", list)
+        monkeypatch.setattr(
+            build_emacs, "build_environment", lambda prefix: {}
+        )
+        for step_name in ("assert_required_features", "ensure_build_tools",
+                          "ensure_tree_sitter", "checkout_emacs_source",
+                          "clean_stale_build_tree", "build_and_install_emacs",
+                          "warn_about_missing_features"):
+            monkeypatch.setattr(
+                build_emacs, step_name,
+                lambda *args, step_name=step_name: steps.append(step_name),
+            )
+        build_emacs.main(["--prefix", str(tmp_path)])
+        assert steps.index("assert_required_features") < steps.index(
+            "ensure_build_tools"
+        )
