@@ -8,15 +8,21 @@
     - ansible_facts.os_family == "Debian"
     - emacs_build_emacs | bool
   block:
+    # The script module copies the script from this checkout to the managed
+    # host before running it, so the role also works over ssh.
     - name: Set the path of the build script
       ansible.builtin.set_fact:
         emacs_build_script: "{{ role_path }}/../../../emacs.d/scripts/build_emacs.py"
 
     # The script exits with 10 when the Emacs under ~/.local is missing or
     # older than the version that the script builds.
+    # --check changes nothing, so the task also runs under ansible-playbook
+    # --check, where the next block needs its return code.
     - name: Check whether Emacs needs a build
-      ansible.builtin.command:
+      ansible.builtin.script:
         cmd: "{{ emacs_build_script }} --check"
+        executable: python3
+      check_mode: false
       register: emacs_build_check
       changed_when: false
       failed_when: emacs_build_check.rc not in [0, 10]
@@ -180,6 +186,7 @@
               - quilt
               - sharutils
               - sqlite3
+              - libsqlite3-dev
               - texinfo
               - xaw3dg-dev
               - zlib1g-dev
@@ -344,6 +351,7 @@
               - quilt
               - sharutils
               - sqlite3
+              - libsqlite3-dev
               - texinfo
               - xaw3dg-dev
               - zlib1g-dev
@@ -353,6 +361,13 @@
               - libtool-bin # for libvterm
           become: true
           when: ansible_facts.distribution_version == '24.04'
+        # The apt step above installs GTK 3, the image libraries, GnuTLS,
+        # SQLite, and libgccjit, so a missing one must fail the build instead
+        # of silently dropping its feature.
         - name: Build and install Emacs
-          ansible.builtin.command:
-            cmd: "{{ emacs_build_script }} --source-dir {{ emacs_source_path | quote }}"
+          ansible.builtin.script:
+            cmd: >-
+              {{ emacs_build_script }}
+              --source-dir {{ emacs_source_path | quote }}
+              --gui pgtk --gnutls yes --sqlite yes --native-compilation aot
+            executable: python3

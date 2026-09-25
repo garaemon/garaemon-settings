@@ -98,7 +98,9 @@ jobs:
         id: changed-files-emacs
         uses: tj-actions/changed-files@v47
         with:
-          files: ansible/roles/emacs/**
+          files: |
+            ansible/roles/emacs/**
+            emacs.d/scripts/build_emacs.py
 
       - name: Execute main.yml
         run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"

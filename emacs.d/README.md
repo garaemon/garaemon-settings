@@ -294,7 +294,9 @@ scripts/build_emacs.py
 ```
 
 The Ansible `emacs` role runs the same script. The role first installs the
-build dependencies with apt, so a host with sudo gets every feature.
+build dependencies with apt, then passes
+`--gui pgtk --gnutls yes --sqlite yes --native-compilation aot` so that a
+missing dependency fails the build instead of dropping a feature.
 
 The script skips the build when `~/.local/bin/emacs` is already the pinned
 version or newer. Pass `--force` to rebuild anyway, and `--help` for the
@@ -305,10 +307,16 @@ Without root, the script adapts to the host in these ways:
 - It builds m4, autoconf, makeinfo, and tree-sitter into `~/.local` when
   they are missing. Their sources are cached under `~/.cache/build-emacs`.
 - It builds the pgtk GUI when the GTK 3 headers are installed, and a
-  terminal-only Emacs otherwise. `--gui none` forces a terminal-only build.
+  terminal-only Emacs otherwise. `--gui none` forces a terminal-only build,
+  and `--gui pgtk` makes missing GTK 3 or image libraries fail the build.
 - It turns off native compilation when libgccjit is missing.
+  `--native-compilation aot` makes a missing libgccjit fail the build.
 - It builds without GnuTLS when the GnuTLS headers are missing. package.el
   then cannot reach the https archives, so the script prints a warning.
+  `--gnutls yes` makes missing GnuTLS headers fail the build.
+- It builds without SQLite when the SQLite headers are missing, and warns,
+  because org-roam needs SQLite. `--sqlite yes` stops before the build
+  instead.
 
 The script stops and lists the Debian packages to ask an administrator for
 when it lacks a requirement that it cannot build: git, a C compiler, make,
