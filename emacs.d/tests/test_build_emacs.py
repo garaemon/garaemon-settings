@@ -152,10 +152,11 @@ class TestCheckOnly:
 
 
 class TestConfigureArguments:
-    def build_arguments(self, monkeypatch, argv=(), gtk3=True, gccjit=True):
-        monkeypatch.setattr(build_emacs, "has_gtk3", lambda env: gtk3)
+    def build_arguments(self, monkeypatch, argv=(), has_gtk3=True,
+                        has_gccjit=True):
+        monkeypatch.setattr(build_emacs, "has_gtk3", lambda env: has_gtk3)
         monkeypatch.setattr(
-            build_emacs, "has_usable_libgccjit", lambda env: gccjit
+            build_emacs, "has_usable_libgccjit", lambda env: has_gccjit
         )
         options = build_emacs.parse_arguments(list(argv))
         return build_emacs.build_configure_arguments(options, env={})
@@ -167,33 +168,33 @@ class TestConfigureArguments:
         assert "--prefix=/opt/e" in arguments
 
     def test_should_pick_pgtk_when_gtk3_exists(self, monkeypatch):
-        arguments = self.build_arguments(monkeypatch, gtk3=True)
+        arguments = self.build_arguments(monkeypatch, has_gtk3=True)
         assert "--with-pgtk" in arguments
 
     def test_should_build_terminal_only_without_gtk3(self, monkeypatch):
-        arguments = self.build_arguments(monkeypatch, gtk3=False)
+        arguments = self.build_arguments(monkeypatch, has_gtk3=False)
         assert "--without-x" in arguments
 
     def test_should_honor_gui_none_even_with_gtk3(self, monkeypatch):
         arguments = self.build_arguments(
-            monkeypatch, argv=["--gui", "none"], gtk3=True
+            monkeypatch, argv=["--gui", "none"], has_gtk3=True
         )
         assert "--with-pgtk" not in arguments
 
     def test_should_force_pgtk_when_requested(self, monkeypatch):
         arguments = self.build_arguments(
-            monkeypatch, argv=["--gui", "pgtk"], gtk3=False
+            monkeypatch, argv=["--gui", "pgtk"], has_gtk3=False
         )
         assert "--with-pgtk" in arguments
 
     def test_should_compile_ahead_of_time_with_libgccjit(self, monkeypatch):
-        arguments = self.build_arguments(monkeypatch, gccjit=True)
+        arguments = self.build_arguments(monkeypatch, has_gccjit=True)
         assert "--with-native-compilation=aot" in arguments
 
     def test_should_disable_native_compilation_without_libgccjit(
         self, monkeypatch
     ):
-        arguments = self.build_arguments(monkeypatch, gccjit=False)
+        arguments = self.build_arguments(monkeypatch, has_gccjit=False)
         assert "--with-native-compilation=no" in arguments
 
     def test_should_tolerate_missing_gnutls(self, monkeypatch):
@@ -204,20 +205,20 @@ class TestConfigureArguments:
         self, monkeypatch
     ):
         arguments = self.build_arguments(
-            monkeypatch, argv=["--native-compilation", "aot"], gccjit=False
+            monkeypatch, argv=["--native-compilation", "aot"], has_gccjit=False
         )
         assert "--with-native-compilation=aot" in arguments
 
     def test_should_tolerate_missing_images_for_auto_gui(self, monkeypatch):
-        arguments = self.build_arguments(monkeypatch, gtk3=True)
+        arguments = self.build_arguments(monkeypatch, has_gtk3=True)
         assert "--with-xpm=ifavailable" in arguments
 
     def test_should_require_images_for_explicit_pgtk(self, monkeypatch):
         arguments = self.build_arguments(monkeypatch, argv=["--gui", "pgtk"])
-        assert not any(
-            argument.endswith("=ifavailable") and "gnutls" not in argument
-            for argument in arguments
-        )
+        assert [
+            argument for argument in arguments
+            if argument in build_emacs.LENIENT_IMAGE_ARGUMENTS
+        ] == []
 
     def test_should_require_gnutls_when_requested(self, monkeypatch):
         arguments = self.build_arguments(monkeypatch, argv=["--gnutls", "yes"])
@@ -225,7 +226,7 @@ class TestConfigureArguments:
 
     def test_should_skip_native_compilation_when_disabled(self, monkeypatch):
         arguments = self.build_arguments(
-            monkeypatch, argv=["--native-compilation", "no"], gccjit=True
+            monkeypatch, argv=["--native-compilation", "no"], has_gccjit=True
         )
         assert "--with-native-compilation=no" in arguments
 
@@ -531,8 +532,10 @@ class TestEnsureBuildTools:
 
 
 class TestRequiredFeatures:
-    def assert_features(self, monkeypatch, argv, sqlite3):
-        monkeypatch.setattr(build_emacs, "has_sqlite3", lambda env: sqlite3)
+    def assert_features(self, monkeypatch, argv, has_sqlite3):
+        monkeypatch.setattr(
+            build_emacs, "has_sqlite3", lambda env: has_sqlite3
+        )
         options = build_emacs.parse_arguments(argv)
         build_emacs.assert_required_features(options, env={})
 

@@ -34,6 +34,11 @@ TREE_SITTER_VERSION = "v0.25.9"
 TREE_SITTER_COMMIT = "a467ea8502d95562171f97953a6dc5b2a8622609"
 GNU_MIRROR_URL = "https://ftp.gnu.org/gnu"
 BUILD_STAMP_NAME = ".built-emacs-version"
+# configure fails on a missing image library unless the option says
+# "ifavailable", which only an automatically chosen GUI passes.
+LENIENT_IMAGE_ARGUMENTS = tuple(
+    f"--with-{image_format}=ifavailable"
+    for image_format in ("xpm", "jpeg", "png", "gif", "tiff"))
 # --check exits with this status when a build is due, so that a caller can
 # tell "build needed" apart from a failure of the script itself.
 EXIT_CODE_BUILD_NEEDED = 10
@@ -460,9 +465,7 @@ def build_configure_arguments(options: argparse.Namespace,
     else:
         arguments.append("--with-pgtk")
     if gui_mode == "pgtk" and options.gui == "auto":
-        arguments += [f"--with-{image_format}=ifavailable"
-                      for image_format in ("xpm", "jpeg", "png", "gif",
-                                           "tiff")]
+        arguments += LENIENT_IMAGE_ARGUMENTS
     native_compilation = options.native_compilation
     if native_compilation == "auto":
         native_compilation = "aot" if has_usable_libgccjit(env) else "no"
