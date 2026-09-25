@@ -67,10 +67,31 @@ class TestArguments:
             tmp_path / "src" / "github.com" / "emacs-mirror" / "emacs"
         )
 
-    def test_should_cap_default_jobs(self, monkeypatch):
-        monkeypatch.setattr(build_emacs.os, "cpu_count", lambda: 64)
+    def test_should_default_jobs_to_available_cpus(self, monkeypatch):
+        monkeypatch.setattr(build_emacs, "count_available_cpus", lambda: 64)
         options = build_emacs.parse_arguments([])
-        assert options.jobs == build_emacs.MAX_DEFAULT_JOBS
+        assert options.jobs == 64
+
+
+class TestCountAvailableCpus:
+    def test_should_count_cpus_in_affinity_mask(self, monkeypatch):
+        monkeypatch.setattr(
+            build_emacs.os, "sched_getaffinity", lambda pid: {0, 1, 2},
+            raising=False,
+        )
+        assert build_emacs.count_available_cpus() == 3
+
+    def test_should_fall_back_to_cpu_count_without_affinity(
+        self, monkeypatch
+    ):
+        monkeypatch.delattr(build_emacs.os, "sched_getaffinity", raising=False)
+        monkeypatch.setattr(build_emacs.os, "cpu_count", lambda: 12)
+        assert build_emacs.count_available_cpus() == 12
+
+    def test_should_return_one_when_cpu_count_is_unknown(self, monkeypatch):
+        monkeypatch.delattr(build_emacs.os, "sched_getaffinity", raising=False)
+        monkeypatch.setattr(build_emacs.os, "cpu_count", lambda: None)
+        assert build_emacs.count_available_cpus() == 1
 
 
 class TestVersionComparison:

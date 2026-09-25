@@ -32,7 +32,6 @@ TREE_SITTER_REPOSITORY_URL = "https://github.com/tree-sitter/tree-sitter"
 TREE_SITTER_VERSION = "v0.25.9"
 GNU_MIRROR_URL = "https://ftp.gnu.org/gnu"
 BUILD_STAMP_NAME = ".built-emacs-version"
-MAX_DEFAULT_JOBS = 4
 # --check exits with this status when a build is due, so that a caller can
 # tell "build needed" apart from a failure of the script itself.
 EXIT_CODE_BUILD_NEEDED = 10
@@ -83,6 +82,18 @@ def succeeds(command: List[str], **kwargs) -> bool:
     return completed.returncode == 0
 
 
+def count_available_cpus() -> int:
+    """Return the number of CPUs that this process may run on.
+
+    The affinity mask reflects a taskset or cgroup cpuset limit on a shared
+    host, while os.cpu_count() counts every CPU of the machine. macOS lacks
+    sched_getaffinity.
+    """
+    if hasattr(os, "sched_getaffinity"):
+        return len(os.sched_getaffinity(0))
+    return os.cpu_count() or 1
+
+
 def parse_arguments(argv: List[str]) -> argparse.Namespace:
     """Return the options; argparse exits with status 2 on a usage error."""
     home = Path.home()
@@ -104,9 +115,8 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
         default=ghq_root / "github.com" / "emacs-mirror" / "emacs",
         help="Emacs checkout to build in (default: under $GHQ_ROOT or ~/ghq)")
     parser.add_argument(
-        "--jobs", type=int,
-        default=min(os.cpu_count() or 1, MAX_DEFAULT_JOBS),
-        help="parallel make jobs (default: CPU count, at most 4)")
+        "--jobs", type=int, default=count_available_cpus(),
+        help="parallel make jobs (default: available CPUs)")
     parser.add_argument(
         "--gui", choices=("auto", "pgtk", "none"), default="auto",
         help="auto picks pgtk when the GTK 3 headers exist (default: auto)")
