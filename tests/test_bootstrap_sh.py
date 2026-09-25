@@ -83,7 +83,7 @@ class TestMainArguments:
             if not line.startswith("[bootstrap]")
         ]
         assert steps == [
-            "PREREQ:true true", "CLONE", "DOTFILES", "ANSIBLE",
+            "PREREQ:true true true", "CLONE", "DOTFILES", "ANSIBLE",
             "PLAYBOOK:main",
         ]
 
@@ -143,11 +143,11 @@ class TestMainArguments:
             f"{self.HARNESS}has_root_access() {{ return 1; }}\nmain",
             tmp_path,
         )
-        assert "PREREQ:false false" in result.stdout
+        assert "PREREQ:false false false" in result.stdout
 
     def test_should_not_need_python_when_ansible_skipped(self, tmp_path):
         result = self.run_main("--skip-ansible", tmp_path)
-        assert "PREREQ:true false" in result.stdout
+        assert "PREREQ:true false false" in result.stdout
 
     def test_should_not_build_emacs_by_default(self, tmp_path):
         result = self.run_main("", tmp_path)
@@ -156,6 +156,10 @@ class TestMainArguments:
     def test_should_build_emacs_without_root(self, tmp_path):
         result = self.run_main("--no-sudo --build-emacs", tmp_path)
         assert "BUILD_EMACS" in result.stdout
+
+    def test_should_need_python_without_venv_to_build_emacs(self, tmp_path):
+        result = self.run_main("--no-sudo --build-emacs", tmp_path)
+        assert "PREREQ:false true false" in result.stdout
 
     def test_should_build_emacs_after_playbook(self, tmp_path):
         result = self.run_main("--build-emacs", tmp_path)
@@ -201,35 +205,48 @@ class TestInstallDebianPrerequisites:
         self.write_tool_stubs(stub_dir, ["curl", "python3"])
         write_stub(stub_dir, "sudo", '"$@"')
         write_stub(stub_dir, "apt-get", 'echo "APT $*"')
-        result = self.run_install("true true", tmp_path, stub_dir)
+        result = self.run_install("true true true", tmp_path, stub_dir)
         assert "APT install -y git" in result.stdout
 
     def test_should_fail_without_root_when_git_is_missing(
         self, tmp_path, stub_dir
     ):
         self.write_tool_stubs(stub_dir, ["curl", "python3"])
-        result = self.run_install("false true", tmp_path, stub_dir)
+        result = self.run_install("false true true", tmp_path, stub_dir)
         assert result.returncode == 1
 
     def test_should_not_call_apt_without_root(self, tmp_path, stub_dir):
         self.write_tool_stubs(stub_dir, ["curl", "python3"])
         write_stub(stub_dir, "apt-get", "echo APT_CALLED")
-        result = self.run_install("false true", tmp_path, stub_dir)
+        result = self.run_install("false true true", tmp_path, stub_dir)
         assert "APT_CALLED" not in result.stdout
 
     def test_should_name_missing_packages_without_root(
         self, tmp_path, stub_dir
     ):
         self.write_tool_stubs(stub_dir, ["curl", "python3"])
-        result = self.run_install("false true", tmp_path, stub_dir)
+        result = self.run_install("false true true", tmp_path, stub_dir)
         assert "git" in result.stderr
 
     def test_should_skip_python_check_when_not_needed(
         self, tmp_path, stub_dir
     ):
         self.write_tool_stubs(stub_dir, ["git", "curl"])
-        result = self.run_install("false false", tmp_path, stub_dir)
+        result = self.run_install("false false false", tmp_path, stub_dir)
         assert result.returncode == 0
+
+    def test_should_skip_venv_check_when_only_python_is_needed(
+        self, tmp_path, stub_dir
+    ):
+        self.write_tool_stubs(stub_dir, ["git", "curl"])
+        write_stub(stub_dir, "python3", '[[ "$1" == -c ]] && exit 1; exit 0')
+        result = self.run_install("false true false", tmp_path, stub_dir)
+        assert result.returncode == 0
+
+    def test_should_require_python_to_build_emacs(self, tmp_path, stub_dir):
+        self.write_tool_stubs(stub_dir, ["git", "curl"])
+        result = self.run_install("false true false", tmp_path, stub_dir)
+        assert "python3" in result.stderr
 
 
 class TestCloneRepository:

@@ -58,17 +58,21 @@ activate_homebrew() {
     return 1
 }
 
-# Usage: install_debian_prerequisites <has_root> <needs_python>
-# Only Ansible needs python3 and its venv module. Without root the function
-# cannot install anything, so it exits when a package is missing.
+# Usage: install_debian_prerequisites <has_root> <needs_python> <needs_venv>
+# Ansible needs python3 and its venv module, and build_emacs.py needs python3
+# alone. Without root the function cannot install anything, so it exits when
+# a package is missing.
 install_debian_prerequisites() {
     local has_root="$1"
     local needs_python="$2"
+    local needs_venv="$3"
     local -a missing_packages=()
     command -v git >/dev/null 2>&1 || missing_packages+=(git)
     command -v curl >/dev/null 2>&1 || missing_packages+=(curl)
     if [[ "${needs_python}" == true ]]; then
         command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
+    fi
+    if [[ "${needs_venv}" == true ]]; then
         python3 -c 'import ensurepip' >/dev/null 2>&1 || missing_packages+=(python3-venv)
     fi
     if [[ "${#missing_packages[@]}" -eq 0 ]]; then
@@ -101,7 +105,7 @@ install_macos_prerequisites() {
     fi
 }
 
-# Usage: install_prerequisites <has_root> <needs_python>
+# Usage: install_prerequisites <has_root> <needs_python> <needs_venv>
 install_prerequisites() {
     case "$(uname -s)" in
         Linux)
@@ -301,7 +305,11 @@ main() {
     # binary that install.sh put in ~/.local/bin is not on PATH.
     export PATH="${HOME}/.local/bin:${PATH}"
 
-    install_prerequisites "${has_root}" "${will_run_ansible}"
+    local needs_python="${will_run_ansible}"
+    if [[ "${should_build_emacs}" == true ]]; then
+        needs_python=true
+    fi
+    install_prerequisites "${has_root}" "${needs_python}" "${will_run_ansible}"
     clone_repository
     if [[ "${should_apply_dotfiles}" == true ]]; then
         apply_dotfiles
