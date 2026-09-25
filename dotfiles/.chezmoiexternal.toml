@@ -1,0 +1,11 @@
+# Clone the repositories that dot_zshrc sources into the default ghq root, so
+# machines without sudo, where Ansible never runs, get them too. chezmoi skips
+# an existing clone and pulls only with `chezmoi apply --refresh-externals`.
+
+["ghq/github.com/rupa/z"]
+type = "git-repo"
+url = "https://github.com/rupa/z.git"
+
+["ghq/github.com/seebi/dircolors-solarized"]
+type = "git-repo"
+url = "https://github.com/seebi/dircolors-solarized.git"
