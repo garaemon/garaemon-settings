@@ -12,7 +12,7 @@ Org 9.7.11, which has neither, so every inline image refresh fails with
 
 The pinned version lives in two places, and both name 31.1:
 
-- `scripts/build-emacs.sh` builds `emacs-31.1` on a host whose Emacs is
+- `scripts/build_emacs.py` builds `emacs-31.1` on a host whose Emacs is
   older. See [Building Emacs](#building-emacs).
 - `.github/workflows/emacs-test.yml` runs the tests on 31.1.
 
@@ -283,13 +283,14 @@ recorder.
 
 ## Building Emacs
 
-`scripts/build-emacs.sh` builds Emacs from
+`scripts/build_emacs.py` builds Emacs from
 [emacs-mirror](https://github.com/emacs-mirror/emacs) and installs it under
 `~/.local`. The script needs no root, so it also works on a shared host
-without sudo:
+without sudo. It needs Python 3.8 or later and nothing outside the standard
+library:
 
 ```sh
-scripts/build-emacs.sh
+scripts/build_emacs.py
 ```
 
 The Ansible `emacs` role runs the same script. The role first installs the
@@ -311,7 +312,7 @@ Without root, the script adapts to the host in these ways:
 
 The script stops and lists the Debian packages to ask an administrator for
 when it lacks a requirement that it cannot build: git, a C compiler, make,
-pkg-config, perl, curl, xz, or the ncurses development files.
+pkg-config, perl, or the ncurses development files.
 
 ## Scripts
 

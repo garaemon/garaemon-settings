@@ -1,5 +1,5 @@
 # Set the variable true if you want to build emacs from source.
-# emacs.d/scripts/build-emacs.sh pins the Emacs version to build.
+# emacs.d/scripts/build_emacs.py pins the Emacs version to build.
 emacs_build_emacs: false
 
 # Directory the Emacs source is cloned into and built in.

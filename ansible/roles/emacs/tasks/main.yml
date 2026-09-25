@@ -10,7 +10,7 @@
   block:
     - name: Set the path of the build script
       ansible.builtin.set_fact:
-        emacs_build_script: "{{ role_path }}/../../../emacs.d/scripts/build-emacs.sh"
+        emacs_build_script: "{{ role_path }}/../../../emacs.d/scripts/build_emacs.py"
 
     # The script exits with 10 when the Emacs under ~/.local is missing or
     # older than the version that the script builds.

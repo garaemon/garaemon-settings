@@ -6,14 +6,14 @@ on:
       - main
     paths:
       - 'ansible/**'
-      - 'emacs.d/scripts/build-emacs.sh'
+      - 'emacs.d/scripts/build_emacs.py'
       - '.github/workflows/ansible.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'ansible/**'
-      - 'emacs.d/scripts/build-emacs.sh'
+      - 'emacs.d/scripts/build_emacs.py'
       - '.github/workflows/ansible.yml'
 
 defaults:

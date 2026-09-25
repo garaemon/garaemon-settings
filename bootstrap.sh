@@ -209,8 +209,8 @@ run_playbook() {
 # Builds Emacs from source under ~/.local. The script needs no root, so this
 # step also runs on a host where the playbooks cannot.
 build_emacs() {
-    log "Building Emacs with emacs.d/scripts/build-emacs.sh"
-    "${CHECKOUT_DIR}/emacs.d/scripts/build-emacs.sh"
+    log "Building Emacs with emacs.d/scripts/build_emacs.py"
+    python3 "${CHECKOUT_DIR}/emacs.d/scripts/build_emacs.py"
 }
 
 usage() {
