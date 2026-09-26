@@ -3,7 +3,7 @@
 ;;; Commentary:
 ;; Startup and configuration faults this suite pins down.  The first three
 ;; surface as errors in *Messages* on a fresh Emacs 31 start, while the last
-;; one stays silent:
+;; two stay silent:
 ;;
 ;; - `tsx-mode' cannot activate while `treesit-fold' stays uninstallable,
 ;;   which happens when `package-archives' drops the NonGNU ELPA entry that
@@ -15,6 +15,8 @@
 ;;   is not a directory.
 ;; - A `use-package' :hook entry that names `<mode>-hook' registers
 ;;   `<mode>-hook-hook', a hook that nothing ever runs.
+;; - A `use-package' form with both :after and :bind-keymap leaves its
+;;   prefix key unbound until another command loads the :after package.
 ;;
 ;; The tests read the init files instead of loading them, because loading
 ;; them reaches for the package archives.  Run with:
@@ -185,6 +187,24 @@ is dotted, which tells the two shapes apart."
             (push (format "%s: %s" relative-name mode) misnamed-hooks)))))
     ;; Assert
     (should (null misnamed-hooks))))
+
+(ert-deftest init-should-not-defer-bind-keymap-behind-after ()
+  ;; Arrange
+  ;; `use-package' wraps the whole form, :bind-keymap included, in
+  ;; `eval-after-load' for every :after package.  The prefix key therefore
+  ;; stays unbound until something else loads that package.
+  (let ((deferred-prefixes nil))
+    ;; Act
+    (dolist (relative-name (init-startup-test--list-configuration-files))
+      (dolist (use-package-form
+               (init-startup-test--collect-use-package-forms
+                (init-startup-test--read-forms relative-name)))
+        (when (and (memq :after use-package-form)
+                   (memq :bind-keymap use-package-form))
+          (push (format "%s: %s" relative-name (cadr use-package-form))
+                deferred-prefixes))))
+    ;; Assert
+    (should (null deferred-prefixes))))
 
 (provide 'init-startup-test)
 ;;; init-startup-test.el ends here

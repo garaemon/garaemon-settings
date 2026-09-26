@@ -577,7 +577,6 @@ Skip when the cached SVG is already newer than FILE."
 
 (use-package org-roam-dailies
   :ensure nil
-  :after org-roam
   :custom
   (org-roam-dailies-capture-templates
    ;; Insert timestamp automatically for org-agenda
