@@ -170,10 +170,7 @@ then generates a report. Prompts the user for the duration in seconds."
           (left . 1.0)
           ;; The screen size should use the right half.
           (width . 0.5)
-          ;; We use a value slightly smaller than 1.0. This is because even if `top`
-          ;; is set to 0.0 in MacOS, the window is displayed slightly lower, and as a result,
-          ;; if `height` is set to 1.0, the bottom of the window becomes invisible.
-          (height . 0.9)
+          (height . 1.0)
           ))
   )
 
