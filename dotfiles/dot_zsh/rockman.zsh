@@ -4,11 +4,11 @@
 # Each character in a sprite row names one pixel. A dot is transparent.
 # The colors are the NES PPU palette entries that the sprite uses.
 typeset -gA ROCKMAN_PALETTE=(
-  K '0;0;0'
-  B '0;112;236'
-  C '0;232;216'
-  S '252;228;160'
-  W '252;252;252'
+  [K]='0;0;0'
+  [B]='0;112;236'
+  [C]='0;232;216'
+  [S]='252;228;160'
+  [W]='252;252;252'
 )
 
 # The idle frame of Rockman (NES, 1987), mirrored to face right as the game
