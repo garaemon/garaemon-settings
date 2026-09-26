@@ -2,46 +2,47 @@
 # -*- coding: utf-8 -*-
 
 # Each character in a sprite row names one pixel. A dot is transparent.
+# The colors are the NES PPU palette entries that the sprite uses.
 typeset -gA ROCKMAN_PALETTE=(
-  K 16
-  B 27
-  C 81
-  S 223
-  W 231
+  K '0;0;0'
+  B '0;112;236'
+  C '0;232;216'
+  S '252;228;160'
+  W '252;252;252'
 )
 
+# The idle frame of Rockman (NES, 1987), mirrored to face right as the game
+# does at the start of a stage. Source sheet ripped by Mister Mike:
+# https://www.spriters-resource.com/nes/mm/asset/144772/
 typeset -ga ROCKMAN_SPRITE=(
-  '......KKKKKKKK......'
-  '....KKBBCCCCBBKK....'
-  '...KBBBBCCCCBBBBK...'
-  '..KBBBBBCCCCBBBBBK..'
-  '..KBBBBBCCCCBBBBBK..'
-  '.KBBBBBBBBBBBBBBBBK.'
-  '.KBBBKKKKKKKKKKBBBK.'
-  'KCCBKSSSSSSSSSSKBCCK'
-  'KCCBKSWWKSSKWWSKBCCK'
-  'KCCBKSWWKSSKWWSKBCCK'
-  'KCCBKSWWKSSKWWSKBCCK'
-  '.KBBKSSSSSSSSSSKBBK.'
-  '.KBBBKSSSKKSSSKBBBK.'
-  '..KKKKKSSSSSSKKKKK..'
-  '...KBBKKKKKKKKBBK...'
-  '..KCCKCCCCCCCCKCCK..'
-  '.KCCCKCCCCCCCCKCCCK.'
-  '.KCCKKCCCCCCCCKKCCK.'
-  '.KBBBKCCCCCCCCKBBBK.'
-  '.KBBBKBBBBBBBBKBBBK.'
-  '..KKKKBBBBBBBBKKKK..'
-  '....KCCCKKKKCCCK....'
-  '...KBBBBK..KBBBBK...'
-  '..KBBBBBK..KBBBBBK..'
-  '.KBBBBBBK..KBBBBBBK.'
-  '.KKKKKKKK..KKKKKKKK.'
+  '..........KKK........'
+  '........KKKCCK.......'
+  '.......KBBBKCCK......'
+  '......KBBBBBKKKK.....'
+  '......KBBBBBKCCBK....'
+  '.....KCBBBBBBKKBK....'
+  '.....KCBBSWWWBBWK....'
+  '.....KCBSWWKKSKWK....'
+  '......KBSWWKKSKWK....'
+  '.....KKBSSWWWSWSK....'
+  '...KKCCKBSKKKKSKKK...'
+  '..KBCCCCKSSSSSKCCBK..'
+  '..KBBCCCCKKKKKCCBBK..'
+  '.KBBBCKCCCCCCCKCBBBK.'
+  '.KBBKKKCCCCCCCKKKBBK.'
+  '.KBBBKKCCCCCCCKKBBBK.'
+  '.KBBBKKBBBBBBBKKBBBK.'
+  '..KKK.KBBBBBBBK.KKK..'
+  '.....KCCBBBBCCCK.....'
+  '....KBBCCCKCCCCBK....'
+  '...KKBBBCK.KCBBBKK...'
+  '.KKBBBBBK...KBBBBBKK.'
+  'KBBBBBBBK...KBBBBBBBK'
+  'KKKKKKKKK...KKKKKKKKK'
 )
 
 # Prints one terminal cell that shows two vertically stacked pixels.
-# The 256-color palette keeps the colors intact inside tmux, which drops
-# 24-bit colors unless its terminal-overrides enable them.
+# A tmux without the RGB feature maps the 24-bit colors to its 256 colors.
 function print-rockman-cell() {
   local upper_pixel=$1
   local lower_pixel=$2
@@ -50,11 +51,11 @@ function print-rockman-cell() {
   if [[ -z $upper_color && -z $lower_color ]]; then
     printf '\e[0m '
   elif [[ -z $lower_color ]]; then
-    printf '\e[0;38;5;%sm▀' "$upper_color"
+    printf '\e[0;38;2;%sm▀' "$upper_color"
   elif [[ -z $upper_color ]]; then
-    printf '\e[0;38;5;%sm▄' "$lower_color"
+    printf '\e[0;38;2;%sm▄' "$lower_color"
   else
-    printf '\e[0;38;5;%s;48;5;%sm▀' "$upper_color" "$lower_color"
+    printf '\e[0;38;2;%s;48;2;%sm▀' "$upper_color" "$lower_color"
   fi
 }
 

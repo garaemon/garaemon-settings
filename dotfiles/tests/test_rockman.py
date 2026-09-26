@@ -11,8 +11,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROCKMAN_ZSH = REPO_ROOT / "dot_zsh" / "rockman.zsh"
-SPRITE_HEIGHT = 26
-SPRITE_WIDTH = 20
+SPRITE_HEIGHT = 24
+SPRITE_WIDTH = 21
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*m")
 
 
