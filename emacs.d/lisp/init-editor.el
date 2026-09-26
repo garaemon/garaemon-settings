@@ -31,6 +31,9 @@
   ;; Do not enable it for org-mode since it has special expansion keybinds for "<" like "<s[TAB]".
   (add-hook 'org-mode-hook (lambda () (electric-pair-local-mode -1))))
 
+(use-package rainbow-delimiters :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode))
+
 ;;; Completion frameworks
 
 (use-package vertico
