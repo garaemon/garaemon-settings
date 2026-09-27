@@ -376,10 +376,10 @@ set_terminal_title() {
   fi
 }
 
-# Set title to process name before command execution
+# Show the running command with the host name, so that a long-running command
+# such as `tmux a` still tells which machine the terminal is on.
 preexec() {
-  # The first argument is often the command name
-  set_terminal_title "$1"
+  set_terminal_title "${HOST}: $1"
 }
 
 precmd() {
