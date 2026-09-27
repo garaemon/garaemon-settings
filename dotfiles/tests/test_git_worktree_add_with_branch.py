@@ -2,7 +2,8 @@
 
 The function lives in dot_zsh/git-functions.zsh. It takes a name, creates a
 worktree at <main-repo-root>/.worktrees/<name> on a branch named
-YYYY.MM.DD-<name>, and cds into it. We test it end-to-end by sourcing the
+YYYY.MM.DD-<name>, and cds into it. An optional second argument names the
+base that a new branch starts from. We test it end-to-end by sourcing the
 file in zsh inside a temp git repo.
 """
 
@@ -107,6 +108,27 @@ class TestGitWorktreeAddWithBranch:
             repo / ".worktrees" / "foo", "branch", "--show-current"
         ).stdout.strip()
         assert branch == expected_branch
+
+    def test_should_start_new_branch_from_given_base(self, repo):
+        base_commit = run_git(repo, "rev-parse", "HEAD").stdout.strip()
+        run_git(repo, "branch", "base")
+        (repo / "README").write_text("changed\n")
+        run_git(repo, "commit", "-am", "advance main")
+        result = run_function(repo, "foo", "base")
+        assert result.returncode == 0, result.stdout + result.stderr
+        head = run_git(
+            repo / ".worktrees" / "foo", "rev-parse", "HEAD"
+        ).stdout.strip()
+        assert head == base_commit
+
+    def test_should_fail_when_base_does_not_exist(self, repo):
+        result = run_function(repo, "foo", "no-such-base")
+        assert result.returncode != 0
+
+    def test_should_fail_when_base_given_for_existing_branch(self, repo):
+        run_git(repo, "branch", build_expected_branch_name("foo"))
+        result = run_function(repo, "foo", "main")
+        assert result.returncode != 0
 
     def test_should_fail_when_no_argument_given(self, repo):
         result = run_function(repo)

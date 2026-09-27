@@ -35,13 +35,17 @@ function git-branch-remove-all-remote-exec() {
 
 # Create a git worktree under <main-repo-root>/.worktrees and cd into it.
 # Usage:
-#   git-worktree-add-with-branch foo   # Create .worktrees/foo on branch YYYY.MM.DD-foo
+#   git-worktree-add-with-branch foo        # Create .worktrees/foo on branch YYYY.MM.DD-foo
+#   git-worktree-add-with-branch foo main   # Start the new branch from main
 # The branch name gets a date prefix to follow the branch naming convention.
-# If the branch already exists, it is checked out instead of being recreated.
+# The new branch starts from HEAD unless a base branch or commit is given.
+# If the branch already exists, it is checked out instead of being recreated,
+# and passing a base for it is an error because the base would be ignored.
 function git-worktree-add-with-branch() {
   local name="$1"
+  local base="$2"
   if [ -z "$name" ]; then
-    echo "Usage: git-worktree-add-with-branch <name>" >&2
+    echo "Usage: git-worktree-add-with-branch <name> [<base>]" >&2
     return 1
   fi
   if ! git rev-parse --git-dir &> /dev/null; then
@@ -66,7 +70,17 @@ function git-worktree-add-with-branch() {
   fi
 
   if git show-ref --verify --quiet "refs/heads/${branch_name}"; then
+    if [ -n "$base" ]; then
+      echo "Error: Branch ${branch_name} already exists; cannot start it from ${base}." >&2
+      return 1
+    fi
     git worktree add "$worktree_dir" "$branch_name" || return
+  elif [ -n "$base" ]; then
+    if ! git rev-parse --verify --quiet "${base}^{commit}" > /dev/null; then
+      echo "Error: Base not found: ${base}" >&2
+      return 1
+    fi
+    git worktree add "$worktree_dir" -b "$branch_name" "$base" || return
   else
     git worktree add "$worktree_dir" -b "$branch_name" || return
   fi
