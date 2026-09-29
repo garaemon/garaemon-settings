@@ -4,8 +4,10 @@ description: |
   Speed up code with a measure-first workflow: ask the user how to measure
   performance, record a baseline, profile, apply one optimization at a time,
   measure again after every change, and keep a change only when its speedup
-  justifies the complexity it adds. Every report pairs the before/after
-  numbers with the complexity cost.
+  justifies the complexity it adds. Every change must return the same results
+  as before, preferably proven by a test; a change that alters results needs
+  the user's approval. Every report pairs the before/after numbers with the
+  complexity cost.
   Use this skill whenever the user wants to make code faster, reduce latency,
   cut memory use, or improve throughput, or says things like "高速化して",
   "速くして", "パフォーマンス改善", "パフォーマンスチューニング", "重いので直して",
@@ -22,22 +24,26 @@ weighed against the complexity it adds.
 ## Why this exists
 
 Optimizations chosen by intuition often target the wrong code, and even a real
-speedup can cost more in maintenance than it saves in runtime. This skill
-enforces three rules:
+speedup can cost more in maintenance than it saves in runtime. A faster
+program that returns a different answer is a bug, not an optimization. This
+skill enforces four rules:
 
 1. Agree on the measurement with the user before touching the code.
-2. Measure before and after every change, under the same conditions.
-3. Keep a change only when its measured gain outweighs its complexity.
+2. Prove that every change returns the same results as the original code.
+   Ask the user before keeping any change that alters the results.
+3. Measure before and after every change, under the same conditions.
+4. Keep a change only when its measured gain outweighs its complexity.
 
 ## Workflow
 
 1. Ask the user how to measure.
-2. Record the baseline.
-3. Profile to find the hotspot.
-4. Apply one optimization.
-5. Measure again and compare.
-6. Decide whether to keep the change.
-7. Repeat steps 3 to 6, then report.
+2. Lock in the current results.
+3. Record the baseline.
+4. Profile to find the hotspot.
+5. Apply one optimization.
+6. Verify the results, then measure again.
+7. Decide whether to keep the change.
+8. Repeat steps 4 to 7, then report.
 
 ## Step 1: Ask the User How to Measure
 
@@ -56,14 +62,46 @@ point the user already answered:
   more than a large one.
 - **Target**: the goal, such as "under 200 ms" or "2x faster". Without a
   target, stop when the next candidate is not worth its complexity.
-- **Constraints**: what must not change, such as the public API, output
-  bit-for-bit, memory ceiling, or dependencies.
+- **Constraints**: what must not change, such as the public API, memory
+  ceiling, or dependencies.
+- **Equivalence**: what counts as "the same result". Examples: bit-for-bit
+  identical output, floating-point values within a tolerance, or the same
+  set of items in any order. Default to bit-for-bit when the user has no
+  preference.
 
 If no benchmark exists, propose one: a small script under the scratchpad or a
 benchmark file that matches the project's test layout. Get the user's approval
 before adding a benchmark to the repository.
 
-## Step 2: Record the Baseline
+## Step 2: Lock In the Current Results
+
+Before changing any code, capture what the code computes today, so every later
+change can be checked against it.
+
+Prefer an automated test. Write an equivalence test (also called a
+characterization or golden test) when the code allows it:
+
+1. Pick representative inputs, including edge cases such as empty input, a
+   single element, duplicates, and the largest realistic size.
+2. Run the unmodified code on those inputs and store the outputs as expected
+   values or golden files.
+3. Write a test that runs the code on the same inputs and compares the
+   outputs under the equivalence rule from Step 1.
+4. Run the test against the unmodified code and confirm it passes.
+
+Follow the project's test layout and framework. Ask the user before committing
+the test to the repository; if the user declines, keep it in the scratchpad
+and still run it after every change.
+
+When a test is impractical, for example because the output depends on an
+external service, save the output of the benchmark workload to a file and
+compare against it with `diff` or a small script instead. Tell the user that
+the check is weaker than a test and why no test was written.
+
+Also run the existing test suite once and record which tests pass, so a later
+failure can be attributed to a change and not to the starting state.
+
+## Step 3: Record the Baseline
 
 Measure the unmodified code before any change. Record the commit hash with
 the numbers so the baseline can be reproduced.
@@ -77,14 +115,12 @@ Make the measurement trustworthy:
 - Build with the same flags the user ships, such as release mode or `-O2`.
 - Keep the machine state stable. Close heavy background jobs, and note when
   the environment is noisy, such as a shared cloud container.
-- Confirm correctness: run the tests and save the output of the baseline run,
-  so later changes can prove they return the same result.
 
 When the spread is larger than the gain you hope to detect, fix the
 measurement before optimizing. For example, raise the sample count, enlarge
 the workload, or pin the CPU.
 
-## Step 3: Profile to Find the Hotspot
+## Step 4: Profile to Find the Hotspot
 
 Locate where the time or memory goes before choosing what to change. Prefer
 the profiler that fits the language:
@@ -98,7 +134,7 @@ the profiler that fits the language:
 Rank the candidates by their share of the total. A function that takes 5% of
 the runtime can never yield more than a 5% gain, however clever the fix.
 
-## Step 4: Apply One Optimization
+## Step 5: Apply One Optimization
 
 Change one thing at a time, so each measurement maps to exactly one cause.
 Commit or stash each candidate separately so it can be reverted alone.
@@ -118,11 +154,30 @@ Try cheap, local changes before invasive ones. A rough order:
 Items later in the list usually add more complexity. Reach for them only when
 the earlier items do not meet the target.
 
-## Step 5: Measure Again and Compare
+## Step 6: Verify the Results, Then Measure Again
 
-Run the exact command from Step 2 with the same workload, build flags, and
-sample count. Confirm the tests still pass and the output still matches the
-baseline.
+Check the results first. Run the equivalence test or output comparison from
+Step 2 and the existing test suite. A speed number from code that returns
+different results means nothing.
+
+When the results differ, stop and ask the user with `AskUserQuestion` before
+going further. Show:
+
+- The inputs whose outputs changed, with the old and new values side by side.
+- The size of the difference, such as the largest floating-point error or the
+  number of reordered items.
+- The cause, such as a different summation order in a parallel reduction, a
+  lower-precision type, or an unstable sort.
+- The speedup the change would bring, measured separately and labeled as
+  unverified.
+
+Keep the change only when the user explicitly accepts the new results. Then
+update the equivalence rule or the expected values, and record the accepted
+difference in the report. Otherwise revert the change or fix it until the
+results match.
+
+Once the results match, run the exact command from Step 3 with the same
+workload, build flags, and sample count.
 
 Compute the change against the baseline:
 
@@ -131,7 +186,7 @@ Compute the change against the baseline:
 
 Treat a difference smaller than the measured spread as noise, not a gain.
 
-## Step 6: Decide Whether to Keep the Change
+## Step 7: Decide Whether to Keep the Change
 
 Weigh the measured gain against the complexity the change introduces. Rate
 the complexity on these axes:
@@ -160,9 +215,9 @@ A kept change that adds a non-obvious invariant needs a comment that states
 the invariant and the measured reason, for example
 `// Cache the parsed config. Parsing took 40% of request time in the profile.`
 
-## Step 7: Repeat, Then Report
+## Step 8: Repeat, Then Report
 
-Return to Step 3 with the new code as the reference. Profile again, because
+Return to Step 4 with the new code as the reference. Profile again, because
 the hotspot moves after each fix. Stop when one of these holds:
 
 - The target from Step 1 is met.
@@ -176,13 +231,16 @@ Finish with a report in this form:
 
 Measurement: `<command>` on `<workload>`, <N> samples, median (min to max).
 
-| Step | Change | Result | vs baseline | Complexity | Decision |
-| --- | --- | --- | --- | --- | --- |
-| 0 | Baseline (<commit>) | 1.20 s (1.18 to 1.25) | - | - | - |
-| 1 | Hoist regex compile out of loop | 0.80 s (0.79 to 0.82) | 1.50x | Low: 2 lines | Kept |
-| 2 | Parallelize file parsing | 0.74 s (0.70 to 0.90) | 1.62x | High: thread pool, shared state | Reverted |
+Equivalence check: `<test name or comparison command>`, rule: <bit-for-bit, tolerance, ...>.
 
-Final: 1.20 s to 0.80 s (1.50x). Tests pass and the output matches the baseline.
+| Step | Change | Time | vs baseline | Results | Complexity | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | Baseline (<commit>) | 1.20 s (1.18 to 1.25) | - | - | - | - |
+| 1 | Hoist regex compile out of loop | 0.80 s (0.79 to 0.82) | 1.50x | Identical | Low: 2 lines | Kept |
+| 2 | Parallelize file parsing | 0.74 s (0.70 to 0.90) | 1.62x | Identical | High: thread pool, shared state | Reverted |
+| 3 | Sum in float32 | 0.70 s (0.69 to 0.71) | 1.71x | Differs by up to 1e-6 | Low: 1 line | Rejected by user |
+
+Final: 1.20 s to 0.80 s (1.50x). All tests and the equivalence check pass.
 ```
 
 List the rejected changes too. They record what was tried and why it was not
@@ -195,7 +253,8 @@ worth it, which saves the next person from repeating the experiment.
 - **Same conditions** — the before and after runs must share the command,
   workload, build flags, and machine. Re-run the baseline if any of them
   changed.
-- **Correctness first** — a faster wrong answer is a regression. Run the tests
-  after every change.
+- **Same results** — run the equivalence check and the test suite after every
+  change, before measuring speed. Never keep a change that alters the results
+  without the user's explicit approval.
 - **Report regressions honestly** — if a change makes another metric worse,
   such as memory rising while time falls, include that metric in the report.
