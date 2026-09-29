@@ -4,7 +4,9 @@ description: |
   Speed up code with a measure-first workflow: ask the user how to measure
   performance, record a baseline, profile, apply one optimization at a time,
   measure again after every change, and keep a change only when its speedup
-  justifies the complexity it adds. Every change must return the same results
+  justifies the complexity it adds. Algorithmic improvements that lower the
+  computational complexity come before caching, parallelism, and other
+  constant-factor tricks. Every change must return the same results
   as before, preferably proven by a test; a change that alters results needs
   the user's approval. Every report pairs the before/after numbers with the
   complexity cost.
@@ -26,13 +28,15 @@ weighed against the complexity it adds.
 Optimizations chosen by intuition often target the wrong code, and even a real
 speedup can cost more in maintenance than it saves in runtime. A faster
 program that returns a different answer is a bug, not an optimization. This
-skill enforces four rules:
+skill enforces five rules:
 
 1. Agree on the measurement with the user before touching the code.
 2. Prove that every change returns the same results as the original code.
    Ask the user before keeping any change that alters the results.
 3. Measure before and after every change, under the same conditions.
-4. Keep a change only when its measured gain outweighs its complexity.
+4. Lower the computational complexity before reaching for caching,
+   parallelism, or other constant-factor tricks.
+5. Keep a change only when its measured gain outweighs its complexity.
 
 ## Workflow
 
@@ -134,25 +138,45 @@ the profiler that fits the language:
 Rank the candidates by their share of the total. A function that takes 5% of
 the runtime can never yield more than a 5% gain, however clever the fix.
 
+For each hotspot, write down its time and space complexity in terms of the
+input size, such as O(n^2) for a nested loop over the same list. Hidden costs
+count too: a membership test on a list inside a loop, repeated string
+concatenation, or a query issued per item (the N+1 pattern). To confirm the
+growth rate empirically, run the benchmark at two or three input sizes, such
+as n, 2n, and 4n, and check how the time grows.
+
 ## Step 5: Apply One Optimization
 
 Change one thing at a time, so each measurement maps to exactly one cause.
 Commit or stash each candidate separately so it can be reverted alone.
 
-Try cheap, local changes before invasive ones. A rough order:
+Prefer changes that lower the computational complexity. A better algorithm
+keeps paying off as the input grows, and it usually leaves the code simpler.
+Caching, parallelism, and low-level tuning only shrink a constant factor, and
+they add state, invariants, or platform-specific code. Work through the
+candidates in this order:
 
-1. Remove wasted work: redundant calls, repeated I/O, work inside a loop that
-   belongs outside it.
-2. Use a better algorithm or data structure, such as a hash map instead of a
-   linear scan.
-3. Batch I/O or network calls.
-4. Add caching or memoization.
-5. Add concurrency or parallelism.
-6. Rewrite in a lower-level form, such as SIMD, unsafe code, or a native
+1. Lower the complexity with a better algorithm or data structure. Examples:
+   - Replace a linear scan inside a loop with a hash map or set lookup,
+     turning O(n^2) into O(n).
+   - Sort once and use binary search or a two-pointer sweep.
+   - Replace a naive recursion with dynamic programming, or a repeated
+     full recomputation with an incremental update.
+   - Use a heap for top-k, or a prefix sum for range queries.
+   - Replace per-item queries with one batched query or a join.
+2. Remove wasted work: redundant calls, repeated I/O, or work inside a loop
+   that belongs outside it.
+3. Add caching or memoization.
+4. Add concurrency or parallelism.
+5. Rewrite in a lower-level form, such as SIMD, unsafe code, or a native
    extension.
 
-Items later in the list usually add more complexity. Reach for them only when
-the earlier items do not meet the target.
+Move to items 3 to 5 only when no candidate in items 1 and 2 remains in the
+hotspot, or when those candidates do not meet the target. When you propose a
+constant-factor technique, state why no complexity reduction applies, for
+example "the algorithm is already O(n) and every element must be read".
+Memoization that removes repeated subproblems, as in dynamic programming,
+counts as item 1 because it changes the complexity.
 
 ## Step 6: Verify the Results, Then Measure Again
 
@@ -188,8 +212,10 @@ Treat a difference smaller than the measured spread as noise, not a gain.
 
 ## Step 7: Decide Whether to Keep the Change
 
-Weigh the measured gain against the complexity the change introduces. Rate
-the complexity on these axes:
+Weigh the measured gain against the complexity the change introduces. A
+change that lowers the computational complexity gains more as the input
+grows, so judge it at the largest realistic input size, not only at the
+benchmark size. Rate the implementation complexity on these axes:
 
 - Lines of code added or changed.
 - New dependencies, build steps, or platform-specific code.
@@ -233,14 +259,14 @@ Measurement: `<command>` on `<workload>`, <N> samples, median (min to max).
 
 Equivalence check: `<test name or comparison command>`, rule: <bit-for-bit, tolerance, ...>.
 
-| Step | Change | Time | vs baseline | Results | Complexity | Decision |
-| --- | --- | --- | --- | --- | --- | --- |
-| 0 | Baseline (<commit>) | 1.20 s (1.18 to 1.25) | - | - | - | - |
-| 1 | Hoist regex compile out of loop | 0.80 s (0.79 to 0.82) | 1.50x | Identical | Low: 2 lines | Kept |
-| 2 | Parallelize file parsing | 0.74 s (0.70 to 0.90) | 1.62x | Identical | High: thread pool, shared state | Reverted |
-| 3 | Sum in float32 | 0.70 s (0.69 to 0.71) | 1.71x | Differs by up to 1e-6 | Low: 1 line | Rejected by user |
+| Step | Change | Big-O | Time | vs baseline | Results | Complexity | Decision |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | Baseline (<commit>) | O(n^2) | 1.20 s (1.18 to 1.25) | - | - | - | - |
+| 1 | Look up IDs in a set instead of a list | O(n^2) to O(n) | 0.30 s (0.29 to 0.31) | 4.00x | Identical | Low: 3 lines | Kept |
+| 2 | Parallelize file parsing | O(n) | 0.27 s (0.25 to 0.35) | 4.44x | Identical | High: thread pool, shared state | Reverted |
+| 3 | Sum in float32 | O(n) | 0.26 s (0.26 to 0.27) | 4.62x | Differs by up to 1e-6 | Low: 1 line | Rejected by user |
 
-Final: 1.20 s to 0.80 s (1.50x). All tests and the equivalence check pass.
+Final: 1.20 s to 0.30 s (4.00x), O(n^2) to O(n). All tests and the equivalence check pass.
 ```
 
 List the rejected changes too. They record what was tried and why it was not
