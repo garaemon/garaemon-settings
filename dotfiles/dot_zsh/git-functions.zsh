@@ -143,9 +143,10 @@ function git-worktree-select() {
     return 1
   fi
 
-  # Show branch names for selection via peco
+  # Extract the text inside [...] because `git worktree list` appends flags
+  # such as "locked" or "prunable" after the branch name.
   local selected
-  selected=$(echo "$worktree_list" | awk '{print $NF}' | tr -d '[]' | peco --prompt "worktree branch>")
+  selected=$(echo "$worktree_list" | sed -n 's/.*\[\(.*\)\].*/\1/p' | peco --prompt "worktree branch>")
 
   if [ -z "$selected" ]; then
     echo "No worktree selected." >&2
@@ -163,6 +164,25 @@ function git-worktree-select() {
 
   echo "Changing to worktree '${selected}' at ${target_dir}"
   cd "$target_dir" || return
+}
+
+# Unlock every locked worktree of the current repository.
+function git-worktree-unlock-all() {
+  local locked_paths
+  locked_paths=$(git worktree list --porcelain 2>/dev/null | awk '
+    /^worktree / { path = substr($0, 10) }
+    /^locked/ { print path }
+  ')
+
+  if [ -z "$locked_paths" ]; then
+    echo "No locked worktrees found."
+    return 0
+  fi
+
+  local locked_path
+  echo "$locked_paths" | while IFS= read -r locked_path; do
+    git worktree unlock "$locked_path" && echo "Unlocked ${locked_path}"
+  done
 }
 
 # Create a git worktree for an open pull request and cd into it.
