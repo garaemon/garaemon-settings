@@ -102,8 +102,9 @@ the wrong server, stop and tell the user rather than posting anything.
 ### Step 0: Choose the review model
 
 The review runs in a subagent so the user can pick the model for it each time.
-Review quality tracks how deeply the model reads, and Claude Fable 5.1 costs
-twice Claude Opus 5 per token, so the choice belongs to the user, per diff.
+Claude Sonnet 5.5 reviews most diffs well at the lowest price, so it is the
+default. Review quality tracks how deeply the model reads, so the user can step
+up to Claude Opus 5.5 or Claude Fable 5.1 per diff.
 
 **Skip this step entirely, and never launch a subagent, when either holds:**
 
@@ -123,13 +124,14 @@ Otherwise:
    receives them verbatim.
 2. Ask one question with AskUserQuestion, quoting the `size` block
    ("N files, +X / -Y"). Offer these options, with these descriptions:
-   - **Opus 5**: everyday reviews; the baseline price.
+   - **Sonnet 5.5**: everyday reviews; the default and the lowest price.
+   - **Opus 5.5**: diffs where Sonnet missed findings before; costs more than
+     Sonnet.
    - **Fable 5.1**: large diffs, or diffs that touch concurrency, security
-     boundaries, or shell execution; twice the price of Opus.
-   - **Sonnet 5**: small, mechanical diffs; 0.4 times the price of Opus.
-   Mark Opus 5 as recommended, except when additions exceed 200 or the changed
-   files include authentication, input boundaries, or shell execution, where
-   Fable 5.1 is the recommendation.
+     boundaries, or shell execution; the highest price.
+   Mark Sonnet 5.5 as recommended, except when additions exceed 200 or the
+   changed files include authentication, input boundaries, or shell execution,
+   where Fable 5.1 is the recommendation.
 3. Launch an Agent (general-purpose) with `model` set to the choice (`opus`,
    `fable`, or `sonnet`) and this prompt, marker line first:
 
@@ -147,8 +149,7 @@ Otherwise:
    Build the posting payload from the `review.json` path the subagent reported.
 
 When AskUserQuestion is unavailable or the run is non-interactive, skip the
-question and launch the subagent without `model`, which uses the session's
-model.
+question and launch the subagent with `model` set to `sonnet`.
 
 ### Step 1: Gather the diff
 
