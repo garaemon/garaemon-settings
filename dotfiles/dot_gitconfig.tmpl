@@ -37,7 +37,16 @@
 	navigate = True
 	side-by-side = True
 [merge]
+	{{- /* zdiff3 needs git 2.35+. Older git rejects it, so fall back to diff3. */}}
+	{{- $gitVersion := "0.0.0" }}
+	{{- if lookPath "git" }}
+	{{- $gitVersion = output "git" "--version" | regexFind "[0-9]+\\.[0-9]+(\\.[0-9]+)?" }}
+	{{- end }}
+	{{- if semverCompare ">=2.35.0" $gitVersion }}
 	conflictStyle = zdiff3
+	{{- else }}
+	conflictStyle = diff3
+	{{- end }}
 [init]
 	defaultBranch = main
 [push]
