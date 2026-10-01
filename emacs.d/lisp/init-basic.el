@@ -115,6 +115,10 @@
 (setq find-name-arg "-not -path '*/\\.git*' -name")
 ;; Do not ask y-or-n when following symlinks
 (setq vc-follow-symlinks t)
+;; Send files deleted from dired to the Finder Trash instead of unlinking
+;; them, so a mistaken delete is recoverable.
+(when-darwin
+ (setq delete-by-moving-to-trash t))
 
 ;;; Scroll settings
 (setq scroll-conservatively 1)
