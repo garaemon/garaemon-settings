@@ -59,7 +59,7 @@ branch-review skill still checks it when the subagent writes it.
    given there, and mark the recommended one by the rule given there, so the
    two skills never quote different prices or recommendations. When
    AskUserQuestion is unavailable or the run is non-interactive, skip the
-   question and use the session's model.
+   question and use `sonnet`.
 
 ### Loop
 
