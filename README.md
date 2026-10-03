@@ -61,6 +61,18 @@ Steps 1 and 4 install system packages, so the script handles them this way:
 Pass `--build-emacs` to get Emacs on such a host, because the playbook that
 normally builds it does not run there.
 
+To bootstrap a host without sudo, copy and paste this command. It skips the
+Ansible step and builds Emacs into `~/.local`:
+
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
+  bootstrap --no-sudo --build-emacs
+```
+
+Drop `--build-emacs` if the host already has Emacs. The command needs `git` and
+`curl` on the host. Afterward, open a new shell so that `~/.local/bin` is on
+`PATH`.
+
 Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
 the sudo and Ansible password prompts cannot read the keyboard.
 
