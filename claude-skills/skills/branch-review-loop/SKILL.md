@@ -2,8 +2,8 @@
 name: branch-review-loop
 description: |
   Iterative code review and fix loop. Runs the branch-review skill via a subagent,
-  fixes all reported issues, then re-reviews until no findings remain (up to 5
-  iterations). REVIEW.md and REVIEW.html accumulate the findings of every
+  fixes all reported issues, then re-reviews. The loop stops as soon as a review
+  reports no findings, and runs at most 5 iterations. REVIEW.md and REVIEW.html accumulate the findings of every
   iteration, each marked fixed or open, so one page tells the whole story of the loop.
   Use this skill when the user wants a thorough review with automatic fixes, says things
   like "review and fix", "branch-review-loop", "レビューして直して", "レビューループ",
@@ -14,7 +14,9 @@ allowed-tools: Bash(uv run --project ${CLAUDE_SKILL_DIR}/../branch-review ${CLAU
 # Code Review Loop Skill
 
 Run the branch-review skill in a subagent, read its findings, fix all reported issues,
-and repeat until the review comes back clean -- up to 5 iterations maximum.
+and repeat until the review comes back clean. Stop the loop as soon as a review
+reports no findings; do not run the remaining iterations. The limit of 5
+iterations is a ceiling, not a target.
 Respond in the language of Claude Code's `language` setting, defaulting to
 Japanese when it is unset.
 
@@ -102,7 +104,8 @@ After the subagent completes:
 
    The script prints one line per iteration. When the line for iteration N
    says `No findings.` (the exact sentence `render_review.py` writes when
-   every category is empty), the loop is done -- skip to Completion.
+   every category is empty), end the loop here -- skip Step 3 and go to
+   Completion.
 2. Read the findings of this iteration from
    `{scratchpad}/branch-review-loop/iteration-{N}/review.json`, not from
    `REVIEW.md`, which now also holds every earlier iteration.
