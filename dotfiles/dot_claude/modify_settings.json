@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+
+# chezmoi pipes the current ~/.claude/settings.json to stdin and installs
+# whatever this script prints. Claude Code writes permissions and plugin
+# state into that file, so merging keeps those edits where a plain
+# dot_claude/settings.json would overwrite them on every apply.
+existing_settings="$(cat)"
+if [ -z "${existing_settings//[[:space:]]/}" ]; then
+  existing_settings='{}'
+fi
+
+jq '
+  .enabledPlugins["i-have-adhd@i-have-adhd"] = true
+  | .extraKnownMarketplaces["i-have-adhd"] = {
+      source: {source: "github", repo: "ayghri/i-have-adhd"}
+    }
+' <<<"$existing_settings"
