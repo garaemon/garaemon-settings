@@ -181,6 +181,17 @@ when a unit file changes:
 systemctl --user disable --now news-digest-slack.timer
 ```
 
+### Claude Code plugins
+
+`dot_claude/modify_settings.json` is a chezmoi modify script. It merges these
+keys into `~/.claude/settings.json` and leaves every other key alone:
+
+- `extraKnownMarketplaces`: registers the `ayghri/i-have-adhd` marketplace.
+- `enabledPlugins`: enables `i-have-adhd@i-have-adhd`.
+
+The script needs `jq`, which `install.sh --tools` installs. Add further
+plugins by extending the `jq` filter in the script.
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
