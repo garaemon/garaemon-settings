@@ -262,9 +262,13 @@ test_should_fail_when_image_basenames_collide() {
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
   mkdir -p "${WORK_DIRECTORY}/other"
   cp "$IMAGE_FILE" "${WORK_DIRECTORY}/other/chart.png"
-  if run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" "${WORK_DIRECTORY}/other/chart.png" 2>/dev/null; then
+  local error_output
+  if error_output="$(run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" "${WORK_DIRECTORY}/other/chart.png" 2>&1)"; then
     fail "expected non-zero exit when two images share a basename"
   fi
+  grep -qF "share the name 'chart.png'" <<<"$error_output" \
+    || fail "expected the duplicate-name message, got: ${error_output}"
+  [ ! -e "$RECORD_FILE" ] || fail "gh must not run before validation: $(cat "$RECORD_FILE")"
 }
 
 test_should_fail_when_image_name_has_unsafe_characters() {
@@ -356,9 +360,13 @@ test_should_fail_when_markdown_basenames_collide() {
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
   mkdir -p "${WORK_DIRECTORY}/other"
   echo "# other" >"${WORK_DIRECTORY}/other/report.md"
-  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/other/report.md" 2>/dev/null; then
+  local error_output
+  if error_output="$(run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/other/report.md" 2>&1)"; then
     fail "expected non-zero exit when two Markdown files share a basename"
   fi
+  grep -qF "share the name 'report.md'" <<<"$error_output" \
+    || fail "expected the duplicate-name message, got: ${error_output}"
+  [ ! -e "$RECORD_FILE" ] || fail "gh must not run before validation: $(cat "$RECORD_FILE")"
 }
 
 test_should_accept_uppercase_image_extension() {
