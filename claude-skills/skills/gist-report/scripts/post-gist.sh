@@ -56,7 +56,9 @@ detect_origin_host() {
 }
 
 is_image_file() {
-  local file_extension="${1##*.}"
+  # tr, not ${var,,}: macOS ships bash 3.2, which lacks that expansion.
+  local file_extension
+  file_extension="$(echo "${1##*.}" | tr '[:upper:]' '[:lower:]')"
   local supported_extension
   for supported_extension in $IMAGE_EXTENSIONS; do
     [ "$file_extension" = "$supported_extension" ] && return 0
@@ -219,7 +221,7 @@ main() {
     clone_directory="$(mktemp -d)"
     # shellcheck disable=SC2064
     trap "rm -rf '${clone_directory}'" EXIT
-    echo "created ${gist_url}; uploading images (on failure: gh gist delete ${gist_url##*/})" >&2
+    echo "created ${gist_url}; uploading images (on failure: GH_HOST=${GH_HOST} gh gist delete ${gist_url##*/})" >&2
     push_images_to_gist "$clone_directory" "$gist_url" "${#markdown_names[@]}" \
       "${markdown_names[@]}" "${image_paths[@]}"
   fi

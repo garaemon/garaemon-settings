@@ -53,7 +53,7 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
 - Pass a short `--description` that names the report topic.
 - Name image files with letters, digits, `.`, `_`, and `-` only, and give
   every image a distinct file name. A gist has no directories.
-- Supported images: png, jpg, jpeg, gif, svg, and webp.
+- Supported images: png, jpg, jpeg, gif, svg, and webp (any letter case).
 - Follow the `technical-writing` skill for the prose.
 
 ## What the script does
@@ -65,10 +65,12 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
 - When images are given:
   1. Clones the gist, because `gh gist create` rejects binary files.
   2. Copies the images into the clone.
-  3. Rewrites image links (`](path/name.png)` and `src="path/name.png"`) in
-     every Markdown file to `<gist URL>/raw/name.png`.
+  3. Rewrites image links in every Markdown file to `<gist URL>/raw/name.png`.
+     It handles inline links with or without a title, `src="path/name.png"`
+     attributes, and reference definitions (`[id]: path/name.png`).
   4. Pushes one commit through `gh auth git-credential`.
-- Prints the gist URL.
+- Prints the gist URL. When the image upload fails, it prints the gist URL and
+  a `GH_HOST=<host> gh gist delete <id>` command to stderr first.
 - Exits non-zero for a missing file, an unsupported extension, duplicate file
   names, an unsafe image name, no Markdown file, no `origin` remote, or an
   origin URL without a host.

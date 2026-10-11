@@ -351,6 +351,33 @@ test_should_fail_when_origin_url_has_no_host() {
   [ ! -e "$RECORD_FILE" ] || fail "gh must not run: $(cat "$RECORD_FILE")"
 }
 
+test_should_fail_when_markdown_basenames_collide() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  mkdir -p "${WORK_DIRECTORY}/other"
+  echo "# other" >"${WORK_DIRECTORY}/other/report.md"
+  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/other/report.md" 2>/dev/null; then
+    fail "expected non-zero exit when two Markdown files share a basename"
+  fi
+}
+
+test_should_accept_uppercase_image_extension() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  cp "$IMAGE_FILE" "${WORK_DIRECTORY}/images/Shot.PNG"
+  run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/Shot.PNG" >/dev/null 2>&1 \
+    || fail "an uppercase image extension must be accepted"
+  git -C "$REMOTE_GIST" cat-file -e main:Shot.PNG || fail "Shot.PNG was not pushed"
+}
+
+test_should_name_gist_host_in_recovery_command() {
+  local repository error_output
+  repository="$(make_repository_with_origin https://ghe.example.com/owner/repo)"
+  error_output="$(FAKE_GH_REJECT_PUSH=1 run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" 2>&1 || true)"
+  grep -qF "GH_HOST=ghe.example.com gh gist delete abc123" <<<"$error_output" \
+    || fail "recovery command must name the host: ${error_output}"
+}
+
 main() {
   install_fake_gh
   echo "# Report" >"$REPORT_FILE"
