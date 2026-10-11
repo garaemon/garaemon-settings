@@ -58,6 +58,14 @@ jobs:
       - name: Run smoke test
         run: bash scripts/tests/gws-secure-smoke.sh
 
+  gist-report-tests:
+    name: gist-report tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run post-gist tests
+        run: bash skills/gist-report/tests/post-gist-test.sh
+
   spotify-sheets-image:
     name: Build spotify-sheets image
     runs-on: ubuntu-latest

@@ -51,6 +51,10 @@ git -C "\$seed_directory" add -A
 git -C "\$seed_directory" -c user.name=t -c user.email=t@example.com commit -q -m seed
 git -C "\$seed_directory" push -q "${REMOTE_GIST}" HEAD:refs/heads/main 2>/dev/null
 git -C "${REMOTE_GIST}" symbolic-ref HEAD refs/heads/main
+if [ -n "\${FAKE_GH_REJECT_PUSH:-}" ]; then
+  printf '#!/bin/sh\nexit 1\n' >"${REMOTE_GIST}/hooks/pre-receive"
+  chmod +x "${REMOTE_GIST}/hooks/pre-receive"
+fi
 echo "${GIST_URL}"
 FAKE_GH
   chmod +x "${FAKE_BIN}/gh"
@@ -263,12 +267,52 @@ test_should_fail_when_image_basenames_collide() {
 }
 
 test_should_fail_when_image_name_has_unsafe_characters() {
-  local repository
+  local repository error_output
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
   cp "$IMAGE_FILE" "${WORK_DIRECTORY}/images/bad name&.png"
-  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/bad name&.png" 2>/dev/null; then
+  if error_output="$(run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/bad name&.png" 2>&1)"; then
     fail "expected non-zero exit for an unsafe image name"
   fi
+  grep -qF "unsafe image file name" <<<"$error_output" \
+    || fail "expected the unsafe-name message, got: ${error_output}"
+}
+
+test_should_accept_markdown_names_that_differ_only_in_directory_spacing() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  mkdir -p "${WORK_DIRECTORY}/a b" "${WORK_DIRECTORY}/x b"
+  echo "# one" >"${WORK_DIRECTORY}/a b/one.md"
+  echo "# two" >"${WORK_DIRECTORY}/x b/two.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/a b/one.md" "${WORK_DIRECTORY}/x b/two.md" >/dev/null \
+    || fail "paths with spaces must not be reported as duplicates"
+}
+
+test_should_accept_markdown_name_with_single_quote() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  echo "# quoted" >"${WORK_DIRECTORY}/it's.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/it's.md" >/dev/null \
+    || fail "a single quote in a Markdown name must not break the script"
+}
+
+test_should_report_gist_url_when_image_push_fails() {
+  local repository error_output
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  if error_output="$(FAKE_GH_REJECT_PUSH=1 run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" 2>&1)"; then
+    fail "expected non-zero exit when the image push is rejected"
+  fi
+  grep -qF "$GIST_URL" <<<"$error_output" \
+    || fail "the created gist URL was not reported: ${error_output}"
+}
+
+test_should_remove_temporary_directory_when_image_push_fails() {
+  local repository temporary_root="${WORK_DIRECTORY}/tmp-root"
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  mkdir -p "$temporary_root"
+  TMPDIR="$temporary_root" FAKE_GH_REJECT_PUSH=1 \
+    run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" >/dev/null 2>&1 || true
+  [ -z "$(ls -A "$temporary_root")" ] \
+    || fail "temporary directory leaked: $(ls "$temporary_root")"
 }
 
 test_should_fail_when_no_markdown_file_is_given() {

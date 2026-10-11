@@ -13,6 +13,9 @@ set -euo pipefail
 readonly IMAGE_EXTENSIONS='png jpg jpeg gif svg webp'
 # Image names go into a sed expression, so allow only characters that are
 # literal there and safe in a URL.
+# Use gh as the only credential helper so a clone or push on GitHub Enterprise
+# authenticates without a terminal prompt.
+readonly GH_CREDENTIAL_OPTIONS=(-c credential.helper= -c "credential.helper=!gh auth git-credential")
 readonly SAFE_FILE_NAME_PATTERN='^[A-Za-z0-9_-][A-Za-z0-9._-]*$'
 
 usage() {
@@ -63,8 +66,8 @@ is_image_file() {
 assert_unique_base_names() {
   local label="$1"
   shift
-  local duplicate
-  duplicate="$(printf '%s\n' "$@" | xargs -n1 basename | sort | uniq -d | head -n1)"
+  local file_path duplicate
+  duplicate="$(for file_path in "$@"; do echo "${file_path##*/}"; done | sort | uniq -d | head -n1)"
   if [ -n "$duplicate" ]; then
     echo "error: two ${label} files share the name '${duplicate}'; a gist is flat" >&2
     return 1
@@ -95,24 +98,22 @@ rewrite_image_links() {
   mv "$temporary_file" "$markdown_file"
 }
 
-# Clone the gist, add the images, point the Markdown links at the raw URLs, and
-# push. gh gist create cannot upload binary files, but the gist is a git
-# repository that accepts them.
+# Clone the gist into CLONE_DIRECTORY, add the images, point the Markdown links
+# at the raw URLs, and push. gh gist create cannot upload binary files, but the
+# gist is a git repository that accepts them.
+#
+# Usage: push_images_to_gist CLONE_DIRECTORY GIST_URL MARKDOWN_COUNT MARKDOWN_NAME... IMAGE_PATH...
+# MARKDOWN_NAME is a base name inside the gist; IMAGE_PATH is a local path.
 push_images_to_gist() {
-  local gist_url="$1"
-  shift
-  local clone_directory
-  clone_directory="$(mktemp -d)"
-  # shellcheck disable=SC2064
-  trap "rm -rf '${clone_directory}'" RETURN
-
-  local markdown_count="$1"
-  shift
+  local clone_directory="$1"
+  local gist_url="$2"
+  local markdown_count="$3"
+  shift 3
   local markdown_names=("${@:1:markdown_count}")
   shift "$markdown_count"
   local image_paths=("$@")
 
-  git clone -q "${gist_url}.git" "${clone_directory}/gist"
+  git "${GH_CREDENTIAL_OPTIONS[@]}" clone -q "${gist_url}.git" "${clone_directory}/gist"
   local image_path image_name markdown_name
   for image_path in "${image_paths[@]}"; do
     image_name="$(basename "$image_path")"
@@ -130,9 +131,7 @@ push_images_to_gist() {
   git -C "${clone_directory}/gist" \
     -c "user.name=${author_name}" -c "user.email=${author_email}" \
     commit -q -m "Add images"
-  git -C "${clone_directory}/gist" \
-    -c credential.helper= -c "credential.helper=!gh auth git-credential" \
-    push -q origin HEAD
+  git -C "${clone_directory}/gist" "${GH_CREDENTIAL_OPTIONS[@]}" push -q origin HEAD
 }
 
 main() {
@@ -211,7 +210,14 @@ main() {
     for markdown_path in "${markdown_paths[@]}"; do
       markdown_names+=("$(basename "$markdown_path")")
     done
-    push_images_to_gist "$gist_url" "${#markdown_names[@]}" \
+    # EXIT, not RETURN: set -e leaves the script without returning from the
+    # function, so a RETURN trap would not remove the clone.
+    local clone_directory
+    clone_directory="$(mktemp -d)"
+    # shellcheck disable=SC2064
+    trap "rm -rf '${clone_directory}'" EXIT
+    echo "created ${gist_url}; uploading images (on failure: gh gist delete ${gist_url##*/})" >&2
+    push_images_to_gist "$clone_directory" "$gist_url" "${#markdown_names[@]}" \
       "${markdown_names[@]}" "${image_paths[@]}"
   fi
   echo "$gist_url"
