@@ -94,6 +94,21 @@ read_remote_file() {
   git -C "$REMOTE_GIST" show "main:$1"
 }
 
+# Runs the script and fails the test unless it exits non-zero with
+# EXPECTED_MESSAGE on stderr and without ever calling gh.
+assert_rejected() {
+  local repository="$1"
+  local expected_message="$2"
+  shift 2
+  local error_output
+  if error_output="$(run_post_gist "$repository" "$@" 2>&1)"; then
+    fail "expected non-zero exit for: $*"
+  fi
+  grep -qF -- "$expected_message" <<<"$error_output" \
+    || fail "expected '${expected_message}', got: ${error_output}"
+  [ ! -e "$RECORD_FILE" ] || fail "gh must not run: $(cat "$RECORD_FILE")"
+}
+
 test_should_use_host_from_https_remote() {
   local repository
   repository="$(make_repository_with_origin https://ghe.example.com/owner/repo.git)"
@@ -155,34 +170,26 @@ test_should_print_gist_url() {
 test_should_fail_when_file_is_missing() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
-  if run_post_gist "$repository" "${WORK_DIRECTORY}/missing.md" 2>/dev/null; then
-    fail "expected non-zero exit for a missing file"
-  fi
+  assert_rejected "$repository" "file not found" "${WORK_DIRECTORY}/missing.md"
 }
 
 test_should_fail_when_file_has_unsupported_extension() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
   echo "text" >"${WORK_DIRECTORY}/report.txt"
-  if run_post_gist "$repository" "${WORK_DIRECTORY}/report.txt" 2>/dev/null; then
-    fail "expected non-zero exit for a non-.md, non-image file"
-  fi
+  assert_rejected "$repository" "only .md files and images" "${WORK_DIRECTORY}/report.txt"
 }
 
 test_should_fail_without_origin_remote() {
   local repository="${WORK_DIRECTORY}/no-origin"
   git init -q "$repository"
-  if run_post_gist "$repository" "$REPORT_FILE" 2>/dev/null; then
-    fail "expected non-zero exit without an origin remote"
-  fi
+  assert_rejected "$repository" "no 'origin' remote" "$REPORT_FILE"
 }
 
 test_should_fail_without_arguments() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
-  if run_post_gist "$repository" 2>/dev/null; then
-    fail "expected non-zero exit without a file argument"
-  fi
+  assert_rejected "$repository" "Usage:"
 }
 
 test_should_upload_multiple_markdown_files() {
@@ -252,9 +259,7 @@ test_should_leave_other_links_untouched() {
 test_should_fail_when_image_file_is_missing() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
-  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/missing.png" 2>/dev/null; then
-    fail "expected non-zero exit for a missing image"
-  fi
+  assert_rejected "$repository" "file not found" "$REPORT_FILE" "${WORK_DIRECTORY}/images/missing.png"
 }
 
 test_should_fail_when_image_basenames_collide() {
@@ -323,9 +328,7 @@ test_should_remove_temporary_directory_when_image_push_fails() {
 test_should_fail_when_no_markdown_file_is_given() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
-  if run_post_gist "$repository" "$IMAGE_FILE" 2>/dev/null; then
-    fail "expected non-zero exit with only an image"
-  fi
+  assert_rejected "$repository" "Usage:" "$IMAGE_FILE"
 }
 
 test_should_rewrite_link_with_title() {
@@ -384,6 +387,14 @@ test_should_name_gist_host_in_recovery_command() {
   error_output="$(FAKE_GH_REJECT_PUSH=1 run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" 2>&1 || true)"
   grep -qF "GH_HOST=ghe.example.com gh gist delete abc123" <<<"$error_output" \
     || fail "recovery command must name the host: ${error_output}"
+}
+
+test_should_accept_uppercase_markdown_extension() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  echo "# Upper" >"${WORK_DIRECTORY}/UPPER.MD"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/UPPER.MD" >/dev/null 2>&1 \
+    || fail "an uppercase .MD extension must be accepted"
 }
 
 main() {

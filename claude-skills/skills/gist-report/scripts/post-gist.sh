@@ -55,10 +55,19 @@ detect_origin_host() {
   echo "$host"
 }
 
-is_image_file() {
+# Print the lower-cased extension of a path, without the dot.
+get_lowercase_extension() {
   # tr, not ${var,,}: macOS ships bash 3.2, which lacks that expansion.
+  echo "${1##*.}" | tr '[:upper:]' '[:lower:]'
+}
+
+is_markdown_file() {
+  [ "$(get_lowercase_extension "$1")" = "md" ]
+}
+
+is_image_file() {
   local file_extension
-  file_extension="$(echo "${1##*.}" | tr '[:upper:]' '[:lower:]')"
+  file_extension="$(get_lowercase_extension "$1")"
   local supported_extension
   for supported_extension in $IMAGE_EXTENSIONS; do
     [ "$file_extension" = "$supported_extension" ] && return 0
@@ -167,7 +176,7 @@ main() {
           echo "error: file not found: ${argument_path}" >&2
           return 1
         fi
-        if [[ "$argument_path" == *.md ]]; then
+        if is_markdown_file "$argument_path"; then
           markdown_paths+=("$argument_path")
         elif is_image_file "$argument_path"; then
           image_paths+=("$argument_path")

@@ -53,7 +53,8 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
 - Pass a short `--description` that names the report topic.
 - Name image files with letters, digits, `.`, `_`, and `-` only, and give
   every image a distinct file name. A gist has no directories.
-- Supported images: png, jpg, jpeg, gif, svg, and webp (any letter case).
+- Supported images: png, jpg, jpeg, gif, svg, and webp. The script matches
+  these extensions, and `.md`, in any letter case.
 - Follow the `technical-writing` skill for the prose.
 
 ## What the script does
