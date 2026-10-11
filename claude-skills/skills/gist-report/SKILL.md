@@ -26,7 +26,8 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
 2. Collect the image files the report shows (screenshots, charts). Reference
    them from both Markdown files with a relative path, for example
    `![Latency](images/latency.png)`. The link only has to end in the image's
-   file name; the script rewrites it.
+   file name; the script rewrites inline links (with or without a title),
+   `<img src>` attributes, and reference definitions (`[id]: path`).
 3. Run the script from inside the repository whose origin decides the host.
    Use the absolute path of the script, for example
    `~/.claude/skills/gist-report/scripts/post-gist.sh`:

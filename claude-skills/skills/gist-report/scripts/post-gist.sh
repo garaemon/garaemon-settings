@@ -11,14 +11,14 @@ set -euo pipefail
 # image's file name. They are rewritten to the gist's raw URL.
 
 readonly IMAGE_EXTENSIONS='png jpg jpeg gif svg webp'
-# Image names go into a sed expression, so allow only characters that are
-# literal there and safe in a URL.
 # Use gh as the only credential helper so a clone or push on GitHub Enterprise
 # authenticates without a terminal prompt.
 readonly GH_CREDENTIAL_OPTIONS=(-c credential.helper= -c "credential.helper=!gh auth git-credential")
+# Image names go into a sed expression, so allow only characters that are
+# literal there and safe in a URL.
 readonly SAFE_FILE_NAME_PATTERN='^[A-Za-z0-9_-][A-Za-z0-9._-]*$'
 
-usage() {
+print_usage() {
   echo "Usage: $(basename "$0") [--public] [--description TEXT] FILE.md [FILE.md ...] [IMAGE ...]" >&2
 }
 
@@ -56,10 +56,12 @@ detect_origin_host() {
 }
 
 is_image_file() {
-  case "$1" in
-    *.png | *.jpg | *.jpeg | *.gif | *.svg | *.webp) return 0 ;;
-    *) return 1 ;;
-  esac
+  local file_extension="${1##*.}"
+  local supported_extension
+  for supported_extension in $IMAGE_EXTENSIONS; do
+    [ "$file_extension" = "$supported_extension" ] && return 0
+  done
+  return 1
 }
 
 # Fail when two files would land under the same name in the flat gist.
@@ -86,14 +88,15 @@ assert_safe_image_names() {
 }
 
 # Rewrite links that end in IMAGE_NAME inside MARKDOWN_FILE to RAW_URL.
-# Matches Markdown links "](path/name.png)" and HTML attributes src="path/name.png".
+# Matches inline links "](path/name.png)" with or without a title, HTML
+# attributes src="path/name.png", and reference definitions "[id]: path/name.png".
 rewrite_image_links() {
   local markdown_file="$1"
   local image_name="$2"
   local raw_url="$3"
   local escaped_name="${image_name//./\\.}"
   local temporary_file="${markdown_file}.rewrite"
-  sed -E "s#(\]\(|src=\")([^)\" ]*/)?${escaped_name}(\)|\")#\1${raw_url}\3#g" \
+  sed -E "s#(\]\(|src=\"|^\[[^]]+\]:[ ]+)([^)\" ]*/)?${escaped_name}(\)|\"|[ ]|\$)#\1${raw_url}\3#g" \
     "$markdown_file" >"$temporary_file"
   mv "$temporary_file" "$markdown_file"
 }
@@ -148,12 +151,12 @@ main() {
         shift
         ;;
       --description)
-        [ $# -ge 2 ] || { usage; return 2; }
+        [ $# -ge 2 ] || { print_usage; return 2; }
         description="$2"
         shift 2
         ;;
       -*)
-        usage
+        print_usage
         return 2
         ;;
       *)
@@ -176,7 +179,7 @@ main() {
   done
 
   if [ "${#markdown_paths[@]}" -eq 0 ]; then
-    usage
+    print_usage
     return 2
   fi
   assert_unique_base_names Markdown "${markdown_paths[@]}"

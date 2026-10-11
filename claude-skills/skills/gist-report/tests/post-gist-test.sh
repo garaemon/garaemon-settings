@@ -63,7 +63,8 @@ FAKE_GH
 # Creates a repository whose origin is the given URL and prints its path.
 make_repository_with_origin() {
   local origin_url="$1"
-  local repository="${WORK_DIRECTORY}/repo-$RANDOM"
+  local repository
+  repository="$(mktemp -d "${WORK_DIRECTORY}/repo-XXXXXX")"
   git init -q "$repository"
   git -C "$repository" remote add origin "$origin_url"
   echo "$repository"
@@ -321,6 +322,33 @@ test_should_fail_when_no_markdown_file_is_given() {
   if run_post_gist "$repository" "$IMAGE_FILE" 2>/dev/null; then
     fail "expected non-zero exit with only an image"
   fi
+}
+
+test_should_rewrite_link_with_title() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '![c](images/chart.png "p99 latency")\n' >"${WORK_DIRECTORY}/titled.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/titled.md" "$IMAGE_FILE" >/dev/null 2>&1
+  [ "$(read_remote_file titled.md)" = "![c](${GIST_URL}/raw/chart.png \"p99 latency\")" ] \
+    || fail "titled link was not rewritten: $(read_remote_file titled.md)"
+}
+
+test_should_rewrite_reference_style_definition() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '![c][latency]\n\n[latency]: images/chart.png\n' >"${WORK_DIRECTORY}/reference.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/reference.md" "$IMAGE_FILE" >/dev/null 2>&1
+  read_remote_file reference.md | grep -qxF "[latency]: ${GIST_URL}/raw/chart.png" \
+    || fail "reference definition was not rewritten: $(read_remote_file reference.md)"
+}
+
+test_should_fail_when_origin_url_has_no_host() {
+  local repository
+  repository="$(make_repository_with_origin /srv/git/repo.git)"
+  if run_post_gist "$repository" "$REPORT_FILE" 2>/dev/null; then
+    fail "expected non-zero exit for an origin URL without a host"
+  fi
+  [ ! -e "$RECORD_FILE" ] || fail "gh must not run: $(cat "$RECORD_FILE")"
 }
 
 main() {
