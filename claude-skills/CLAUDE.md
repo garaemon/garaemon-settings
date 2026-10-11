@@ -111,6 +111,22 @@ Treat this as a one-off, not a precedent: any new credential- or
 network-touching skill still defaults to the Docker pattern unless it can
 make an equally strong, written argument here.
 
+### Documented exception: `gist-report` runs `gh` on the host
+
+`skills/gist-report/scripts/post_gist.py` reaches the network through `gh` and
+`git` on the host, like the local-development skills (`create-pr`,
+`branch-review`). The exception rests on these facts:
+
+- The skill carries no credential of its own. `gh` authenticates from the
+  host's own login, and the script passes `gh auth git-credential` as the only
+  credential helper for the gist clone and push.
+- The `gh` login is host-bound (keyring or `GH_TOKEN` in the user's
+  environment), so a container would need that credential punched through to it,
+  which weakens isolation.
+- The script uploads only the files named on its command line.
+
+Treat this as a one-off, not a precedent.
+
 ### Skill layout
 
 ```text
