@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Tests for scripts/post-gist.sh. A fake `gh` on PATH records its arguments
-# and GH_HOST, so no network or credentials are needed.
+# and GH_HOST and publishes the files to a local bare repository, so no
+# network or credentials are needed.
 
 SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIRECTORY
@@ -15,6 +16,10 @@ trap 'rm -rf "$WORK_DIRECTORY"' EXIT
 readonly FAKE_BIN="${WORK_DIRECTORY}/bin"
 readonly RECORD_FILE="${WORK_DIRECTORY}/record"
 readonly REPORT_FILE="${WORK_DIRECTORY}/report.md"
+readonly REMOTE_DIRECTORY="${WORK_DIRECTORY}/remote"
+readonly REMOTE_GIST="${REMOTE_DIRECTORY}/abc123.git"
+readonly IMAGE_FILE="${WORK_DIRECTORY}/images/chart.png"
+readonly GIST_URL="https://gist.github.com/tester/abc123"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -23,14 +28,31 @@ fail() {
 
 install_fake_gh() {
   mkdir -p "$FAKE_BIN"
-  cat >"${FAKE_BIN}/gh" <<EOF
+  cat >"${FAKE_BIN}/gh" <<FAKE_GH
 #!/bin/bash
 {
   echo "GH_HOST=\${GH_HOST:-}"
   echo "ARGS=\$*"
 } >"${RECORD_FILE}"
-echo "https://\${GH_HOST:-github.com}/gist/abc123"
-EOF
+seed_directory="${WORK_DIRECTORY}/seed"
+rm -rf "\$seed_directory" "${REMOTE_GIST}"
+mkdir -p "\$seed_directory"
+shift 2
+while [ \$# -gt 0 ]; do
+  case "\$1" in
+    -d) shift 2 ;;
+    -*) shift ;;
+    *) cp "\$1" "\$seed_directory/"; shift ;;
+  esac
+done
+git init -q --bare "${REMOTE_GIST}"
+git -C "\$seed_directory" init -q
+git -C "\$seed_directory" add -A
+git -C "\$seed_directory" -c user.name=t -c user.email=t@example.com commit -q -m seed
+git -C "\$seed_directory" push -q "${REMOTE_GIST}" HEAD:refs/heads/main 2>/dev/null
+git -C "${REMOTE_GIST}" symbolic-ref HEAD refs/heads/main
+echo "${GIST_URL}"
+FAKE_GH
   chmod +x "${FAKE_BIN}/gh"
 }
 
@@ -43,17 +65,28 @@ make_repository_with_origin() {
   echo "$repository"
 }
 
+# Runs the script with the gist clone URL redirected to the local bare repo.
 run_post_gist() {
   local repository="$1"
   shift
-  (cd "$repository" && PATH="${FAKE_BIN}:${PATH}" "$POST_GIST" "$@")
+  (
+    cd "$repository"
+    export PATH="${FAKE_BIN}:${PATH}"
+    export GIT_CONFIG_COUNT=1
+    export GIT_CONFIG_KEY_0="url.${REMOTE_GIST}.insteadOf"
+    export GIT_CONFIG_VALUE_0="${GIST_URL}.git"
+    "$POST_GIST" "$@"
+  )
 }
 
 assert_record_contains() {
   local expected="$1"
-  grep -qxF -- "$expected" "$RECORD_FILE" \
-    || grep -qF -- "$expected" "$RECORD_FILE" \
+  grep -qF -- "$expected" "$RECORD_FILE" \
     || fail "expected '${expected}' in record: $(cat "$RECORD_FILE")"
+}
+
+read_remote_file() {
+  git -C "$REMOTE_GIST" show "main:$1"
 }
 
 test_should_use_host_from_https_remote() {
@@ -111,8 +144,7 @@ test_should_print_gist_url() {
   local repository output
   repository="$(make_repository_with_origin https://ghe.example.com/owner/repo)"
   output="$(run_post_gist "$repository" "$REPORT_FILE")"
-  [ "$output" = "https://ghe.example.com/gist/abc123" ] \
-    || fail "unexpected output: ${output}"
+  [ "$output" = "$GIST_URL" ] || fail "unexpected output: ${output}"
 }
 
 test_should_fail_when_file_is_missing() {
@@ -123,12 +155,12 @@ test_should_fail_when_file_is_missing() {
   fi
 }
 
-test_should_fail_when_file_is_not_markdown() {
+test_should_fail_when_file_has_unsupported_extension() {
   local repository
   repository="$(make_repository_with_origin https://github.com/owner/repo)"
   echo "text" >"${WORK_DIRECTORY}/report.txt"
   if run_post_gist "$repository" "${WORK_DIRECTORY}/report.txt" 2>/dev/null; then
-    fail "expected non-zero exit for a non-.md file"
+    fail "expected non-zero exit for a non-.md, non-image file"
   fi
 }
 
@@ -148,9 +180,110 @@ test_should_fail_without_arguments() {
   fi
 }
 
+test_should_upload_multiple_markdown_files() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  echo "# Report ja" >"${WORK_DIRECTORY}/report.ja.md"
+  run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/report.ja.md" >/dev/null
+  assert_record_contains "report.md"
+  assert_record_contains "report.ja.md"
+}
+
+test_should_push_image_to_gist_repository() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" >/dev/null
+  git -C "$REMOTE_GIST" cat-file -e main:chart.png \
+    || fail "chart.png was not pushed to the gist repository"
+}
+
+test_should_not_pass_image_to_gist_create() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" >/dev/null
+  if grep -q "chart.png" "$RECORD_FILE"; then
+    fail "gh gist create must not receive binary files: $(cat "$RECORD_FILE")"
+  fi
+}
+
+test_should_rewrite_markdown_image_link_to_raw_url() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '# R\n\n![chart](images/chart.png)\n' >"${WORK_DIRECTORY}/with-image.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/with-image.md" "$IMAGE_FILE" >/dev/null
+  read_remote_file with-image.md | grep -qF "![chart](${GIST_URL}/raw/chart.png)" \
+    || fail "image link was not rewritten: $(read_remote_file with-image.md)"
+}
+
+test_should_rewrite_html_image_tag_to_raw_url() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '<img src="./chart.png" width="300">\n' >"${WORK_DIRECTORY}/html-image.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/html-image.md" "$IMAGE_FILE" >/dev/null
+  read_remote_file html-image.md | grep -qF "src=\"${GIST_URL}/raw/chart.png\"" \
+    || fail "img tag was not rewritten: $(read_remote_file html-image.md)"
+}
+
+test_should_rewrite_image_links_in_every_markdown_file() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '![c](chart.png)\n' >"${WORK_DIRECTORY}/doc.en.md"
+  printf '![c](chart.png)\n' >"${WORK_DIRECTORY}/doc.ja.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/doc.en.md" \
+    "${WORK_DIRECTORY}/doc.ja.md" "$IMAGE_FILE" >/dev/null
+  read_remote_file doc.ja.md | grep -qF "${GIST_URL}/raw/chart.png" \
+    || fail "second markdown file link was not rewritten"
+}
+
+test_should_leave_other_links_untouched() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  printf '![x](other.png) [t](chart.png.txt)\n' >"${WORK_DIRECTORY}/other.md"
+  run_post_gist "$repository" "${WORK_DIRECTORY}/other.md" "$IMAGE_FILE" >/dev/null
+  [ "$(read_remote_file other.md)" = '![x](other.png) [t](chart.png.txt)' ] \
+    || fail "unrelated links changed: $(read_remote_file other.md)"
+}
+
+test_should_fail_when_image_file_is_missing() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/missing.png" 2>/dev/null; then
+    fail "expected non-zero exit for a missing image"
+  fi
+}
+
+test_should_fail_when_image_basenames_collide() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  mkdir -p "${WORK_DIRECTORY}/other"
+  cp "$IMAGE_FILE" "${WORK_DIRECTORY}/other/chart.png"
+  if run_post_gist "$repository" "$REPORT_FILE" "$IMAGE_FILE" "${WORK_DIRECTORY}/other/chart.png" 2>/dev/null; then
+    fail "expected non-zero exit when two images share a basename"
+  fi
+}
+
+test_should_fail_when_image_name_has_unsafe_characters() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  cp "$IMAGE_FILE" "${WORK_DIRECTORY}/images/bad name&.png"
+  if run_post_gist "$repository" "$REPORT_FILE" "${WORK_DIRECTORY}/images/bad name&.png" 2>/dev/null; then
+    fail "expected non-zero exit for an unsafe image name"
+  fi
+}
+
+test_should_fail_when_no_markdown_file_is_given() {
+  local repository
+  repository="$(make_repository_with_origin https://github.com/owner/repo)"
+  if run_post_gist "$repository" "$IMAGE_FILE" 2>/dev/null; then
+    fail "expected non-zero exit with only an image"
+  fi
+}
+
 main() {
   install_fake_gh
   echo "# Report" >"$REPORT_FILE"
+  mkdir -p "$REMOTE_DIRECTORY" "$(dirname "$IMAGE_FILE")"
+  printf '\211PNG\r\n\032\n' >"$IMAGE_FILE"
   local test_name
   for test_name in $(declare -F | awk '{print $3}' | grep '^test_'); do
     rm -f "$RECORD_FILE"
