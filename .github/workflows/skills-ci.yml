@@ -63,8 +63,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Run post-gist tests
-        run: bash skills/gist-report/tests/post-gist-test.sh
+      - uses: astral-sh/setup-uv@v7
+      # Pinned to the floor the script supports so a newer-only construct fails
+      # here rather than on a machine whose python3 is 3.9.
+      - name: Run unit tests
+        working-directory: claude-skills/skills/gist-report
+        run: uv run --no-project --python 3.9 -m unittest discover -s scripts
 
   spotify-sheets-image:
     name: Build spotify-sheets image

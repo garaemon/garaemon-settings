@@ -113,7 +113,7 @@ make an equally strong, written argument here.
 
 ### Documented exception: `gist-report` runs `gh` on the host
 
-`skills/gist-report/scripts/post-gist.sh` reaches the network through `gh` and
+`skills/gist-report/scripts/post_gist.py` reaches the network through `gh` and
 `git` on the host, like the local-development skills (`create-pr`,
 `branch-review`). The exception rests on these facts:
 

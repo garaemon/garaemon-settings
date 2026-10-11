@@ -13,7 +13,7 @@ description: |
 # Gist Report Skill
 
 Write a report as two Markdown files (English and Japanese), then upload them
-and their images as one gist with `scripts/post-gist.sh`. The script derives
+and their images as one gist with `scripts/post_gist.py`. The script derives
 `GH_HOST` from the `origin` remote URL, so never set or guess `GH_HOST` by hand.
 
 ## Workflow
@@ -29,11 +29,10 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
    file name; the script rewrites inline links (with or without a title),
    `<img src>` attributes, and reference definitions (`[id]: path`).
 3. Run the script from inside the repository whose origin decides the host.
-   Use the absolute path of the script, for example
-   `~/.claude/skills/gist-report/scripts/post-gist.sh`:
+   Call the script by its absolute path:
 
    ```bash
-   post-gist.sh [--public] [--description TEXT] \
+   python3 ~/.claude/skills/gist-report/scripts/post_gist.py [--public] [--description TEXT] \
      topic.en.md topic.ja.md [IMAGE ...]
    ```
 
@@ -79,10 +78,10 @@ and their images as one gist with `scripts/post-gist.sh`. The script derives
 ## Tests
 
 ```bash
-bash tests/post-gist-test.sh
+python3 -m unittest discover -s scripts
 ```
 
-The test replaces `gh` with a fake that publishes to a local bare repository,
+The tests replace `gh` with a fake that publishes to a local bare repository,
 so it needs no network or credentials. It does not exercise a real GitHub
 server: the first real run is the check for the raw-URL form on GitHub
 Enterprise.
