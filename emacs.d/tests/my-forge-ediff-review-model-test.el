@@ -336,6 +336,11 @@ LOCATION is an alist providing the thread-level `path', `line',
   (should (equal "" (my-forge-ediff-review-model-format-time nil)))
   (should (equal "" (my-forge-ediff-review-model-format-time ""))))
 
+(ert-deftest review-model-format-time-should-be-empty-for-garbage ()
+  "An unparsable timestamp must not abort the render of a whole buffer."
+  (should (equal "" (my-forge-ediff-review-model-format-time "not a date")))
+  (should (equal "" (my-forge-ediff-review-model-format-time "2026-13-45"))))
+
 ;;;; Card text padding and wrapping
 
 (ert-deftest review-model-pad-should-fill-to-width ()
@@ -492,6 +497,122 @@ LOCATION is an alist providing the thread-level `path', `line',
 
 (ert-deftest review-model-resolve-host-should-return-nil-when-empty ()
   (should-not (my-forge-ediff-review-model-resolve-host "")))
+
+;;;; Conversation comments (GitHub GraphQL response)
+
+(defun my-forge-ediff-review-model-test--conversation-response
+    (comment-nodes &optional node-id)
+  "Wrap COMMENT-NODES and NODE-ID in the pullRequest GraphQL envelope."
+  `((data
+     (repository
+      (pullRequest
+       ,@(when node-id `((id . ,node-id)))
+       (comments
+        (nodes . ,comment-nodes)))))))
+
+(defun my-forge-ediff-review-model-test--post (body author &optional created-at)
+  "Build one conversation comment node from BODY, AUTHOR login, CREATED-AT."
+  `((id . "IC_1")
+    (body . ,body)
+    ,@(when created-at `((createdAt . ,created-at)))
+    (url . "https://github.com/o/r/pull/1#issuecomment-1")
+    (author (login . ,author))))
+
+(ert-deftest review-model-conversation-should-parse-comments-in-order ()
+  (let ((posts (my-forge-ediff-review-model-parse-conversation
+                (my-forge-ediff-review-model-test--conversation-response
+                 (list (my-forge-ediff-review-model-test--post
+                        "first" "alice" "2026-01-15T10:30:00Z")
+                       (my-forge-ediff-review-model-test--post
+                        "second" "bob"))))))
+    (should (= 2 (length posts)))
+    (should (equal "first" (plist-get (car posts) :body)))
+    (should (equal "alice" (plist-get (car posts) :author)))
+    (should (equal "2026-01-15T10:30:00Z"
+                   (plist-get (car posts) :created-at)))
+    (should (equal "second" (plist-get (cadr posts) :body)))
+    (should (equal "bob" (plist-get (cadr posts) :author)))))
+
+(ert-deftest review-model-conversation-should-name-deleted-author-unknown ()
+  "A comment whose author was deleted has no `author' object at all."
+  (let ((posts (my-forge-ediff-review-model-parse-conversation
+                (my-forge-ediff-review-model-test--conversation-response
+                 '(((id . "IC_1") (body . "orphan")))))))
+    (should (equal "unknown" (plist-get (car posts) :author)))))
+
+(ert-deftest review-model-conversation-should-accept-vector-nodes ()
+  "Some JSON readers hand back vectors rather than lists."
+  (let ((posts (my-forge-ediff-review-model-parse-conversation
+                (my-forge-ediff-review-model-test--conversation-response
+                 (vector (my-forge-ediff-review-model-test--post
+                          "vectored" "alice"))))))
+    (should (= 1 (length posts)))
+    (should (equal "vectored" (plist-get (car posts) :body)))))
+
+(ert-deftest review-model-conversation-should-return-empty-for-no-comments ()
+  (should-not (my-forge-ediff-review-model-parse-conversation
+               (my-forge-ediff-review-model-test--conversation-response nil))))
+
+(ert-deftest review-model-conversation-should-parse-pr-node-id ()
+  (should (equal "PR_kwABC"
+                 (my-forge-ediff-review-model-parse-pr-node-id
+                  (my-forge-ediff-review-model-test--conversation-response
+                   nil "PR_kwABC")))))
+
+(ert-deftest review-model-conversation-node-id-should-be-nil-when-absent ()
+  (should-not (my-forge-ediff-review-model-parse-pr-node-id
+               (my-forge-ediff-review-model-test--conversation-response nil))))
+
+;;;; Conversation formatting
+
+(ert-deftest review-model-format-conversation-should-follow-the-description ()
+  "The PR body is rendered first, then the comments beneath it."
+  (let* ((process-environment (cons "TZ=UTC" process-environment))
+         (text (my-forge-ediff-review-model-format-conversation
+                7 "Title" "Body."
+                (list (list :author "alice" :body "Looks good."
+                            :created-at "2026-01-15T10:30:00Z")))))
+    (should (string-prefix-p "# PR #7: Title\n\nBody.\n" text))
+    (should (string-match-p "^## Comments (1)$" text))
+    (should (string-match-p "^### alice — 2026-01-15 10:30$" text))
+    (should (string-match-p "^Looks good\\.$" text))))
+
+(ert-deftest review-model-format-conversation-should-keep-comment-order ()
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "Title" "Body."
+               (list (list :author "alice" :body "first")
+                     (list :author "bob" :body "second")))))
+    (should (< (string-match "### alice" text)
+               (string-match "### bob" text)))))
+
+(ert-deftest review-model-format-conversation-should-say-when-empty ()
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "Title" "Body." nil)))
+    (should (string-match-p "No comments yet\\." text))
+    (should-not (string-match-p "###" text))))
+
+(ert-deftest review-model-format-conversation-should-not-wrap-bodies ()
+  "Bodies stay verbatim so markdown code blocks and lists survive."
+  (let* ((body (concat "Try this:\n\n```elisp\n(message \"hi\")\n```\n\n"
+                       "- one\n- two"))
+         (text (my-forge-ediff-review-model-format-conversation
+                7 "Title" "Body."
+                (list (list :author "alice" :body body)))))
+    (should (string-match-p "(message \"hi\")" text))
+    (should (string-match-p "^- one$" text))))
+
+(ert-deftest review-model-format-conversation-should-mark-an-empty-body ()
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "Title" "Body."
+               (list (list :author "alice" :body "   ")))))
+    (should (string-match-p "(empty comment)" text))))
+
+(ert-deftest review-model-format-conversation-should-omit-a-missing-time ()
+  "A comment with no timestamp gets a byline without a trailing dash."
+  (let ((text (my-forge-ediff-review-model-format-conversation
+               7 "Title" "Body."
+               (list (list :author "alice" :body "hi")))))
+    (should (string-match-p "^### alice$" text))))
 
 (provide 'my-forge-ediff-review-model-test)
 ;;; my-forge-ediff-review-model-test.el ends here
