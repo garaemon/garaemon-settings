@@ -36,7 +36,17 @@ def install_fake_gh(bin_dir, log_file):
         "    printf '#12\\tfeature-branch\\tAdd feature\\n'\n"
         "    printf '#34\\tbugfix-branch\\tFix bug\\n'\n"
         "    ;;\n"
+        '  "pr view")\n'
+        '    case "$3" in\n'
+        "      12) echo feature-branch ;;\n"
+        "      34) echo bugfix-branch ;;\n"
+        "    esac\n"
+        "    ;;\n"
         '  "pr checkout")\n'
+        '    if [ -n "$FAKE_GH_CHECKOUT_FAILS" ]; then\n'
+        "      echo 'checkout failed' >&2\n"
+        "      exit 1\n"
+        "    fi\n"
         "    ;;\n"
         "esac\n"
     )
@@ -149,6 +159,38 @@ class TestGitWorktreeFromPr:
         final_pwd = second.stdout.strip().splitlines()[-1]
         expected_dir = tmp_path / "repo" / ".worktrees" / "pr-12"
         assert Path(final_pwd).resolve() == expected_dir.resolve()
+
+    def test_should_enter_existing_worktree_when_branch_is_already_checked_out(
+        self, repo, fake_bin, stub_log, tmp_path
+    ):
+        install_fake_gh(fake_bin, stub_log)
+        install_fake_peco(fake_bin, "feature-branch", stub_log)
+        other_dir = tmp_path / "other-worktree"
+        run_git(repo, "worktree", "add", "-b", "feature-branch", str(other_dir))
+        result = run_function(repo, fake_bin, "12")
+        assert result.returncode == 0, result.stdout + result.stderr
+        final_pwd = result.stdout.strip().splitlines()[-1]
+        assert Path(final_pwd).resolve() == other_dir.resolve()
+
+    def test_should_not_leave_directory_when_branch_is_already_checked_out(
+        self, repo, fake_bin, stub_log, tmp_path
+    ):
+        install_fake_gh(fake_bin, stub_log)
+        install_fake_peco(fake_bin, "feature-branch", stub_log)
+        other_dir = tmp_path / "other-worktree"
+        run_git(repo, "worktree", "add", "-b", "feature-branch", str(other_dir))
+        run_function(repo, fake_bin, "12")
+        assert not (repo / ".worktrees" / "pr-12").exists()
+
+    def test_should_remove_worktree_when_gh_checkout_fails(
+        self, repo, fake_bin, stub_log, monkeypatch
+    ):
+        install_fake_gh(fake_bin, stub_log)
+        install_fake_peco(fake_bin, "feature-branch", stub_log)
+        monkeypatch.setenv("FAKE_GH_CHECKOUT_FAILS", "1")
+        result = run_function(repo, fake_bin, "12")
+        assert result.returncode != 0
+        assert not (repo / ".worktrees" / "pr-12").exists()
 
     def test_should_fail_when_no_pr_selected(self, repo, fake_bin, stub_log):
         install_fake_gh(fake_bin, stub_log)
