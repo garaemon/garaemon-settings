@@ -241,10 +241,31 @@ function git-worktree-from-pr() {
     return 0
   fi
 
+  # git refuses to check out a branch that another worktree already holds, so
+  # reuse that worktree instead of creating one that gh would fail in.
+  local head_branch
+  head_branch=$(gh pr view "$pr_number" --json headRefName \
+    --jq '.headRefName') || return
+  local existing_worktree
+  existing_worktree=$(git worktree list --porcelain | awk -v branch="refs/heads/${head_branch}" '
+    $1 == "worktree" { path = substr($0, 10) }
+    $1 == "branch" && $2 == branch { print path; exit }
+  ')
+  if [ -n "$existing_worktree" ]; then
+    echo "Branch '${head_branch}' is already checked out in: ${existing_worktree}"
+    cd "$existing_worktree" || return
+    return 0
+  fi
+
   # Create a detached worktree first, then let gh check out the PR branch.
   git worktree add --detach "$worktree_dir" || return
   cd "$worktree_dir" || return
-  gh pr checkout "$pr_number"
+  if ! gh pr checkout "$pr_number"; then
+    # Remove the half-made worktree so a failed checkout leaves no directory.
+    cd "$main_repo_root" || return
+    git worktree remove --force "$worktree_dir"
+    return 1
+  fi
 }
 
 function git-branch-for-pr() {
