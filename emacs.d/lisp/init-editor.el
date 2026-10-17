@@ -412,9 +412,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :ensure nil
   :bind (:map dired-mode-map
               ("M-s" . consult-grep)
+              ("O" . my-dired-open-externally)
               ("F" . magit-pull)
               ("b" . magit-branch))
   :hook (dired-mode . auto-revert-mode)
+  :config
+  (require 'my-dired-open)
   )
 
 (use-package wdired
