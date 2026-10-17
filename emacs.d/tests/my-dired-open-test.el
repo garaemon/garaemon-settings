@@ -20,9 +20,9 @@
   (declare (indent 0))
   `(let ((recorded-calls nil))
      (cl-letf (((symbol-function 'start-process)
-                (lambda (&rest args) (push args recorded-calls))))
-       ,@body
-       (setq recorded-calls (nreverse recorded-calls)))))
+                (lambda (&rest args)
+                  (setq recorded-calls (append recorded-calls (list args))))))
+       ,@body)))
 
 (ert-deftest my-dired-open-should-use-open-on-macos ()
   (let ((system-type 'darwin))
