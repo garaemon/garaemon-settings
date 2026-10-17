@@ -417,7 +417,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ("b" . magit-branch))
   :hook (dired-mode . auto-revert-mode)
   :config
-  ;; Open the marked files with the macOS `open' command on "E".
   (require 'my-dired-open)
   )
 
