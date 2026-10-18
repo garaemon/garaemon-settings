@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Sequence
+from typing import NamedTuple, Sequence
 from urllib.parse import unquote, urlsplit
 
 IMAGE_EXTENSIONS = ("png", "jpg", "jpeg", "gif", "svg", "webp")
@@ -108,24 +108,55 @@ def classify_input_paths(paths: Sequence[Path]) -> tuple[list[Path], list[Path]]
     return markdown_paths, image_paths
 
 
-def find_referenced_image_paths(markdown_path: Path) -> list[Path]:
-    """Return the existing local image files that a Markdown file references.
+class ReferencedImages(NamedTuple):
+    """Local image targets of one Markdown file, as resolved file paths."""
+
+    existing: list[Path]
+    missing: list[Path]
+
+
+def find_referenced_image_paths(markdown_path: Path) -> ReferencedImages:
+    """Return the local images that a Markdown file references.
 
     Relative targets resolve against the Markdown file's directory. Remote
-    URLs, missing files, and non-image targets are skipped, so the gist keeps
-    its original link for them.
+    URLs and non-image targets are skipped, so the gist keeps their original
+    link. A local image target that is not a file counts as missing.
     """
-    found_paths: list[Path] = []
+    existing: list[Path] = []
+    missing: list[Path] = []
     for match in IMAGE_TARGET_PATTERN.finditer(markdown_path.read_text()):
         target = match.group("target")
         if urlsplit(target).scheme:
             continue
         candidate = markdown_path.parent / unquote(target)
-        if is_image_file(candidate) and candidate.is_file():
-            resolved = candidate.resolve()
-            if resolved not in found_paths:
-                found_paths.append(resolved)
-    return found_paths
+        if not is_image_file(candidate):
+            continue
+        resolved = candidate.resolve()
+        destination = existing if candidate.is_file() else missing
+        if resolved not in destination:
+            destination.append(resolved)
+    return ReferencedImages(existing, missing)
+
+
+def collect_image_paths(
+    markdown_paths: Sequence[Path], ignore_missing_images: bool
+) -> list[Path]:
+    """Return the existing images that the Markdown files reference.
+
+    Fails on a missing image unless ignore_missing_images is set, because the
+    gist would otherwise contain a broken link.
+    """
+    discovered: list[Path] = []
+    for markdown_path in markdown_paths:
+        references = find_referenced_image_paths(markdown_path)
+        if references.missing and not ignore_missing_images:
+            raise PostGistError(
+                f"referenced image not found in {markdown_path}: "
+                + ", ".join(str(path) for path in references.missing)
+                + " (pass --ignore-missing-images to skip them)"
+            )
+        discovered.extend(references.existing)
+    return discovered
 
 
 def merge_image_paths(
@@ -262,6 +293,11 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--public", action="store_true", help="create a public gist")
     parser.add_argument("--description", help="gist description")
     parser.add_argument(
+        "--ignore-missing-images",
+        action="store_true",
+        help="skip referenced images that do not exist instead of failing",
+    )
+    parser.add_argument(
         "paths", nargs="+", type=Path, metavar="FILE", help=".md files, then images"
     )
     return parser.parse_args(argv)
@@ -273,11 +309,9 @@ def run(argv: Sequence[str]) -> str:
     markdown_paths, explicit_image_paths = classify_input_paths(arguments.paths)
     if not markdown_paths:
         raise PostGistError("no Markdown file given; pass at least one .md file")
-    discovered_image_paths = [
-        image_path
-        for markdown_path in markdown_paths
-        for image_path in find_referenced_image_paths(markdown_path)
-    ]
+    discovered_image_paths = collect_image_paths(
+        markdown_paths, arguments.ignore_missing_images
+    )
     image_paths = merge_image_paths(explicit_image_paths, discovered_image_paths)
     assert_unique_base_names("Markdown", markdown_paths)
     assert_unique_base_names("image", image_paths)

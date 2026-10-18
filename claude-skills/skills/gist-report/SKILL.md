@@ -35,7 +35,7 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
 
    ```bash
    python3 ~/.claude/skills/gist-report/scripts/post_gist.py [--public] [--description TEXT] \
-     topic.en.md topic.ja.md
+     [--ignore-missing-images] topic.en.md topic.ja.md
    ```
 
 4. Show the gist URL that the script prints to the user.
@@ -52,6 +52,10 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
 - Do not call `gh gist create` directly. The script prevents a wrong host
   and an inherited `GH_HOST` from sending the report to the wrong server.
 - Pass a short `--description` that names the report topic.
+- A local image link whose file does not exist fails the run before any
+  upload. Fix the path. Pass `--ignore-missing-images` only when the link is
+  intentional, for example an example path in a code block; the script then
+  leaves that link unchanged.
 - Pass an `IMAGE` argument only for an image that no Markdown link names.
 - Name image files with letters, digits, `.`, `_`, and `-` only, and give
   every image a distinct file name. A gist has no directories.
@@ -66,9 +70,9 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
 - Exports `GH_HOST` for that host, replacing any inherited value.
 - Runs `gh gist create` on the Markdown files and takes the gist URL.
 - Scans every Markdown file for local image references and adds the files it
-  finds to the upload. It skips remote URLs, missing files, and non-image
-  targets, and it uploads an image used by several files once. Images given
-  on the command line are uploaded too.
+  finds to the upload. It skips remote URLs and non-image targets, and it
+  uploads an image used by several files once. Images given on the command
+  line are uploaded too.
 - When images are found or given:
   1. Clones the gist, because `gh gist create` rejects binary files.
   2. Copies the images into the clone.
@@ -78,9 +82,9 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
   4. Pushes one commit through `gh auth git-credential`.
 - Prints the gist URL. When the image upload fails, it prints the gist URL and
   a `GH_HOST=<host> gh gist delete <id>` command to stderr first.
-- Exits non-zero for a missing file, an unsupported extension, duplicate file
-  names, an unsafe image name, no Markdown file, no `origin` remote, or an
-  origin URL without a host.
+- Exits non-zero for a missing file, a referenced image that does not exist,
+  an unsupported extension, duplicate file names, an unsafe image name, no
+  Markdown file, no `origin` remote, or an origin URL without a host.
 
 ## Tests
 
