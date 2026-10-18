@@ -360,6 +360,18 @@ pkg-config, perl, or the ncurses development files.
 without sudo, on a runner without makeinfo and tree-sitter, whenever the
 script changes.
 
+## Profiler Report Export
+
+`profiler-report` opens call trees that are collapsed, so a copy of the buffer
+loses everything behind the `+` markers. `lisp/my-profiler-export.el` expands
+every entry and copies the plain text:
+
+- `C-c C-w` in a profiler report buffer copies that report.
+- `M-x my-profiler-export-copy-report` outside a report buffer copies every
+  open report (CPU and memory), each under a `===== buffer name =====` heading.
+
+Paste the result into a coding agent as is.
+
 ## Scripts
 
 Helper scripts kept under `scripts/`. They are not loaded automatically by Emacs; run them manually as described below.

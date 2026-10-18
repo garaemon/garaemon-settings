@@ -139,6 +139,10 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 ;;; Profiler utilities
 
+;; Provides `my-profiler-export-copy-report', bound to `C-c C-w' in
+;; profiler report buffers.
+(require 'my-profiler-export)
+
 (defun profiler-auto-start-and-report (duration-seconds)
   "Starts the Emacs profiler and automatically stops it after a specified duration,
 then generates a report. Prompts the user for the duration in seconds."
