@@ -79,6 +79,47 @@ class RewriteImageLinksTest(unittest.TestCase):
         self.assertEqual(self.rewrite(text), text)
 
 
+class FindReferencedImagePathsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary_directory.cleanup)
+        self.work = Path(temporary_directory.name)
+        (self.work / "images").mkdir()
+        self.image = self.work / "images" / "chart.png"
+        self.image.write_bytes(PNG_BYTES)
+
+    def find(self, text: str) -> list[Path]:
+        report = self.work / "report.md"
+        report.write_text(text)
+        return post_gist.find_referenced_image_paths(report)
+
+    def test_should_find_inline_link(self) -> None:
+        self.assertEqual(self.find("![c](images/chart.png)"), [self.image])
+
+    def test_should_find_link_with_title(self) -> None:
+        self.assertEqual(self.find('![c](images/chart.png "p99")'), [self.image])
+
+    def test_should_find_html_img_src(self) -> None:
+        self.assertEqual(self.find('<img src="./images/chart.png">'), [self.image])
+
+    def test_should_find_reference_definition(self) -> None:
+        self.assertEqual(self.find("![c][id]\n\n[id]: images/chart.png\n"), [self.image])
+
+    def test_should_ignore_remote_urls(self) -> None:
+        self.assertEqual(self.find("![c](https://example.com/chart.png)"), [])
+
+    def test_should_ignore_missing_files(self) -> None:
+        self.assertEqual(self.find("![c](images/missing.png)"), [])
+
+    def test_should_ignore_non_image_links(self) -> None:
+        self.assertEqual(self.find("[t](images/chart.png.txt)"), [])
+
+    def test_should_list_repeated_reference_once(self) -> None:
+        self.assertEqual(
+            self.find("![a](images/chart.png) ![b](images/chart.png)"), [self.image]
+        )
+
+
 class PostGistCommandTest(unittest.TestCase):
     def setUp(self) -> None:
         temporary_directory = tempfile.TemporaryDirectory()
@@ -343,6 +384,41 @@ class ImageEmbeddingTest(PostGistCommandTest):
         self.run_on_github(english, japanese, self.image)
         self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.en.md"))
         self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.ja.md"))
+
+
+class AutomaticImageDiscoveryTest(PostGistCommandTest):
+    def write_report_referencing_image(self, name: str = "doc.md") -> Path:
+        return self.write_file(name, "![c](images/chart.png)\n")
+
+    def test_should_upload_image_referenced_by_markdown(self) -> None:
+        report = self.write_report_referencing_image()
+        self.run_on_github(report)
+        self.assertTrue(self.remote_has_file("chart.png"))
+
+    def test_should_rewrite_link_of_discovered_image(self) -> None:
+        report = self.write_report_referencing_image()
+        self.run_on_github(report)
+        self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.md"))
+
+    def test_should_not_pass_discovered_image_to_gist_create(self) -> None:
+        report = self.write_report_referencing_image()
+        self.run_on_github(report)
+        self.assertNotIn(str(self.image), self.read_record()["args"])
+
+    def test_should_accept_explicit_image_that_is_also_referenced(self) -> None:
+        report = self.write_report_referencing_image()
+        result = self.run_on_github(report, self.image)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_should_share_image_referenced_by_both_languages(self) -> None:
+        english = self.write_report_referencing_image("doc.en.md")
+        japanese = self.write_report_referencing_image("doc.ja.md")
+        result = self.run_on_github(english, japanese)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_should_skip_image_upload_when_nothing_is_referenced(self) -> None:
+        result = self.run_on_github(self.report)
+        self.assertNotIn("uploading images", result.stderr)
 
 
 class ImagePushFailureTest(PostGistCommandTest):

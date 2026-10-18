@@ -23,17 +23,19 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
    outside the repository). Use lowercase kebab-case for `<topic>`.
    - Give both files the same structure, headings order, numbers, and images.
    - Write each one as a native document, not a word-for-word translation.
-2. Collect the image files the report shows (screenshots, charts). Reference
-   them from both Markdown files with a relative path, for example
-   `![Latency](images/latency.png)`. The link only has to end in the image's
-   file name; the script rewrites inline links (with or without a title),
-   `<img src>` attributes, and reference definitions (`[id]: path`).
+2. Reference the images the report shows (screenshots, charts) from both
+   Markdown files with a relative path, for example
+   `![Latency](images/latency.png)`. The script finds these images itself, so
+   do not list them on the command line. The path resolves against the
+   directory of the Markdown file. The script rewrites inline links (with or
+   without a title), `<img src>` attributes, and reference definitions
+   (`[id]: path`).
 3. Run the script from inside the repository whose origin decides the host.
    Call the script by its absolute path:
 
    ```bash
    python3 ~/.claude/skills/gist-report/scripts/post_gist.py [--public] [--description TEXT] \
-     topic.en.md topic.ja.md [IMAGE ...]
+     topic.en.md topic.ja.md
    ```
 
 4. Show the gist URL that the script prints to the user.
@@ -50,6 +52,7 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
 - Do not call `gh gist create` directly. The script prevents a wrong host
   and an inherited `GH_HOST` from sending the report to the wrong server.
 - Pass a short `--description` that names the report topic.
+- Pass an `IMAGE` argument only for an image that no Markdown link names.
 - Name image files with letters, digits, `.`, `_`, and `-` only, and give
   every image a distinct file name. A gist has no directories.
 - Supported images: png, jpg, jpeg, gif, svg, and webp. The script matches
@@ -62,7 +65,11 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
   scp-like (`git@host:owner/repo`) forms.
 - Exports `GH_HOST` for that host, replacing any inherited value.
 - Runs `gh gist create` on the Markdown files and takes the gist URL.
-- When images are given:
+- Scans every Markdown file for local image references and adds the files it
+  finds to the upload. It skips remote URLs, missing files, and non-image
+  targets, and it uploads an image used by several files once. Images given
+  on the command line are uploaded too.
+- When images are found or given:
   1. Clones the gist, because `gh gist create` rejects binary files.
   2. Copies the images into the clone.
   3. Rewrites image links in every Markdown file to `<gist URL>/raw/name.png`.
