@@ -242,7 +242,7 @@ face height changes; `text-scale+' and friends below do that."
 
 (use-package diff-hl :ensure t
   :custom
-  (diff-hl-disable-on-remote nil)
+  (diff-hl-disable-on-remote t)
   (diff-hl-update-async t)
   :config
   (global-diff-hl-mode)

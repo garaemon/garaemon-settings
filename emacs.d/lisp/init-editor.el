@@ -406,6 +406,26 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind ("M-o" . switch-window-or-split)
   )
 
+;;; TRAMP performance
+
+(use-package tramp
+  :ensure nil
+  :custom
+  ;; Trust cached remote file attributes for 60 seconds.  Dired and
+  ;; completion otherwise issue an ssh round trip per file.
+  (remote-file-name-inhibit-cache 60)
+  ;; Reuse one ssh connection for 10 minutes after the last use.
+  (tramp-ssh-controlmaster-options
+   (concat "-o ControlMaster=auto -o ControlPath=/tmp/tramp.%%C "
+           "-o ControlPersist=10m"))
+  (tramp-verbose 1)
+  (remote-file-name-inhibit-auto-save-visited t)
+  :config
+  ;; Stop `vc' from running git on remote files.  Every find-file and
+  ;; dired refresh otherwise spawns remote processes to detect the backend.
+  (setq vc-ignore-dir-regexp
+        (format "\\(%s\\)\\|\\(%s\\)" vc-ignore-dir-regexp tramp-file-name-regexp)))
+
 ;;; Dired enhancements
 
 (use-package dired
