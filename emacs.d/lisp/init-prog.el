@@ -387,8 +387,22 @@ command prompt, as in `projectile-run-project'."
   ;; the subproject variant is C-c p c m r, too long for the edit-run loop.
   :bind (("C-c C-r" . projectile-run-task)
          ("C-c r" . my-run-project-or-subproject))
+  :custom
+  ;; The dynamic mode line calls `projectile-project-name' on every
+  ;; redisplay, which probes the remote host.
+  (projectile-dynamic-mode-line nil)
   :config
   (projectile-mode +1)
+
+  ;; Report no project root for remote directories.  Root detection tests
+  ;; every marker file at every ancestor directory, and each test costs an
+  ;; ssh round trip: 56% of CPU time when opening a file from dired.
+  (defun my-projectile-skip-remote-root (original-function &optional directory)
+    "Call ORIGINAL-FUNCTION with DIRECTORY unless it is a remote path."
+    (let ((target-directory (or directory default-directory)))
+      (unless (file-remote-p target-directory)
+        (funcall original-function directory))))
+  (advice-add 'projectile-project-root :around #'my-projectile-skip-remote-root)
 
   ;; Accept a list of strings as a directory-local value of
   ;; `projectile-subproject-markers' without confirmation. Projectile marks

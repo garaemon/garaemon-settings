@@ -281,6 +281,40 @@ Run `M-x my-keybind-stats-flush` to write the pending counts before building a
 report from the command line, and `M-x my-keybind-stats-mode` to pause the
 recorder.
 
+## Remote Editing over TRAMP
+
+Every ssh round trip costs tens of milliseconds, so the configuration removes
+per-file remote calls from dired and `find-file`. Local buffers behave as usual.
+Remote buffers differ in the following ways:
+
+- **Projectile is off.** `projectile-project-root` returns nil for remote
+  directories, so commands such as `projectile-find-file` do not work there.
+  Root detection tests every marker file at every ancestor directory, which
+  took 56% of CPU time when opening a file from dired.
+- **VC is off.** `vc-ignore-dir-regexp` includes the TRAMP file name regexp, so
+  the mode line shows no VC state. Use `magit` for git operations. Magit
+  already drops its expensive status sections on remote hosts.
+- **diff-hl is off.** The fringe shows no change markers in remote buffers.
+- **Dired icons are generic.** Icons are chosen from the file name and the `d`
+  in the permission column, without any stat call. Symlinks, git repositories
+  and submodules get the plain file or directory icon.
+- **Remote attributes are cached for 60 seconds.** A file changed by another
+  process may look stale for up to a minute. Run `M-x tramp-cleanup-this-connection`
+  or revert the buffer to refresh sooner.
+- **Remote files are not auto-saved on visit.**
+  `remote-file-name-inhibit-auto-save-visited` is `t`.
+
+The ssh connection stays open for 10 minutes after the last use
+(`ControlPersist=10m`), so reconnecting within that window is fast.
+
+The settings live in these places:
+
+- `lisp/init-editor.el`: the `tramp` block.
+- `lisp/init-prog.el`: `my-projectile-skip-remote-root`.
+- `lisp/init-ui.el`: `diff-hl-disable-on-remote` and
+  `my-all-the-icons-dired-icon-without-stat`.
+- `tests/init-tramp-test.el`: checks that each setting is present.
+
 ## Building Emacs
 
 `scripts/build_emacs.py` builds Emacs from

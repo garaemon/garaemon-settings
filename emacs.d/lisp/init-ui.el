@@ -242,7 +242,7 @@ face height changes; `text-scale+' and friends below do that."
 
 (use-package diff-hl :ensure t
   :custom
-  (diff-hl-disable-on-remote nil)
+  (diff-hl-disable-on-remote t)
   (diff-hl-update-async t)
   :config
   (global-diff-hl-mode)
@@ -262,7 +262,33 @@ face height changes; `text-scale+' and friends below do that."
   ;; Keep one color per file type.  The package default repaints every icon
   ;; in the color of the surrounding text, which erases that distinction.
   (all-the-icons-dired-monochrome nil)
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :config
+  ;; Choose icons for remote listings without any stat.  The stock code runs
+  ;; `file-directory-p', `file-symlink-p' and a submodule check per file, and
+  ;; each costs an ssh round trip.  Fontifying a remote listing took 62% of
+  ;; allocations.  The "d" in the permission column marks a directory.
+  (defun my-all-the-icons-dired-icon-without-stat (original-function file)
+    "Return the icon for FILE, skipping stat calls in remote dired buffers.
+Delegate to ORIGINAL-FUNCTION in local buffers."
+    (if (not (file-remote-p default-directory))
+        (funcall original-function file)
+      (if (eq (char-after (+ (line-beginning-position) 2)) ?d)
+          (let* ((icon (all-the-icons-match-to-alist
+                        (file-name-base (directory-file-name file))
+                        all-the-icons-dir-icon-alist))
+                 (args (append (list (cadr icon))
+                               (list :face 'all-the-icons-dired-dir-face
+                                     :v-adjust all-the-icons-dired-v-adjust)
+                               (cddr icon))))
+            (apply (car icon) args))
+        (apply 'all-the-icons-icon-for-file file
+               (append
+                `(:v-adjust ,all-the-icons-dired-v-adjust)
+                (when all-the-icons-dired-monochrome
+                  `(:face ,(face-at-point))))))))
+  (advice-add 'all-the-icons-dired--icon :around
+              #'my-all-the-icons-dired-icon-without-stat))
 
 (use-package hl-line
   ;; It is difficult to disable hl-line mode for specific modes if we use (global-hl-line-mode).
