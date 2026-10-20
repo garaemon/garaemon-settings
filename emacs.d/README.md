@@ -366,9 +366,10 @@ script changes.
 loses everything behind the `+` markers. `lisp/my-profiler-export.el` expands
 every entry and copies the plain text:
 
-- `C-c C-w` in a profiler report buffer copies that report.
-- `M-x my-profiler-export-copy-report` outside a report buffer copies every
-  open report (CPU and memory), each under a `===== buffer name =====` heading.
+- `M-x my-profiler-export-copy-report` in a profiler report buffer copies that
+  report.
+- The same command outside a report buffer copies every open report (CPU and
+  memory), each under a `===== buffer name =====` heading.
 
 Paste the result into a coding agent as is.
 

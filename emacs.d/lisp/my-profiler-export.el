@@ -73,9 +73,5 @@ open report with a heading per buffer."
              (length buffers)
              (length (split-string text "\n" t)))))
 
-(with-eval-after-load 'profiler
-  (define-key profiler-report-mode-map (kbd "C-c C-w")
-              #'my-profiler-export-copy-report))
-
 (provide 'my-profiler-export)
 ;;; my-profiler-export.el ends here
