@@ -23,10 +23,7 @@
 
 (use-package udev-mode :ensure t)
 
-(use-package gist :ensure t
-  :bind
-  (("C-c C-g" . gist-region-or-buffer))
-  )
+(use-package gist :ensure t)
 
 (use-package google-this :ensure t)
 
