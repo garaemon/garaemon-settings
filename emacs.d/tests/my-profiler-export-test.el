@@ -67,6 +67,44 @@
       (should (string-match-p "my-profiler-export-test--busy-work"
                               (car kill-ring))))))
 
+(defun my-profiler-export-test--kill-report-buffers ()
+  "Kill every profiler report buffer."
+  (dolist (buf (buffer-list))
+    (when (provided-mode-derived-p
+           (buffer-local-value 'major-mode buf) 'profiler-report-mode)
+      (kill-buffer buf))))
+
+(defun my-profiler-export-test--profile-cpu-and-memory ()
+  "Profile a busy loop and open both the CPU and the memory report."
+  (my-profiler-export-test--kill-report-buffers)
+  (profiler-reset)
+  (profiler-start 'cpu+mem)
+  (my-profiler-export-test--busy-work)
+  (profiler-stop)
+  (profiler-report))
+
+(ert-deftest should_copy_cpu_and_memory_reports_when_called_outside_report ()
+  (my-profiler-export-test--profile-cpu-and-memory)
+  (unwind-protect
+      (let ((kill-ring nil))
+        (with-temp-buffer (my-profiler-export-copy-report))
+        (should (string-match-p "CPU-Profiler-Report" (car kill-ring)))
+        (should (string-match-p "Memory-Profiler-Report" (car kill-ring))))
+    (my-profiler-export-test--kill-report-buffers)))
+
+(ert-deftest should_copy_cpu_and_memory_reports_when_called_inside_report ()
+  (my-profiler-export-test--profile-cpu-and-memory)
+  (unwind-protect
+      (let ((kill-ring nil))
+        (with-current-buffer
+            (cl-find-if (lambda (buf)
+                          (string-prefix-p "*CPU-Profiler-Report"
+                                           (buffer-name buf)))
+                        (buffer-list))
+          (my-profiler-export-copy-report))
+        (should (string-match-p "Memory-Profiler-Report" (car kill-ring))))
+    (my-profiler-export-test--kill-report-buffers)))
+
 (ert-deftest should_signal_user_error_when_no_report_buffer_exists ()
   (dolist (buf (buffer-list))
     (when (provided-mode-derived-p

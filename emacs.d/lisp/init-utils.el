@@ -144,7 +144,8 @@ unless you specify the optional argument: FORCE-REVERTING to true."
 
 (defun profiler-auto-start-and-report (duration-seconds)
   "Starts the Emacs profiler and automatically stops it after a specified duration,
-then generates a report. Prompts the user for the duration in seconds."
+then generates a report and copies it, expanded, to the kill ring.
+Prompts the user for the duration in seconds."
   (interactive "nNumber of seconds to profile: ")
   (unless (> duration-seconds 0)
     (user-error "Duration must be a positive number."))
@@ -160,6 +161,7 @@ then generates a report. Prompts the user for the duration in seconds."
      (message "Stopping profiler and generating report...")
      (profiler-stop)
      (profiler-report)
+     (my-profiler-export-copy-report)
      (message "Profiling complete."))
    )
   (message "Profiler is running. It will stop and report automatically in %s seconds." duration-seconds))

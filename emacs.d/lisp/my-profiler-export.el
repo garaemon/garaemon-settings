@@ -6,9 +6,8 @@
 ;; the buffer as is yields only the top-level entries.
 ;;
 ;; `my-profiler-export-copy-report' expands every entry and puts the
-;; plain text on the kill ring.  Without a report buffer as the current
-;; buffer, the command copies all open report buffers (CPU and memory),
-;; separated by their buffer names.
+;; plain text of all open report buffers (CPU and memory) on the kill
+;; ring, separated by their buffer names.
 
 ;;; Code:
 
@@ -38,19 +37,20 @@ matches the copied text."
     (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun my-profiler-export--report-buffers ()
-  "Return the live profiler report buffers."
-  (seq-filter (lambda (buf)
-                (provided-mode-derived-p
-                 (buffer-local-value 'major-mode buf) 'profiler-report-mode))
-              (buffer-list)))
+  "Return the live profiler report buffers, sorted by name.
+The sort puts the CPU report before the memory report."
+  (sort (seq-filter (lambda (buf)
+                      (provided-mode-derived-p
+                       (buffer-local-value 'major-mode buf)
+                       'profiler-report-mode))
+                    (buffer-list))
+        (lambda (a b) (string< (buffer-name a) (buffer-name b)))))
 
 (defun my-profiler-export--select-buffers ()
-  "Return the report buffers to copy from the current context."
-  (cond
-   ((derived-mode-p 'profiler-report-mode) (list (current-buffer)))
-   (t (or (my-profiler-export--report-buffers)
-          (user-error
-           "No profiler report buffer found; run `profiler-report' first")))))
+  "Return every open report buffer, or signal when none is open."
+  (or (my-profiler-export--report-buffers)
+      (user-error
+       "No profiler report buffer found; run `profiler-report' first")))
 
 (defun my-profiler-export--format-section (report-buffer)
   "Return the expanded text of REPORT-BUFFER under a heading."
@@ -61,8 +61,8 @@ matches the copied text."
 ;;;###autoload
 (defun my-profiler-export-copy-report ()
   "Copy the fully expanded profiler report to the kill ring.
-In a profiler report buffer, copy that report.  Elsewhere, copy every
-open report with a heading per buffer."
+Copy every open report (CPU and memory) with a heading per buffer,
+whichever buffer is current."
   (interactive)
   (let* ((buffers (my-profiler-export--select-buffers))
          (text (if (cdr buffers)

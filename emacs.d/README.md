@@ -366,10 +366,11 @@ script changes.
 loses everything behind the `+` markers. `lisp/my-profiler-export.el` expands
 every entry and copies the plain text:
 
-- `M-x my-profiler-export-copy-report` in a profiler report buffer copies that
-  report.
-- The same command outside a report buffer copies every open report (CPU and
-  memory), each under a `===== buffer name =====` heading.
+- `M-x my-profiler-export-copy-report` copies every open report (CPU and
+  memory), each under a `===== buffer name =====` heading. The current buffer
+  does not matter.
+- `M-x profiler-auto-start-and-report` runs the command by itself once the
+  report opens, so the result is already on the kill ring.
 
 Paste the result into a coding agent as is.
 
