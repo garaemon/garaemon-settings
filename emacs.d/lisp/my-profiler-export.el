@@ -7,7 +7,9 @@
 ;;
 ;; `my-profiler-export-copy-report' expands every entry and puts the
 ;; plain text of all open report buffers (CPU and memory) on the kill
-;; ring, separated by their buffer names.
+;; ring, separated by their buffer names.  The copy omits lines that
+;; show 0%, which only add length without changing the diagnosis.
+;; `my-profiler-export-min-percent' raises that threshold.
 
 ;;; Code:
 
@@ -52,11 +54,46 @@ The sort puts the CPU report before the memory report."
       (user-error
        "No profiler report buffer found; run `profiler-report' first")))
 
+(defgroup my-profiler-export nil
+  "Copy fully expanded profiler reports."
+  :group 'profiler)
+
+(defcustom my-profiler-export-min-percent 1
+  "Smallest percent a report line needs to appear in the copy.
+The profiler rounds its percent column, so the default 1 drops the
+lines that show 0%, which stand for under 0.5% of the total.  Raise the
+value to shorten the copy further; 0 keeps every line."
+  :type 'natnum
+  :group 'my-profiler-export)
+
+(defconst my-profiler-export--percent-line-regexp
+  "^ *[0-9,]+ +\\([0-9]+\\)% "
+  "Match a report line and capture its percent column.")
+
+(defun my-profiler-export--line-below-threshold-p (line min-percent)
+  "Return non-nil when LINE shows a percent under MIN-PERCENT."
+  (and (string-match my-profiler-export--percent-line-regexp line)
+       (< (string-to-number (match-string 1 line)) min-percent)))
+
+(defun my-profiler-export-prune-text (text &optional min-percent)
+  "Return TEXT without the report lines under MIN-PERCENT.
+MIN-PERCENT defaults to `my-profiler-export-min-percent'.  A child never
+exceeds its parent, which makes every descendant of a dropped line a
+dropped line too, and the remaining tree stays intact."
+  (let ((threshold (or min-percent my-profiler-export-min-percent)))
+    (mapconcat #'identity
+               (seq-remove (lambda (line)
+                             (my-profiler-export--line-below-threshold-p
+                              line threshold))
+                           (split-string text "\n"))
+               "\n")))
+
 (defun my-profiler-export--format-section (report-buffer)
-  "Return the expanded text of REPORT-BUFFER under a heading."
+  "Return the pruned, expanded text of REPORT-BUFFER under a heading."
   (concat (format my-profiler-export--report-separator-format
                   (buffer-name report-buffer))
-          (my-profiler-export-expanded-text report-buffer)))
+          (my-profiler-export-prune-text
+           (my-profiler-export-expanded-text report-buffer))))
 
 ;;;###autoload
 (defun my-profiler-export-copy-report ()
@@ -67,7 +104,8 @@ whichever buffer is current."
   (let* ((buffers (my-profiler-export--select-buffers))
          (text (if (cdr buffers)
                    (mapconcat #'my-profiler-export--format-section buffers "\n")
-                 (my-profiler-export-expanded-text (car buffers)))))
+                 (my-profiler-export-prune-text
+                  (my-profiler-export-expanded-text (car buffers))))))
     (kill-new text)
     (message "Copied %d profiler report(s), %d lines"
              (length buffers)

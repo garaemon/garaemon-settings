@@ -372,6 +372,10 @@ every entry and copies the plain text:
 - `M-x profiler-auto-start-and-report` runs the command by itself once the
   report opens, so the result is already on the kill ring.
 
+- The copy omits lines whose percent column reads `0%`. Set
+  `my-profiler-export-min-percent` to a higher number to shorten it further, or
+  to `0` to keep every line.
+
 Paste the result into a coding agent as is.
 
 ## Scripts
