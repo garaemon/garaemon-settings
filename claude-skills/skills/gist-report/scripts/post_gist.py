@@ -12,6 +12,7 @@ image's file name. They are rewritten to the gist's raw URL.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -225,44 +226,74 @@ def read_git_config(key: str, fallback: str) -> str:
     return completed.stdout.strip() if completed.returncode == 0 else fallback
 
 
+def fetch_gist_metadata(gist_id: str) -> dict:
+    """Return the gist as the server describes it (git_pull_url, files)."""
+    completed = subprocess.run(
+        ["gh", "api", f"gists/{gist_id}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise PostGistError(f"cannot read gist {gist_id}: {completed.stderr.strip()}")
+    return json.loads(completed.stdout)
+
+
+def commit_all(message: str, clone_directory: Path) -> None:
+    author_name = read_git_config("user.name", "gist-report")
+    author_email = read_git_config("user.email", "gist-report@users.noreply.github.com")
+    run_git(["add", "-A"], clone_directory)
+    # An image that no Markdown link names leaves nothing to commit the second
+    # time, and git commit exits non-zero on an empty commit.
+    has_staged_changes = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"], cwd=clone_directory
+    ).returncode != 0
+    if not has_staged_changes:
+        return
+    run_git(
+        [
+            "-c", f"user.name={author_name}",
+            "-c", f"user.email={author_email}",
+            "commit", "-q", "-m", message,
+        ],
+        clone_directory,
+    )
+    run_git([*GH_CREDENTIAL_OPTIONS, "push", "-q", "origin", "HEAD"], clone_directory)
+
+
 def push_images_to_gist(
-    gist_url: str,
+    gist_id: str,
     markdown_names: Sequence[str],
     image_paths: Sequence[Path],
     clone_root: Path,
 ) -> None:
-    """Clone the gist, add the images, rewrite Markdown links, and push.
+    """Push the images, then point the Markdown links at the raw URLs.
 
     gh gist create cannot upload binary files, but the gist is a git
-    repository that accepts them.
+    repository that accepts them. The raw URLs come from the server's own
+    answer instead of the URL that gh printed: that URL can lack the user
+    name (GitHub Enterprise), and a raw URL built from it would not resolve.
+    The images go in a first commit because their raw URLs exist only after
+    the push.
     """
     clone_directory = clone_root / "gist"
     try:
-        run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", f"{gist_url}.git", str(clone_directory)])
+        git_pull_url = fetch_gist_metadata(gist_id)["git_pull_url"]
+        run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
         for image_path in image_paths:
             shutil.copy(image_path, clone_directory / image_path.name)
-            raw_url = f"{gist_url}/raw/{image_path.name}"
-            for markdown_name in markdown_names:
-                markdown_path = clone_directory / markdown_name
-                markdown_path.write_text(
-                    rewrite_image_links(
-                        markdown_path.read_text(), image_path.name, raw_url
-                    )
+        commit_all("Add images", clone_directory)
+
+        gist_files = fetch_gist_metadata(gist_id)["files"]
+        for markdown_name in markdown_names:
+            markdown_path = clone_directory / markdown_name
+            rewritten_text = markdown_path.read_text()
+            for image_path in image_paths:
+                rewritten_text = rewrite_image_links(
+                    rewritten_text, image_path.name, gist_files[image_path.name]["raw_url"]
                 )
-        author_name = read_git_config("user.name", "gist-report")
-        author_email = read_git_config(
-            "user.email", "gist-report@users.noreply.github.com"
-        )
-        run_git(["add", "-A"], clone_directory)
-        run_git(
-            [
-                "-c", f"user.name={author_name}",
-                "-c", f"user.email={author_email}",
-                "commit", "-q", "-m", "Add images",
-            ],
-            clone_directory,
-        )
-        run_git([*GH_CREDENTIAL_OPTIONS, "push", "-q", "origin", "HEAD"], clone_directory)
+            markdown_path.write_text(rewritten_text)
+        commit_all("Link images", clone_directory)
     except subprocess.CalledProcessError as error:
         detail = error.stderr.decode(errors="replace").strip()
         raise PostGistError(f"image upload failed: {detail}") from error
@@ -332,7 +363,7 @@ def run(argv: Sequence[str]) -> str:
         # A context manager removes the clone even when the push raises.
         with tempfile.TemporaryDirectory() as clone_root:
             push_images_to_gist(
-                gist_url,
+                gist_url.rstrip("/").rsplit("/", 1)[-1],
                 [path.name for path in markdown_paths],
                 image_paths,
                 Path(clone_root),

@@ -74,12 +74,18 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
   uploads an image used by several files once. Images given on the command
   line are uploaded too.
 - When images are found or given:
-  1. Clones the gist, because `gh gist create` rejects binary files.
-  2. Copies the images into the clone.
-  3. Rewrites image links in every Markdown file to `<gist URL>/raw/name.png`.
-     It handles inline links with or without a title, `src="path/name.png"`
-     attributes, and reference definitions (`[id]: path/name.png`).
-  4. Pushes one commit through `gh auth git-credential`.
+  1. Reads the gist with `gh api gists/<id>` and clones its `git_pull_url`,
+     because `gh gist create` rejects binary files.
+  2. Copies the images into the clone and pushes them in a first commit,
+     through `gh auth git-credential`.
+  3. Reads the `raw_url` of each image from the API. The script does not build
+     the URL from the one that `gh gist create` printed, because that URL can
+     lack the user name on GitHub Enterprise.
+  4. Rewrites image links in every Markdown file to that `raw_url`. It handles
+     inline links with or without a title, `src="path/name.png"` attributes,
+     and reference definitions (`[id]: path/name.png`).
+  5. Pushes the rewritten Markdown in a second commit. It skips this commit
+     when no Markdown link changed.
 - Prints the gist URL. When the image upload fails, it prints the gist URL and
   a `GH_HOST=<host> gh gist delete <id>` command to stderr first.
 - Exits non-zero for a missing file, a referenced image that does not exist,
