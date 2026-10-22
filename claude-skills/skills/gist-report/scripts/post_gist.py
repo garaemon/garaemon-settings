@@ -4,7 +4,8 @@
 The gist goes to the host that the current repository's origin remote points
 at. The script prints the gist URL on stdout.
 
-Image links in the Markdown files may use any relative path that ends in the
+Images that the Markdown files reference by a local path are found and
+uploaded automatically. Image links may use any relative path that ends in the
 image's file name. They are rewritten to the gist's raw URL.
 """
 
@@ -18,8 +19,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Sequence
-from urllib.parse import urlsplit
+from typing import NamedTuple, Sequence
+from urllib.parse import unquote, urlsplit
 
 IMAGE_EXTENSIONS = ("png", "jpg", "jpeg", "gif", "svg", "webp")
 MARKDOWN_EXTENSION = "md"
@@ -35,6 +36,13 @@ GH_CREDENTIAL_OPTIONS = (
     "credential.helper=",
     "-c",
     "credential.helper=!gh auth git-credential",
+)
+
+# Captures the target of an inline link, an HTML src attribute, or a reference
+# definition, without any title that follows the target.
+IMAGE_TARGET_PATTERN = re.compile(
+    r"(?:\]\(|src=\"|^\[[^\]]+\]:[ ]+)<?(?P<target>[^)\"\s>]+)",
+    re.MULTILINE,
 )
 
 SCP_LIKE_URL_PATTERN = re.compile(r"^[^@/\s]+@(?P<host>[^:/\s]+):")
@@ -98,6 +106,71 @@ def classify_input_paths(paths: Sequence[Path]) -> tuple[list[Path], list[Path]]
                 f"are supported: {path}"
             )
     return markdown_paths, image_paths
+
+
+class ReferencedImages(NamedTuple):
+    """Local image targets of one Markdown file, as resolved file paths."""
+
+    existing: list[Path]
+    missing: list[Path]
+
+
+def find_referenced_image_paths(markdown_path: Path) -> ReferencedImages:
+    """Return the local images that a Markdown file references.
+
+    Relative targets resolve against the Markdown file's directory. Remote
+    URLs and non-image targets are skipped, so the gist keeps their original
+    link. A local image target that is not a file counts as missing.
+    """
+    existing: list[Path] = []
+    missing: list[Path] = []
+    for match in IMAGE_TARGET_PATTERN.finditer(markdown_path.read_text()):
+        target = match.group("target")
+        if urlsplit(target).scheme:
+            continue
+        candidate = markdown_path.parent / unquote(target)
+        if not is_image_file(candidate):
+            continue
+        resolved = candidate.resolve()
+        destination = existing if candidate.is_file() else missing
+        if resolved not in destination:
+            destination.append(resolved)
+    return ReferencedImages(existing, missing)
+
+
+def collect_image_paths(
+    markdown_paths: Sequence[Path], ignore_missing_images: bool
+) -> list[Path]:
+    """Return the existing images that the Markdown files reference.
+
+    Fails on a missing image unless ignore_missing_images is set, because the
+    gist would otherwise contain a broken link.
+    """
+    discovered: list[Path] = []
+    for markdown_path in markdown_paths:
+        references = find_referenced_image_paths(markdown_path)
+        if references.missing and not ignore_missing_images:
+            raise PostGistError(
+                f"referenced image not found in {markdown_path}: "
+                + ", ".join(str(path) for path in references.missing)
+                + " (pass --ignore-missing-images to skip them)"
+            )
+        discovered.extend(references.existing)
+    return discovered
+
+
+def merge_image_paths(
+    explicit_paths: Sequence[Path], discovered_paths: Sequence[Path]
+) -> list[Path]:
+    """Return explicit images followed by discovered ones, each file once."""
+    merged: list[Path] = []
+    seen_resolved: set[Path] = set()
+    for path in [*explicit_paths, *discovered_paths]:
+        resolved = path.resolve()
+        if resolved not in seen_resolved:
+            seen_resolved.add(resolved)
+            merged.append(path)
+    return merged
 
 
 def assert_unique_base_names(label: str, paths: Sequence[Path]) -> None:
@@ -220,6 +293,11 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--public", action="store_true", help="create a public gist")
     parser.add_argument("--description", help="gist description")
     parser.add_argument(
+        "--ignore-missing-images",
+        action="store_true",
+        help="skip referenced images that do not exist instead of failing",
+    )
+    parser.add_argument(
         "paths", nargs="+", type=Path, metavar="FILE", help=".md files, then images"
     )
     return parser.parse_args(argv)
@@ -228,9 +306,13 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
 def run(argv: Sequence[str]) -> str:
     """Run the whole upload and return the gist URL."""
     arguments = parse_arguments(argv)
-    markdown_paths, image_paths = classify_input_paths(arguments.paths)
+    markdown_paths, explicit_image_paths = classify_input_paths(arguments.paths)
     if not markdown_paths:
         raise PostGistError("no Markdown file given; pass at least one .md file")
+    discovered_image_paths = collect_image_paths(
+        markdown_paths, arguments.ignore_missing_images
+    )
+    image_paths = merge_image_paths(explicit_image_paths, discovered_image_paths)
     assert_unique_base_names("Markdown", markdown_paths)
     assert_unique_base_names("image", image_paths)
     assert_safe_image_names(image_paths)
