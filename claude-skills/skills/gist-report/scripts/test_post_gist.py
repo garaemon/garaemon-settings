@@ -9,6 +9,7 @@ Run with: python3 -m unittest discover -s scripts
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -162,6 +163,20 @@ class PostGistCommandTest(unittest.TestCase):
                 from pathlib import Path
 
                 arguments = sys.argv[1:]
+                if arguments[0] == "api":
+                    api_remote = Path({str(self.remote_gist)!r})
+                    def read_remote(*command):
+                        return subprocess.run(
+                            ["git", "-C", str(api_remote), *command], check=True,
+                            capture_output=True, text=True).stdout.strip()
+                    sha = read_remote("rev-parse", "main")
+                    names = read_remote("ls-tree", "--name-only", "main").splitlines()
+                    print(json.dumps({{
+                        "git_pull_url": {GIST_URL!r} + ".git",
+                        "files": {{name: {{"raw_url":
+                            f"{GIST_URL}/raw/{{sha}}/{{name}}"}} for name in names}},
+                    }}))
+                    sys.exit(0)
                 Path({str(self.record_file)!r}).write_text(
                     json.dumps({{"gh_host": os.environ.get("GH_HOST", ""),
                                 "args": arguments}})
@@ -191,7 +206,7 @@ class PostGistCommandTest(unittest.TestCase):
                     hook = remote / "hooks" / "pre-receive"
                     hook.write_text("#!/bin/sh\\nexit 1\\n")
                     hook.chmod(0o755)
-                print({GIST_URL!r})
+                print(os.environ.get("FAKE_GH_CREATE_URL") or {GIST_URL!r})
                 """
             )
         )
@@ -246,6 +261,11 @@ class PostGistCommandTest(unittest.TestCase):
 
     def read_record(self) -> dict:
         return json.loads(self.record_file.read_text())
+
+    def assert_links_to_raw_image(self, text: str, image_name: str) -> None:
+        self.assertRegex(
+            text, rf"{re.escape(GIST_URL)}/raw/[0-9a-f]{{40}}/{re.escape(image_name)}"
+        )
 
     def read_remote_file(self, name: str) -> str:
         return subprocess.run(
@@ -397,8 +417,8 @@ class ImageEmbeddingTest(PostGistCommandTest):
         english = self.write_file("doc.en.md", "![c](images/chart.png)\n")
         japanese = self.write_file("doc.ja.md", '<img src="./images/chart.png">\n')
         self.run_on_github(english, japanese, self.image)
-        self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.en.md"))
-        self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.ja.md"))
+        self.assert_links_to_raw_image(self.read_remote_file("doc.en.md"), "chart.png")
+        self.assert_links_to_raw_image(self.read_remote_file("doc.ja.md"), "chart.png")
 
 
 class AutomaticImageDiscoveryTest(PostGistCommandTest):
@@ -413,7 +433,7 @@ class AutomaticImageDiscoveryTest(PostGistCommandTest):
     def test_should_rewrite_link_of_discovered_image(self) -> None:
         report = self.write_report_referencing_image()
         self.run_on_github(report)
-        self.assertIn(f"{GIST_URL}/raw/chart.png", self.read_remote_file("doc.md"))
+        self.assert_links_to_raw_image(self.read_remote_file("doc.md"), "chart.png")
 
     def test_should_not_pass_discovered_image_to_gist_create(self) -> None:
         report = self.write_report_referencing_image()
@@ -454,11 +474,38 @@ class AutomaticImageDiscoveryTest(PostGistCommandTest):
         self.run_on_github("--ignore-missing-images", report)
         remote_text = self.read_remote_file("doc.md")
         self.assertIn("(images/missing.png)", remote_text)
-        self.assertIn(f"{GIST_URL}/raw/chart.png", remote_text)
+        self.assert_links_to_raw_image(remote_text, "chart.png")
 
     def test_should_skip_image_upload_when_nothing_is_referenced(self) -> None:
         result = self.run_on_github(self.report)
         self.assertNotIn("uploading images", result.stderr)
+
+
+class RawUrlFromApiTest(PostGistCommandTest):
+    def test_should_use_raw_url_that_the_api_reports(self) -> None:
+        report = self.write_file("doc.md", "![c](images/chart.png)\n")
+        self.run_on_github(report)
+        self.assertRegex(
+            self.read_remote_file("doc.md"),
+            rf"\({GIST_URL}/raw/[0-9a-f]{{40}}/chart\.png\)",
+        )
+
+    def test_should_keep_user_name_when_gh_prints_url_without_it(self) -> None:
+        report = self.write_file("doc.md", "![c](images/chart.png)\n")
+        self.run_on_github(
+            report,
+            extra_env={"FAKE_GH_CREATE_URL": "https://gist.github.com/abc123"},
+        )
+        self.assertIn("/tester/abc123/raw/", self.read_remote_file("doc.md"))
+
+    def test_should_push_images_before_markdown_links_change(self) -> None:
+        report = self.write_file("doc.md", "![c](images/chart.png)\n")
+        self.run_on_github(report)
+        commit_count = subprocess.run(
+            ["git", "-C", str(self.remote_gist), "rev-list", "--count", "main"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        self.assertEqual(commit_count, "3")
 
 
 class ImagePushFailureTest(PostGistCommandTest):
