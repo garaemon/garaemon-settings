@@ -252,7 +252,9 @@ def clone_gist_repository(git_pull_url: str, clone_directory: Path) -> None:
             ]
         )
         return
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.decode(errors="replace").strip()
+        print(f"SSH clone failed, retrying over HTTPS: {detail}", file=sys.stderr)
         shutil.rmtree(clone_directory, ignore_errors=True)
     run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
 

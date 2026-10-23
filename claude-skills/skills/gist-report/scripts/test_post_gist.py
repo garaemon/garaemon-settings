@@ -548,6 +548,14 @@ class SshPreferenceTest(PostGistCommandTest):
         self.run_with_gist_urls(self.work / "unreachable", self.remote_gist)
         self.assertTrue(self.remote_has_file("chart.png"))
 
+    def test_should_report_ssh_failure_before_falling_back(self) -> None:
+        result = self.run_with_gist_urls(self.work / "unreachable", self.remote_gist)
+        self.assertIn("SSH clone failed", result.stderr)
+
+    def test_should_not_report_ssh_failure_when_ssh_works(self) -> None:
+        result = self.run_with_gist_urls(self.remote_gist, self.work / "unreachable")
+        self.assertNotIn("SSH clone failed", result.stderr)
+
 
 class ImagePushFailureTest(PostGistCommandTest):
     def run_with_rejected_push(self, origin_url: str) -> subprocess.CompletedProcess:
