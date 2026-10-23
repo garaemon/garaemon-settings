@@ -425,6 +425,11 @@
   )
 
 
+;; `package-vc-install' does not install dependencies, so declare the ones
+;; tsx-mode requires (see its Package-Requires).
+(use-package treesit-fold)
+(use-package flymake-eslint)
+
 ;; Install tsx-mode from custom repository
 ;; The latest emacs30 branch depends on flymaks-jsts.
 ;; `(use-package flymake-jsts)' does not work well.
