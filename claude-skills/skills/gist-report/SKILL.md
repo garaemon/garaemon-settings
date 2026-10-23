@@ -76,10 +76,10 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
 - When images are found or given:
   1. Reads the gist with `gh api gists/<id>` and clones its `git_pull_url`,
      because `gh gist create` rejects binary files. It tries SSH first
-     (`git@<host>:<path>`) in batch mode with a 10-second connect timeout. It
-     adds an unknown host key to `known_hosts` on the first connection
-     (`StrictHostKeyChecking=accept-new`) but rejects a changed one. When
-     SSH fails, it prints the SSH error to stderr and clones over HTTPS
+     (`git@<host>:<path>`) in batch mode with a 10-second connect timeout.
+     When `~/.ssh/known_hosts` lacks the gist host, it skips SSH and prints the
+     `ssh -T git@<host>` command that records the key. When SSH fails, it
+     prints the SSH error to stderr. In both cases it clones over HTTPS
      through `gh auth git-credential`.
   2. Copies the images into the clone and pushes them in a first commit over
      the same protocol as the clone.

@@ -61,11 +61,6 @@ class ConvertToSshUrlTest(unittest.TestCase):
         )
 
 
-class SshBatchOptionsTest(unittest.TestCase):
-    def test_should_accept_unknown_host_key_on_first_connection(self) -> None:
-        self.assertIn("StrictHostKeyChecking=accept-new", post_gist.SSH_BATCH_OPTIONS)
-
-
 class RewriteImageLinksTest(unittest.TestCase):
     RAW_URL = f"{GIST_URL}/raw/chart.png"
 
@@ -165,10 +160,18 @@ class PostGistCommandTest(unittest.TestCase):
         self.temporary_root = self.work / "tmp-root"
         self.temporary_root.mkdir()
         self.install_fake_gh()
+        self.install_fake_ssh_keygen()
         self.report = self.write_file("report.md", "# Report\n")
         self.image = self.work / "images" / "chart.png"
         self.image.parent.mkdir()
         self.image.write_bytes(PNG_BYTES)
+
+    def install_fake_ssh_keygen(self) -> None:
+        fake_ssh_keygen = self.work / "bin" / "ssh-keygen"
+        fake_ssh_keygen.write_text(
+            '#!/bin/sh\ntest -z "$FAKE_SSH_UNKNOWN_HOST"\n'
+        )
+        fake_ssh_keygen.chmod(0o755)
 
     def install_fake_gh(self) -> None:
         fake_bin = self.work / "bin"
@@ -531,7 +534,7 @@ class RawUrlFromApiTest(PostGistCommandTest):
 
 class SshPreferenceTest(PostGistCommandTest):
     def run_with_gist_urls(
-        self, ssh_target: Path, https_target: Path
+        self, ssh_target: Path, https_target: Path, is_host_known: bool = True
     ) -> subprocess.CompletedProcess:
         return self.run_on_github(
             self.report,
@@ -542,6 +545,7 @@ class SshPreferenceTest(PostGistCommandTest):
                 "GIT_CONFIG_VALUE_0": f"{GIST_URL}.git",
                 "GIT_CONFIG_KEY_1": f"url.{ssh_target}.insteadOf",
                 "GIT_CONFIG_VALUE_1": SSH_GIST_URL,
+                **({} if is_host_known else {"FAKE_SSH_UNKNOWN_HOST": "1"}),
             },
         )
 
@@ -560,6 +564,23 @@ class SshPreferenceTest(PostGistCommandTest):
     def test_should_not_report_ssh_failure_when_ssh_works(self) -> None:
         result = self.run_with_gist_urls(self.remote_gist, self.work / "unreachable")
         self.assertNotIn("SSH clone failed", result.stderr)
+
+    def run_with_unknown_host(self) -> subprocess.CompletedProcess:
+        return self.run_with_gist_urls(
+            self.work / "unreachable", self.remote_gist, is_host_known=False
+        )
+
+    def test_should_skip_ssh_when_host_is_not_in_known_hosts(self) -> None:
+        self.assertNotIn("SSH clone failed", self.run_with_unknown_host().stderr)
+
+    def test_should_name_host_missing_from_known_hosts(self) -> None:
+        self.assertIn(
+            "gist.github.com is not in known_hosts", self.run_with_unknown_host().stderr
+        )
+
+    def test_should_use_https_when_host_is_not_in_known_hosts(self) -> None:
+        self.run_with_unknown_host()
+        self.assertTrue(self.remote_has_file("chart.png"))
 
 
 class ImagePushFailureTest(PostGistCommandTest):
