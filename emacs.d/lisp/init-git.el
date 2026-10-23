@@ -466,6 +466,12 @@ Changes AFTER the selected commit are shown in the fringe (exclusive)."
 ;;     For a side-by-side view of a single hunk, split the window
 ;;     horizontally (`C-x 3`) and visit the file with `magit-diff-visit-file`
 ;;     in the other window; comments stay in the code-review buffer.
+
+;; `:vc' does not install dependencies, so declare the ones code-review
+;; requires that nothing else pulls in.
+(use-package a)
+(use-package uuidgen)
+(use-package deferred)
 (use-package code-review
   :vc (:url "https://github.com/doomelpa/code-review.git" :rev :newest)
   :after forge
