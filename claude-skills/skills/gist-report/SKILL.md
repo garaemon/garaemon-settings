@@ -75,9 +75,11 @@ and their images as one gist with `scripts/post_gist.py`. The script derives
   line are uploaded too.
 - When images are found or given:
   1. Reads the gist with `gh api gists/<id>` and clones its `git_pull_url`,
-     because `gh gist create` rejects binary files.
-  2. Copies the images into the clone and pushes them in a first commit,
-     through `gh auth git-credential`.
+     because `gh gist create` rejects binary files. It tries SSH first
+     (`git@<host>:<path>`) in batch mode with a 10-second connect timeout. When
+     SSH fails, it clones over HTTPS through `gh auth git-credential`.
+  2. Copies the images into the clone and pushes them in a first commit over
+     the same protocol as the clone.
   3. Reads the `raw_url` of each image from the API. The script does not build
      the URL from the one that `gh gist create` printed, because that URL can
      lack the user name on GitHub Enterprise.

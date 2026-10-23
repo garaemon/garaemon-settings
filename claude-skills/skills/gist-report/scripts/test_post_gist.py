@@ -21,6 +21,7 @@ import post_gist
 
 SCRIPT_PATH = Path(__file__).resolve().parent / "post_gist.py"
 GIST_URL = "https://gist.github.com/tester/abc123"
+SSH_GIST_URL = "git@gist.github.com:tester/abc123.git"
 PNG_BYTES = b"\x89PNG\r\n\x1a\n"
 
 
@@ -45,6 +46,19 @@ class ParseHostFromRemoteUrlTest(unittest.TestCase):
 
     def test_should_return_none_for_local_path(self) -> None:
         self.assertIsNone(post_gist.parse_host_from_remote_url("/srv/git/repo.git"))
+
+
+class ConvertToSshUrlTest(unittest.TestCase):
+    def test_should_convert_github_gist_url(self) -> None:
+        self.assertEqual(
+            post_gist.convert_to_ssh_url(f"{GIST_URL}.git"), SSH_GIST_URL
+        )
+
+    def test_should_keep_path_of_enterprise_gist_url(self) -> None:
+        self.assertEqual(
+            post_gist.convert_to_ssh_url("https://ghe.example.com/gist/abc123.git"),
+            "git@ghe.example.com:gist/abc123.git",
+        )
 
 
 class RewriteImageLinksTest(unittest.TestCase):
@@ -242,6 +256,8 @@ class PostGistCommandTest(unittest.TestCase):
             "GIT_CONFIG_COUNT": "1",
             "GIT_CONFIG_KEY_0": f"url.{self.remote_gist}.insteadOf",
             "GIT_CONFIG_VALUE_0": f"{GIST_URL}.git",
+            # Fail SSH at once so a test never reaches the network.
+            "GIT_SSH_COMMAND": "false",
             **(extra_env or {}),
         }
         return subprocess.run(
@@ -506,6 +522,31 @@ class RawUrlFromApiTest(PostGistCommandTest):
             check=True, capture_output=True, text=True,
         ).stdout.strip()
         self.assertEqual(commit_count, "3")
+
+
+class SshPreferenceTest(PostGistCommandTest):
+    def run_with_gist_urls(
+        self, ssh_target: Path, https_target: Path
+    ) -> subprocess.CompletedProcess:
+        return self.run_on_github(
+            self.report,
+            self.image,
+            extra_env={
+                "GIT_CONFIG_COUNT": "2",
+                "GIT_CONFIG_KEY_0": f"url.{https_target}.insteadOf",
+                "GIT_CONFIG_VALUE_0": f"{GIST_URL}.git",
+                "GIT_CONFIG_KEY_1": f"url.{ssh_target}.insteadOf",
+                "GIT_CONFIG_VALUE_1": SSH_GIST_URL,
+            },
+        )
+
+    def test_should_push_over_ssh_when_ssh_works(self) -> None:
+        self.run_with_gist_urls(self.remote_gist, self.work / "unreachable")
+        self.assertTrue(self.remote_has_file("chart.png"))
+
+    def test_should_fall_back_to_https_when_ssh_fails(self) -> None:
+        self.run_with_gist_urls(self.work / "unreachable", self.remote_gist)
+        self.assertTrue(self.remote_has_file("chart.png"))
 
 
 class ImagePushFailureTest(PostGistCommandTest):

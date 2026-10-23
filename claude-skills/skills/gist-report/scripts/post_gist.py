@@ -39,6 +39,10 @@ GH_CREDENTIAL_OPTIONS = (
     "credential.helper=!gh auth git-credential",
 )
 
+# Make SSH fail fast when no key is loaded or port 22 is blocked, so the clone
+# falls back to HTTPS.
+SSH_BATCH_OPTIONS = "-o BatchMode=yes -o ConnectTimeout=10"
+
 # Captures the target of an inline link, an HTML src attribute, or a reference
 # definition, without any title that follows the target.
 IMAGE_TARGET_PATTERN = re.compile(
@@ -226,6 +230,33 @@ def read_git_config(key: str, fallback: str) -> str:
     return completed.stdout.strip() if completed.returncode == 0 else fallback
 
 
+def convert_to_ssh_url(https_url: str) -> str:
+    """Return the scp-like SSH form (git@host:path) of an HTTPS git URL."""
+    parts = urlsplit(https_url)
+    return f"git@{parts.hostname}:{parts.path.lstrip('/')}"
+
+
+def clone_gist_repository(git_pull_url: str, clone_directory: Path) -> None:
+    """Clone the gist over SSH, or over HTTPS through gh when SSH fails.
+
+    The clone keeps the SSH options in its config, so the later pushes from it
+    fail instead of waiting on a password or host key prompt.
+    """
+    ssh_command = read_git_config("core.sshCommand", "ssh")
+    try:
+        run_git(
+            [
+                "clone", "-q",
+                "--config", f"core.sshCommand={ssh_command} {SSH_BATCH_OPTIONS}",
+                convert_to_ssh_url(git_pull_url), str(clone_directory),
+            ]
+        )
+        return
+    except subprocess.CalledProcessError:
+        shutil.rmtree(clone_directory, ignore_errors=True)
+    run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
+
+
 def fetch_gist_metadata(gist_id: str) -> dict:
     """Return the gist as the server describes it (git_pull_url, files)."""
     completed = subprocess.run(
@@ -279,7 +310,7 @@ def push_images_to_gist(
     clone_directory = clone_root / "gist"
     try:
         git_pull_url = fetch_gist_metadata(gist_id)["git_pull_url"]
-        run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
+        clone_gist_repository(git_pull_url, clone_directory)
         for image_path in image_paths:
             shutil.copy(image_path, clone_directory / image_path.name)
         commit_all("Add images", clone_directory)
