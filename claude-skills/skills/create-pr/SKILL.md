@@ -146,39 +146,131 @@ If tests or linters fail, fix the issues before proceeding. Do not skip this ste
 
 ## Step 9: Create the PR
 
-Write the PR description in English. Focus on the "why" — background, motivation, and the
-problem being solved. If the "why" isn't clear from the code or commits, ask the user.
+Write the PR body as a cover note for the reviewer. It is not a changelog, a
+validation log, or a file-by-file summary. Write it in English, and follow the
+`technical-writing` skill.
 
-Do NOT use generic section headers like "## Why", "## What", "## Summary". Instead, use
-descriptive headers that convey the actual content. The reader should understand the gist
-just from scanning the headers.
+The body shape and reviewer aids below come from Sentry's `pr-writer` skill:
+<https://github.com/getsentry/skills/blob/main/skills/pr-writer/SKILL.md>
 
-**Example:**
+### Gather the context
+
+Read the whole branch diff against the base branch, not only the latest commit:
 
 ```bash
-gh pr create --title "Fix null handling in utility functions" --body "$(cat <<'EOF'
-## Prevent crashes when None is passed to format_string and parse_int
+git log "$BASE"..HEAD --oneline
+git diff "$BASE"...HEAD
+```
 
-These functions are called throughout the codebase but never guarded against
-None input. In production, this surfaces as intermittent AttributeError and
-TypeError crashes in the request pipeline.
+Then answer two questions:
 
-## Add None guard and extend exception handling
+- What behavior changes, and who notices it?
+- Why is the change needed now?
 
-- `format_string`: return empty string for None input
-- `parse_int`: catch TypeError in addition to ValueError
+If the "why" is not clear from the code, the commits, or the conversation,
+ask the user. Never invent a motivation, an issue number, or a benchmark.
 
-## Verified with unit tests
+### Write the title
 
-- `format_string(None)` returns `""`
-- `parse_int(None)` returns `None`
+- Write one imperative sentence that names the dominant change, such as
+  "Fix null handling in format_string and parse_int".
+- Avoid vague titles such as "Update", "Cleanup", "Fix bug", or
+  "Address feedback".
+- Do not end the title with a period.
+
+### Pick the smallest body shape
+
+Choose the shape from the kind of change:
+
+| Change | Body |
+| --- | --- |
+| Small or obvious | One short paragraph. No headings. |
+| Bug fix | The symptom, the root cause, and the fix. |
+| Feature or refactor | The changed behavior and its effect, then the non-obvious approach or trade-off. |
+| Breaking change | The affected API, config, or CLI surface, and the migration steps. |
+| Broad or generated change | Why the breadth is necessary, and where the review should start. |
+
+The default body has two paragraphs:
+
+```markdown
+<What changed and what effect it has.>
+
+<Why this approach, the risk, or what the reviewer should focus on.>
+```
+
+Make the body easy to scan:
+
+- Put the gist in the first sentence. A reviewer who reads only that sentence
+  should know what the PR does.
+- Keep each paragraph to three sentences or fewer.
+- Use a bulleted list for three or more parallel items.
+- Add headings only when the body has two or more distinct topics that a
+  reviewer will want to jump between. Then make each heading a descriptive
+  phrase, never a generic label such as "Why", "What", "Summary", "Changes", or
+  "Test Plan".
+
+### Add reviewer aids only when they save the reviewer work
+
+Each aid must replace reconstruction work that the reviewer would otherwise do:
+
+- A before/after snippet for a changed output, payload, schema, or CLI.
+- A small Mermaid diagram for an async flow or a state transition.
+- A screenshot for a visual change.
+- A review-order note for a broad PR.
+
+Introduce each aid with one sentence that says what to notice in it.
+
+### Leave these out
+
+- A `Test Plan` or validation section for routine checks. Mention testing only
+  when it changes the risk, such as a manual check of a case that CI cannot
+  cover.
+- Pasted command output, CI logs, or commit lists.
+- File-by-file narration. The diff already shows the files.
+- Empty headings and placeholders.
+- The history of the review. Describe the PR as it stands now.
+
+If the repository has a PR template, fill in its headings and keep the text
+under each heading as short as the rules above require.
+
+### Create the PR
+
+Write the body to a temporary file, then pass it with `--body-file`:
+
+```bash
+gh pr create --title "Fix null handling in format_string and parse_int" \
+  --body-file /tmp/pr-body.md
+```
+
+A bug fix body looks like this:
+
+```markdown
+`format_string` and `parse_int` no longer crash when they receive `None`.
+`format_string` now returns `""`, and `parse_int` returns `None`.
+
+Both helpers run on every request, but neither guarded against `None`. Requests
+with a missing optional field surfaced as intermittent `AttributeError` and
+`TypeError` crashes in the request pipeline.
 
 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
+```
+
+A small change needs only one paragraph:
+
+```markdown
+The sidebar section now starts collapsed so it does not take space before the
+user needs it. Expanding it keeps the saved preference as before.
+
+Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 After creating the PR, display the PR URL to the user.
+
+### Refresh the description after follow-up commits
+
+When later commits change the scope, the approach, or the risk, rewrite the
+title and the body around the full diff. Skip the refresh for typo-only or
+formatting-only commits.
 
 ## Important Rules
 
@@ -189,5 +281,7 @@ After creating the PR, display the PR URL to the user.
   and fix stale docs in the same PR
 - Always set upstream when pushing (`git push -u`)
 - Keep PRs small (~100 lines); split larger changes with user approval
-- Focus PR descriptions on the "why", ask the user if the motivation is unclear
+- Write the PR description as a short cover note for the reviewer: gist first,
+  the smallest body shape that fits, and the "why"; ask the user if the
+  motivation is unclear
 - When on the default branch, always create a new branch first
