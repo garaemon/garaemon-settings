@@ -40,8 +40,11 @@ GH_CREDENTIAL_OPTIONS = (
 )
 
 # Make SSH fail fast when no key is loaded or port 22 is blocked, so the clone
-# falls back to HTTPS.
-SSH_BATCH_OPTIONS = "-o BatchMode=yes -o ConnectTimeout=10"
+# falls back to HTTPS. known_hosts often lists github.com but not
+# gist.github.com, and batch mode cannot ask to trust a new host key.
+SSH_BATCH_OPTIONS = (
+    "-o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new"
+)
 
 # Captures the target of an inline link, an HTML src attribute, or a reference
 # definition, without any title that follows the target.

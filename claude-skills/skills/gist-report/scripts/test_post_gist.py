@@ -61,6 +61,11 @@ class ConvertToSshUrlTest(unittest.TestCase):
         )
 
 
+class SshBatchOptionsTest(unittest.TestCase):
+    def test_should_accept_unknown_host_key_on_first_connection(self) -> None:
+        self.assertIn("StrictHostKeyChecking=accept-new", post_gist.SSH_BATCH_OPTIONS)
+
+
 class RewriteImageLinksTest(unittest.TestCase):
     RAW_URL = f"{GIST_URL}/raw/chart.png"
 
