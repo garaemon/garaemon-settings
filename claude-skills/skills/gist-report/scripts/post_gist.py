@@ -236,12 +236,36 @@ def convert_to_ssh_url(https_url: str) -> str:
     return f"git@{parts.hostname}:{parts.path.lstrip('/')}"
 
 
+def is_known_ssh_host(host: str) -> bool:
+    """Return whether ~/.ssh/known_hosts holds a key for host."""
+    try:
+        completed = subprocess.run(["ssh-keygen", "-F", host], capture_output=True)
+    except FileNotFoundError:
+        return False
+    return completed.returncode == 0
+
+
+def clone_over_https(git_pull_url: str, clone_directory: Path) -> None:
+    run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
+
+
 def clone_gist_repository(git_pull_url: str, clone_directory: Path) -> None:
     """Clone the gist over SSH, or over HTTPS through gh when SSH fails.
 
-    The clone keeps the SSH options in its config, so the later pushes from it
-    fail instead of waiting on a password or host key prompt.
+    SSH is skipped when known_hosts lacks the gist host, because batch mode
+    rejects an unknown host key. known_hosts often lists github.com but not
+    gist.github.com. The clone keeps the SSH options in its config, so the
+    later pushes from it fail instead of waiting on a prompt.
     """
+    host = urlsplit(git_pull_url).hostname or ""
+    if not is_known_ssh_host(host):
+        print(
+            f"{host} is not in known_hosts, cloning over HTTPS; "
+            f"run 'ssh -T git@{host}' once to use SSH",
+            file=sys.stderr,
+        )
+        clone_over_https(git_pull_url, clone_directory)
+        return
     ssh_command = read_git_config("core.sshCommand", "ssh")
     try:
         run_git(
@@ -252,9 +276,11 @@ def clone_gist_repository(git_pull_url: str, clone_directory: Path) -> None:
             ]
         )
         return
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.decode(errors="replace").strip()
+        print(f"SSH clone failed, retrying over HTTPS: {detail}", file=sys.stderr)
         shutil.rmtree(clone_directory, ignore_errors=True)
-    run_git([*GH_CREDENTIAL_OPTIONS, "clone", "-q", git_pull_url, str(clone_directory)])
+    clone_over_https(git_pull_url, clone_directory)
 
 
 def fetch_gist_metadata(gist_id: str) -> dict:
