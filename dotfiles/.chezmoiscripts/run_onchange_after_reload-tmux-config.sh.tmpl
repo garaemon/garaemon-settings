@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+# chezmoi reruns this script only when its rendered text changes, so embed a
+# hash of the tmux config. Editing dot_tmux.conf then reloads tmux on the next
+# `chezmoi apply`.
+# dot_tmux.conf: {{ include "dot_tmux.conf" | sha256sum }}
+
+if ! command -v tmux >/dev/null 2>&1 || ! tmux list-sessions >/dev/null 2>&1; then
+  echo "skip: no tmux server running, the next tmux start reads the new config"
+  exit 0
+fi
+
+# dotfiles/tests/test_install_sh.py applies into a scratch home. Sourcing that
+# copy would push a test config into the user's live tmux server.
+login_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
+readonly login_home
+if [ "{{ .chezmoi.destDir }}" != "${login_home}" ]; then
+  echo "skip: applying to {{ .chezmoi.destDir }}, not the login home ${login_home}"
+  exit 0
+fi
+
+tmux source-file "{{ .chezmoi.destDir }}/.tmux.conf"
+tmux display-message "Reloaded ~/.tmux.conf after chezmoi apply"

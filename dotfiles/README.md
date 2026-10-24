@@ -144,6 +144,20 @@ when `atuin.syncAddress` is set. On a machine without this local config the
 line is omitted entirely and `chezmoi apply` still succeeds, so atuin simply
 runs without a sync server.
 
+### tmux config reload
+
+`chezmoi apply` runs
+`.chezmoiscripts/run_onchange_after_reload-tmux-config.sh.tmpl` after it
+installs `~/.tmux.conf`. The script runs `tmux source-file ~/.tmux.conf` so the
+running tmux server picks up the new config. The script embeds a hash of
+`dot_tmux.conf`, so chezmoi reruns it only when the config changes.
+
+The script skips the reload in two cases:
+
+- No tmux server runs. The next tmux start reads the new config anyway.
+- chezmoi applies outside the login home, as the `install.sh` end-to-end test
+  does.
+
 ### Slack digest timers (systemd --user, ax8-max only)
 
 `dot_config/systemd/user/` holds the `systemd --user` timers that post the
