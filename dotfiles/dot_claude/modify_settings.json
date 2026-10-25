@@ -1,18 +1,16 @@
-#!/bin/bash
-set -euo pipefail
-
-# chezmoi pipes the current ~/.claude/settings.json to stdin and installs
-# whatever this script prints. Claude Code writes permissions and plugin
-# state into that file, so merging keeps those edits where a plain
-# dot_claude/settings.json would overwrite them on every apply.
-existing_settings="$(cat)"
-if [ -z "${existing_settings//[[:space:]]/}" ]; then
-  existing_settings='{}'
-fi
-
-jq '
-  .enabledPlugins["i-have-adhd@i-have-adhd"] = true
-  | .extraKnownMarketplaces["i-have-adhd"] = {
-      source: {source: "github", repo: "ayghri/i-have-adhd"}
-    }
-' <<<"$existing_settings"
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  chezmoi passes the current ~/.claude/settings.json in .chezmoi.stdin and
+  installs what this template renders. Claude Code writes permissions and
+  plugin state into that file, so merging keeps those edits where a plain
+  dot_claude/settings.json would overwrite them on every apply.
+  The merge uses chezmoi's own template functions instead of jq, because
+  bootstrap.sh applies the dotfiles before mise installs jq.
+*/ -}}
+{{- $settings := dict -}}
+{{- if trim .chezmoi.stdin -}}
+{{-   $settings = fromJson .chezmoi.stdin -}}
+{{- end -}}
+{{- $settings = setValueAtPath (list "enabledPlugins" "i-have-adhd@i-have-adhd") true $settings -}}
+{{- $settings = setValueAtPath (list "extraKnownMarketplaces" "i-have-adhd") (dict "source" (dict "source" "github" "repo" "ayghri/i-have-adhd")) $settings -}}
+{{- toPrettyJson "  " $settings -}}

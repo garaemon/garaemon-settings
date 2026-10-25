@@ -28,6 +28,12 @@ jobs:
           python-version: "3.x"
       - name: Install zsh
         run: sudo apt-get update && sudo apt-get install -y zsh
+      # test_modify_claude_settings.py renders the settings.json template
+      # with chezmoi and skips without it.
+      - name: Install chezmoi
+        run: |
+          bash -c 'source ./install.sh && install_chezmoi'
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Install pytest
         run: pip install pytest
       - name: Run tests
