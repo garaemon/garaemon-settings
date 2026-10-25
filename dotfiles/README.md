@@ -197,14 +197,17 @@ systemctl --user disable --now news-digest-slack.timer
 
 ### Claude Code plugins
 
-`dot_claude/modify_settings.json` is a chezmoi modify script. It merges these
-keys into `~/.claude/settings.json` and leaves every other key alone:
+`dot_claude/modify_settings.json` is a chezmoi modify template. It merges
+these keys into `~/.claude/settings.json` and leaves every other key alone:
 
 - `extraKnownMarketplaces`: registers the `ayghri/i-have-adhd` marketplace.
 - `enabledPlugins`: enables `i-have-adhd@i-have-adhd`.
 
-The script needs `jq`, which `install.sh --tools` installs. Add further
-plugins by extending the `jq` filter in the script.
+The template uses chezmoi's built-in `fromJson`, `setValueAtPath`, and
+`toPrettyJson` functions, so it needs no external command such as `jq`.
+`bootstrap.sh` applies the dotfiles before mise installs `jq`. The rendered
+file lists its keys in alphabetical order. Add further plugins with more
+`setValueAtPath` calls in the template.
 
 ### Pre-commit hooks
 
