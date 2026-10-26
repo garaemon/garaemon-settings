@@ -16,24 +16,21 @@
       become: true
       changed_when: false
 
-    - name: Download keyd PPA signing key
-      get_url:
-        url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCD9F79EC6A8AFB2F&options=mr"
-        dest: /tmp/keyd-ppa-signing-key.pub
-        mode: "0644"
+    # The PPA does not publish a series for every Ubuntu release. Ubuntu
+    # 26.04 carries keyd in the archive, and pointing apt at a missing suite
+    # makes `apt-get update` fail, so the PPA is only used where it exists.
+    - name: Check whether the keyd PPA publishes this release
+      ansible.builtin.uri:
+        url: "https://ppa.launchpadcontent.net/keyd-team/ppa/ubuntu/dists/{{ ansible_facts.distribution_release }}/Release"
+        method: HEAD
+        status_code: [200, 404]
+      register: keyd_ppa_release
+      changed_when: false
+      check_mode: false
 
-    - name: Convert and install keyd PPA signing key to keyrings
-      ansible.builtin.shell: |
-        gpg --dearmor < /tmp/keyd-ppa-signing-key.pub > /usr/share/keyrings/keyd-team-ppa.gpg
-      become: true
-      args:
-        creates: /usr/share/keyrings/keyd-team-ppa.gpg
-
-    - name: Set permissions on keyd PPA keyring
-      file:
-        path: /usr/share/keyrings/keyd-team-ppa.gpg
-        mode: "0644"
-      become: true
+    - name: Set whether the keyd PPA applies
+      set_fact:
+        keyd_ppa_available: "{{ keyd_ppa_release.status | default(404) == 200 }}"
 
     - name: Remove old keyd PPA source list
       file:
@@ -41,22 +38,52 @@
         state: absent
       become: true
 
-    - name: Write keyd PPA repository file with signed-by
-      vars:
-        keyd_keyring: /usr/share/keyrings/keyd-team-ppa.gpg
-        keyd_repo_url: https://ppa.launchpadcontent.net/keyd-team/ppa/ubuntu
-      copy:
-        dest: /etc/apt/sources.list.d/keyd-team-ppa.list
-        content: "deb [signed-by={{ keyd_keyring }}] {{ keyd_repo_url }} {{ ansible_facts.distribution_release }} main\n"
-        mode: "0644"
+    - name: Register the keyd PPA
+      when: keyd_ppa_available | bool
+      block:
+        - name: Download keyd PPA signing key
+          get_url:
+            url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCD9F79EC6A8AFB2F&options=mr"
+            dest: /tmp/keyd-ppa-signing-key.pub
+            mode: "0644"
+
+        - name: Convert and install keyd PPA signing key to keyrings
+          ansible.builtin.shell: |
+            gpg --dearmor < /tmp/keyd-ppa-signing-key.pub > /usr/share/keyrings/keyd-team-ppa.gpg
+          become: true
+          args:
+            creates: /usr/share/keyrings/keyd-team-ppa.gpg
+
+        - name: Set permissions on keyd PPA keyring
+          file:
+            path: /usr/share/keyrings/keyd-team-ppa.gpg
+            mode: "0644"
+          become: true
+
+        - name: Write keyd PPA repository file with signed-by
+          vars:
+            keyd_keyring: /usr/share/keyrings/keyd-team-ppa.gpg
+            keyd_repo_url: https://ppa.launchpadcontent.net/keyd-team/ppa/ubuntu
+          copy:
+            dest: /etc/apt/sources.list.d/keyd-team-ppa.list
+            content: "deb [signed-by={{ keyd_keyring }}] {{ keyd_repo_url }} {{ ansible_facts.distribution_release }} main\n"
+            mode: "0644"
+          become: true
+          register: keyd_repository
+
+    - name: Drop a keyd PPA source list that no longer applies
+      when: not (keyd_ppa_available | bool)
+      file:
+        path: /etc/apt/sources.list.d/keyd-team-ppa.list
+        state: absent
       become: true
-      register: keyd_repository
+      register: keyd_repository_removed
 
     - name: Update apt cache
       apt:
         update_cache: true
       become: true
-      when: keyd_repository.changed
+      when: keyd_repository.changed or keyd_repository_removed.changed
 
     - name: Install keyd
       apt:
