@@ -36,17 +36,17 @@ fi
 #   2. Update CHEZMOI_VERSION below.
 #   3. Update each entry in CHEZMOI_CHECKSUMS with the matching sha256
 #      from the official chezmoi_<version>_checksums.txt for that release.
-readonly CHEZMOI_VERSION="2.73.1"
+readonly CHEZMOI_VERSION="2.73.2"
 
 # Pinned sha256 checksums of the chezmoi release tarballs, keyed by
 # os_arch. Embedded here rather than fetched alongside the binary so that
 # a compromised release artifact (or a network MITM that swaps both files)
 # cannot match itself. Requires bash 4+ for associative arrays.
 declare -rA CHEZMOI_CHECKSUMS=(
-    [darwin_amd64]="0ec1869c60752644863bc4690878a290455f0d35c6e9b200ca4a822b35d2be54"  # pragma: allowlist secret
-    [darwin_arm64]="19a8d9778d90476cc2f0463be69e9d82e2b91ba7b2361dbfc5348f243b1ba731"  # pragma: allowlist secret
-    [linux_amd64]="a3f958acb7d0e5d53fa43c2eec9bc8ae3b4fba8bcbfdce29a8881ca3ffc20a53"  # pragma: allowlist secret
-    [linux_arm64]="e60275b27f505ae2086bfb87b144eacf7377a89803120f6bd933d1852a93b0c6"  # pragma: allowlist secret
+    [darwin_amd64]="c6c3e2a8eb3126c33cef454ad354e580d91290b92003c7bf21608d1e73832fc6"  # pragma: allowlist secret
+    [darwin_arm64]="b41f5a51700a7dc0b7c2ae02652d42824ee112d3d97cb2f3c725d53e8d9f6b32"  # pragma: allowlist secret
+    [linux_amd64]="4d7bd8072f15373d5f5c801209bac218527452c8e54f9ae46ba6c5bd4a6eca41"  # pragma: allowlist secret
+    [linux_arm64]="db92b343a32cade0b1d4ff5e30da54c5156f7a580349281e583a5402c57c7bcf"  # pragma: allowlist secret
 )
 
 # Pinned mise release, used only when tool installation is requested via
