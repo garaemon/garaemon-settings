@@ -547,6 +547,11 @@ Skip when the cached SVG is already newer than FILE."
 
   (add-function :after after-focus-change-function
                 #'my-org-excalidraw-redisplay-on-focus)
+
+  ;; `C-c n e' names the drawing after the Org file, such as
+  ;; 2026-10-25-1.excalidraw for a daily note, instead of prompting for a path.
+  (require 'my-org-excalidraw-name)
+  (keymap-set org-mode-map "C-c n e" #'my-org-excalidraw-name-create-drawing)
   )
 
 (use-package org-roam

@@ -132,6 +132,21 @@ The fetch and the commit chain run as asynchronous git processes:
   commits stop and the buffer shows a chain that never reported back,
   `M-x my-org-git-sync-reset` lets the next save start one again.
 
+## Excalidraw Drawings
+
+`C-c n e` in an Org buffer creates a drawing under
+`org-excalidraw-default-directory` and inserts its `excalidraw:` link at
+point. `my-org-excalidraw-name.el` names the drawing after the Org file, so
+no file name prompt appears:
+
+- `C-c n e` in `2026-10-25.org` creates `2026-10-25-1.excalidraw`, then
+  `2026-10-25-2.excalidraw`.
+- `C-u C-c n e` asks for a label and creates `2026-10-25-LABEL.excalidraw`.
+- An `org-roam-dailies` capture buffer counts as the daily note it captures
+  into.
+- A buffer without a file falls back to the path prompt of
+  `org-excalidraw-create-drawing`.
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per
