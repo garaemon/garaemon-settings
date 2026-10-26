@@ -183,6 +183,13 @@ emacs_build_packages_by_release:
     - libgccjit-13-dev
     - libgdk-pixbuf2.0-0
     - libxml2
+  '26.04':
+    - g++-15
+    - gcc-15
+    - libflac14
+    - libgccjit-15-dev
+    - libgdk-pixbuf-2.0-0
+    - libxml2-16
 
 emacs_build_packages_release_specific: >-
   {{ emacs_build_packages_by_release.get(
