@@ -9,9 +9,9 @@
 
     - name: Check if distribution version is supported
       set_fact:
-        ghostty_install_supported_versions: ['24.04', '25.04', '25.10', 'trixie']
+        ghostty_install_supported_versions: ['24.04', '25.04', '25.10', '26.04', 'trixie']
         ghostty_install_is_supported: >-
-          {{ ansible_facts.distribution_version in ['24.04', '25.04', '25.10'] or
+          {{ ansible_facts.distribution_version in ['24.04', '25.04', '25.10', '26.04'] or
              (ansible_facts.distribution == 'Debian' and ansible_facts.distribution_release == 'trixie') }}
 
     - name: Install ghostty from deb file
