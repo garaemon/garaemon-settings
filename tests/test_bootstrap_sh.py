@@ -334,3 +334,26 @@ class TestBuildBecomeArguments:
         write_stub(stub_dir, "sudo", "exit 0")
         result = source_and_run("build_become_arguments", tmp_path, stub_dir)
         assert result.stdout.strip() == ""
+
+
+class TestInstallAnsible:
+    # The python3 stub fakes `python3 -m venv <dir>` by creating a pip stub in
+    # <dir>/bin that appends its arguments to pip.log.
+    PYTHON3_STUB = (
+        'venv_dir="$3"\n'
+        'mkdir -p "${venv_dir}/bin"\n'
+        "cat >\"${venv_dir}/bin/pip\" <<'PIP'\n"
+        "#!/bin/bash\n"
+        'echo "$*" >>"$(dirname "$0")/pip.log"\n'
+        "PIP\n"
+        'chmod +x "${venv_dir}/bin/pip"\n'
+    )
+
+    def read_pip_log(self, home):
+        venv_bin = home / ".local/share/garaemon-settings/ansible-venv/bin"
+        return (venv_bin / "pip.log").read_text().splitlines()
+
+    def test_should_install_ansible_core_only(self, tmp_path, stub_dir):
+        write_stub(stub_dir, "python3", self.PYTHON3_STUB)
+        source_and_run("install_ansible", tmp_path, stub_dir)
+        assert self.read_pip_log(tmp_path)[-1] == "install ansible-core"

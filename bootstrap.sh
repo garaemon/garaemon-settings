@@ -170,6 +170,9 @@ apply_dotfiles() {
 
 # Installs Ansible into a private virtualenv. Debian 12+ refuses a system-wide
 # pip install (PEP 668), and a venv keeps the version independent of apt.
+# ansible-core suffices because run_playbook installs the only extra
+# collection, community.general, from requirements.yml. The full ansible
+# package bundles 100+ collections, a 500 MB venv that takes ~30 s longer.
 install_ansible() {
     if [[ -x "${ANSIBLE_VENV_DIR}/bin/ansible-playbook" ]]; then
         log "Ansible already installed in ${ANSIBLE_VENV_DIR}"
@@ -179,7 +182,7 @@ install_ansible() {
     mkdir -p "$(dirname "${ANSIBLE_VENV_DIR}")"
     python3 -m venv "${ANSIBLE_VENV_DIR}"
     "${ANSIBLE_VENV_DIR}/bin/pip" install --upgrade pip
-    "${ANSIBLE_VENV_DIR}/bin/pip" install ansible
+    "${ANSIBLE_VENV_DIR}/bin/pip" install ansible-core
 }
 
 # Prints the ansible-playbook flag that prompts for the sudo password, or
