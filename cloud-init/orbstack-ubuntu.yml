@@ -1,0 +1,68 @@
+#cloud-config
+# User data for an OrbStack Ubuntu machine. It installs zsh, makes zsh the
+# login shell, and runs bootstrap.sh with the minimal playbook, which skips
+# the slow Emacs build. See cloud-init/README.md for usage.
+
+package_update: true
+packages:
+  - curl
+  - git
+  - python3-venv
+  - zsh
+
+write_files:
+  - path: /usr/local/sbin/garaemon-bootstrap
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      readonly BOOTSTRAP_URL="https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh"
+      readonly USER_WAIT_TIMEOUT_SECONDS=300
+
+      # Prints the login user that OrbStack creates from the macOS account.
+      # macOS UIDs start at 501, so the lowest UID of 500 or more under /home
+      # picks that user even when the image also ships an "ubuntu" user.
+      find_login_user() {
+          getent passwd \
+              | awk -F: '$3 >= 500 && $3 < 60000 && $6 ~ /^\/home\// { print $3, $1 }' \
+              | sort -n | head -n 1 | cut -d' ' -f2
+      }
+
+      # OrbStack may add the user after cloud-init starts, so poll for it.
+      wait_for_login_user() {
+          local elapsed_seconds=0
+          local login_user=""
+          while [[ -z "${login_user}" ]]; do
+              login_user="$(find_login_user)"
+              if [[ -n "${login_user}" ]]; then
+                  break
+              fi
+              if [[ "${elapsed_seconds}" -ge "${USER_WAIT_TIMEOUT_SECONDS}" ]]; then
+                  echo "garaemon-bootstrap: no login user found" >&2
+                  return 1
+              fi
+              sleep 5
+              elapsed_seconds=$((elapsed_seconds + 5))
+          done
+          printf '%s\n' "${login_user}"
+      }
+
+      main() {
+          local login_user
+          login_user="${1:-$(wait_for_login_user)}"
+          chsh -s "$(command -v zsh)" "${login_user}"
+          # bootstrap.sh runs without a terminal here, so the Ansible sudo
+          # password prompt would hang. OrbStack already allows this.
+          printf '%s ALL=(ALL) NOPASSWD:ALL\n' "${login_user}" \
+              >"/etc/sudoers.d/90-garaemon-bootstrap"
+          chmod 0440 /etc/sudoers.d/90-garaemon-bootstrap
+          sudo -u "${login_user}" -H bash -c \
+              'cd "${HOME}" && bash -c "$(curl -fsSL "$1")" bootstrap --playbook minimal' \
+              _ "${BOOTSTRAP_URL}"
+      }
+
+      main "$@"
+
+runcmd:
+  - [/usr/local/sbin/garaemon-bootstrap]

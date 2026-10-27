@@ -18,7 +18,7 @@ lives at `dotfiles/dot_claude/rules/`. Read the source copy when
 
 ## Repository Guidance
 
-Read [README.md](README.md) first. It documents the layout of the four
+Read [README.md](README.md) first. It documents the layout of the
 components, the per-language lint setup, the install commands, and the
 boundary against `private-server-config`. Each component carries its own
 README or CLAUDE.md for the details.

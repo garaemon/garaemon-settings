@@ -104,6 +104,9 @@ To rerun a playbook later from the checkout, call the script directly:
   fresh clone, so a container that never runs chezmoi, such as Claude Code on
   the web, still loads every skill.
   See [claude-skills/README.md](claude-skills/README.md).
+- **cloud-init/**: cloud-init user data that creates a virtual machine, such
+  as an OrbStack Ubuntu machine, with this repository bootstrapped. See
+  [cloud-init/README.md](cloud-init/README.md).
 - **dotfiles/**: chezmoi source for shell, git, editor, and terminal
   configuration. The root-level `.chezmoiroot` file points chezmoi at this
   subdirectory, so chezmoi commands need no `--source` flag. The root-level
