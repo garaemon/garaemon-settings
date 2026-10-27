@@ -8,7 +8,6 @@
       - alt-tab
       - aspell
       - ccache
-      - ccls
       - clang-format
       - cmake
       - cmigemo
