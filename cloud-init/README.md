@@ -29,6 +29,11 @@ orb -m my-machine sudo tail -f /var/log/cloud-init-output.log
 orb -m my-machine cloud-init status --long
 ```
 
+`ansible/ansible.cfg` enables the `profile_tasks` callback, so the end of
+`/var/log/cloud-init-output.log` lists the slowest playbook tasks.
+`orb -m my-machine cloud-init analyze blame` shows the time of each
+cloud-init stage.
+
 To get Emacs later, run the build inside the machine:
 
 ```sh
