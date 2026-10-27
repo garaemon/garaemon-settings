@@ -45,3 +45,8 @@ def test_should_skip_when_destination_is_not_the_login_home():
 
 def test_should_source_tmux_conf():
     assert re.search(r"^tmux source-file ", read_reload_script(), re.MULTILINE)
+
+
+def test_should_look_up_login_home_with_dscl_when_getent_is_missing():
+    # macOS ships without getent, so the script must fall back to dscl there.
+    assert "dscl . -read" in read_reload_script()

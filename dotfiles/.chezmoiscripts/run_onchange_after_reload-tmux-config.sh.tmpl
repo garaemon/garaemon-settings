@@ -6,6 +6,16 @@ set -euo pipefail
 # `chezmoi apply`.
 # dot_tmux.conf: {{ include "dot_tmux.conf" | sha256sum }}
 
+# Prints the home directory from the account database rather than ${HOME},
+# which the install tests point at a scratch directory. macOS has no getent.
+print_login_home() {
+  if command -v getent >/dev/null 2>&1; then
+    getent passwd "$(id -u)" | cut -d: -f6
+  else
+    dscl . -read "/Users/$(id -un)" NFSHomeDirectory | sed 's/^NFSHomeDirectory: //'
+  fi
+}
+
 if ! command -v tmux >/dev/null 2>&1 || ! tmux list-sessions >/dev/null 2>&1; then
   echo "skip: no tmux server running, the next tmux start reads the new config"
   exit 0
@@ -13,7 +23,7 @@ fi
 
 # dotfiles/tests/test_install_sh.py applies into a scratch home. Sourcing that
 # copy would push a test config into the user's live tmux server.
-login_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
+login_home="$(print_login_home)"
 readonly login_home
 if [ "{{ .chezmoi.destDir }}" != "${login_home}" ]; then
   echo "skip: applying to {{ .chezmoi.destDir }}, not the login home ${login_home}"
