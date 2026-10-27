@@ -33,6 +33,10 @@ Do not add trailing spaces.
 
 When creating a new shell script (`*.sh` or `*.bash`), read `~/.claude/rules/shell-script.md` first and follow it.
 
+## Python
+
+When creating or editing Python code (`*.py`), read `~/.claude/rules/python.md` first and follow it.
+
 ## Comments
 
 ### Principle
