@@ -158,6 +158,23 @@ The script skips the reload in two cases:
 - chezmoi applies outside the login home, as the `install.sh` end-to-end test
   does.
 
+### mise tool install
+
+`chezmoi apply` runs
+`.chezmoiscripts/run_onchange_after_install-mise-tools.sh.tmpl` after it
+installs `~/.config/mise/config.toml`. The script runs `mise install --yes`, so
+a tool added to the config, or a bumped version pin, arrives without a manual
+install. chezmoi itself is one of those tools. The script embeds a hash of
+`dot_config/mise/config.toml`, so chezmoi reruns it only when the config
+changes. A tool pinned to `latest` therefore stays at its installed version
+until you run `mise upgrade`.
+
+The script skips the install in two cases:
+
+- mise is not installed.
+- chezmoi applies outside the login home, as the `install.sh` end-to-end test
+  does.
+
 ### Slack digest timers (systemd --user, ax8-max only)
 
 `dot_config/systemd/user/` holds the `systemd --user` timers that post the
