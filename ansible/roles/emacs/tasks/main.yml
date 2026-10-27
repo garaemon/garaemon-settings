@@ -30,13 +30,20 @@
     - name: Build Emacs if not already installed or version is too old
       when: emacs_build_check.rc == 10
       block:
+        # Without its build packages, the Emacs build fails at configure with
+        # an error that does not name the missing release entry.
+        - name: Fail on an Ubuntu release without Emacs build packages
+          ansible.builtin.fail:
+            msg: >-
+              Add {{ ansible_facts.distribution_version }} to
+              emacs_build_packages_by_release in roles/emacs/defaults/main.yml.
+          when: ansible_facts.distribution_version not in emacs_build_packages_by_release
       # Refer to https://github.com/KarimAziev/build-emacs/blob/main/build-emacs.sh
         - name: Install packages to build emacs
           apt:
             name: "{{ emacs_build_packages }}"
             state: present
           become: true
-          when: ansible_facts.distribution_version in emacs_build_packages_by_release
         # The apt step above installs GTK 3, the image libraries, GnuTLS,
         # SQLite, and libgccjit, so a missing one must fail the build instead
         # of silently dropping its feature.
