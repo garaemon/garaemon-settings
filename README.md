@@ -38,8 +38,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settin
 The script accepts these options:
 
 - `--playbook main|minimal|orbstack|ax8-max`: selects the playbook. The
-  default is `main`. `orbstack` is `minimal` without the font and
-  spell-checker roles, for virtual machines such as OrbStack machines.
+  default is `main`. `orbstack` is `minimal` without the font,
+  spell-checker, and Claude Code roles, for virtual machines such as OrbStack
+  machines.
 - `--skip-dotfiles`: skips step 3.
 - `--skip-ansible`: skips step 4.
 - `--no-sudo`: never uses sudo, even when it is installed.

@@ -1,5 +1,6 @@
-# The minimal playbook without the font and spell-checker roles, which only
-# matter on a desktop. OrbStack machines borrow the fonts of the macOS host.
+# The minimal playbook without the font, spell-checker, and Claude Code roles.
+# OrbStack machines borrow the fonts of the macOS host and do not need Claude
+# Code.
 - name: Apply settings for OrbStack virtual machines
   hosts: all
   roles:
@@ -9,4 +10,3 @@
     - git
     - git_find_big
     - uv
-    - claude_code
