@@ -161,10 +161,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # ansible-core 2.21 supports Python up to 3.14, and ansible-lint fails
+      # on 3.15 with "module 'dataclasses' has no attribute '_is_type'".
       - uses: actions/setup-python@v7
         if: ${{ !env.ACT }}
         with:
-          python-version: '3.x'
+          python-version: '3.14'
       - name: Install ansible-lint (GitHub Actions)
         if: ${{ !env.ACT }}
         run: pip install ansible-lint

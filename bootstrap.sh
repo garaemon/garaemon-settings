@@ -14,7 +14,10 @@ set -euo pipefail
 # before Homebrew has installed a newer one.
 
 readonly REPOSITORY_URL="https://github.com/garaemon/garaemon-settings.git"
-readonly ALLOWED_PLAYBOOKS="main minimal ax8-max"
+readonly ALLOWED_PLAYBOOKS="main minimal orbstack ax8-max"
+# Playbooks whose roles use ansible.builtin only. Skipping the collection
+# install saves about 10 s on a fresh machine.
+readonly PLAYBOOKS_WITHOUT_COLLECTIONS="orbstack"
 # ~/.emacs.d and ~/.claude/skills are chezmoi symlinks that point at this exact
 # path, so the checkout cannot live anywhere else.
 readonly CHECKOUT_DIR="${HOME}/ghq/github.com/garaemon/garaemon-settings"
@@ -170,6 +173,9 @@ apply_dotfiles() {
 
 # Installs Ansible into a private virtualenv. Debian 12+ refuses a system-wide
 # pip install (PEP 668), and a venv keeps the version independent of apt.
+# ansible-core suffices because run_playbook installs the only extra
+# collection, community.general, from requirements.yml when needed. The full ansible
+# package bundles 100+ collections, a 500 MB venv that takes ~30 s longer.
 install_ansible() {
     if [[ -x "${ANSIBLE_VENV_DIR}/bin/ansible-playbook" ]]; then
         log "Ansible already installed in ${ANSIBLE_VENV_DIR}"
@@ -179,7 +185,7 @@ install_ansible() {
     mkdir -p "$(dirname "${ANSIBLE_VENV_DIR}")"
     python3 -m venv "${ANSIBLE_VENV_DIR}"
     "${ANSIBLE_VENV_DIR}/bin/pip" install --upgrade pip
-    "${ANSIBLE_VENV_DIR}/bin/pip" install ansible
+    "${ANSIBLE_VENV_DIR}/bin/pip" install ansible-core
 }
 
 # Prints the ansible-playbook flag that prompts for the sudo password, or
@@ -190,6 +196,16 @@ build_become_arguments() {
         return 0
     fi
     printf '%s\n' "--ask-become-pass"
+}
+
+# Returns success when the playbook needs the collections in requirements.yml.
+needs_collections() {
+    local playbook_name="$1"
+    local playbook_without_collections
+    for playbook_without_collections in ${PLAYBOOKS_WITHOUT_COLLECTIONS}; do
+        [[ "${playbook_name}" == "${playbook_without_collections}" ]] && return 1
+    done
+    return 0
 }
 
 run_playbook() {
@@ -204,7 +220,9 @@ run_playbook() {
     log "Running ansible/${playbook_name}.yml"
     (
         cd "${CHECKOUT_DIR}/ansible"
-        "${ANSIBLE_VENV_DIR}/bin/ansible-galaxy" collection install -r requirements.yml
+        if needs_collections "${playbook_name}"; then
+            "${ANSIBLE_VENV_DIR}/bin/ansible-galaxy" collection install -r requirements.yml
+        fi
         "${ANSIBLE_VENV_DIR}/bin/ansible-playbook" -i localhost, -c local \
             "${playbook_name}.yml" ${become_arguments[@]+"${become_arguments[@]}"}
     )
@@ -219,9 +237,9 @@ build_emacs() {
 
 usage() {
     cat <<'EOF'
-Usage: bootstrap.sh [--playbook main|minimal|ax8-max] [--skip-dotfiles]
-                    [--skip-ansible] [--no-sudo] [--build-emacs]
-                    [-h|--help]
+Usage: bootstrap.sh [--playbook main|minimal|orbstack|ax8-max]
+                    [--skip-dotfiles] [--skip-ansible] [--no-sudo]
+                    [--build-emacs] [-h|--help]
 
 Sets up this machine from nothing:
   1. Installs the prerequisites (git, curl, python3-venv; Homebrew bash on macOS).

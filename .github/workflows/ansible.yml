@@ -36,7 +36,7 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/setup-python@v7
         with:
-          python-version: '3.x'
+          python-version: '3.14'  # ansible-core 2.21 does not support 3.15
 
       - name: Install Ansible (GitHub Actions)
         if: ${{ !env.ACT }}
@@ -78,7 +78,7 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/setup-python@v7
         with:
-          python-version: '3.x'
+          python-version: '3.14'  # ansible-core 2.21 does not support 3.15
 
       - name: Install Ansible (GitHub Actions)
         if: ${{ !env.ACT }}
@@ -106,3 +106,4 @@ jobs:
         run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"
         env:
           MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

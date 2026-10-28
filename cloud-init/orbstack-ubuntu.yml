@@ -1,0 +1,87 @@
+#cloud-config
+# User data for an OrbStack Ubuntu machine. It installs zsh, makes zsh the
+# login shell, and runs bootstrap.sh with the orbstack playbook, which skips
+# the slow Emacs build. See cloud-init/README.md for usage.
+
+package_update: true
+packages:
+  - curl
+  - git
+  - python3-venv
+  - zsh
+
+write_files:
+  - path: /usr/local/sbin/garaemon-bootstrap
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      readonly BOOTSTRAP_URL="https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh"
+      readonly USER_WAIT_TIMEOUT_SECONDS=600
+
+      # Prints the user that OrbStack creates from the macOS account. macOS
+      # UIDs start at 501, while Ubuntu gives its own users UIDs of 1000 or
+      # more, so the range skips the "ubuntu" user that cloud-init creates.
+      find_login_user() {
+          getent passwd \
+              | awk -F: '$3 >= 500 && $3 < 1000 && $6 ~ /^\/home\// { print $3, $1 }' \
+              | sort -n | head -n 1 | cut -d' ' -f2
+      }
+
+      # OrbStack replaces the "ubuntu" user with the macOS user only after
+      # cloud-init finishes, so this script runs from a systemd unit.
+      wait_for_login_user() {
+          local elapsed_seconds=0
+          local login_user=""
+          while [[ -z "${login_user}" ]]; do
+              login_user="$(find_login_user)"
+              if [[ -n "${login_user}" && -d "/home/${login_user}" ]]; then
+                  break
+              fi
+              login_user=""
+              if [[ "${elapsed_seconds}" -ge "${USER_WAIT_TIMEOUT_SECONDS}" ]]; then
+                  echo "garaemon-bootstrap: no login user found" >&2
+                  return 1
+              fi
+              sleep 5
+              elapsed_seconds=$((elapsed_seconds + 5))
+          done
+          printf '%s\n' "${login_user}"
+      }
+
+      main() {
+          local login_user
+          login_user="${1:-$(wait_for_login_user)}"
+          echo "garaemon-bootstrap: setting up ${login_user}"
+          chsh -s "$(command -v zsh)" "${login_user}"
+          # bootstrap.sh runs without a terminal here, so the Ansible sudo
+          # password prompt would hang. OrbStack already allows this.
+          printf '%s ALL=(ALL) NOPASSWD:ALL\n' "${login_user}" \
+              >"/etc/sudoers.d/90-garaemon-bootstrap"
+          chmod 0440 /etc/sudoers.d/90-garaemon-bootstrap
+          sudo -u "${login_user}" -H bash -c \
+              'cd "${HOME}" && bash -c "$(curl -fsSL "$1")" bootstrap --playbook orbstack' \
+              _ "${BOOTSTRAP_URL}"
+      }
+
+      main "$@"
+
+  # Type=exec instead of oneshot: a oneshot unit started during boot keeps
+  # systemd in the "starting" state until the bootstrap ends.
+  - path: /etc/systemd/system/garaemon-bootstrap.service
+    content: |
+      [Unit]
+      Description=Bootstrap garaemon-settings for the OrbStack user
+      After=cloud-final.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=exec
+      ExecStart=/usr/local/sbin/garaemon-bootstrap
+
+# --no-block queues the unit without waiting for it. The unit starts after
+# cloud-final.service, which waits for runcmd, so a blocking start deadlocks.
+runcmd:
+  - [systemctl, daemon-reload]
+  - [systemctl, start, --no-block, garaemon-bootstrap.service]

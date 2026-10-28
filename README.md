@@ -37,8 +37,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settin
 
 The script accepts these options:
 
-- `--playbook main|minimal|ax8-max`: selects the playbook. The default is
-  `main`.
+- `--playbook main|minimal|orbstack|ax8-max`: selects the playbook. The
+  default is `main`. `orbstack` is `minimal` without the font,
+  spell-checker, and Claude Code roles, for virtual machines such as OrbStack
+  machines.
 - `--skip-dotfiles`: skips step 3.
 - `--skip-ansible`: skips step 4.
 - `--no-sudo`: never uses sudo, even when it is installed.
@@ -104,6 +106,9 @@ To rerun a playbook later from the checkout, call the script directly:
   fresh clone, so a container that never runs chezmoi, such as Claude Code on
   the web, still loads every skill.
   See [claude-skills/README.md](claude-skills/README.md).
+- **cloud-init/**: cloud-init user data that creates a virtual machine, such
+  as an OrbStack Ubuntu machine, with this repository bootstrapped. See
+  [cloud-init/README.md](cloud-init/README.md).
 - **dotfiles/**: chezmoi source for shell, git, editor, and terminal
   configuration. The root-level `.chezmoiroot` file points chezmoi at this
   subdirectory, so chezmoi commands need no `--source` flag. The root-level

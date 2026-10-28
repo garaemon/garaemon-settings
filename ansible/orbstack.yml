@@ -1,0 +1,13 @@
+# The minimal playbook without the font, spell-checker, and Claude Code roles.
+# OrbStack machines borrow the fonts of the macOS host and do not need Claude
+# Code. Keep these roles on ansible.builtin, because bootstrap.sh skips the
+# community.general install for this playbook.
+- name: Apply settings for OrbStack virtual machines
+  hosts: all
+  roles:
+    - mise
+    - ghq
+    - base
+    - git
+    - git_find_big
+    - uv

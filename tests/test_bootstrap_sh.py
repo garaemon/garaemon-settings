@@ -93,6 +93,14 @@ class TestMainArguments:
         result = self.run_main("--playbook minimal", tmp_path)
         assert "PLAYBOOK:minimal" in result.stdout
 
+    def test_should_accept_orbstack_playbook(self, tmp_path):
+        result = self.run_main("--playbook orbstack", tmp_path)
+        assert "PLAYBOOK:orbstack" in result.stdout
+
+    def test_should_list_orbstack_playbook_in_usage(self, tmp_path):
+        result = self.run_main("--help", tmp_path)
+        assert "main|minimal|orbstack|ax8-max" in result.stdout
+
     def test_should_accept_playbook_with_equals(self, tmp_path):
         result = self.run_main("--playbook=ax8-max", tmp_path)
         assert "PLAYBOOK:ax8-max" in result.stdout
@@ -334,3 +342,61 @@ class TestBuildBecomeArguments:
         write_stub(stub_dir, "sudo", "exit 0")
         result = source_and_run("build_become_arguments", tmp_path, stub_dir)
         assert result.stdout.strip() == ""
+
+
+class TestInstallAnsible:
+    # The python3 stub fakes `python3 -m venv <dir>` by creating a pip stub in
+    # <dir>/bin that appends its arguments to pip.log.
+    PYTHON3_STUB = (
+        'venv_dir="$3"\n'
+        'mkdir -p "${venv_dir}/bin"\n'
+        "cat >\"${venv_dir}/bin/pip\" <<'PIP'\n"
+        "#!/bin/bash\n"
+        'echo "$*" >>"$(dirname "$0")/pip.log"\n'
+        "PIP\n"
+        'chmod +x "${venv_dir}/bin/pip"\n'
+    )
+
+    def read_pip_log(self, home):
+        venv_bin = home / ".local/share/garaemon-settings/ansible-venv/bin"
+        return (venv_bin / "pip.log").read_text().splitlines()
+
+    def test_should_install_ansible_core_only(self, tmp_path, stub_dir):
+        write_stub(stub_dir, "python3", self.PYTHON3_STUB)
+        source_and_run("install_ansible", tmp_path, stub_dir)
+        assert self.read_pip_log(tmp_path)[-1] == "install ansible-core"
+
+
+class TestRunPlaybook:
+    def run_playbook(self, playbook_name, home, stub_dir):
+        (home / "ghq/github.com/garaemon/garaemon-settings/ansible").mkdir(
+            parents=True
+        )
+        venv_bin = home / ".local/share/garaemon-settings/ansible-venv/bin"
+        venv_bin.mkdir(parents=True)
+        for command in ("ansible-galaxy", "ansible-playbook"):
+            write_stub(venv_bin, command, f'echo "{command} $*"')
+        write_stub(stub_dir, "sudo", "exit 0")
+        return source_and_run(
+            f"run_playbook {playbook_name}", home, stub_dir
+        )
+
+    def test_should_install_collections_for_main_playbook(
+        self, tmp_path, stub_dir
+    ):
+        result = self.run_playbook("main", tmp_path, stub_dir)
+        assert "ansible-galaxy collection install" in result.stdout
+
+    def test_should_skip_collections_for_orbstack_playbook(
+        self, tmp_path, stub_dir
+    ):
+        result = self.run_playbook("orbstack", tmp_path, stub_dir)
+        assert "ansible-galaxy" not in result.stdout
+
+    def test_should_run_orbstack_playbook_without_collections(
+        self, tmp_path, stub_dir
+    ):
+        result = self.run_playbook("orbstack", tmp_path, stub_dir)
+        assert "ansible-playbook -i localhost, -c local orbstack.yml" in (
+            result.stdout
+        )
