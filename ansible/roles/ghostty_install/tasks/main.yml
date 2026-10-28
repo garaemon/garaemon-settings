@@ -29,6 +29,11 @@
           uri:
             url: https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/latest
             return_content: true
+            # Anonymous requests share a limit of 60 per hour per IP address,
+            # which GitHub Actions runners exhaust. A token raises the limit.
+            headers: >-
+              {{ {'Authorization': 'Bearer ' + ghostty_install_github_token}
+                 if ghostty_install_github_token else {} }}
           register: ghostty_install_release
           changed_when: false
 

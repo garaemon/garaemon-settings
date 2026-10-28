@@ -106,3 +106,4 @@ jobs:
         run: ansible-playbook -i localhost, -c local main.yml -v -e "emacs_build_emacs=${{ steps.changed-files-emacs.outputs.any_changed }}"
         env:
           MISE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
