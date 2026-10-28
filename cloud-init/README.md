@@ -20,8 +20,9 @@ The user data runs these steps on the first boot:
 1. Sets zsh as the login shell of that user.
 1. Grants that user passwordless sudo, because `bootstrap.sh` runs without a
    terminal and cannot answer a password prompt.
-1. Runs `bootstrap.sh --playbook minimal` as that user. The minimal playbook
-   skips the Emacs build, which takes the longest in the `main` playbook.
+1. Runs `bootstrap.sh --playbook orbstack` as that user. The orbstack
+   playbook is the minimal playbook without the `font`, `enchant`, and
+   `ispell` roles. Like the minimal playbook, it skips the Emacs build.
 
 The bootstrap takes a few minutes after `orb create` returns. Follow the
 progress and check the result with:

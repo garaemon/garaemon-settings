@@ -1,6 +1,6 @@
 #cloud-config
 # User data for an OrbStack Ubuntu machine. It installs zsh, makes zsh the
-# login shell, and runs bootstrap.sh with the minimal playbook, which skips
+# login shell, and runs bootstrap.sh with the orbstack playbook, which skips
 # the slow Emacs build. See cloud-init/README.md for usage.
 
 package_update: true
@@ -61,7 +61,7 @@ write_files:
               >"/etc/sudoers.d/90-garaemon-bootstrap"
           chmod 0440 /etc/sudoers.d/90-garaemon-bootstrap
           sudo -u "${login_user}" -H bash -c \
-              'cd "${HOME}" && bash -c "$(curl -fsSL "$1")" bootstrap --playbook minimal' \
+              'cd "${HOME}" && bash -c "$(curl -fsSL "$1")" bootstrap --playbook orbstack' \
               _ "${BOOTSTRAP_URL}"
       }
 
