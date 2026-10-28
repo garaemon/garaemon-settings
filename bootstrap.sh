@@ -15,6 +15,9 @@ set -euo pipefail
 
 readonly REPOSITORY_URL="https://github.com/garaemon/garaemon-settings.git"
 readonly ALLOWED_PLAYBOOKS="main minimal orbstack ax8-max"
+# Playbooks whose roles use ansible.builtin only. Skipping the collection
+# install saves about 10 s on a fresh machine.
+readonly PLAYBOOKS_WITHOUT_COLLECTIONS="orbstack"
 # ~/.emacs.d and ~/.claude/skills are chezmoi symlinks that point at this exact
 # path, so the checkout cannot live anywhere else.
 readonly CHECKOUT_DIR="${HOME}/ghq/github.com/garaemon/garaemon-settings"
@@ -171,7 +174,7 @@ apply_dotfiles() {
 # Installs Ansible into a private virtualenv. Debian 12+ refuses a system-wide
 # pip install (PEP 668), and a venv keeps the version independent of apt.
 # ansible-core suffices because run_playbook installs the only extra
-# collection, community.general, from requirements.yml. The full ansible
+# collection, community.general, from requirements.yml when needed. The full ansible
 # package bundles 100+ collections, a 500 MB venv that takes ~30 s longer.
 install_ansible() {
     if [[ -x "${ANSIBLE_VENV_DIR}/bin/ansible-playbook" ]]; then
@@ -195,6 +198,16 @@ build_become_arguments() {
     printf '%s\n' "--ask-become-pass"
 }
 
+# Returns success when the playbook needs the collections in requirements.yml.
+needs_collections() {
+    local playbook_name="$1"
+    local playbook_without_collections
+    for playbook_without_collections in ${PLAYBOOKS_WITHOUT_COLLECTIONS}; do
+        [[ "${playbook_name}" == "${playbook_without_collections}" ]] && return 1
+    done
+    return 0
+}
+
 run_playbook() {
     local playbook_name="$1"
     local -a become_arguments=()
@@ -207,7 +220,9 @@ run_playbook() {
     log "Running ansible/${playbook_name}.yml"
     (
         cd "${CHECKOUT_DIR}/ansible"
-        "${ANSIBLE_VENV_DIR}/bin/ansible-galaxy" collection install -r requirements.yml
+        if needs_collections "${playbook_name}"; then
+            "${ANSIBLE_VENV_DIR}/bin/ansible-galaxy" collection install -r requirements.yml
+        fi
         "${ANSIBLE_VENV_DIR}/bin/ansible-playbook" -i localhost, -c local \
             "${playbook_name}.yml" ${become_arguments[@]+"${become_arguments[@]}"}
     )
