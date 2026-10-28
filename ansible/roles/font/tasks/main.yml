@@ -35,6 +35,14 @@
   when: not font_monaspace_check_status.stat.exists
   block:
 
+    # ansible.builtin.unarchive needs unzip for .zip files, and minimal
+    # images such as the OrbStack Ubuntu image do not ship it.
+    - name: Install unzip
+      ansible.builtin.apt:
+        name: unzip
+      become: true
+      when: ansible_facts.os_family == "Debian"
+
     - name: Create a unique temporary staging directory for download and extraction
       ansible.builtin.tempfile:
         state: directory
