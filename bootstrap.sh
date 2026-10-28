@@ -14,7 +14,7 @@ set -euo pipefail
 # before Homebrew has installed a newer one.
 
 readonly REPOSITORY_URL="https://github.com/garaemon/garaemon-settings.git"
-readonly ALLOWED_PLAYBOOKS="main minimal ax8-max"
+readonly ALLOWED_PLAYBOOKS="main minimal orbstack ax8-max"
 # ~/.emacs.d and ~/.claude/skills are chezmoi symlinks that point at this exact
 # path, so the checkout cannot live anywhere else.
 readonly CHECKOUT_DIR="${HOME}/ghq/github.com/garaemon/garaemon-settings"
@@ -222,9 +222,9 @@ build_emacs() {
 
 usage() {
     cat <<'EOF'
-Usage: bootstrap.sh [--playbook main|minimal|ax8-max] [--skip-dotfiles]
-                    [--skip-ansible] [--no-sudo] [--build-emacs]
-                    [-h|--help]
+Usage: bootstrap.sh [--playbook main|minimal|orbstack|ax8-max]
+                    [--skip-dotfiles] [--skip-ansible] [--no-sudo]
+                    [--build-emacs] [-h|--help]
 
 Sets up this machine from nothing:
   1. Installs the prerequisites (git, curl, python3-venv; Homebrew bash on macOS).

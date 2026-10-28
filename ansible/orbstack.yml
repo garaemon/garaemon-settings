@@ -1,0 +1,12 @@
+# The minimal playbook without the font and spell-checker roles, which only
+# matter on a desktop. OrbStack machines borrow the fonts of the macOS host.
+- name: Apply settings for OrbStack virtual machines
+  hosts: all
+  roles:
+    - mise
+    - ghq
+    - base
+    - git
+    - git_find_big
+    - uv
+    - claude_code

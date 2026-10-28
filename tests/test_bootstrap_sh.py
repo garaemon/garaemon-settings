@@ -93,6 +93,14 @@ class TestMainArguments:
         result = self.run_main("--playbook minimal", tmp_path)
         assert "PLAYBOOK:minimal" in result.stdout
 
+    def test_should_accept_orbstack_playbook(self, tmp_path):
+        result = self.run_main("--playbook orbstack", tmp_path)
+        assert "PLAYBOOK:orbstack" in result.stdout
+
+    def test_should_list_orbstack_playbook_in_usage(self, tmp_path):
+        result = self.run_main("--help", tmp_path)
+        assert "main|minimal|orbstack|ax8-max" in result.stdout
+
     def test_should_accept_playbook_with_equals(self, tmp_path):
         result = self.run_main("--playbook=ax8-max", tmp_path)
         assert "PLAYBOOK:ax8-max" in result.stdout
