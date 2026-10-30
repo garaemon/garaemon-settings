@@ -184,41 +184,63 @@ Choose the shape from the kind of change:
 
 | Change | Body |
 | --- | --- |
-| Small or obvious | One short paragraph. No headings. |
-| Bug fix | The symptom, the root cause, and the fix. |
-| Feature or refactor | The changed behavior and its effect, then the non-obvious approach or trade-off. |
-| Breaking change | The affected API, config, or CLI surface, and the migration steps. |
-| Broad or generated change | Why the breadth is necessary, and where the review should start. |
+| Small or obvious | One gist sentence, plus a short bulleted list if there are two or more changes. No headings. |
+| Bug fix | The gist, then bullets for the symptom, the root cause, and the fix. |
+| Feature or refactor | The gist, a bulleted list of the behavior changes, then the non-obvious approach or trade-off. Add a diagram when components or steps interact. |
+| Breaking change | The affected API, config, or CLI surface, a before/after snippet, and numbered migration steps. |
+| Broad or generated change | Why the breadth is necessary, and a numbered review order. |
 
-The default body has two paragraphs:
+The default body is a gist sentence followed by bullets:
 
 ```markdown
-<What changed and what effect it has.>
+<One sentence: what changed and what effect it has.>
 
-<Why this approach, the risk, or what the reviewer should focus on.>
+- <Behavior change 1>
+- <Behavior change 2>
+
+<Why this approach, the risk, or what the reviewer should focus on, as bullets
+or one short paragraph.>
 ```
 
-Make the body easy to scan:
+Make the body easy to scan. Reviewers skim, so prefer structure over prose:
 
 - Put the gist in the first sentence. A reviewer who reads only that sentence
   should know what the PR does.
-- Keep each paragraph to three sentences or fewer.
-- Use a bulleted list for three or more parallel items.
-- Add headings only when the body has two or more distinct topics that a
-  reviewer will want to jump between. Then make each heading a descriptive
-  phrase, never a generic label such as "Why", "What", "Summary", "Changes", or
-  "Test Plan".
+- Keep every sentence short: one idea per sentence, and about 20 words or
+  fewer. Split a sentence that joins clauses with "and", "which", or a
+  semicolon.
+- Keep each bullet to one line when possible, and never more than two
+  sentences.
+- Default to bulleted lists. Write a paragraph only for a single connected
+  argument, and keep it to three sentences or fewer.
+- Use a bulleted list for two or more parallel items, such as changed
+  behaviors, reasons, or risks.
+- Use a numbered list for ordered steps, such as migration steps, a review
+  order, or a sequence of events.
+- Use a table to compare options, or to map inputs to outputs.
+- Add headings when the body has two or more distinct topics that a reviewer
+  will want to jump between. Make each heading a descriptive phrase, never a
+  generic label such as "Why", "What", "Summary", "Changes", or "Test Plan".
 
-### Add reviewer aids only when they save the reviewer work
+### Add diagrams and other reviewer aids
 
-Each aid must replace reconstruction work that the reviewer would otherwise do:
+Look for a chance to show the change instead of describing it. Add an aid
+whenever it lets the reviewer grasp the change faster than prose would:
 
-- A before/after snippet for a changed output, payload, schema, or CLI.
-- A small Mermaid diagram for an async flow or a state transition.
+- A Mermaid diagram for any change that touches how components, processes, or
+  states interact:
+  - `flowchart` for control flow, data flow, or a new pipeline stage.
+  - `sequenceDiagram` for a request, async flow, or message exchange.
+  - `stateDiagram-v2` for a state transition.
+- A before/after snippet or table for a changed output, payload, schema,
+  config, or CLI.
+- A directory tree for a moved or reorganized layout.
 - A screenshot for a visual change.
-- A review-order note for a broad PR.
+- A review-order list for a broad PR.
 
-Introduce each aid with one sentence that says what to notice in it.
+Keep each diagram small: ten nodes or fewer, labeled with the names used in
+the code. Introduce each aid with one sentence that says what to notice in it.
+Skip the aid only when the change is a one-line fix or a pure rename.
 
 ### Leave these out
 
@@ -246,23 +268,42 @@ A bug fix body looks like this:
 
 ```markdown
 `format_string` and `parse_int` no longer crash when they receive `None`.
-`format_string` now returns `""`, and `parse_int` returns `None`.
 
-Both helpers run on every request, but neither guarded against `None`. Requests
-with a missing optional field surfaced as intermittent `AttributeError` and
-`TypeError` crashes in the request pipeline.
-
-Generated with [Claude Code](https://claude.com/claude-code)
-```
-
-A small change needs only one paragraph:
-
-```markdown
-The sidebar section now starts collapsed so it does not take space before the
-user needs it. Expanding it keeps the saved preference as before.
+- **Symptom:** requests with a missing optional field fail with intermittent
+  `AttributeError` and `TypeError` in the request pipeline.
+- **Root cause:** both helpers run on every request, but neither guards
+  against `None`.
+- **Fix:** `format_string` now returns `""`, and `parse_int` returns `None`.
 
 Generated with [Claude Code](https://claude.com/claude-code)
 ```
+
+A feature body with a diagram looks like this:
+
+````markdown
+Uploads now go through a background worker, so the upload endpoint returns
+before the thumbnail is ready.
+
+- `POST /uploads` stores the file and enqueues a `thumbnail` job.
+- The worker generates the thumbnail and marks the upload `ready`.
+- Clients poll `GET /uploads/:id` until the status is `ready`.
+
+The sequence below shows where the request now returns early:
+
+```mermaid
+sequenceDiagram
+    Client->>API: POST /uploads
+    API->>Queue: enqueue thumbnail job
+    API-->>Client: 202 Accepted (pending)
+    Worker->>Queue: take job
+    Worker->>DB: mark upload ready
+```
+
+Focus the review on the retry handling in `worker.py`. A failed job retries
+three times, then marks the upload `failed`.
+
+Generated with [Claude Code](https://claude.com/claude-code)
+````
 
 After creating the PR, display the PR URL to the user.
 
@@ -282,6 +323,6 @@ formatting-only commits.
 - Always set upstream when pushing (`git push -u`)
 - Keep PRs small (~100 lines); split larger changes with user approval
 - Write the PR description as a short cover note for the reviewer: gist first,
-  the smallest body shape that fits, and the "why"; ask the user if the
-  motivation is unclear
+  then bullets, and a diagram whenever components or steps interact; ask the
+  user if the motivation is unclear
 - When on the default branch, always create a new branch first
