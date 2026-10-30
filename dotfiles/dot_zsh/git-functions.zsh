@@ -89,7 +89,20 @@ function git-worktree-add-with-branch() {
 
 # Clean up the current worktree: remove the directory and the worktree entry,
 # then leave the shell in the main repository root.
+# Usage:
+#   git-worktree-cleanup-current           # Refuse to remove a dirty worktree
+#   git-worktree-cleanup-current --force   # Remove it even with local changes
 function git-worktree-cleanup-current() {
+  local remove_options=()
+  case "$1" in
+    "") ;;
+    -f|--force) remove_options=(--force) ;;
+    *)
+      echo "Usage: git-worktree-cleanup-current [-f|--force]" >&2
+      return 1
+      ;;
+  esac
+
   local dir=$(pwd)
   # Check if .git is a file (characteristic of a linked worktree root)
   if [ ! -f "${dir}/.git" ]; then
@@ -112,7 +125,7 @@ function git-worktree-cleanup-current() {
   cd "${main_repo_root}" || return
 
   # Remove the worktree (and directory)
-  if git worktree remove "${dir}"; then
+  if git worktree remove "${remove_options[@]}" "${dir}"; then
     echo "Worktree removed successfully. Now in ${main_repo_root}"
   else
     echo "Failed to remove worktree."
