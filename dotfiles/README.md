@@ -183,33 +183,17 @@ Slack. Each service runs a wrapper script inside
 `~/ghq/github.com/garaemon/garaemon-settings/claude-skills/`, so the monorepo
 must be checked out at that path.
 
-`chezmoi apply` installs the units and then runs
-`.chezmoiscripts/run_onchange_after_enable-slack-digest-timers.sh.tmpl`, which
-reloads systemd and enables the timers. The script embeds a hash of every unit
-file, so chezmoi reruns it whenever a unit changes.
+The digests now run as Claude Code on the web routines. `chezmoi apply`
+installs the units on ax8-max but leaves the timers disabled.
+`.chezmoiignore.tmpl` skips the units on every other host.
 
-Only ax8-max runs these digests, so `.chezmoiignore.tmpl` skips both the units
-and the script on every other host. The script itself also exits early in two
-cases:
-
-- No systemd user manager answers, for example over an ssh session before
-  lingering is enabled.
-- chezmoi applies outside the login home, where the manager would never see the
-  units. This case keeps the `install.sh` end-to-end test green on ax8-max.
-
-Inspect or run the jobs by hand:
+Enable, inspect, or run a job by hand:
 
 ```bash
+systemctl --user enable --now news-digest-slack.timer
 systemctl --user list-timers '*-slack.timer'
 journalctl --user -u news-digest-slack.service -n 200 --no-pager
 systemctl --user start news-digest-slack.service
-```
-
-To stop a job on one machine, disable its timer. chezmoi re-enables it only
-when a unit file changes:
-
-```bash
-systemctl --user disable --now news-digest-slack.timer
 ```
 
 ### Claude Code plugins
