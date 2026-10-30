@@ -206,6 +206,11 @@ Make the body easy to scan. Reviewers skim, so prefer structure over prose:
 
 - Put the gist in the first sentence. A reviewer who reads only that sentence
   should know what the PR does.
+- Keep every sentence short: one idea per sentence, and about 20 words or
+  fewer. Split a sentence that joins clauses with "and", "which", or a
+  semicolon.
+- Keep each bullet to one line when possible, and never more than two
+  sentences.
 - Default to bulleted lists. Write a paragraph only for a single connected
   argument, and keep it to three sentences or fewer.
 - Use a bulleted list for two or more parallel items, such as changed
