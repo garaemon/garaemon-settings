@@ -206,5 +206,53 @@ is dotted, which tells the two shapes apart."
     ;; Assert
     (should (null deferred-prefixes))))
 
+(defun init-startup-test--find-use-package (forms package)
+  "Return the `use-package' form for PACKAGE within FORMS."
+  (cl-find-if (lambda (form) (eq (cadr form) package))
+              (init-startup-test--collect-use-package-forms forms)))
+
+(defun init-startup-test--keyword-section (use-package-form keyword)
+  "Return the forms that follow KEYWORD in USE-PACKAGE-FORM."
+  (cl-loop for element in (cdr (memq keyword use-package-form))
+           until (keywordp element)
+           collect element))
+
+(defun init-startup-test--mentions-symbol-p (forms symbol)
+  "Return non-nil when SYMBOL appears anywhere within FORMS."
+  (init-startup-test--find-form forms (lambda (form) (eq form symbol))))
+
+(ert-deftest init-org-should-not-wait-for-org-roam-to-extend-agenda-files ()
+  ;; Arrange
+  ;; :bind defers org-roam, so its :config runs only once a roam command
+  ;; such as a daily capture loads the package.  Agenda files added there
+  ;; are missing from every `org-agenda' call made before that point.
+  (let* ((forms (init-startup-test--read-forms "lisp/init-org.el"))
+         (late-sections
+          (mapcar (lambda (package)
+                    (init-startup-test--keyword-section
+                     (init-startup-test--find-use-package forms package)
+                     :config))
+                  '(org-roam org-roam-dailies))))
+    ;; Act
+    (let ((late-additions
+           (cl-remove-if-not
+            (lambda (section)
+              (init-startup-test--mentions-symbol-p section 'org-agenda-files))
+            late-sections)))
+      ;; Assert
+      (should (null late-additions)))))
+
+(ert-deftest init-org-should-add-org-roam-directories-to-agenda-files ()
+  ;; Arrange
+  (let* ((forms (init-startup-test--read-forms "lisp/init-org.el"))
+         (init-section (init-startup-test--keyword-section
+                        (init-startup-test--find-use-package forms 'org-roam)
+                        :init)))
+    ;; Act
+    (let ((mentions-agenda-files
+           (init-startup-test--mentions-symbol-p init-section 'org-agenda-files)))
+      ;; Assert
+      (should mentions-agenda-files))))
+
 (provide 'init-startup-test)
 ;;; init-startup-test.el ends here
