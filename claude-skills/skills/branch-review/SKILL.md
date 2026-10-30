@@ -339,6 +339,14 @@ When flagging a missing comment, briefly describe what the comment should say.
 - Misleading test names (test name says one thing, test body checks another)
 - Missing test coverage for critical paths
 - Flaky patterns (timing-dependent assertions, uncontrolled randomness)
+- Low-value tests that cost maintenance without catching bugs. Propose deleting
+  or merging each one, and name the test that already covers its behavior:
+  - Tests that repeat another test's assertion with only a trivially different
+    input, where a parametrized test or no extra case would do
+  - Tests that only check language or library behavior (a getter returns what
+    the setter stored, a dataclass keeps its fields, a mock returns its stub)
+  - Tests that assert the implementation line by line, so any refactor breaks
+    them while a real behavior change still passes
 
 #### Category 7: Style / Consistency
 
@@ -347,8 +355,6 @@ one pattern, new code should follow it -- even if another pattern is arguably be
 
 - Duplicate definitions (same constant in two places, same style in CSS and JS)
 - Inconsistent patterns within the same codebase
-- Reimplemented stdlib/library functionality (hand-rolled path parsing, mime type
-  guessing when a well-maintained library exists)
 
 Skip formatting issues (whitespace, semicolons, quotes, brace placement) if a
 formatter is configured in the project.
@@ -360,6 +366,29 @@ formatter is configured in the project.
 - Double debouncing / double buffering
 - Unnecessary allocations in tight loops
 - Missing caching for expensive repeated computations
+
+#### Category 9: Simplicity / Reuse
+
+Every line the branch adds is a line someone must read and maintain. Check
+whether the same behavior fits in less code:
+
+- **Shorter equivalents.** Flag code that a simpler construct expresses with
+  the same behavior: a loop that a comprehension or a library call replaces,
+  nested conditionals that an early return flattens, a helper or wrapper used
+  once that only forwards its arguments, branches that differ in one value.
+  Show the shorter version in full and confirm that it keeps the behavior.
+- **Reimplemented codebase functionality.** Search the repository (Grep, Glob)
+  for helpers, utilities, constants, and types that already do what the new
+  code does, before accepting new code as necessary. When one exists, name its
+  path and show the call that replaces the new code. Flag a near-duplicate too,
+  and propose extending the existing helper instead of adding a second one.
+- **Reimplemented stdlib/library functionality.** Flag hand-rolled path
+  parsing, date math, or mime type guessing when the standard library or a
+  dependency the project already uses provides it.
+
+Do not flag code that a shorter version would make harder to read. The
+standard from [Review Philosophy](#review-philosophy) still holds: a dense
+one-liner is not an improvement over a plain loop.
 
 ### Step 4: Write review.json and render the reports
 
@@ -411,7 +440,7 @@ Rules for building the file:
   codebase, such as "documentation is consistently missing" or "naming
   conventions are not followed", plus the PR size note from Step 1.5. Those go
   here, not as individual findings.
-- List the categories in the order of Step 3, numbered 1-8. Empty categories
+- List the categories in the order of Step 3, numbered 1-9. Empty categories
   may be listed or left out; the reports omit them either way.
 - Number findings `<category>-<index>` (`2-1`, `2-2`, ...). Ids must be unique.
 - `path` is relative to the repository root and `line` is the line on the HEAD
