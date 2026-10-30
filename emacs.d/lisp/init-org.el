@@ -559,7 +559,6 @@ Skip when the cached SVG is already newer than FILE."
   :custom
   (org-roam-db-update-method 'immediate)
   (org-roam-db-location "~/.emacs.d/org-roam.db")
-  (org-roam-directory (concat org-directory "org-roam/"))
   (org-roam-index-file (concat org-roam-directory "Index.org"))
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
@@ -567,11 +566,19 @@ Skip when the cached SVG is already newer than FILE."
                          "#+title: ${title}\n#+date: %T\n#+filetags: \n")
       :unnarrowed t
       :jump-to-captured t)))
+  :init
+  ;; :bind defers org-roam until a roam command such as a daily capture runs,
+  ;; so agenda files added in :config stay missing until then.  A :custom
+  ;; value stays unbound until org-roam loads, so the directory is set here.
+  (setq org-roam-directory (concat org-directory "org-roam/"))
+  (with-eval-after-load 'org
+    (add-to-list 'org-agenda-files org-roam-directory)
+    ;; Org does not search agenda directories recursively.
+    (add-to-list 'org-agenda-files (concat org-roam-directory "daily/")))
   :config
   (if (not (file-exists-p org-roam-directory))
       (make-directory org-roam-directory t))
   (org-roam-db-autosync-mode)
-  (add-to-list 'org-agenda-files org-roam-directory)
   ;; Why do we need this? Without this require, (use-package org-roam-dailies) does not load the
   ;; configuration.
   (require 'org-roam-dailies)
@@ -589,8 +596,6 @@ Skip when the cached SVG is already newer than FILE."
       "* %T %?\n "
       :target (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n")
       :jump-to-captured t)))
-  :config
-  (add-to-list 'org-agenda-files (concat org-roam-directory "daily/"))
   :bind-keymap ("C-c n d" . org-roam-dailies-map)
   )
 
