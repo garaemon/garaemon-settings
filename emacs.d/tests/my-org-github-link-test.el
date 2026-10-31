@@ -25,15 +25,37 @@
                  (concat "[[https://github.com/garaemon/garaemon-settings/pull/21]"
                          "[garaemon/garaemon-settings#21]]"))))
 
-(ert-deftest my-org-github-link-test-keeps-url-with-comment-anchor ()
+(ert-deftest my-org-github-link-test-marks-issue-comment ()
   (should (equal (my-org-github-link-format
                   "https://github.com/a/b/issues/3#issuecomment-99")
-                 "[[https://github.com/a/b/issues/3#issuecomment-99][a/b#3]]")))
+                 (concat "[[https://github.com/a/b/issues/3#issuecomment-99]"
+                         "[a/b#3 (comment)]]"))))
 
-(ert-deftest my-org-github-link-test-formats-pull-request-subpage ()
+(ert-deftest my-org-github-link-test-marks-review-comment ()
+  (should (equal (my-org-github-link-format
+                  "https://github.com/a/b/pull/4#discussion_r123")
+                 "[[https://github.com/a/b/pull/4#discussion_r123][a/b#4 (comment)]]")))
+
+(ert-deftest my-org-github-link-test-marks-review-comment-on-files-tab ()
+  (should (equal (my-org-github-link-format
+                  "https://github.com/a/b/pull/4/files#r123")
+                 "[[https://github.com/a/b/pull/4/files#r123][a/b#4 (comment)]]")))
+
+(ert-deftest my-org-github-link-test-marks-review ()
+  (should (equal (my-org-github-link-format
+                  "https://github.com/a/b/pull/4#pullrequestreview-55")
+                 (concat "[[https://github.com/a/b/pull/4#pullrequestreview-55]"
+                         "[a/b#4 (review)]]"))))
+
+(ert-deftest my-org-github-link-test-marks-pull-request-subpage ()
   (should (equal (my-org-github-link-format
                   "https://github.com/a/b/pull/4/files")
-                 "[[https://github.com/a/b/pull/4/files][a/b#4]]")))
+                 "[[https://github.com/a/b/pull/4/files][a/b#4 (files)]]")))
+
+(ert-deftest my-org-github-link-test-ignores-unknown-anchor ()
+  (should (equal (my-org-github-link-format
+                  "https://github.com/a/b/issues/3#top")
+                 "[[https://github.com/a/b/issues/3#top][a/b#3]]")))
 
 (ert-deftest my-org-github-link-test-formats-repository-url ()
   (should (equal (my-org-github-link-format "https://github.com/a/b")
