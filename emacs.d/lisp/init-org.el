@@ -554,6 +554,10 @@ Skip when the cached SVG is already newer than FILE."
   (keymap-set org-mode-map "C-c n e" #'my-org-excalidraw-name-create-drawing)
   )
 
+(use-package my-org-github-link
+  :ensure nil
+  :hook (org-mode . my-org-github-link-mode))
+
 (use-package org-roam
   :ensure t
   :custom

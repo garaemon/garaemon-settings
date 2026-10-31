@@ -147,6 +147,23 @@ no file name prompt appears:
 - A buffer without a file falls back to the path prompt of
   `org-excalidraw-create-drawing`.
 
+## GitHub Links
+
+`my-org-github-link.el` turns a GitHub URL that you yank into an Org buffer
+into a link with a short description:
+
+| Yanked URL                                  | Description      |
+| ------------------------------------------- | ---------------- |
+| `https://github.com/owner/repo/issues/20`   | `owner/repo#20`  |
+| `https://github.com/owner/repo/pull/21`     | `owner/repo#21`  |
+| `https://github.com/owner/repo`             | `owner/repo`     |
+
+The following yanks stay unchanged:
+
+- Text other than a lone URL, such as a sentence that contains one.
+- Other GitHub pages, such as files and commits.
+- A yank between `[[` and `]`, such as into the target of `[[]]`.
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per
