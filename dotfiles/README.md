@@ -210,6 +210,48 @@ The template uses chezmoi's built-in `fromJson`, `setValueAtPath`, and
 file lists its keys in alphabetical order. Add further plugins with more
 `setValueAtPath` calls in the template.
 
+### Claude Code worklog
+
+`dot_claude/hooks/executable_claude_worklog.py` installs to
+`~/.claude/hooks/claude_worklog.py`. Claude Code runs the script when a
+session ends. The script logs the session in the org-roam daily note so that
+the work shows up in org-agenda:
+
+1. The hook returns at once and hands the work to a detached child process.
+1. The child reads the transcript of the day and asks `claude -p --model haiku`
+   for a short Japanese summary. The first prompt becomes the title when the
+   summary fails.
+1. The child writes one entry into `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org`.
+   `ORG_DIR` defaults to `~/ghq/github.com/garaemon/org`.
+
+Each entry looks like this:
+
+```org
+* <2026-10-31 Sat 14:02> garaemon-settings: <title> :claude:worklog:
+:PROPERTIES:
+:GENERATED_BY: claude-code/worklog
+:SESSION_ID: <session id>
+:CWD: /path/to/repository
+:BRANCH: <branch>
+:END:
+:LOGBOOK:
+CLOCK: [2026-10-31 Sat 14:02]--[2026-10-31 Sat 14:47] =>  0:45
+:END:
+- <what was done>
+```
+
+The entry has these properties:
+
+- The active timestamp puts the entry on the agenda day view.
+- The CLOCK lines feed the agenda log mode and clock tables. An idle gap over
+  30 minutes splits the session into separate CLOCK lines.
+- A resumed session replaces its own entry of the same day, matched by
+  `SESSION_ID`, instead of adding a duplicate.
+
+The hook does nothing when the org-roam directory is missing, as in a cloud
+container. The summarizer sets `CLAUDE_WORKLOG_RUNNING`, so its own session
+does not trigger the hook again.
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
