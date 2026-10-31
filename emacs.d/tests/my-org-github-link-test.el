@@ -57,6 +57,24 @@
                   "https://github.com/a/b/issues/3#top")
                  "[[https://github.com/a/b/issues/3#top][a/b#3]]")))
 
+(ert-deftest my-org-github-link-test-ignores-enterprise-host-by-default ()
+  (should-not (my-org-github-link-format
+               "https://ghe.example.com/a/b/issues/1")))
+
+(ert-deftest my-org-github-link-test-formats-added-enterprise-host ()
+  (let ((my-org-github-link-hosts '("github.com" "ghe.example.com")))
+    (should (equal (my-org-github-link-format
+                    "https://ghe.example.com/a/b/issues/1")
+                   "[[https://ghe.example.com/a/b/issues/1][a/b#1]]"))))
+
+(ert-deftest my-org-github-link-test-keeps-github-com-with-added-host ()
+  (let ((my-org-github-link-hosts '("github.com" "ghe.example.com")))
+    (should (my-org-github-link-format "https://github.com/a/b"))))
+
+(ert-deftest my-org-github-link-test-quotes-dots-in-host ()
+  (let ((my-org-github-link-hosts '("ghe.example.com")))
+    (should-not (my-org-github-link-format "https://gheXexample.com/a/b"))))
+
 (ert-deftest my-org-github-link-test-formats-repository-url ()
   (should (equal (my-org-github-link-format "https://github.com/a/b")
                  "[[https://github.com/a/b][a/b]]")))

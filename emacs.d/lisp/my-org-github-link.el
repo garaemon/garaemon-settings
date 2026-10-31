@@ -11,11 +11,21 @@
 ;;   https://github.com/owner/repo                 -> owner/repo
 ;;
 ;; Only a yank that consists of one URL changes.  Other GitHub pages, such
-;; as file views and commits, stay as plain URLs.
+;; as file views and commits, stay as plain URLs.  Add GitHub Enterprise
+;; hosts to `my-org-github-link-hosts'.
 
 ;;; Code:
 
 (require 'subr-x)
+
+(defgroup my-org-github-link nil
+  "Format yanked GitHub URLs as Org links."
+  :group 'org-link)
+
+(defcustom my-org-github-link-hosts '("github.com")
+  "Host names whose URLs get formatted, such as a GitHub Enterprise host.
+Each entry is a bare host name without a scheme or a path."
+  :type '(repeat string))
 
 (defconst my-org-github-link-reserved-owners
   '("about" "apps" "collections" "enterprise" "explore" "features" "issues"
@@ -28,17 +38,19 @@
     ("\\`pullrequestreview-[0-9]+\\'" . "review"))
   "Alist from a URL fragment regexp to the label that the description shows.")
 
-(defconst my-org-github-link-url-re
-  (concat "\\`https?://\\(?:www\\.\\)?github\\.com"
+(defun my-org-github-link-url-regexp ()
+  "Return a regexp that matches a repository, issue, or pull request URL.
+The host is one of `my-org-github-link-hosts'.  The groups hold:
+1 the owner, 2 the repository, 3 the number, 4 the first path segment
+after the number, and 5 the fragment."
+  (concat "\\`https?://\\(?:www\\.\\)?"
+          (regexp-opt my-org-github-link-hosts)
           "/\\([[:alnum:]-]+\\)/\\([[:alnum:]._-]+\\)"
           "\\(?:/\\(?:issues\\|pull\\)/\\([0-9]+\\)"
           "\\(?:/\\([[:alpha:]]*\\)[^?#[:space:]]*\\)?"
           "\\(?:\\?[^#[:space:]]*\\)?"
           "\\(?:#\\([^[:space:]]*\\)\\)?"
-          "\\|/?\\)\\'")
-  "Match a repository, issue, or pull request URL on github.com.
-The groups hold: 1 the owner, 2 the repository, 3 the number, 4 the first
-path segment after the number, and 5 the fragment.")
+          "\\|/?\\)\\'"))
 
 (defun my-org-github-link-detail-label (subpage fragment)
   "Return the label for FRAGMENT, else for SUBPAGE, or nil for neither.
@@ -55,7 +67,7 @@ OWNER/REPO#NUMBER for an issue or a pull request, followed by a label in
 parentheses for a comment, a review, or a tab such as `files'.  A
 repository gets OWNER/REPO."
   (let ((url (string-trim text)))
-    (when (and (string-match my-org-github-link-url-re url)
+    (when (and (string-match (my-org-github-link-url-regexp) url)
                (not (member (match-string 1 url)
                             my-org-github-link-reserved-owners)))
       (let* ((repository (format "%s/%s" (match-string 1 url)
