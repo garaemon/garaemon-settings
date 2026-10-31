@@ -133,3 +133,38 @@ def test_should_fail_when_json_is_malformed(tmp_path):
     completed_process, _ = run_chezmoi_apply(tmp_path, '{"model": "opus",')
 
     assert completed_process.returncode != 0
+
+
+WORKLOG_HOOK_COMMAND = "$HOME/.claude/hooks/claude_worklog.py"
+
+
+def list_session_end_commands(settings):
+    return [
+        hook["command"]
+        for group in settings.get("hooks", {}).get("SessionEnd", [])
+        for hook in group.get("hooks", [])
+    ]
+
+
+def test_should_register_worklog_hook_when_settings_are_empty(apply_settings_template):
+    merged = apply_settings_template("")
+
+    assert list_session_end_commands(merged) == [WORKLOG_HOOK_COMMAND]
+
+
+def test_should_keep_other_session_end_hooks_when_registering_worklog(apply_settings_template):
+    other_group = {"hooks": [{"type": "command", "command": "other-hook"}]}
+    existing = json.dumps({"hooks": {"SessionEnd": [other_group]}})
+
+    merged = apply_settings_template(existing)
+
+    assert list_session_end_commands(merged) == ["other-hook", WORKLOG_HOOK_COMMAND]
+
+
+def test_should_keep_other_hook_events_when_registering_worklog(apply_settings_template):
+    stop_groups = [{"hooks": [{"type": "command", "command": "stop-hook"}]}]
+    existing = json.dumps({"hooks": {"Stop": stop_groups}})
+
+    merged = apply_settings_template(existing)
+
+    assert merged["hooks"]["Stop"] == stop_groups
