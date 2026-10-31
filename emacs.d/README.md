@@ -147,6 +147,32 @@ no file name prompt appears:
 - A buffer without a file falls back to the path prompt of
   `org-excalidraw-create-drawing`.
 
+## GitHub Links
+
+`my-org-github-link.el` turns a GitHub URL that you yank into an Org buffer
+into a link with a short description:
+
+| Yanked URL | Description |
+| --- | --- |
+| `https://github.com/owner/repo/issues/20` | `owner/repo#20` |
+| `https://github.com/owner/repo/issues/20#issuecomment-1` | `owner/repo#20 (comment)` |
+| `https://github.com/owner/repo/pull/21#pullrequestreview-1` | `owner/repo#21 (review)` |
+| `https://github.com/owner/repo/pull/21/files` | `owner/repo#21 (files)` |
+| `https://github.com/owner/repo` | `owner/repo` |
+
+The following yanks stay unchanged:
+
+- Text other than a lone URL, such as a sentence that contains one.
+- Other GitHub pages, such as file views and commits.
+- A yank between `[[` and `]`, such as into the target of `[[]]`.
+
+Only `github.com` URLs change by default. Add a GitHub Enterprise host to
+`my-org-github-link-hosts`, for example in `custom.el`:
+
+```elisp
+(setopt my-org-github-link-hosts '("github.com" "github.example.com"))
+```
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per
