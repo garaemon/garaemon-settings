@@ -461,6 +461,12 @@ def test_should_flatten_title_to_one_line_when_model_output_has_newlines():
     assert summary.title == "Fix login"
 
 
+def test_should_render_entry_with_unreviewed_status():
+    entry = worklog.render_entry(make_digest(), worklog.Summary(title="t", bullets=()), timedelta(minutes=30))
+
+    assert ":STATUS: unreviewed\n" in entry
+
+
 def capture_summarizer_call(monkeypatch):
     captured_calls = []
 
