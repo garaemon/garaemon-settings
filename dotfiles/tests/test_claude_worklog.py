@@ -429,6 +429,23 @@ def test_should_resolve_daily_directory_from_default_when_env_is_unset():
     assert daily_directory == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
 
 
+def test_should_keep_parent_heading_when_entry_was_demoted():
+    existing = "* Work\n** old entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n- old\n** other\n"
+    entry = "* new entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n"
+
+    updated = worklog.upsert_entry(existing, "session-1", entry)
+
+    assert updated == "* Work\n** new entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n** other\n"
+
+
+def test_should_append_entry_when_session_id_has_no_heading():
+    existing = ":PROPERTIES:\n:SESSION_ID: session-1\n:END:\n"
+
+    updated = worklog.upsert_entry(existing, "session-1", "* new entry\n")
+
+    assert updated == existing + "* new entry\n"
+
+
 def test_should_collect_user_prompt_when_content_is_block_list():
     content = [{"type": "image", "source": {}}, {"type": "text", "text": "Fix the bug"}]
     lines = [make_user_line("", "2026-10-31T10:00:00Z", message={"role": "user", "content": content})]

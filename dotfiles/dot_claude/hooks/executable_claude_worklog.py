@@ -40,6 +40,7 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+HEADING_PATTERN = re.compile(r"^(\*+) ")
 # Claude Code records its own output, such as command echoes, local command
 # stdout, bash mode (`!`) input and output, and task notifications, as user
 # turns wrapped in these tags.
@@ -349,24 +350,43 @@ def render_entry(digest: SessionDigest, summary: Summary, max_gap: timedelta) ->
     return "\n".join(lines) + "\n"
 
 
+def get_heading_level(line: str) -> int:
+    """Returns the number of stars of an org heading, or 0 for a body line."""
+    heading_match = HEADING_PATTERN.match(line)
+    return len(heading_match.group(1)) if heading_match else 0
+
+
 def upsert_entry(file_text: str, session_id: str, entry: str) -> str:
     """Returns the file text with the session's entry replaced or appended.
 
     An entry belongs to the session when its property drawer carries the same
-    SESSION_ID. The entry spans from its top-level heading to the next one.
+    SESSION_ID. The entry spans from its heading to the next heading of the
+    same or a shallower level, so a demoted entry keeps its parent.
     """
     lines = file_text.splitlines(keepends=True)
     session_line = f":SESSION_ID: {session_id}"
-    property_index = next((i for i, line in enumerate(lines) if line.strip() == session_line), None)
-    if property_index is None:
+    property_index = next((index for index, line in enumerate(lines) if line.strip() == session_line), None)
+    heading_index = None
+    if property_index is not None:
+        heading_index = next(
+            (index for index in range(property_index, -1, -1) if get_heading_level(lines[index])), None
+        )
+    if heading_index is None:
         separator = "" if not file_text or file_text.endswith("\n") else "\n"
         return file_text + separator + entry
-    heading_index = next(i for i in range(property_index, -1, -1) if lines[i].startswith("* "))
+    heading_level = get_heading_level(lines[heading_index])
     next_heading_index = next(
-        (i for i in range(property_index + 1, len(lines)) if lines[i].startswith("* ")),
+        (
+            index
+            for index in range(heading_index + 1, len(lines))
+            if 0 < get_heading_level(lines[index]) <= heading_level
+        ),
         len(lines),
     )
-    return "".join(lines[:heading_index]) + entry + "".join(lines[next_heading_index:])
+    # The user may have demoted the entry under a parent heading, so the
+    # replacement keeps the depth it found instead of the default top level.
+    leveled_entry = "*" * (heading_level - 1) + entry
+    return "".join(lines[:heading_index]) + leveled_entry + "".join(lines[next_heading_index:])
 
 
 def render_daily_header(day: date) -> str:
