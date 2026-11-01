@@ -40,6 +40,7 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+LOG_PATH = Path.home() / ".cache" / "claude_worklog.log"
 HEADING_PATTERN = re.compile(r"^(\*+) ")
 # Claude Code records its own output, such as command echoes, local command
 # stdout, bash mode (`!`) input and output, and task notifications, as user
@@ -440,13 +441,22 @@ def write_worklog(hook_input: dict) -> None:
 
 
 def spawn_detached_writer(hook_input: dict) -> None:
-    subprocess.Popen(
-        [sys.executable, str(Path(__file__).resolve()), "--write", json.dumps(hook_input)],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    """Starts the writer as a child that outlives this hook process.
+
+    Claude Code waits for the hook's stdout and stderr pipes to close, so the
+    child writes to `LOG_PATH` instead, which also keeps the traceback of a
+    failed write. A new session keeps the child out of the hook's process
+    group, so the signal that ends the hook does not end the child.
+    """
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG_PATH, "a", encoding="utf-8") as log_handle:
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "--write", json.dumps(hook_input)],
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=log_handle,
+            start_new_session=True,
+        )
 
 
 def main(argv: list[str]) -> int:

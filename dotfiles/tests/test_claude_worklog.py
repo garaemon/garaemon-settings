@@ -493,6 +493,17 @@ def test_should_disable_tools_and_mcp_when_summarizing(monkeypatch):
     assert summarizer_call["command"][-3:] == ["--tools", "", "--strict-mcp-config"]
 
 
+def test_should_send_child_output_to_log_file(tmp_path, monkeypatch):
+    captured_kwargs = []
+    log_path = tmp_path / "logs" / "worklog.log"
+    monkeypatch.setattr(worklog, "LOG_PATH", log_path)
+    monkeypatch.setattr(worklog.subprocess, "Popen", lambda _command, **kwargs: captured_kwargs.append(kwargs))
+
+    worklog.spawn_detached_writer({})
+
+    assert captured_kwargs[0]["stderr"].name == str(log_path)
+
+
 def test_should_flatten_bullets_to_one_line_when_model_output_has_newlines():
     summary = worklog.parse_summary_response('{"title": "t", "bullets": ["Fix\\n* login"]}')
 

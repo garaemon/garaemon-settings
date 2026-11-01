@@ -260,7 +260,8 @@ container. The summarizer sets `CLAUDE_WORKLOG_RUNNING`, so its own session
 does not trigger the hook again.
 
 The summarizer runs without tools and MCP servers, because the transcript is
-untrusted input.
+untrusted input. The child process writes its errors to
+`~/.cache/claude_worklog.log`. Check that file when an entry is missing.
 
 ### Pre-commit hooks
 
