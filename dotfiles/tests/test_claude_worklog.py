@@ -86,8 +86,10 @@ def make_digest(**overrides):
             datetime(2026, 10, 31, 14, 25, tzinfo=UTC),
             datetime(2026, 10, 31, 14, 47, tzinfo=UTC),
         ),
-        "user_prompts": ("Fix the login bug",),
-        "assistant_texts": ("Fixed it.",),
+        "turns": (
+            worklog.Turn(role="USER", text="Fix the login bug"),
+            worklog.Turn(role="ASSISTANT", text="Fixed it."),
+        ),
     }
     fields.update(overrides)
     return worklog.SessionDigest(**fields)
@@ -120,12 +122,77 @@ def test_should_skip_meta_messages_when_collecting_prompts():
     assert digest.user_prompts == ()
 
 
-def test_should_keep_only_text_blocks_when_collecting_assistant_texts():
+def test_should_keep_only_text_blocks_when_collecting_assistant_turns():
     lines = [make_assistant_line("Done.", "2026-10-31T10:01:00Z")]
 
     digest = parse_lines(lines)
 
-    assert digest.assistant_texts == ("Done.",)
+    assert digest.turns == (worklog.Turn(role="ASSISTANT", text="Done."),)
+
+
+def test_should_keep_turns_in_transcript_order():
+    lines = [
+        make_user_line("First ask", "2026-10-31T10:00:00Z"),
+        make_assistant_line("First answer", "2026-10-31T10:01:00Z"),
+        make_user_line("Second ask", "2026-10-31T10:02:00Z"),
+    ]
+
+    digest = parse_lines(lines)
+
+    assert [turn.text for turn in digest.turns] == ["First ask", "First answer", "Second ask"]
+
+
+def test_should_interleave_turns_in_summary_input():
+    digest = make_digest(
+        turns=(
+            worklog.Turn(role="USER", text="First ask"),
+            worklog.Turn(role="ASSISTANT", text="First answer"),
+            worklog.Turn(role="USER", text="Second ask"),
+        )
+    )
+
+    summary_input = worklog.build_summary_input(digest)
+
+    assert "USER: First ask\n\nASSISTANT: First answer\n\nUSER: Second ask" in summary_input
+
+
+def test_should_keep_first_prompt_when_summary_input_is_trimmed():
+    long_answer = "x" * (worklog.MAX_TRANSCRIPT_CHARS_FOR_SUMMARY * 2)
+    digest = make_digest(
+        turns=(
+            worklog.Turn(role="USER", text="Original ask"),
+            worklog.Turn(role="ASSISTANT", text=long_answer),
+            worklog.Turn(role="ASSISTANT", text="Final answer"),
+        )
+    )
+
+    summary_input = worklog.build_summary_input(digest)
+
+    assert "USER: Original ask" in summary_input
+
+
+def test_should_keep_last_turn_when_summary_input_is_trimmed():
+    long_answer = "x" * (worklog.MAX_TRANSCRIPT_CHARS_FOR_SUMMARY * 2)
+    digest = make_digest(
+        turns=(
+            worklog.Turn(role="USER", text="Original ask"),
+            worklog.Turn(role="ASSISTANT", text=long_answer),
+            worklog.Turn(role="ASSISTANT", text="Final answer"),
+        )
+    )
+
+    summary_input = worklog.build_summary_input(digest)
+
+    assert summary_input.rstrip().endswith("ASSISTANT: Final answer\n</transcript>")
+
+
+def test_should_bound_summary_input_when_first_prompt_is_huge():
+    huge_prompt = "y" * (worklog.MAX_TRANSCRIPT_CHARS_FOR_SUMMARY * 2)
+    digest = make_digest(turns=(worklog.Turn(role="USER", text=huge_prompt),))
+
+    summary_input = worklog.build_summary_input(digest)
+
+    assert len(summary_input) < worklog.MAX_TRANSCRIPT_CHARS_FOR_SUMMARY + len(worklog.SUMMARY_INSTRUCTIONS) + 100
 
 
 def test_should_drop_events_from_other_days():
@@ -211,7 +278,7 @@ def test_should_return_none_when_summary_is_not_json():
 
 
 def test_should_fall_back_to_first_prompt_when_summary_fails():
-    digest = make_digest(user_prompts=("Fix the login bug\nwith details",))
+    digest = make_digest(turns=(worklog.Turn(role="USER", text="Fix the login bug\nwith details"),))
 
     summary = worklog.build_fallback_summary(digest)
 

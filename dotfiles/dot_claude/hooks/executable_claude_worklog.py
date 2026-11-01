@@ -54,6 +54,12 @@ Rules:
 
 
 @dataclass(frozen=True)
+class Turn:
+    role: str  # "USER" or "ASSISTANT"
+    text: str
+
+
+@dataclass(frozen=True)
 class SessionDigest:
     """The parts of one day of a session transcript that the log needs."""
 
@@ -61,8 +67,11 @@ class SessionDigest:
     cwd: str
     branch: str
     timestamps: tuple[datetime, ...]
-    user_prompts: tuple[str, ...]
-    assistant_texts: tuple[str, ...]
+    turns: tuple[Turn, ...]  # In transcript order.
+
+    @property
+    def user_prompts(self) -> tuple[str, ...]:
+        return tuple(turn.text for turn in self.turns if turn.role == "USER")
 
 
 @dataclass(frozen=True)
@@ -128,7 +137,7 @@ def parse_transcript(lines, target_day: date, local_timezone: tzinfo) -> Session
     already logged them. Subagent (sidechain) turns are dropped too.
     """
     session_id = cwd = branch = ""
-    timestamps, user_prompts, assistant_texts = [], [], []
+    timestamps, turns = [], []
     for line in lines:
         try:
             record = json.loads(line)
@@ -144,20 +153,17 @@ def parse_transcript(lines, target_day: date, local_timezone: tzinfo) -> Session
         branch = record.get("gitBranch") or branch
         timestamps.append(timestamp)
         if record["type"] == "user":
-            prompt = extract_user_prompt(record)
-            if prompt:
-                user_prompts.append(prompt)
+            turn_text, role = extract_user_prompt(record), "USER"
         else:
-            assistant_text = extract_assistant_text(record)
-            if assistant_text:
-                assistant_texts.append(assistant_text)
+            turn_text, role = extract_assistant_text(record), "ASSISTANT"
+        if turn_text:
+            turns.append(Turn(role=role, text=turn_text))
     return SessionDigest(
         session_id=session_id,
         cwd=cwd,
         branch=branch,
         timestamps=tuple(sorted(timestamps)),
-        user_prompts=tuple(user_prompts),
-        assistant_texts=tuple(assistant_texts),
+        turns=tuple(turns),
     )
 
 
@@ -195,14 +201,26 @@ def format_clock_line(interval: ClockInterval) -> str:
     )
 
 
+def trim_transcript_text(turn_texts: list[str], max_chars: int) -> str:
+    """Returns the turns joined in order, cut to at most `max_chars`.
+
+    A cut keeps the first turn, which states the task, and the tail, which
+    carries the outcome. The first turn takes at most half of the budget.
+    """
+    full_text = "\n\n".join(turn_texts)
+    if len(full_text) <= max_chars:
+        return full_text
+    omission_marker = "\n\n[...]\n\n"
+    head_text = turn_texts[0][: max_chars // 2]
+    tail_budget = max(max_chars - len(head_text) - len(omission_marker), 0)
+    tail_text = "\n\n".join(turn_texts[1:])[-tail_budget:] if tail_budget else ""
+    return head_text + omission_marker + tail_text
+
+
 def build_summary_input(digest: SessionDigest) -> str:
     """Returns the prompt for the summarizer, trimmed to its size budget."""
-    turns = [f"USER: {prompt}" for prompt in digest.user_prompts]
-    turns += [f"ASSISTANT: {text}" for text in digest.assistant_texts]
-    transcript_text = "\n\n".join(turns)
-    if len(transcript_text) > MAX_TRANSCRIPT_CHARS_FOR_SUMMARY:
-        # The final answers carry the outcome, so the tail survives the cut.
-        transcript_text = transcript_text[-MAX_TRANSCRIPT_CHARS_FOR_SUMMARY:]
+    turn_texts = [f"{turn.role}: {turn.text}" for turn in digest.turns]
+    transcript_text = trim_transcript_text(turn_texts, MAX_TRANSCRIPT_CHARS_FOR_SUMMARY)
     return f"{SUMMARY_INSTRUCTIONS}\n<transcript>\n{transcript_text}\n</transcript>\n"
 
 
