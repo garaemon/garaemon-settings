@@ -455,6 +455,12 @@ def test_should_collect_user_prompt_when_content_is_block_list():
     assert digest.user_prompts == ("Fix the bug",)
 
 
+def test_should_flatten_title_to_one_line_when_model_output_has_newlines():
+    summary = worklog.parse_summary_response('{"title": "Fix\\nlogin", "bullets": []}')
+
+    assert summary.title == "Fix login"
+
+
 def capture_summarizer_call(monkeypatch):
     captured_calls = []
 
@@ -485,6 +491,24 @@ def test_should_disable_tools_and_mcp_when_summarizing(monkeypatch):
     summarizer_call = capture_summarizer_call(monkeypatch)
 
     assert summarizer_call["command"][-3:] == ["--tools", "", "--strict-mcp-config"]
+
+
+def test_should_flatten_bullets_to_one_line_when_model_output_has_newlines():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": ["Fix\\n* login"]}')
+
+    assert summary.bullets == ("Fix * login",)
+
+
+def test_should_return_no_bullets_when_bullets_is_null():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": null}')
+
+    assert summary.bullets == ()
+
+
+def test_should_return_no_bullets_when_bullets_is_string():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": "abc"}')
+
+    assert summary.bullets == ()
 
 
 def test_should_use_command_name_when_prompt_is_slash_command():

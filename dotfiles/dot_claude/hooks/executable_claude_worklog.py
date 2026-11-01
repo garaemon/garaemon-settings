@@ -285,6 +285,15 @@ def build_summary_input(digest: SessionDigest) -> str:
     return f"{SUMMARY_INSTRUCTIONS}\n<transcript>\n{transcript_text}\n</transcript>\n"
 
 
+def flatten_to_one_line(value: object) -> str:
+    """Returns the value as text with every run of whitespace, newlines included, as one space.
+
+    A newline in model output would start a new org line, and a line that
+    begins with `* ` would become a heading outside the entry.
+    """
+    return " ".join(str(value).split())
+
+
 def parse_summary_response(response_text: str) -> Summary | None:
     """Returns the summary in the model output, or None when it is unusable."""
     json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
@@ -294,8 +303,10 @@ def parse_summary_response(response_text: str) -> Summary | None:
         payload = json.loads(json_match.group(0))
     except json.JSONDecodeError:
         return None
-    title = str(payload.get("title", "")).strip()
-    bullets = tuple(str(bullet).strip() for bullet in payload.get("bullets", []) if str(bullet).strip())
+    title = flatten_to_one_line(payload.get("title", ""))
+    raw_bullets = payload.get("bullets")
+    bullet_values = raw_bullets if isinstance(raw_bullets, list) else []
+    bullets = tuple(flatten_to_one_line(bullet) for bullet in bullet_values if flatten_to_one_line(bullet))
     if not title:
         return None
     return Summary(title=title, bullets=bullets)
