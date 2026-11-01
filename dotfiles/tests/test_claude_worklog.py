@@ -595,6 +595,14 @@ def test_should_skip_compact_summary_when_collecting_prompts():
     assert digest.user_prompts == ()
 
 
+def test_should_omit_logbook_when_session_has_no_clock_lines():
+    digest = make_digest(timestamps=(datetime(2026, 10, 31, 14, 2, tzinfo=UTC),))
+
+    entry = worklog.render_entry(digest, worklog.Summary(title="t", bullets=()), timedelta(minutes=30))
+
+    assert ":LOGBOOK:" not in entry
+
+
 def test_should_append_args_when_slash_command_has_args():
     command_text = (
         "<command-message>branch-review</command-message>\n<command-name>/branch-review</command-name>\n"
