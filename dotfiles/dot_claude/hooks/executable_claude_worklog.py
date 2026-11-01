@@ -19,7 +19,7 @@ import re
 import subprocess
 import sys
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, tzinfo
 from pathlib import Path
 
@@ -338,7 +338,7 @@ def write_worklog(hook_input: dict) -> None:
     if not digest.user_prompts:
         return
     session_id = digest.session_id or hook_input.get("session_id", "unknown")
-    complete_digest = SessionDigest(**{**digest.__dict__, "session_id": session_id})
+    complete_digest = replace(digest, session_id=session_id)
     entry = render_entry(complete_digest, summarize_session(complete_digest), MAX_CLOCK_GAP)
     daily_directory = resolve_daily_directory(dict(os.environ), Path.home())
     write_daily_note(daily_directory / f"{today:%Y-%m-%d}.org", today, session_id, entry)
