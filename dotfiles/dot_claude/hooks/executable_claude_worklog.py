@@ -12,6 +12,10 @@ shows up in org-agenda and its clock reports. A session that ends again after
 a resume replaces its earlier entry of the same day instead of duplicating it.
 """
 
+# macOS ships Python 3.9 as /usr/bin/python3, which cannot evaluate `X | None`
+# annotations. The hook runs under it when Claude Code starts without mise.
+from __future__ import annotations
+
 import fcntl
 import json
 import os

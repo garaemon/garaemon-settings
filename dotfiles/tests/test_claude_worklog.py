@@ -3,8 +3,12 @@
 import importlib.machinery
 import importlib.util
 import json
+import subprocess
+import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+import pytest
 
 SCRIPT_PATH = (
     Path(__file__).resolve().parent.parent
@@ -15,6 +19,9 @@ SCRIPT_PATH = (
 _loader = importlib.machinery.SourceFileLoader("claude_worklog", str(SCRIPT_PATH))
 _spec = importlib.util.spec_from_loader("claude_worklog", _loader)
 worklog = importlib.util.module_from_spec(_spec)
+# dataclasses resolves the postponed annotations of the hook through
+# sys.modules, so the module must be registered before it runs.
+sys.modules["claude_worklog"] = worklog
 _spec.loader.exec_module(worklog)
 
 UTC = timezone.utc
@@ -420,3 +427,29 @@ def test_should_resolve_daily_directory_from_default_when_env_is_unset():
     daily_dir = worklog.resolve_daily_directory({}, Path("/home/me"))
 
     assert daily_dir == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
+
+
+
+SYSTEM_PYTHON = Path("/usr/bin/python3")
+
+
+@pytest.mark.skipif(not SYSTEM_PYTHON.exists(), reason="no system Python to check")
+def test_should_import_hook_with_system_python():
+    # macOS ships Python 3.9 as /usr/bin/python3, which the hook runs under
+    # when Claude Code starts without mise on PATH.
+    import_script = (
+        "import importlib.machinery, importlib.util, sys;"
+        "loader = importlib.machinery.SourceFileLoader('worklog', sys.argv[1]);"
+        "spec = importlib.util.spec_from_loader('worklog', loader);"
+        "module = sys.modules['worklog'] = importlib.util.module_from_spec(spec);"
+        "loader.exec_module(module)"
+    )
+
+    completed_process = subprocess.run(
+        [str(SYSTEM_PYTHON), "-B", "-c", import_script, str(SCRIPT_PATH)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed_process.returncode == 0, completed_process.stderr
