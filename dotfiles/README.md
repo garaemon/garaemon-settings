@@ -236,6 +236,7 @@ Each entry looks like this:
 :SESSION_ID: <session id>
 :CWD: /path/to/repository
 :BRANCH: <branch>
+:HOST: <hostname>
 :END:
 :LOGBOOK:
 CLOCK: [2026-10-31 Sat 14:02]--[2026-10-31 Sat 14:47] =>  0:45

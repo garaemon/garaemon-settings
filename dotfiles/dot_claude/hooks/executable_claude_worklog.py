@@ -16,6 +16,7 @@ import fcntl
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import uuid
@@ -68,6 +69,8 @@ class SessionDigest:
     branch: str
     timestamps: tuple[datetime, ...]
     turns: tuple[Turn, ...]  # In transcript order.
+    # The transcript does not record the machine, so the writer fills this in.
+    hostname: str = ""
 
     @property
     def user_prompts(self) -> tuple[str, ...]:
@@ -102,6 +105,11 @@ def should_log_session(environment: dict, roam_directory: Path) -> bool:
     if environment.get(RECURSION_GUARD_ENV):
         return False
     return roam_directory.is_dir()
+
+
+def shorten_hostname(hostname: str) -> str:
+    """Returns the hostname without its domain, such as `macbook` for `macbook.local`."""
+    return hostname.split(".")[0]
 
 
 def parse_timestamp(text: str, local_timezone: tzinfo) -> datetime | None:
@@ -276,6 +284,7 @@ def render_entry(digest: SessionDigest, summary: Summary, max_gap: timedelta) ->
         f":SESSION_ID: {digest.session_id}",
         f":CWD: {digest.cwd}",
         f":BRANCH: {digest.branch}",
+        f":HOST: {digest.hostname}",
         ":END:",
         ":LOGBOOK:",
         *clock_lines,
@@ -338,7 +347,7 @@ def write_worklog(hook_input: dict) -> None:
     if not digest.user_prompts:
         return
     session_id = digest.session_id or hook_input.get("session_id", "unknown")
-    complete_digest = replace(digest, session_id=session_id)
+    complete_digest = replace(digest, session_id=session_id, hostname=shorten_hostname(socket.gethostname()))
     entry = render_entry(complete_digest, summarize_session(complete_digest), MAX_CLOCK_GAP)
     daily_directory = resolve_daily_directory(dict(os.environ), Path.home())
     write_daily_note(daily_directory / f"{today:%Y-%m-%d}.org", today, session_id, entry)

@@ -303,6 +303,27 @@ def test_should_render_entry_with_session_id_property():
     assert ":SESSION_ID: session-1" in entry
 
 
+def test_should_render_entry_with_host_property():
+    digest = make_digest(hostname="workstation")
+    summary = worklog.Summary(title="Fix login", bullets=("Patch auth",))
+
+    entry = worklog.render_entry(digest, summary, timedelta(minutes=30))
+
+    assert ":HOST: workstation" in entry
+
+
+def test_should_drop_domain_when_shortening_hostname():
+    short_hostname = worklog.shorten_hostname("macbook.local")
+
+    assert short_hostname == "macbook"
+
+
+def test_should_keep_hostname_when_it_has_no_domain():
+    short_hostname = worklog.shorten_hostname("workstation")
+
+    assert short_hostname == "workstation"
+
+
 def test_should_render_entry_with_clock_in_logbook():
     digest = make_digest()
     summary = worklog.Summary(title="Fix login", bullets=("Patch auth",))
