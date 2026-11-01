@@ -161,6 +161,15 @@ def test_should_keep_other_session_end_hooks_when_registering_worklog(apply_sett
     assert list_session_end_commands(merged) == ["other-hook", WORKLOG_HOOK_COMMAND]
 
 
+def test_should_not_duplicate_worklog_hook_when_already_registered(apply_settings_template):
+    worklog_group = {"hooks": [{"type": "command", "command": WORKLOG_HOOK_COMMAND}]}
+    existing = json.dumps({"hooks": {"SessionEnd": [worklog_group]}})
+
+    merged = apply_settings_template(existing)
+
+    assert list_session_end_commands(merged) == [WORKLOG_HOOK_COMMAND]
+
+
 def test_should_keep_other_hook_events_when_registering_worklog(apply_settings_template):
     stop_groups = [{"hooks": [{"type": "command", "command": "stop-hook"}]}]
     existing = json.dumps({"hooks": {"Stop": stop_groups}})

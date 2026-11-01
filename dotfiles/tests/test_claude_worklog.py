@@ -3,9 +3,12 @@
 import importlib.machinery
 import importlib.util
 import json
+import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+import pytest
 
 SCRIPT_PATH = (
     Path(__file__).resolve().parent.parent
@@ -16,9 +19,9 @@ SCRIPT_PATH = (
 _loader = importlib.machinery.SourceFileLoader("claude_worklog", str(SCRIPT_PATH))
 _spec = importlib.util.spec_from_loader("claude_worklog", _loader)
 worklog = importlib.util.module_from_spec(_spec)
-# The hook lives in the chezmoi source tree, where a __pycache__ directory
-# would be installed into ~/.claude/hooks as a managed file.
-sys.dont_write_bytecode = True
+# dataclasses resolves the postponed annotations of the hook through
+# sys.modules, so the module must be registered before it runs.
+sys.modules["claude_worklog"] = worklog
 _spec.loader.exec_module(worklog)
 
 UTC = timezone.utc
@@ -115,7 +118,7 @@ def test_should_skip_tool_results_when_collecting_prompts():
 
 
 def test_should_skip_meta_messages_when_collecting_prompts():
-    lines = [make_user_line("<command-name>/clear</command-name>", "2026-10-31T10:00:00Z", isMeta=True)]
+    lines = [make_user_line("Caveat: the messages below were generated", "2026-10-31T10:00:00Z", isMeta=True)]
 
     digest = parse_lines(lines)
 
@@ -232,7 +235,7 @@ def test_should_split_clock_intervals_when_gap_exceeds_limit():
 
     intervals = worklog.compute_clock_intervals(timestamps, timedelta(minutes=30))
 
-    assert [(i.start.hour, i.end.hour) for i in intervals] == [(9, 9), (13, 13)]
+    assert [(interval.start.hour, interval.end.hour) for interval in intervals] == [(9, 9), (13, 13)]
 
 
 def test_should_drop_interval_when_it_lasts_under_a_minute():
@@ -394,10 +397,10 @@ def test_should_keep_existing_content_when_writing_daily_file(tmp_path):
     assert daily_file.read_text() == "#+title: 2026-10-31\n* memo\n* entry\n"
 
 
-def test_should_skip_hook_when_recursion_guard_is_set():
-    environment = {worklog.RECURSION_GUARD_ENV: "1", "ORG_DIR": "/tmp/org"}
+def test_should_skip_hook_when_recursion_guard_is_set(tmp_path):
+    environment = {worklog.RECURSION_GUARD_ENV: "1"}
 
-    should_run = worklog.should_log_session(environment, Path("/nonexistent"))
+    should_run = worklog.should_log_session(environment, tmp_path)
 
     assert should_run is False
 
@@ -415,12 +418,235 @@ def test_should_run_hook_when_roam_directory_exists(tmp_path):
 
 
 def test_should_resolve_daily_directory_from_org_dir_env():
-    daily_dir = worklog.resolve_daily_directory({"ORG_DIR": "/data/org"}, Path("/home/me"))
+    daily_directory = worklog.resolve_daily_directory({"ORG_DIR": "/data/org"}, Path("/home/me"))
 
-    assert daily_dir == Path("/data/org/org-roam/daily")
+    assert daily_directory == Path("/data/org/org-roam/daily")
 
 
 def test_should_resolve_daily_directory_from_default_when_env_is_unset():
-    daily_dir = worklog.resolve_daily_directory({}, Path("/home/me"))
+    daily_directory = worklog.resolve_daily_directory({}, Path("/home/me"))
 
-    assert daily_dir == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
+    assert daily_directory == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
+
+
+def test_should_keep_parent_heading_when_entry_was_demoted():
+    existing = "* Work\n** old entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n- old\n** other\n"
+    entry = "* new entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n"
+
+    updated = worklog.upsert_entry(existing, "session-1", entry)
+
+    assert updated == "* Work\n** new entry\n:PROPERTIES:\n:SESSION_ID: session-1\n:END:\n** other\n"
+
+
+def test_should_append_entry_when_session_id_has_no_heading():
+    existing = ":PROPERTIES:\n:SESSION_ID: session-1\n:END:\n"
+
+    updated = worklog.upsert_entry(existing, "session-1", "* new entry\n")
+
+    assert updated == existing + "* new entry\n"
+
+
+def test_should_collect_user_prompt_when_content_is_block_list():
+    content = [{"type": "image", "source": {}}, {"type": "text", "text": "Fix the bug"}]
+    lines = [make_user_line("", "2026-10-31T10:00:00Z", message={"role": "user", "content": content})]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("Fix the bug",)
+
+
+def test_should_flatten_title_to_one_line_when_model_output_has_newlines():
+    summary = worklog.parse_summary_response('{"title": "Fix\\nlogin", "bullets": []}')
+
+    assert summary.title == "Fix login"
+
+
+def test_should_return_none_when_timestamp_is_missing():
+    parsed = worklog.parse_timestamp(None, UTC)
+
+    assert parsed is None
+
+
+def test_should_render_entry_with_unreviewed_status():
+    entry = worklog.render_entry(make_digest(), worklog.Summary(title="t", bullets=()), timedelta(minutes=30))
+
+    assert ":STATUS: unreviewed\n" in entry
+
+
+def capture_summarizer_call(monkeypatch):
+    captured_calls = []
+
+    def fake_run(command, *, env, **_kwargs):
+        captured_calls.append({"command": command, "env": env})
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(worklog.subprocess, "run", fake_run)
+    worklog.summarize_session(make_digest())
+    return captured_calls[0]
+
+
+def test_should_strip_claudecode_when_summarizing(monkeypatch):
+    monkeypatch.setenv("CLAUDECODE", "1")
+
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert "CLAUDECODE" not in summarizer_call["env"]
+
+
+def test_should_set_recursion_guard_when_summarizing(monkeypatch):
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert summarizer_call["env"][worklog.RECURSION_GUARD_ENV] == "1"
+
+
+def test_should_disable_tools_and_mcp_when_summarizing(monkeypatch):
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert summarizer_call["command"][-3:] == ["--tools", "", "--strict-mcp-config"]
+
+
+def test_should_send_child_output_to_log_file(tmp_path, monkeypatch):
+    captured_kwargs = []
+    log_path = tmp_path / "logs" / "worklog.log"
+    monkeypatch.setattr(worklog, "LOG_PATH", log_path)
+    monkeypatch.setattr(worklog.subprocess, "Popen", lambda _command, **kwargs: captured_kwargs.append(kwargs))
+
+    worklog.spawn_detached_writer({})
+
+    assert captured_kwargs[0]["stderr"].name == str(log_path)
+
+
+def test_should_write_entry_for_hook_input(tmp_path, monkeypatch):
+    transcript_path = tmp_path / "transcript.jsonl"
+    transcript_path.write_text(make_user_line("Fix the bug", "2026-10-31T10:00:00Z") + "\n")
+    daily_directory = tmp_path / "org" / "org-roam" / "daily"
+    monkeypatch.setenv("ORG_DIR", str(tmp_path / "org"))
+    monkeypatch.setattr(worklog, "summarize_session", lambda _digest: worklog.Summary(title="Fix login", bullets=()))
+
+    worklog.write_worklog(
+        {"transcript_path": str(transcript_path), "session_id": "hook-session"},
+        now=datetime(2026, 10, 31, 12, 0, tzinfo=UTC),
+    )
+
+    assert ":SESSION_ID: session-1\n" in (daily_directory / "2026-10-31.org").read_text()
+
+
+def test_should_flatten_bullets_to_one_line_when_model_output_has_newlines():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": ["Fix\\n* login"]}')
+
+    assert summary.bullets == ("Fix * login",)
+
+
+def test_should_return_no_bullets_when_bullets_is_null():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": null}')
+
+    assert summary.bullets == ()
+
+
+def test_should_return_no_bullets_when_bullets_is_string():
+    summary = worklog.parse_summary_response('{"title": "t", "bullets": "abc"}')
+
+    assert summary.bullets == ()
+
+
+def test_should_use_command_name_when_prompt_is_slash_command():
+    command_text = "<command-message>branch-review</command-message>\n<command-name>/branch-review</command-name>"
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("/branch-review",)
+
+
+def test_should_skip_local_command_output_when_collecting_prompts():
+    lines = [make_user_line("<local-command-stdout></local-command-stdout>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_skip_task_notification_when_collecting_prompts():
+    lines = [make_user_line("<task-notification><task-id>1</task-id></task-notification>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_skip_clear_command_when_collecting_prompts():
+    command_text = "<command-name>/clear</command-name>\n<command-message>clear</command-message>"
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+SYSTEM_PYTHON = Path("/usr/bin/python3")
+
+
+@pytest.mark.skipif(not SYSTEM_PYTHON.exists(), reason="no system Python to check")
+def test_should_import_hook_with_system_python():
+    # macOS ships Python 3.9 as /usr/bin/python3, which the hook runs under
+    # when Claude Code starts without mise on PATH.
+    import_script = (
+        "import importlib.machinery, importlib.util, sys;"
+        "loader = importlib.machinery.SourceFileLoader('worklog', sys.argv[1]);"
+        "spec = importlib.util.spec_from_loader('worklog', loader);"
+        "module = sys.modules['worklog'] = importlib.util.module_from_spec(spec);"
+        "loader.exec_module(module)"
+    )
+
+    completed_process = subprocess.run(
+        [str(SYSTEM_PYTHON), "-B", "-c", import_script, str(SCRIPT_PATH)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed_process.returncode == 0, completed_process.stderr
+
+
+def test_should_skip_compact_summary_when_collecting_prompts():
+    lines = [make_user_line("This session is being continued", "2026-10-31T10:00:00Z", isCompactSummary=True)]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_omit_logbook_when_session_has_no_clock_lines():
+    digest = make_digest(timestamps=(datetime(2026, 10, 31, 14, 2, tzinfo=UTC),))
+
+    entry = worklog.render_entry(digest, worklog.Summary(title="t", bullets=()), timedelta(minutes=30))
+
+    assert ":LOGBOOK:" not in entry
+
+
+def test_should_append_args_when_slash_command_has_args():
+    command_text = (
+        "<command-message>branch-review</command-message>\n<command-name>/branch-review</command-name>\n"
+        "<command-args>last commit</command-args>"
+    )
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("/branch-review last commit",)
+
+
+def test_should_keep_bash_input_as_command_when_collecting_prompts():
+    lines = [make_user_line("<bash-input>git status</bash-input>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("!git status",)
+
+
+def test_should_skip_bash_output_when_collecting_prompts():
+    lines = [make_user_line("<bash-stdout>secret</bash-stdout><bash-stderr></bash-stderr>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()

@@ -12,6 +12,10 @@ shows up in org-agenda and its clock reports. A session that ends again after
 a resume replaces its earlier entry of the same day instead of duplicating it.
 """
 
+# macOS ships Python 3.9 as /usr/bin/python3, which cannot evaluate `X | None`
+# annotations. The hook runs under it when Claude Code starts without mise.
+from __future__ import annotations
+
 import fcntl
 import json
 import os
@@ -23,6 +27,7 @@ import uuid
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, tzinfo
 from pathlib import Path
+from typing import Literal
 
 # The summarizer itself is a Claude Code session, so its own SessionEnd hook
 # would summarize the summarizer forever without this guard.
@@ -36,6 +41,19 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+LOG_PATH = Path.home() / ".cache" / "claude_worklog.log"
+HEADING_PATTERN = re.compile(r"^(\*+) ")
+# Claude Code records its own output, such as command echoes, local command
+# stdout, bash mode (`!`) input and output, and task notifications, as user
+# turns wrapped in these tags.
+GENERATED_USER_TEXT_PREFIXES = ("<command-", "<local-command-", "<task-notification>", "<bash-")
+CONTENTLESS_COMMAND_NAMES = ("/clear", "/exit")
+# The transcript is untrusted input, so the summarizer gets no tools and no
+# MCP servers from the project directory the hook happens to run in.
+SUMMARY_COMMAND = (
+    "claude", "-p", "--model", SUMMARY_MODEL, "--no-session-persistence",
+    "--tools", "", "--strict-mcp-config",
+)
 
 SUMMARY_INSTRUCTIONS = """\
 You write a work log entry for a Claude Code session. The session transcript
@@ -54,9 +72,14 @@ Rules:
 """
 
 
+TurnRole = Literal["USER", "ASSISTANT"]
+
+
 @dataclass(frozen=True)
 class Turn:
-    role: str  # "USER" or "ASSISTANT"
+    """One prompt or reply from the transcript, as the summarizer sees it."""
+
+    role: TurnRole
     text: str
 
 
@@ -112,37 +135,81 @@ def shorten_hostname(hostname: str) -> str:
     return hostname.split(".")[0]
 
 
-def parse_timestamp(text: str, local_timezone: tzinfo) -> datetime | None:
+def parse_timestamp(text: str | None, local_timezone: tzinfo) -> datetime | None:
+    """Returns the local time of a transcript timestamp, or None when it is missing or malformed."""
+    if not text:
+        return None
     try:
         return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(local_timezone)
-    except (AttributeError, ValueError):
+    except ValueError:
         return None
+
+
+def join_text_blocks(content: object) -> str | None:
+    """Returns the prose of a message body, or None when it holds none.
+
+    A body is a plain string or a list of blocks. Tool results, images, and
+    thinking blocks are not text blocks, so they drop out.
+    """
+    if isinstance(content, str):
+        return content.strip() or None
+    if not isinstance(content, list):
+        return None
+    block_texts = [block.get("text", "") for block in content if block.get("type") == "text"]
+    return "\n".join(block_texts).strip() or None
 
 
 def extract_user_prompt(record: dict) -> str | None:
-    """Returns the text the user typed, or None for tool results and meta turns."""
-    if record.get("isMeta"):
+    """Returns the text the user typed, or None for tool results, meta turns, and compact summaries.
+
+    A slash command becomes its name and arguments, such as `/branch-review
+    last commit`, and a bash mode input becomes `!<command>`. Other text that
+    Claude Code generated, and commands that carry no work, drop out.
+    """
+    if record.get("isMeta") or record.get("isCompactSummary"):
         return None
-    content = record.get("message", {}).get("content")
-    if isinstance(content, str):
-        return content.strip() or None
-    return None
+    prompt_text = join_text_blocks(record.get("message", {}).get("content"))
+    if prompt_text is None or not prompt_text.startswith(GENERATED_USER_TEXT_PREFIXES):
+        return prompt_text
+    return extract_command_from_generated_text(prompt_text)
+
+
+def find_tag_text(tag_name: str, text: str) -> str:
+    """Returns the stripped body of the first `<tag_name>` element, or "" when absent."""
+    tag_match = re.search(rf"<{tag_name}>(.*?)</{tag_name}>", text, re.DOTALL)
+    return tag_match.group(1).strip() if tag_match else ""
+
+
+def extract_command_from_generated_text(generated_text: str) -> str | None:
+    """Returns the command the user ran, such as `/loop 5m` or `!git status`.
+
+    Returns None for command output, task notifications, and commands that
+    carry no work.
+    """
+    bash_command = find_tag_text("bash-input", generated_text)
+    if bash_command:
+        return f"!{bash_command}"
+    command_name = find_tag_text("command-name", generated_text)
+    if not command_name or command_name in CONTENTLESS_COMMAND_NAMES:
+        return None
+    command_args = find_tag_text("command-args", generated_text)
+    return f"{command_name} {command_args}".strip()
 
 
 def extract_assistant_text(record: dict) -> str | None:
-    content = record.get("message", {}).get("content")
-    if not isinstance(content, list):
-        return None
-    texts = [block.get("text", "") for block in content if block.get("type") == "text"]
-    joined_text = "\n".join(texts).strip()
-    return joined_text or None
+    """Returns the prose of a reply without its thinking and tool-use blocks."""
+    return join_text_blocks(record.get("message", {}).get("content"))
 
 
 def parse_transcript(lines, target_day: date, local_timezone: tzinfo) -> SessionDigest:
     """Returns the events of `target_day` from transcript JSONL lines.
 
-    Events from other days are dropped, because the daily note of those days
-    already logged them. Subagent (sidechain) turns are dropped too.
+    Events from other days are dropped so that a resumed session logs only
+    the new day. Subagent (sidechain) turns are dropped too.
+
+    TODO(garaemon): A session that runs past midnight loses the work before
+    midnight, because SessionEnd fires once and only today is written. Write
+    one entry per day found in the transcript instead.
     """
     session_id = cwd = branch = ""
     timestamps, turns = [], []
@@ -184,13 +251,13 @@ def compute_clock_intervals(timestamps: tuple[datetime, ...], max_gap: timedelta
     if not timestamps:
         return ()
     intervals = []
-    interval_start = previous = timestamps[0]
+    interval_start = previous_timestamp = timestamps[0]
     for timestamp in timestamps[1:]:
-        if timestamp - previous > max_gap:
-            intervals.append(ClockInterval(start=interval_start, end=previous))
+        if timestamp - previous_timestamp > max_gap:
+            intervals.append(ClockInterval(start=interval_start, end=previous_timestamp))
             interval_start = timestamp
-        previous = timestamp
-    intervals.append(ClockInterval(start=interval_start, end=previous))
+        previous_timestamp = timestamp
+    intervals.append(ClockInterval(start=interval_start, end=previous_timestamp))
     return tuple(interval for interval in intervals if interval.end - interval.start >= timedelta(minutes=1))
 
 
@@ -232,6 +299,15 @@ def build_summary_input(digest: SessionDigest) -> str:
     return f"{SUMMARY_INSTRUCTIONS}\n<transcript>\n{transcript_text}\n</transcript>\n"
 
 
+def flatten_to_one_line(value: object) -> str:
+    """Returns the value as text with every run of whitespace, newlines included, as one space.
+
+    A newline in model output would start a new org line, and a line that
+    begins with `* ` would become a heading outside the entry.
+    """
+    return " ".join(str(value).split())
+
+
 def parse_summary_response(response_text: str) -> Summary | None:
     """Returns the summary in the model output, or None when it is unusable."""
     json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
@@ -241,8 +317,10 @@ def parse_summary_response(response_text: str) -> Summary | None:
         payload = json.loads(json_match.group(0))
     except json.JSONDecodeError:
         return None
-    title = str(payload.get("title", "")).strip()
-    bullets = tuple(str(bullet).strip() for bullet in payload.get("bullets", []) if str(bullet).strip())
+    title = flatten_to_one_line(payload.get("title", ""))
+    raw_bullets = payload.get("bullets")
+    bullet_values = raw_bullets if isinstance(raw_bullets, list) else []
+    bullets = tuple(flatten_to_one_line(bullet) for bullet in bullet_values if flatten_to_one_line(bullet))
     if not title:
         return None
     return Summary(title=title, bullets=bullets)
@@ -256,10 +334,13 @@ def build_fallback_summary(digest: SessionDigest) -> Summary:
 
 def summarize_session(digest: SessionDigest) -> Summary:
     """Returns the summary from `claude -p`, or a fallback when that fails."""
-    child_environment = {**os.environ, RECURSION_GUARD_ENV: "1"}
+    # Claude Code detects a nested session through CLAUDECODE and may refuse
+    # to start, so the summarizer must not inherit the variable.
+    child_environment = {name: value for name, value in os.environ.items() if name != "CLAUDECODE"}
+    child_environment[RECURSION_GUARD_ENV] = "1"
     try:
         completed_process = subprocess.run(
-            ["claude", "-p", "--model", SUMMARY_MODEL, "--no-session-persistence"],
+            list(SUMMARY_COMMAND),
             input=build_summary_input(digest),
             capture_output=True,
             text=True,
@@ -277,41 +358,60 @@ def render_entry(digest: SessionDigest, summary: Summary, max_gap: timedelta) ->
     """Returns the org subtree for one session, ending with a newline."""
     project_name = Path(digest.cwd).name or "unknown"
     clock_lines = [format_clock_line(interval) for interval in compute_clock_intervals(digest.timestamps, max_gap)]
+    logbook_lines = [":LOGBOOK:", *clock_lines, ":END:"] if clock_lines else []
     lines = [
         f"* <{format_org_time(digest.timestamps[0])}> {project_name}: {summary.title} :claude:autogenerated:worklog:",
         ":PROPERTIES:",
+        ":STATUS: unreviewed",
         f":GENERATED_BY: {GENERATED_BY}",
         f":SESSION_ID: {digest.session_id}",
         f":CWD: {digest.cwd}",
         f":BRANCH: {digest.branch}",
         f":HOST: {digest.hostname}",
         ":END:",
-        ":LOGBOOK:",
-        *clock_lines,
-        ":END:",
+        *logbook_lines,
         *[f"- {bullet}" for bullet in summary.bullets],
     ]
     return "\n".join(lines) + "\n"
+
+
+def get_heading_level(line: str) -> int:
+    """Returns the number of stars of an org heading, or 0 for a body line."""
+    heading_match = HEADING_PATTERN.match(line)
+    return len(heading_match.group(1)) if heading_match else 0
 
 
 def upsert_entry(file_text: str, session_id: str, entry: str) -> str:
     """Returns the file text with the session's entry replaced or appended.
 
     An entry belongs to the session when its property drawer carries the same
-    SESSION_ID. The entry spans from its top-level heading to the next one.
+    SESSION_ID. The entry spans from its heading to the next heading of the
+    same or a shallower level, so a demoted entry keeps its parent.
     """
     lines = file_text.splitlines(keepends=True)
     session_line = f":SESSION_ID: {session_id}"
-    property_index = next((i for i, line in enumerate(lines) if line.strip() == session_line), None)
-    if property_index is None:
+    property_index = next((index for index, line in enumerate(lines) if line.strip() == session_line), None)
+    heading_index = None
+    if property_index is not None:
+        heading_index = next(
+            (index for index in range(property_index, -1, -1) if get_heading_level(lines[index])), None
+        )
+    if heading_index is None:
         separator = "" if not file_text or file_text.endswith("\n") else "\n"
         return file_text + separator + entry
-    heading_index = next(i for i in range(property_index, -1, -1) if lines[i].startswith("* "))
+    heading_level = get_heading_level(lines[heading_index])
     next_heading_index = next(
-        (i for i in range(property_index + 1, len(lines)) if lines[i].startswith("* ")),
+        (
+            index
+            for index in range(heading_index + 1, len(lines))
+            if 0 < get_heading_level(lines[index]) <= heading_level
+        ),
         len(lines),
     )
-    return "".join(lines[:heading_index]) + entry + "".join(lines[next_heading_index:])
+    # The user may have demoted the entry under a parent heading, so the
+    # replacement keeps the depth it found instead of the default top level.
+    leveled_entry = "*" * (heading_level - 1) + entry
+    return "".join(lines[:heading_index]) + leveled_entry + "".join(lines[next_heading_index:])
 
 
 def render_daily_header(day: date) -> str:
@@ -325,6 +425,8 @@ def write_daily_note(daily_file: Path, day: date, session_id: str, entry: str) -
     An exclusive lock serializes sessions that end at the same moment.
     """
     daily_file.parent.mkdir(parents=True, exist_ok=True)
+    # "a+" creates a missing note without emptying an existing one before the
+    # lock is held: "w+" would truncate first and "r+" needs the file to exist.
     with open(daily_file, "a+", encoding="utf-8") as daily_handle:
         fcntl.flock(daily_handle, fcntl.LOCK_EX)
         daily_handle.seek(0)
@@ -335,10 +437,14 @@ def write_daily_note(daily_file: Path, day: date, session_id: str, entry: str) -
         daily_handle.write(updated_text)
 
 
-def write_worklog(hook_input: dict) -> None:
-    """Summarizes the session in the hook input and logs it for today."""
-    local_timezone = datetime.now().astimezone().tzinfo
-    today = datetime.now(local_timezone).date()
+def write_worklog(hook_input: dict, now: datetime | None = None) -> None:
+    """Summarizes the session in the hook input and logs it for the day of `now`.
+
+    `now` defaults to the current local time; tests pass a fixed time.
+    """
+    current_time = now or datetime.now().astimezone()
+    local_timezone = current_time.tzinfo
+    today = current_time.date()
     transcript_path = Path(hook_input.get("transcript_path", ""))
     if not transcript_path.is_file():
         return
@@ -354,13 +460,22 @@ def write_worklog(hook_input: dict) -> None:
 
 
 def spawn_detached_writer(hook_input: dict) -> None:
-    subprocess.Popen(
-        [sys.executable, str(Path(__file__).resolve()), "--write", json.dumps(hook_input)],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    """Starts the writer as a child that outlives this hook process.
+
+    Claude Code waits for the hook's stdout and stderr pipes to close, so the
+    child writes to `LOG_PATH` instead, which also keeps the traceback of a
+    failed write. A new session keeps the child out of the hook's process
+    group, so the signal that ends the hook does not end the child.
+    """
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG_PATH, "a", encoding="utf-8") as log_handle:
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "--write", json.dumps(hook_input)],
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=log_handle,
+            start_new_session=True,
+        )
 
 
 def main(argv: list[str]) -> int:
