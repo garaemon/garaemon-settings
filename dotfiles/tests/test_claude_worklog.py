@@ -3,7 +3,6 @@
 import importlib.machinery
 import importlib.util
 import json
-import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -16,9 +15,6 @@ SCRIPT_PATH = (
 _loader = importlib.machinery.SourceFileLoader("claude_worklog", str(SCRIPT_PATH))
 _spec = importlib.util.spec_from_loader("claude_worklog", _loader)
 worklog = importlib.util.module_from_spec(_spec)
-# The hook lives in the chezmoi source tree, where a __pycache__ directory
-# would be installed into ~/.claude/hooks as a managed file.
-sys.dont_write_bytecode = True
 _spec.loader.exec_module(worklog)
 
 UTC = timezone.utc
