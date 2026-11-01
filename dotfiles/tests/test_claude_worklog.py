@@ -510,6 +510,21 @@ def test_should_send_child_output_to_log_file(tmp_path, monkeypatch):
     assert captured_kwargs[0]["stderr"].name == str(log_path)
 
 
+def test_should_write_entry_for_hook_input(tmp_path, monkeypatch):
+    transcript_path = tmp_path / "transcript.jsonl"
+    transcript_path.write_text(make_user_line("Fix the bug", "2026-10-31T10:00:00Z") + "\n")
+    daily_directory = tmp_path / "org" / "org-roam" / "daily"
+    monkeypatch.setenv("ORG_DIR", str(tmp_path / "org"))
+    monkeypatch.setattr(worklog, "summarize_session", lambda _digest: worklog.Summary(title="Fix login", bullets=()))
+
+    worklog.write_worklog(
+        {"transcript_path": str(transcript_path), "session_id": "hook-session"},
+        now=datetime(2026, 10, 31, 12, 0, tzinfo=UTC),
+    )
+
+    assert ":SESSION_ID: session-1\n" in (daily_directory / "2026-10-31.org").read_text()
+
+
 def test_should_flatten_bullets_to_one_line_when_model_output_has_newlines():
     summary = worklog.parse_summary_response('{"title": "t", "bullets": ["Fix\\n* login"]}')
 

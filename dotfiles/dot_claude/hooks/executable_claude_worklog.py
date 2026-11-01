@@ -422,10 +422,14 @@ def write_daily_note(daily_file: Path, day: date, session_id: str, entry: str) -
         daily_handle.write(updated_text)
 
 
-def write_worklog(hook_input: dict) -> None:
-    """Summarizes the session in the hook input and logs it for today."""
-    local_timezone = datetime.now().astimezone().tzinfo
-    today = datetime.now(local_timezone).date()
+def write_worklog(hook_input: dict, now: datetime | None = None) -> None:
+    """Summarizes the session in the hook input and logs it for the day of `now`.
+
+    `now` defaults to the current local time; tests pass a fixed time.
+    """
+    current_time = now or datetime.now().astimezone()
+    local_timezone = current_time.tzinfo
+    today = current_time.date()
     transcript_path = Path(hook_input.get("transcript_path", ""))
     if not transcript_path.is_file():
         return
