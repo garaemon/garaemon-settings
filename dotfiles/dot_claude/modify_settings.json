@@ -13,4 +13,14 @@
 {{- end -}}
 {{- $settings = setValueAtPath (list "enabledPlugins" "i-have-adhd@i-have-adhd") true $settings -}}
 {{- $settings = setValueAtPath (list "extraKnownMarketplaces" "i-have-adhd") (dict "source" (dict "source" "github" "repo" "ayghri/i-have-adhd")) $settings -}}
+{{- /*
+  Register the worklog hook once, after any SessionEnd hooks the user added.
+  Replacing the list would drop hooks that Claude Code's /hooks wrote there.
+*/ -}}
+{{- $worklogCommand := "$HOME/.claude/hooks/claude_worklog.py" -}}
+{{- $sessionEndGroups := dig "hooks" "SessionEnd" (list) $settings -}}
+{{- if not (contains (toJson $worklogCommand) (toJson $sessionEndGroups)) -}}
+{{-   $worklogGroup := dict "hooks" (list (dict "type" "command" "command" $worklogCommand)) -}}
+{{-   $settings = setValueAtPath (list "hooks" "SessionEnd") (append $sessionEndGroups $worklogGroup) $settings -}}
+{{- end -}}
 {{- toPrettyJson "  " $settings -}}

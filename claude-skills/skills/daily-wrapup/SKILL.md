@@ -367,8 +367,9 @@ fi
 ## Out of scope
 
 - Sources other than GitHub, the user's own calendar, and shell history
-  (atuin). Claude Code session logs are a planned future source for this
-  skill but are not read yet.
+  (atuin). Claude Code sessions log themselves into the same daily note
+  through the worklog hook (`:GENERATED_BY: claude-code/worklog`; see
+  `dotfiles/README.md`), so this skill does not read session transcripts.
 - Calendars other than the user's primary one. Imported and subscribed
   calendars are intentionally excluded.
 - A PR flow for the org repo. The daily note is committed directly to the
