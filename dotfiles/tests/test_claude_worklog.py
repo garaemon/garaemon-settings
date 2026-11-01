@@ -235,7 +235,7 @@ def test_should_split_clock_intervals_when_gap_exceeds_limit():
 
     intervals = worklog.compute_clock_intervals(timestamps, timedelta(minutes=30))
 
-    assert [(i.start.hour, i.end.hour) for i in intervals] == [(9, 9), (13, 13)]
+    assert [(interval.start.hour, interval.end.hour) for interval in intervals] == [(9, 9), (13, 13)]
 
 
 def test_should_drop_interval_when_it_lasts_under_a_minute():
@@ -397,10 +397,10 @@ def test_should_keep_existing_content_when_writing_daily_file(tmp_path):
     assert daily_file.read_text() == "#+title: 2026-10-31\n* memo\n* entry\n"
 
 
-def test_should_skip_hook_when_recursion_guard_is_set():
-    environment = {worklog.RECURSION_GUARD_ENV: "1", "ORG_DIR": "/tmp/org"}
+def test_should_skip_hook_when_recursion_guard_is_set(tmp_path):
+    environment = {worklog.RECURSION_GUARD_ENV: "1"}
 
-    should_run = worklog.should_log_session(environment, Path("/nonexistent"))
+    should_run = worklog.should_log_session(environment, tmp_path)
 
     assert should_run is False
 
@@ -418,16 +418,15 @@ def test_should_run_hook_when_roam_directory_exists(tmp_path):
 
 
 def test_should_resolve_daily_directory_from_org_dir_env():
-    daily_dir = worklog.resolve_daily_directory({"ORG_DIR": "/data/org"}, Path("/home/me"))
+    daily_directory = worklog.resolve_daily_directory({"ORG_DIR": "/data/org"}, Path("/home/me"))
 
-    assert daily_dir == Path("/data/org/org-roam/daily")
+    assert daily_directory == Path("/data/org/org-roam/daily")
 
 
 def test_should_resolve_daily_directory_from_default_when_env_is_unset():
-    daily_dir = worklog.resolve_daily_directory({}, Path("/home/me"))
+    daily_directory = worklog.resolve_daily_directory({}, Path("/home/me"))
 
-    assert daily_dir == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
-
+    assert daily_directory == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
 
 
 SYSTEM_PYTHON = Path("/usr/bin/python3")
