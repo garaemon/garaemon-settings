@@ -429,6 +429,15 @@ def test_should_resolve_daily_directory_from_default_when_env_is_unset():
     assert daily_directory == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
 
 
+def test_should_collect_user_prompt_when_content_is_block_list():
+    content = [{"type": "image", "source": {}}, {"type": "text", "text": "Fix the bug"}]
+    lines = [make_user_line("", "2026-10-31T10:00:00Z", message={"role": "user", "content": content})]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("Fix the bug",)
+
+
 def capture_summarizer_call(monkeypatch):
     captured_calls = []
 

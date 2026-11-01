@@ -129,23 +129,30 @@ def parse_timestamp(text: str, local_timezone: tzinfo) -> datetime | None:
         return None
 
 
+def join_text_blocks(content: object) -> str | None:
+    """Returns the prose of a message body, or None when it holds none.
+
+    A body is a plain string or a list of blocks. Tool results, images, and
+    thinking blocks are not text blocks, so they drop out.
+    """
+    if isinstance(content, str):
+        return content.strip() or None
+    if not isinstance(content, list):
+        return None
+    block_texts = [block.get("text", "") for block in content if block.get("type") == "text"]
+    return "\n".join(block_texts).strip() or None
+
+
 def extract_user_prompt(record: dict) -> str | None:
     """Returns the text the user typed, or None for tool results and meta turns."""
     if record.get("isMeta"):
         return None
-    content = record.get("message", {}).get("content")
-    if isinstance(content, str):
-        return content.strip() or None
-    return None
+    return join_text_blocks(record.get("message", {}).get("content"))
 
 
 def extract_assistant_text(record: dict) -> str | None:
-    content = record.get("message", {}).get("content")
-    if not isinstance(content, list):
-        return None
-    texts = [block.get("text", "") for block in content if block.get("type") == "text"]
-    joined_text = "\n".join(texts).strip()
-    return joined_text or None
+    """Returns the prose of a reply without its thinking and tool-use blocks."""
+    return join_text_blocks(record.get("message", {}).get("content"))
 
 
 def parse_transcript(lines, target_day: date, local_timezone: tzinfo) -> SessionDigest:
