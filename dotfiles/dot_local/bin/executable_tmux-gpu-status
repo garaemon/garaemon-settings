@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+# tmux-gpu-status: Print the VRAM usage of every NVIDIA GPU as tmux markup.
+# dot_tmux.conf runs this script from the second status line. The script
+# prints nothing on a host without a working nvidia-smi, so the status line
+# stays blank instead of showing an error.
+
+# Usage percentages at or above these thresholds turn the entry yellow or red.
+readonly WARNING_PERCENT=50
+readonly CRITICAL_PERCENT=80
+
+if ! command -v nvidia-smi >/dev/null 2>&1; then
+  exit 0
+fi
+
+# nvidia-smi exits nonzero when the driver does not match the kernel module.
+if ! gpu_csv="$(nvidia-smi --query-gpu=index,memory.used,memory.total \
+  --format=csv,noheader,nounits 2>/dev/null)"; then
+  exit 0
+fi
+
+# nvidia-smi reports memory in MiB.
+echo "$gpu_csv" | awk -F', *' \
+  -v warning_percent="$WARNING_PERCENT" \
+  -v critical_percent="$CRITICAL_PERCENT" '
+  NF == 3 && $3 > 0 {
+    used_percent = int($2 * 100 / $3 + 0.5)
+    color = "green"
+    if (used_percent >= critical_percent) {
+      color = "red"
+    } else if (used_percent >= warning_percent) {
+      color = "yellow"
+    }
+    entry = sprintf("#[fg=%s]GPU%s VRAM %.1f/%.1fGiB (%d%%)#[default]",
+                    color, $1, $2 / 1024, $3 / 1024, used_percent)
+    line = (line == "") ? entry : line " | " entry
+  }
+  END {
+    if (line != "") {
+      print line
+    }
+  }'

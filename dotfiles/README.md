@@ -158,6 +158,18 @@ The script skips the reload in two cases:
 - chezmoi applies outside the login home, as the `install.sh` end-to-end test
   does.
 
+### tmux GPU status line
+
+On a host with `nvidia-smi`, tmux shows a second status line with the VRAM
+usage of each NVIDIA GPU. `~/.local/bin/tmux-gpu-status` prints that line and
+colors each GPU by usage:
+
+- Green below 50%.
+- Yellow from 50% to below 80%.
+- Red at 80% or above.
+
+Hosts without `nvidia-smi` keep the single status line.
+
 ### mise tool install
 
 `chezmoi apply` runs
