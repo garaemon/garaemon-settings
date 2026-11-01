@@ -27,6 +27,7 @@ import uuid
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, tzinfo
 from pathlib import Path
+from typing import Literal
 
 # The summarizer itself is a Claude Code session, so its own SessionEnd hook
 # would summarize the summarizer forever without this guard.
@@ -71,9 +72,14 @@ Rules:
 """
 
 
+TurnRole = Literal["USER", "ASSISTANT"]
+
+
 @dataclass(frozen=True)
 class Turn:
-    role: str  # "USER" or "ASSISTANT"
+    """One prompt or reply from the transcript, as the summarizer sees it."""
+
+    role: TurnRole
     text: str
 
 
@@ -129,10 +135,13 @@ def shorten_hostname(hostname: str) -> str:
     return hostname.split(".")[0]
 
 
-def parse_timestamp(text: str, local_timezone: tzinfo) -> datetime | None:
+def parse_timestamp(text: str | None, local_timezone: tzinfo) -> datetime | None:
+    """Returns the local time of a transcript timestamp, or None when it is missing or malformed."""
+    if not text:
+        return None
     try:
         return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(local_timezone)
-    except (AttributeError, ValueError):
+    except ValueError:
         return None
 
 
@@ -238,13 +247,13 @@ def compute_clock_intervals(timestamps: tuple[datetime, ...], max_gap: timedelta
     if not timestamps:
         return ()
     intervals = []
-    interval_start = previous = timestamps[0]
+    interval_start = previous_timestamp = timestamps[0]
     for timestamp in timestamps[1:]:
-        if timestamp - previous > max_gap:
-            intervals.append(ClockInterval(start=interval_start, end=previous))
+        if timestamp - previous_timestamp > max_gap:
+            intervals.append(ClockInterval(start=interval_start, end=previous_timestamp))
             interval_start = timestamp
-        previous = timestamp
-    intervals.append(ClockInterval(start=interval_start, end=previous))
+        previous_timestamp = timestamp
+    intervals.append(ClockInterval(start=interval_start, end=previous_timestamp))
     return tuple(interval for interval in intervals if interval.end - interval.start >= timedelta(minutes=1))
 
 

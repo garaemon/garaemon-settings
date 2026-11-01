@@ -461,6 +461,12 @@ def test_should_flatten_title_to_one_line_when_model_output_has_newlines():
     assert summary.title == "Fix login"
 
 
+def test_should_return_none_when_timestamp_is_missing():
+    parsed = worklog.parse_timestamp(None, UTC)
+
+    assert parsed is None
+
+
 def test_should_render_entry_with_unreviewed_status():
     entry = worklog.render_entry(make_digest(), worklog.Summary(title="t", bullets=()), timedelta(minutes=30))
 
