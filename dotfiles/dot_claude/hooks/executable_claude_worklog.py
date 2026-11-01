@@ -40,6 +40,12 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+# The transcript is untrusted input, so the summarizer gets no tools and no
+# MCP servers from the project directory the hook happens to run in.
+SUMMARY_COMMAND = (
+    "claude", "-p", "--model", SUMMARY_MODEL, "--no-session-persistence",
+    "--tools", "", "--strict-mcp-config",
+)
 
 SUMMARY_INSTRUCTIONS = """\
 You write a work log entry for a Claude Code session. The session transcript
@@ -260,10 +266,13 @@ def build_fallback_summary(digest: SessionDigest) -> Summary:
 
 def summarize_session(digest: SessionDigest) -> Summary:
     """Returns the summary from `claude -p`, or a fallback when that fails."""
-    child_environment = {**os.environ, RECURSION_GUARD_ENV: "1"}
+    # Claude Code detects a nested session through CLAUDECODE and may refuse
+    # to start, so the summarizer must not inherit the variable.
+    child_environment = {name: value for name, value in os.environ.items() if name != "CLAUDECODE"}
+    child_environment[RECURSION_GUARD_ENV] = "1"
     try:
         completed_process = subprocess.run(
-            ["claude", "-p", "--model", SUMMARY_MODEL, "--no-session-persistence"],
+            list(SUMMARY_COMMAND),
             input=build_summary_input(digest),
             capture_output=True,
             text=True,

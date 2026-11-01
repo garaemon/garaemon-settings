@@ -429,6 +429,38 @@ def test_should_resolve_daily_directory_from_default_when_env_is_unset():
     assert daily_directory == Path("/home/me/ghq/github.com/garaemon/org/org-roam/daily")
 
 
+def capture_summarizer_call(monkeypatch):
+    captured_calls = []
+
+    def fake_run(command, *, env, **_kwargs):
+        captured_calls.append({"command": command, "env": env})
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(worklog.subprocess, "run", fake_run)
+    worklog.summarize_session(make_digest())
+    return captured_calls[0]
+
+
+def test_should_strip_claudecode_when_summarizing(monkeypatch):
+    monkeypatch.setenv("CLAUDECODE", "1")
+
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert "CLAUDECODE" not in summarizer_call["env"]
+
+
+def test_should_set_recursion_guard_when_summarizing(monkeypatch):
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert summarizer_call["env"][worklog.RECURSION_GUARD_ENV] == "1"
+
+
+def test_should_disable_tools_and_mcp_when_summarizing(monkeypatch):
+    summarizer_call = capture_summarizer_call(monkeypatch)
+
+    assert summarizer_call["command"][-3:] == ["--tools", "", "--strict-mcp-config"]
+
+
 SYSTEM_PYTHON = Path("/usr/bin/python3")
 
 

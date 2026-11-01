@@ -259,6 +259,9 @@ The hook does nothing when the org-roam directory is missing, as in a cloud
 container. The summarizer sets `CLAUDE_WORKLOG_RUNNING`, so its own session
 does not trigger the hook again.
 
+The summarizer runs without tools and MCP servers, because the transcript is
+untrusted input.
+
 ### Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) with [detect-secrets](https://github.com/Yelp/detect-secrets) to prevent accidental credential commits.
