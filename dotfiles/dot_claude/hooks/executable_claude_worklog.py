@@ -40,6 +40,11 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+# Claude Code records its own output, such as command echoes, local command
+# stdout, bash mode (`!`) input and output, and task notifications, as user
+# turns wrapped in these tags.
+GENERATED_USER_TEXT_PREFIXES = ("<command-", "<local-command-", "<task-notification>", "<bash-")
+CONTENTLESS_COMMAND_NAMES = ("/clear", "/exit")
 # The transcript is untrusted input, so the summarizer gets no tools and no
 # MCP servers from the project directory the hook happens to run in.
 SUMMARY_COMMAND = (
@@ -144,10 +149,40 @@ def join_text_blocks(content: object) -> str | None:
 
 
 def extract_user_prompt(record: dict) -> str | None:
-    """Returns the text the user typed, or None for tool results and meta turns."""
-    if record.get("isMeta"):
+    """Returns the text the user typed, or None for tool results, meta turns, and compact summaries.
+
+    A slash command becomes its name and arguments, such as `/branch-review
+    last commit`, and a bash mode input becomes `!<command>`. Other text that
+    Claude Code generated, and commands that carry no work, drop out.
+    """
+    if record.get("isMeta") or record.get("isCompactSummary"):
         return None
-    return join_text_blocks(record.get("message", {}).get("content"))
+    prompt_text = join_text_blocks(record.get("message", {}).get("content"))
+    if prompt_text is None or not prompt_text.startswith(GENERATED_USER_TEXT_PREFIXES):
+        return prompt_text
+    return extract_command_from_generated_text(prompt_text)
+
+
+def find_tag_text(tag_name: str, text: str) -> str:
+    """Returns the stripped body of the first `<tag_name>` element, or "" when absent."""
+    tag_match = re.search(rf"<{tag_name}>(.*?)</{tag_name}>", text, re.DOTALL)
+    return tag_match.group(1).strip() if tag_match else ""
+
+
+def extract_command_from_generated_text(generated_text: str) -> str | None:
+    """Returns the command the user ran, such as `/loop 5m` or `!git status`.
+
+    Returns None for command output, task notifications, and commands that
+    carry no work.
+    """
+    bash_command = find_tag_text("bash-input", generated_text)
+    if bash_command:
+        return f"!{bash_command}"
+    command_name = find_tag_text("command-name", generated_text)
+    if not command_name or command_name in CONTENTLESS_COMMAND_NAMES:
+        return None
+    command_args = find_tag_text("command-args", generated_text)
+    return f"{command_name} {command_args}".strip()
 
 
 def extract_assistant_text(record: dict) -> str | None:

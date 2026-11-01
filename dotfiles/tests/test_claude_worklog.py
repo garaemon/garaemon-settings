@@ -118,7 +118,7 @@ def test_should_skip_tool_results_when_collecting_prompts():
 
 
 def test_should_skip_meta_messages_when_collecting_prompts():
-    lines = [make_user_line("<command-name>/clear</command-name>", "2026-10-31T10:00:00Z", isMeta=True)]
+    lines = [make_user_line("Caveat: the messages below were generated", "2026-10-31T10:00:00Z", isMeta=True)]
 
     digest = parse_lines(lines)
 
@@ -470,6 +470,40 @@ def test_should_disable_tools_and_mcp_when_summarizing(monkeypatch):
     assert summarizer_call["command"][-3:] == ["--tools", "", "--strict-mcp-config"]
 
 
+def test_should_use_command_name_when_prompt_is_slash_command():
+    command_text = "<command-message>branch-review</command-message>\n<command-name>/branch-review</command-name>"
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("/branch-review",)
+
+
+def test_should_skip_local_command_output_when_collecting_prompts():
+    lines = [make_user_line("<local-command-stdout></local-command-stdout>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_skip_task_notification_when_collecting_prompts():
+    lines = [make_user_line("<task-notification><task-id>1</task-id></task-notification>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_skip_clear_command_when_collecting_prompts():
+    command_text = "<command-name>/clear</command-name>\n<command-message>clear</command-message>"
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
 SYSTEM_PYTHON = Path("/usr/bin/python3")
 
 
@@ -493,3 +527,39 @@ def test_should_import_hook_with_system_python():
     )
 
     assert completed_process.returncode == 0, completed_process.stderr
+
+
+def test_should_skip_compact_summary_when_collecting_prompts():
+    lines = [make_user_line("This session is being continued", "2026-10-31T10:00:00Z", isCompactSummary=True)]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
+
+
+def test_should_append_args_when_slash_command_has_args():
+    command_text = (
+        "<command-message>branch-review</command-message>\n<command-name>/branch-review</command-name>\n"
+        "<command-args>last commit</command-args>"
+    )
+    lines = [make_user_line(command_text, "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("/branch-review last commit",)
+
+
+def test_should_keep_bash_input_as_command_when_collecting_prompts():
+    lines = [make_user_line("<bash-input>git status</bash-input>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ("!git status",)
+
+
+def test_should_skip_bash_output_when_collecting_prompts():
+    lines = [make_user_line("<bash-stdout>secret</bash-stdout><bash-stderr></bash-stderr>", "2026-10-31T10:00:00Z")]
+
+    digest = parse_lines(lines)
+
+    assert digest.user_prompts == ()
