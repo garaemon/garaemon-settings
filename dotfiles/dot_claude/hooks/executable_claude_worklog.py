@@ -204,8 +204,12 @@ def extract_assistant_text(record: dict) -> str | None:
 def parse_transcript(lines, target_day: date, local_timezone: tzinfo) -> SessionDigest:
     """Returns the events of `target_day` from transcript JSONL lines.
 
-    Events from other days are dropped, because the daily note of those days
-    already logged them. Subagent (sidechain) turns are dropped too.
+    Events from other days are dropped so that a resumed session logs only
+    the new day. Subagent (sidechain) turns are dropped too.
+
+    TODO(garaemon): A session that runs past midnight loses the work before
+    midnight, because SessionEnd fires once and only today is written. Write
+    one entry per day found in the transcript instead.
     """
     session_id = cwd = branch = ""
     timestamps, turns = [], []
@@ -421,6 +425,8 @@ def write_daily_note(daily_file: Path, day: date, session_id: str, entry: str) -
     An exclusive lock serializes sessions that end at the same moment.
     """
     daily_file.parent.mkdir(parents=True, exist_ok=True)
+    # "a+" creates a missing note without emptying an existing one before the
+    # lock is held: "w+" would truncate first and "r+" needs the file to exist.
     with open(daily_file, "a+", encoding="utf-8") as daily_handle:
         fcntl.flock(daily_handle, fcntl.LOCK_EX)
         daily_handle.seek(0)
