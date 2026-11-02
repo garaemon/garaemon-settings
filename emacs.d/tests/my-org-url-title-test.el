@@ -81,6 +81,31 @@ A nil RESPONSE reports a network error to the callback."
   (should (equal (my-org-url-title-format-link "https://e.com" "[WIP] a]]b")
                  "[[https://e.com][{WIP} a}}b]]")))
 
+(ert-deftest my-org-url-title-test-elides-long-title ()
+  (let ((my-org-url-title-max-length 10))
+    (should (equal (my-org-url-title-format-link "https://e.com"
+                                                 "abcdefghijklmno")
+                   "[[https://e.com][abcdefg...]]"))))
+
+(ert-deftest my-org-url-title-test-elides-by-display-width ()
+  (let ((my-org-url-title-max-length 7))
+    (should (equal (my-org-url-title-format-link
+                    "https://e.com" (concat my-org-url-title-test-japanese
+                                            my-org-url-title-test-japanese))
+                   (format "[[https://e.com][%s...]]"
+                           (substring my-org-url-title-test-japanese 0 2))))))
+
+(ert-deftest my-org-url-title-test-keeps-title-within-max-length ()
+  (let ((my-org-url-title-max-length 10))
+    (should (equal (my-org-url-title-format-link "https://e.com" "abcdefghij")
+                   "[[https://e.com][abcdefghij]]"))))
+
+(ert-deftest my-org-url-title-test-keeps-long-title-without-limit ()
+  (let ((my-org-url-title-max-length nil))
+    (should (equal (my-org-url-title-format-link "https://e.com"
+                                                 (make-string 200 ?a))
+                   (format "[[https://e.com][%s]]" (make-string 200 ?a))))))
+
 (ert-deftest my-org-url-title-test-parses-utf-8-response ()
   (with-temp-buffer
     (set-buffer-multibyte nil)

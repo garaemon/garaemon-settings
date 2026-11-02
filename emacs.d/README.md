@@ -191,6 +191,13 @@ these cases:
 - You edit the URL before the title arrives.
 - The URL is a GitHub URL that `my-org-github-link.el` already formatted.
 
+A title wider than 80 columns ends in `...`. Change the width, or set it to
+`nil` to keep whole titles:
+
+```elisp
+(setopt my-org-url-title-max-length 120)
+```
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per

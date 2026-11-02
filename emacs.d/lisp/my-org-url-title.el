@@ -26,6 +26,12 @@
   "Fetch page titles for yanked URLs."
   :group 'org-link)
 
+(defcustom my-org-url-title-max-length 80
+  "Display width at which a fetched title gets cut and ends in `...'.
+The width counts a full-width character as two columns.  nil keeps the
+whole title."
+  :type '(choice (natural :tag "Columns") (const :tag "No limit" nil)))
+
 (defconst my-org-url-title-bare-url-regexp
   "\\`https?://[^][:space:]<>\"]+\\'"
   "Regexp that matches a whole string holding one http(s) URL.")
@@ -59,10 +65,17 @@ because some single-page apps leave <title> empty."
 
 (defun my-org-url-title-format-link (url title)
   "Return an Org link to URL described by TITLE.
-Square brackets in TITLE become braces, because `]]' would end the link."
-  (format "[[%s][%s]]" url
-          (replace-regexp-in-string
-           "\\]" "}" (replace-regexp-in-string "\\[" "{" title))))
+Square brackets in TITLE become braces, because `]]' would end the link.
+A title wider than `my-org-url-title-max-length' gets cut."
+  (let ((bracketless-title (replace-regexp-in-string
+                            "\\]" "}" (replace-regexp-in-string
+                                        "\\[" "{" title))))
+    (format "[[%s][%s]]" url
+            (if my-org-url-title-max-length
+                (truncate-string-to-width bracketless-title
+                                          my-org-url-title-max-length
+                                          nil nil "...")
+              bracketless-title))))
 
 (defun my-org-url-title-response-coding (headers body-start)
   "Return the coding system that the current response buffer declares.
