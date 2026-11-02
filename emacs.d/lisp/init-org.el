@@ -558,6 +558,10 @@ Skip when the cached SVG is already newer than FILE."
   :ensure nil
   :hook (org-mode . my-org-github-link-mode))
 
+(use-package my-org-url-title
+  :ensure nil
+  :hook (org-mode . my-org-url-title-mode))
+
 (use-package org-roam
   :ensure t
   :custom

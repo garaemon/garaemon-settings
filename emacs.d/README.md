@@ -173,6 +173,24 @@ Only `github.com` URLs change by default. Add a GitHub Enterprise host to
 (setopt my-org-github-link-hosts '("github.com" "github.example.com"))
 ```
 
+## Page Title Links
+
+`my-org-url-title.el` turns any other web URL that you yank into an Org buffer
+into a link described by the page title:
+
+```text
+https://example.com  ->  [[https://example.com][Example Domain]]
+```
+
+The yank inserts the bare URL at once. The page loads in the background,
+and the URL becomes a link when the title arrives. The bare URL stays in
+these cases:
+
+- The request fails, or the response is not HTML.
+- The page has neither a `<title>` nor an `og:title` meta tag.
+- You edit the URL before the title arrives.
+- The URL is a GitHub URL that `my-org-github-link.el` already formatted.
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per
