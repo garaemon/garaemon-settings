@@ -33,6 +33,7 @@ Python helpers and need `uv` to run them.
 - [branch-review](skills/branch-review/SKILL.md) — Review changes on the current branch against the branch they merge into — the pull request's own base branch when one is open, so a stacked PR reviews only its own changes — or against a narrower commit range. Asks which model should review (Sonnet 5.5 by default, Opus 5.5, or Fable 5.1) and runs the review in a subagent on it. Produces a structured `REVIEW.md` plus a `REVIEW.html` page that opens with a summary of every finding and highlights the code in each one, and posts inline comments via the GitHub API, on github.com or GitHub Enterprise.
 - [branch-review-loop](skills/branch-review-loop/SKILL.md) — Iterative review-and-fix loop: run the `branch-review` skill via a subagent (the user picks the model for the first pass; later passes run on the cheaper of that choice and Opus 5.5), fix every reported issue, then re-review until no findings remain (up to 5 iterations). `REVIEW.md` and `REVIEW.html` accumulate the findings of every iteration, each marked fixed or open.
 - [create-pr](skills/create-pr/SKILL.md) — Automate the full pull-request workflow: stage changes, commit, push, and open a GitHub PR.
+- [respond-to-review](skills/respond-to-review/SKILL.md) — Read the reviewer comments on a pull request, decide with the user how to handle each one, apply the chosen fixes one commit per comment, and reply on GitHub only after the user approves the drafts. Asks up front whether to push and whether to reply to every comment, only to the ones answered without a code change, or to none. Reads and writes GitHub through `gh api` (REST).
 - [fix-agent-todo](skills/fix-agent-todo/SKILL.md) — Find every `TODO(agent)` marker in the codebase, implement the change each one describes, and remove the comment afterward. Other TODO variants are left untouched.
 - [gist-report](skills/gist-report/SKILL.md) — Write a report as Markdown in Japanese and English and upload both as one GitHub gist with `gh`, embedding any image files (pushed through the gist's git repository, with links rewritten to raw URLs). A script derives `GH_HOST` from the `origin` remote URL (github.com or GitHub Enterprise), creates a secret gist by default, and prints the URL. chezmoi also links the script onto `PATH` as `post-gist` (`dotfiles/dot_local/bin/symlink_post-gist.tmpl`), so you can run it by hand.
 - [improve-english](skills/improve-english/SKILL.md) — Improve English in changes bound for a PR: fix spelling in identifiers, smooth comment grammar, and translate Japanese comments into English, scoped to the diff against `origin/main`.
@@ -112,8 +113,9 @@ and `news-digest`.
 calls `npm install`, `go mod tidy`, and `pre-commit install`, and a cloud
 container ships the first two but not `pre-commit`.
 
-**Run once `gh` is installed**: `branch-review` and `branch-review-loop`. `uv`
-is already there; the `gh` CLI is not, so install it alongside the skills:
+**Run once `gh` is installed**: `branch-review`, `branch-review-loop`, and
+`respond-to-review`. `uv` is already there; the `gh` CLI is not, so install it
+alongside the skills:
 
 ```bash
 apt-get install -y gh
