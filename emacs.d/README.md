@@ -364,9 +364,11 @@ Remote buffers differ in the following ways:
 - **Dired icons are generic.** Icons are chosen from the file name and the `d`
   in the permission column, without any stat call. Symlinks, git repositories
   and submodules get the plain file or directory icon.
-- **Remote attributes are cached for 60 seconds.** A file changed by another
-  process may look stale for up to a minute. Run `M-x tramp-cleanup-this-connection`
-  or revert the buffer to refresh sooner.
+- **Remote attributes stay cached until TRAMP flushes them.**
+  `remote-file-name-inhibit-cache` is nil. A file changed by another process
+  may look stale. Run `M-x tramp-cleanup-this-connection` or revert the buffer
+  to refresh. Saving still checks the modification time, so Emacs warns before
+  it overwrites a file that changed on the remote host.
 - **Remote ACLs are ignored.** Saving skips `getfacl` and `setfacl`, which
   saves three ssh round trips per save. Emacs overwrites the file in place, so
   an existing ACL stays intact.
