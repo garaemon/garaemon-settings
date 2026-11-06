@@ -103,6 +103,41 @@ requires. Give it an `:available-p` that returns nil when the code it measures
 is absent, so that the branch a pull request starts from reports `n/a` instead
 of failing.
 
+## Dired Actions
+
+`my-dired-actions.el` adds a context menu to dired. Each action belongs to a
+set of file extensions, and the menu lists only the actions that match every
+target file. The targets are the marked files, or the file at point.
+
+Open the menu in one of two ways:
+
+- Press `;` to pick an action with `completing-read`.
+- Right-click a file to pick an action from a popup menu.
+
+`init-editor.el` registers ffmpeg actions for videos: speed up 2x, extract
+the audio, and convert to GIF. Register your own action with
+`my-dired-actions-add`:
+
+```elisp
+(my-dired-actions-add '("png" "jpg") "Shrink to 50% (ImageMagick)"
+  "magick %i -resize 50%% %d/%b-small.%e")
+```
+
+A command string runs once per file in a shell. The placeholders expand
+shell-quoted:
+
+| Placeholder | Expands to                               |
+| ----------- | ---------------------------------------- |
+| `%i`        | Absolute path of the file                |
+| `%d`        | Directory of the file, no trailing `/`   |
+| `%b`        | File name without directory or extension |
+| `%e`        | Extension without the dot                |
+| `%%`        | A literal `%`                            |
+
+Pass `t` as the extensions to match every file. Pass a function instead of a
+string to receive the list of files. The output goes to `*Dired Action*`, and
+the dired buffer refreshes when the command ends.
+
 ## Org Git Sync
 
 `my-org-git-sync.el` keeps the Org repository under `org-directory` in sync
