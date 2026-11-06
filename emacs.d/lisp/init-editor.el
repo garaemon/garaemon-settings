@@ -424,7 +424,12 @@ if ENV-SH indicates a remote path. Relies on the helper function
   ;; Stop `vc' from running git on remote files.  Every find-file and
   ;; dired refresh otherwise spawns remote processes to detect the backend.
   (setq vc-ignore-dir-regexp
-        (format "\\(%s\\)\\|\\(%s\\)" vc-ignore-dir-regexp tramp-file-name-regexp)))
+        (format "\\(%s\\)\\|\\(%s\\)" vc-ignore-dir-regexp tramp-file-name-regexp))
+  ;; Report every remote host as lacking ACL support.  On a host with ACLs,
+  ;; each save otherwise runs getfacl and then setfacl: three extra ssh round
+  ;; trips.  Saves overwrite in place (`make-backup-files' is nil), so the
+  ;; ACL survives.
+  (advice-add 'tramp-remote-acl-p :override #'ignore))
 
 ;;; Dired enhancements
 
