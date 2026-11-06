@@ -272,48 +272,6 @@
 (use-package string-inflection :ensure t
   :config (global-set-key (kbd "C-c i") 'string-inflection-cycle))
 
-(use-package tramp
-  :custom
-  ;; (tramp-copy-size-limit (* 1024 1024)) ;; 1MB
-  (tramp-copy-size-limit (* 1024 10))
-  (remote-file-name-inhibit-locks t)
-  (tramp-use-scp-direct-remote-copying t)
-  (remote-file-name-inhibit-auto-save-visited t)
-  ;;Cache the file properties. If the target file is not updated frequently, nil is the best.
-  (remote-file-name-inhibit-cache nil)
-  ;; Suppress cache flash
-  (process-file-side-effects nil)
-  ;; Disable debug for performance.
-  (tramp-debug-buffer nil)
-  (tramp-verbose 0)
-  :config
-  ;; (add-hook 'find-file-hook
-  ;;           (lambda ()
-  ;;             (when (file-remote-p default-directory)
-  ;;               (setq-local vc-handled-backends nil))))
-
-  (connection-local-set-profile-variables
-   'remote-direct-async-process
-   '((tramp-direct-async-process . t)))
-
-  (connection-local-set-profiles
-   '(:application tramp :protocol "ssh")
-   'remote-direct-async-process)
-
-  ;; (setq magit-tramp-pipe-stty-settings 'pty)
-
-  (setq tramp-default-method "ssh")
-  (setq tramp-pipe-stty-settings "")
-  (defun tramp-cleanup-all ()
-    "Cleanup all tramp connection and buffers"
-    (interactive)
-    (tramp-cleanup-all-buffers)
-    (call-interactively 'tramp-cleanup-all-connections))
-  ;; By adding 'tramp-own-remote-path to tramp-remote-path, tramp can use the PATH value that
-  ;; the remote shell sets by default. For example, tramp can use the PATH value set by ~/.zshenv.
-  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-  )
-
 (use-package treemacs :ensure t
   :after (all-the-icons)
   :config
