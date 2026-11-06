@@ -143,9 +143,9 @@ shell-quoted:
 | `%e`        | Extension without the dot                |
 | `%%`        | A literal `%`                            |
 
-Pass `t` (or type `*` at the prompt) to match every file. Pass a function instead of a
-string to receive the list of files. The output goes to `*Dired Action*`, and
-the dired buffer refreshes when the command ends.
+Pass `t`, or type `*` at the prompt, to match every file. Pass a function
+instead of a string to receive the list of files. The output goes to
+`*Dired Action*`, and the dired buffer refreshes when the command ends.
 
 ## Org Git Sync
 
