@@ -22,6 +22,8 @@
 ;; - %b: the file name without the directory and the extension.
 ;; - %e: the extension, without the dot.
 ;; - %%: a literal percent sign.
+;; - %{PROMPT:DEFAULT}: a value typed after the action is chosen, such as
+;;   %{Speed:2}.  The same PROMPT is asked once, and ":DEFAULT" is optional.
 ;;
 ;; Every placeholder expands shell-quoted, so names with spaces are safe.
 ;; A function command receives the list of absolute file paths instead.
@@ -115,17 +117,61 @@ replaces the earlier action."
            (with-current-buffer dired-buffer
              (revert-buffer))))))))
 
+(defconst my-dired-actions--prompt-regexp
+  "%%\\|%{\\([^}:]*\\)\\(?::\\([^}]*\\)\\)?}"
+  "Match a literal \"%%\" or a prompt such as \"%{Speed:2}\".
+Matching \"%%\" too keeps \"%%{...}\" from being read as a prompt.")
+
+(defun my-dired-actions--prompt-specs (template)
+  "Return the (PROMPT . DEFAULT) pairs in TEMPLATE, first occurrence only.
+DEFAULT is nil for a prompt written without one, such as \"%{Name}\"."
+  (let ((specs nil)
+        (start 0))
+    (while (string-match my-dired-actions--prompt-regexp template start)
+      (let ((prompt (match-string 1 template)))
+        (when (and prompt (not (assoc prompt specs)))
+          (push (cons prompt (match-string 2 template)) specs)))
+      (setq start (match-end 0)))
+    (nreverse specs)))
+
+(defun my-dired-actions--fill-prompts (template answers)
+  "Return TEMPLATE with each prompt replaced by its value in ANSWERS.
+ANSWERS maps a prompt to its typed value.  Each value is shell-quoted,
+and its \"%\" doubled so that `format-spec' later keeps it literal."
+  (replace-regexp-in-string
+   my-dired-actions--prompt-regexp
+   (lambda (matched)
+     (string-match my-dired-actions--prompt-regexp matched)
+     (let ((prompt (match-string 1 matched)))
+       (if (null prompt) "%%"
+         (string-replace "%" "%%" (shell-quote-argument
+                                   (cdr (assoc prompt answers)))))))
+   template t t))
+
+(defun my-dired-actions--read-answers (template)
+  "Ask for the value of each prompt in TEMPLATE and return the answers."
+  (mapcar (lambda (spec)
+            (let ((default (cdr spec)))
+              (cons (car spec)
+                    (read-string (format-prompt (car spec) default)
+                                 nil nil default))))
+          (my-dired-actions--prompt-specs template)))
+
 (defun my-dired-actions-run (action files)
   "Run ACTION on FILES.
-A shell template runs as one process that handles FILES in turn, so a heavy
-command such as ffmpeg does not start once per file in parallel."
+A shell template asks its prompts once, then runs as one process that
+handles FILES in turn, so a heavy command such as ffmpeg does not start
+once per file in parallel."
   (let ((command (my-dired-action-command action)))
     (if (functionp command)
         (funcall command files)
-      (my-dired-actions--run-shell-command
-       (mapconcat (lambda (file) (my-dired-actions-expand-command command file))
-                  files " && ")
-       (current-buffer)))))
+      (let ((filled-template (my-dired-actions--fill-prompts
+                              command (my-dired-actions--read-answers command))))
+        (my-dired-actions--run-shell-command
+         (mapconcat (lambda (file)
+                      (my-dired-actions-expand-command filled-template file))
+                    files " && ")
+         (current-buffer))))))
 
 ;; Annotations read the global list because `completing-read' passes only
 ;; the candidate string; names are unique, so the lookup is unambiguous.
@@ -200,7 +246,7 @@ The extension prompt starts with the extension of the file at point."
                                    (downcase default-extension))))
          (name (read-string "Action name: "))
          (command (read-string
-                   "Command (%i path, %d dir, %b base name, %e extension): ")))
+                   "Command (%i path, %d dir, %b base, %e ext, %{Prompt:default}): ")))
     (my-dired-actions-save extensions name command)
     (message "Saved dired action \"%s\" to %s" name my-dired-actions-file)))
 

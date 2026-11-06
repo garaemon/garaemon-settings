@@ -111,8 +111,8 @@ file. The targets are the marked files, or the file at point. The list goes
 through `completing-read`, so Vertico and Orderless narrow it as you type.
 Each candidate shows its command as an annotation.
 
-`init-editor.el` registers ffmpeg actions for videos: speed up 2x, extract
-the audio, and convert to GIF.
+`init-editor.el` registers ffmpeg actions for videos: change the speed,
+extract the audio, and convert to GIF.
 
 To add an action from dired, follow these steps:
 
@@ -135,13 +135,22 @@ An init file can also register an action with `my-dired-actions-add`:
 A command string runs once per file in a shell. The placeholders expand
 shell-quoted:
 
-| Placeholder | Expands to                               |
-| ----------- | ---------------------------------------- |
-| `%i`        | Absolute path of the file                |
-| `%d`        | Directory of the file, no trailing `/`   |
-| `%b`        | File name without directory or extension |
-| `%e`        | Extension without the dot                |
-| `%%`        | A literal `%`                            |
+| Placeholder         | Expands to                               |
+| ------------------- | ---------------------------------------- |
+| `%i`                | Absolute path of the file                |
+| `%d`                | Directory of the file, no trailing `/`   |
+| `%b`                | File name without directory or extension |
+| `%e`                | Extension without the dot                |
+| `%%`                | A literal `%`                            |
+| `%{PROMPT:DEFAULT}` | A value typed after you pick the action  |
+
+A prompt such as `%{Speed:2}` asks for a value once per run, even for many
+files, and offers `2` as the default. The `:DEFAULT` part is optional. The
+"Change speed" action uses the same prompt three times:
+
+```elisp
+"ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2} %d/%b-%{Speed:2}x.%e"
+```
 
 Pass `t`, or type `*` at the prompt, to match every file. Pass a function
 instead of a string to receive the list of files. The output goes to

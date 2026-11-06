@@ -188,6 +188,54 @@
         (my-dired-actions-dispatch)))
     (should new-called)))
 
+(ert-deftest my-dired-actions-should-list-each-prompt-once ()
+  (should (equal (my-dired-actions--prompt-specs
+                  "a %{Speed:2} b %{Speed:2} c %{Name}")
+                 '(("Speed" . "2") ("Name" . nil)))))
+
+(ert-deftest my-dired-actions-should-not-read-a-prompt-after-a-literal-percent ()
+  (should-not (my-dired-actions--prompt-specs "echo %%{Speed}")))
+
+(ert-deftest my-dired-actions-should-fill-prompts-with-quoted-answers ()
+  (should (equal (my-dired-actions--fill-prompts
+                  "x=%{Speed:2} y=%{Speed:2} %%{Kept}" '(("Speed" . "1 5")))
+                 (format "x=%s y=%s %%%%{Kept}"
+                         (shell-quote-argument "1 5")
+                         (shell-quote-argument "1 5")))))
+
+(ert-deftest my-dired-actions-should-escape-a-percent-in-an-answer ()
+  ;; format-spec runs after the prompts are filled, so a "%" in an answer
+  ;; must survive it as a literal.
+  (should (equal (my-dired-actions-expand-command
+                  (my-dired-actions--fill-prompts "echo %{Ratio}"
+                                                  '(("Ratio" . "50%")))
+                  "/v/a.mp4")
+                 (concat "echo " (shell-quote-argument "50%")))))
+
+(ert-deftest my-dired-actions-should-ask-prompts-once-for-many-files ()
+  (let ((asked-prompts nil))
+    (my-dired-actions-test--with-recorded-commands
+      (cl-letf (((symbol-function 'read-string)
+                 (lambda (prompt &rest _)
+                   (push prompt asked-prompts)
+                   "3")))
+        (my-dired-actions-run
+         (my-dired-action-create :name "Speed" :extensions t
+                                 :command "speed %{Speed:2} %b")
+         '("/v/a.mp4" "/v/b.mp4")))
+      (should (equal (list (length asked-prompts) recorded-commands)
+                     '(1 ("speed 3 a && speed 3 b")))))))
+
+(ert-deftest my-dired-actions-should-use-the-default-for-an-empty-answer ()
+  (my-dired-actions-test--with-recorded-commands
+    (cl-letf (((symbol-function 'read-string)
+               (lambda (_prompt _initial _history default &rest _) default)))
+      (my-dired-actions-run
+       (my-dired-action-create :name "Speed" :extensions t
+                               :command "speed %{Speed:2}")
+       '("/v/a.mp4")))
+    (should (equal recorded-commands '("speed 2")))))
+
 (provide 'my-dired-actions-test)
 
 ;;; my-dired-actions-test.el ends here
