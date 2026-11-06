@@ -367,6 +367,9 @@ Remote buffers differ in the following ways:
 - **Remote attributes are cached for 60 seconds.** A file changed by another
   process may look stale for up to a minute. Run `M-x tramp-cleanup-this-connection`
   or revert the buffer to refresh sooner.
+- **Remote ACLs are ignored.** Saving skips `getfacl` and `setfacl`, which
+  saves three ssh round trips per save. Emacs overwrites the file in place, so
+  an existing ACL stays intact.
 - **Remote files are not auto-saved on visit.**
   `remote-file-name-inhibit-auto-save-visited` is `t`.
 
