@@ -182,6 +182,7 @@ Answer in Japanese even if the user uses English. Use Japanese for the following
 
 - Todo items.
 - Implementation plans, including plan mode output.
+- Crit review comments and replies, such as `crit comment` text.
 
 ## File Content
 
