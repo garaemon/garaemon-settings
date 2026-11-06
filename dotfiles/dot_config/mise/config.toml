@@ -26,6 +26,7 @@ pre-commit = "latest"
 python = "3.12"
 rclone = "latest"
 ripgrep = "latest"
+rust = "1.99.1"
 starship = "1.24.2"
 teleport-community = "latest"
 

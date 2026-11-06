@@ -147,6 +147,57 @@ no file name prompt appears:
 - A buffer without a file falls back to the path prompt of
   `org-excalidraw-create-drawing`.
 
+## GitHub Links
+
+`my-org-github-link.el` turns a GitHub URL that you yank into an Org buffer
+into a link with a short description:
+
+| Yanked URL | Description |
+| --- | --- |
+| `https://github.com/owner/repo/issues/20` | `owner/repo#20` |
+| `https://github.com/owner/repo/issues/20#issuecomment-1` | `owner/repo#20 (comment)` |
+| `https://github.com/owner/repo/pull/21#pullrequestreview-1` | `owner/repo#21 (review)` |
+| `https://github.com/owner/repo/pull/21/files` | `owner/repo#21 (files)` |
+| `https://github.com/owner/repo` | `owner/repo` |
+
+The following yanks stay unchanged:
+
+- Text other than a lone URL, such as a sentence that contains one.
+- Other GitHub pages, such as file views and commits.
+- A yank between `[[` and `]`, such as into the target of `[[]]`.
+
+Only `github.com` URLs change by default. Add a GitHub Enterprise host to
+`my-org-github-link-hosts`, for example in `custom.el`:
+
+```elisp
+(setopt my-org-github-link-hosts '("github.com" "github.example.com"))
+```
+
+## Page Title Links
+
+`my-org-url-title.el` turns any other web URL that you yank into an Org buffer
+into a link described by the page title:
+
+```text
+https://example.com  ->  [[https://example.com][Example Domain]]
+```
+
+The yank inserts the bare URL at once. The page loads in the background,
+and the URL becomes a link when the title arrives. The bare URL stays in
+these cases:
+
+- The request fails, or the response is not HTML.
+- The page has neither a `<title>` nor an `og:title` meta tag.
+- You edit the URL before the title arrives.
+- The URL is a GitHub URL that `my-org-github-link.el` already formatted.
+
+A title wider than 80 columns ends in `...`. Change the width, or set it to
+`nil` to keep whole titles:
+
+```elisp
+(setopt my-org-url-title-max-length 120)
+```
+
 ## Slide Shows
 
 `org-present` turns an Org file into a slide show, one top-level heading per
@@ -313,9 +364,14 @@ Remote buffers differ in the following ways:
 - **Dired icons are generic.** Icons are chosen from the file name and the `d`
   in the permission column, without any stat call. Symlinks, git repositories
   and submodules get the plain file or directory icon.
-- **Remote attributes are cached for 60 seconds.** A file changed by another
-  process may look stale for up to a minute. Run `M-x tramp-cleanup-this-connection`
-  or revert the buffer to refresh sooner.
+- **Remote attributes stay cached until TRAMP flushes them.**
+  `remote-file-name-inhibit-cache` is nil. A file changed by another process
+  may look stale. Run `M-x tramp-cleanup-this-connection` or revert the buffer
+  to refresh. Saving still checks the modification time, so Emacs warns before
+  it overwrites a file that changed on the remote host.
+- **Remote ACLs are ignored.** Saving skips `getfacl` and `setfacl`, which
+  saves three ssh round trips per save. Emacs overwrites the file in place, so
+  an existing ACL stays intact.
 - **Remote files are not auto-saved on visit.**
   `remote-file-name-inhibit-auto-save-visited` is `t`.
 

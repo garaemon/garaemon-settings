@@ -411,20 +411,51 @@ if ENV-SH indicates a remote path. Relies on the helper function
 (use-package tramp
   :ensure nil
   :custom
-  ;; Trust cached remote file attributes for 60 seconds.  Dired and
-  ;; completion otherwise issue an ssh round trip per file.
-  (remote-file-name-inhibit-cache 60)
+  ;; Trust cached remote file attributes until TRAMP itself flushes them.
+  ;; Dired and completion otherwise issue an ssh round trip per file.
+  ;; Changes made on the remote host by other programs can show up late.
+  (remote-file-name-inhibit-cache nil)
   ;; Reuse one ssh connection for 10 minutes after the last use.
   (tramp-ssh-controlmaster-options
    (concat "-o ControlMaster=auto -o ControlPath=/tmp/tramp.%%C "
            "-o ControlPersist=10m"))
-  (tramp-verbose 1)
+  (tramp-default-method "ssh")
+  (tramp-verbose 0)
+  (tramp-debug-buffer nil)
+  ;; Files above 10 KiB go through scp instead of the inline shell encoder.
+  (tramp-copy-size-limit (* 1024 10))
+  (tramp-use-scp-direct-remote-copying t)
+  (tramp-pipe-stty-settings "")
+  (remote-file-name-inhibit-locks t)
   (remote-file-name-inhibit-auto-save-visited t)
+  ;; Keep the attribute cache across `process-file' calls, which otherwise
+  ;; flush it on the assumption that the command changed remote files.
+  (process-file-side-effects nil)
   :config
+  ;; Run async processes over ssh directly instead of through the remote
+  ;; shell that TRAMP keeps open.
+  (connection-local-set-profile-variables
+   'remote-direct-async-process
+   '((tramp-direct-async-process . t)))
+  (connection-local-set-profiles
+   '(:application tramp :protocol "ssh")
+   'remote-direct-async-process)
+  ;; Use the PATH that the remote login shell sets, such as from ~/.zshenv.
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  (defun tramp-cleanup-all ()
+    "Close all TRAMP connections and kill the buffers visiting remote files."
+    (interactive)
+    (tramp-cleanup-all-buffers)
+    (call-interactively 'tramp-cleanup-all-connections))
   ;; Stop `vc' from running git on remote files.  Every find-file and
   ;; dired refresh otherwise spawns remote processes to detect the backend.
   (setq vc-ignore-dir-regexp
-        (format "\\(%s\\)\\|\\(%s\\)" vc-ignore-dir-regexp tramp-file-name-regexp)))
+        (format "\\(%s\\)\\|\\(%s\\)" vc-ignore-dir-regexp tramp-file-name-regexp))
+  ;; Report every remote host as lacking ACL support.  On a host with ACLs,
+  ;; each save otherwise runs getfacl and then setfacl: three extra ssh round
+  ;; trips.  Saves overwrite in place (`make-backup-files' is nil), so the
+  ;; ACL survives.
+  (advice-add 'tramp-remote-acl-p :override #'ignore))
 
 ;;; Dired enhancements
 

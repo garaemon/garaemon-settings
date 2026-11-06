@@ -26,7 +26,11 @@
 
 (ert-deftest should_enable_tramp_directory_cache_when_loading_init_editor ()
   (let ((text (init-tramp-test--read-file-text "lisp/init-editor.el")))
-    (should (string-match-p "remote-file-name-inhibit-cache [0-9]+" text))))
+    (should (string-match-p "remote-file-name-inhibit-cache nil" text))))
+
+(ert-deftest should_configure_tramp_only_in_init_editor_when_loading_init_prog ()
+  (let ((text (init-tramp-test--read-file-text "lisp/init-prog.el")))
+    (should-not (string-match-p "(use-package tramp" text))))
 
 (ert-deftest should_skip_vc_on_remote_files_when_loading_init_editor ()
   (let ((text (init-tramp-test--read-file-text "lisp/init-editor.el")))
@@ -35,6 +39,11 @@
 (ert-deftest should_keep_ssh_connections_alive_when_loading_init_editor ()
   (let ((text (init-tramp-test--read-file-text "lisp/init-editor.el")))
     (should (string-match-p "ControlPersist" text))))
+
+(ert-deftest should_skip_remote_acl_when_loading_init_editor ()
+  (let ((text (init-tramp-test--read-file-text "lisp/init-editor.el")))
+    (should (string-match-p
+             "advice-add 'tramp-remote-acl-p :override #'ignore" text))))
 
 (ert-deftest should_disable_diff_hl_on_remote_when_loading_init_ui ()
   (let ((text (init-tramp-test--read-file-text "lisp/init-ui.el")))
