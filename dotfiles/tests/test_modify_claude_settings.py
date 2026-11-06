@@ -1,5 +1,5 @@
 """Check that the chezmoi modify template for ~/.claude/settings.json enables
-the i-have-adhd plugin without clobbering the rest of the file.
+the default plugins without clobbering the rest of the file.
 
 Claude Code itself writes permissions and plugin state into settings.json, so
 chezmoi must merge into the existing file instead of replacing it.
@@ -20,8 +20,11 @@ import pytest
 DOTFILES_DIR = Path(__file__).resolve().parent.parent
 SETTINGS_RELATIVE_PATH = Path(".claude") / "settings.json"
 PLUGIN_ID = "i-have-adhd@i-have-adhd"
-MARKETPLACE_NAME = "i-have-adhd"
-MARKETPLACE_REPO = "ayghri/i-have-adhd"
+DEFAULT_PLUGIN_IDS = [PLUGIN_ID, "crit@crit"]
+DEFAULT_MARKETPLACES = {
+    "i-have-adhd": "ayghri/i-have-adhd",
+    "crit": "tomasz-tomczyk/crit",
+}
 
 CHEZMOI_PATH = shutil.which("chezmoi")
 
@@ -70,10 +73,13 @@ def apply_settings_template(tmp_path):
     return apply_settings
 
 
-def test_should_enable_plugin_when_settings_are_empty(apply_settings_template):
+@pytest.mark.parametrize("plugin_id", DEFAULT_PLUGIN_IDS)
+def test_should_enable_plugin_when_settings_are_empty(
+    apply_settings_template, plugin_id
+):
     merged = apply_settings_template("")
 
-    assert merged["enabledPlugins"][PLUGIN_ID] is True
+    assert merged["enabledPlugins"][plugin_id] is True
 
 
 def test_should_enable_plugin_when_settings_file_is_missing(apply_settings_template):
@@ -88,11 +94,16 @@ def test_should_enable_plugin_when_settings_are_whitespace(apply_settings_templa
     assert merged["enabledPlugins"][PLUGIN_ID] is True
 
 
-def test_should_register_marketplace_when_settings_are_empty(apply_settings_template):
+@pytest.mark.parametrize(
+    ("marketplace_name", "marketplace_repo"), DEFAULT_MARKETPLACES.items()
+)
+def test_should_register_marketplace_when_settings_are_empty(
+    apply_settings_template, marketplace_name, marketplace_repo
+):
     merged = apply_settings_template("")
 
-    source = merged["extraKnownMarketplaces"][MARKETPLACE_NAME]["source"]
-    assert source == {"source": "github", "repo": MARKETPLACE_REPO}
+    source = merged["extraKnownMarketplaces"][marketplace_name]["source"]
+    assert source == {"source": "github", "repo": marketplace_repo}
 
 
 def test_should_keep_unrelated_keys_when_settings_exist(apply_settings_template):

@@ -201,11 +201,15 @@ systemctl --user start news-digest-slack.service
 `dot_claude/modify_settings.json` is a chezmoi modify template. It merges
 these keys into `~/.claude/settings.json` and leaves every other key alone:
 
-- `extraKnownMarketplaces`: registers the `ayghri/i-have-adhd` marketplace.
-- `enabledPlugins`: enables `i-have-adhd@i-have-adhd`.
+- `extraKnownMarketplaces`: registers the `ayghri/i-have-adhd` and
+  `tomasz-tomczyk/crit` marketplaces.
+- `enabledPlugins`: enables `i-have-adhd@i-have-adhd` and `crit@crit`.
 - `hooks.SessionEnd`: appends the worklog hook described in
   [Claude Code worklog](#claude-code-worklog). The template keeps any other
   SessionEnd hook and adds the worklog hook only once.
+
+The `crit` plugin calls the `crit` CLI. Install the CLI separately, as the
+[crit README](https://github.com/tomasz-tomczyk/crit) describes.
 
 The template uses chezmoi's built-in `fromJson`, `setValueAtPath`, and
 `toPrettyJson` functions, so it needs no external command such as `jq`.

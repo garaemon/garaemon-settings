@@ -13,6 +13,8 @@
 {{- end -}}
 {{- $settings = setValueAtPath (list "enabledPlugins" "i-have-adhd@i-have-adhd") true $settings -}}
 {{- $settings = setValueAtPath (list "extraKnownMarketplaces" "i-have-adhd") (dict "source" (dict "source" "github" "repo" "ayghri/i-have-adhd")) $settings -}}
+{{- $settings = setValueAtPath (list "enabledPlugins" "crit@crit") true $settings -}}
+{{- $settings = setValueAtPath (list "extraKnownMarketplaces" "crit") (dict "source" (dict "source" "github" "repo" "tomasz-tomczyk/crit")) $settings -}}
 {{- /*
   Register the worklog hook once, after any SessionEnd hooks the user added.
   Replacing the list would drop hooks that Claude Code's /hooks wrote there.
