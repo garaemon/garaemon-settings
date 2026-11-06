@@ -1,0 +1,5 @@
+# Zabbly channel: "stable" for monthly feature releases, or "lts-6.0".
+# Moving from stable back to an LTS channel is not supported.
+incus_channel: lts-6.0
+incus_admin_user: "{{ ansible_facts.user_id }}"
+incus_bridge_interface: incusbr0

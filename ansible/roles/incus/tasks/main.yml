@@ -1,0 +1,85 @@
+# Based on https://github.com/zabbly/incus
+
+- name: Install Incus from the Zabbly apt repository
+  when: ansible_facts.os_family == "Debian"
+  block:
+    - name: Create apt keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+      become: true
+
+    # The checksum pins the key with fingerprint
+    # 4EFC590696CB15B87C73A3AD82CC8797C838DCFD, which expires in 2030-08.
+    - name: Download Zabbly signing key
+      get_url:
+        url: https://pkgs.zabbly.com/key.asc
+        dest: /etc/apt/keyrings/zabbly.asc
+        checksum: sha256:f1adb44fdf82083f983a392b5b406d34e473dce3d66a51de3118cdc1f51d3f87
+        mode: "0644"
+      become: true
+
+    - name: Write Zabbly Incus repository file
+      copy:
+        dest: "/etc/apt/sources.list.d/zabbly-incus-{{ incus_channel }}.sources"
+        content: |
+          Enabled: yes
+          Types: deb
+          URIs: https://pkgs.zabbly.com/incus/{{ incus_channel }}
+          Suites: {{ ansible_facts.distribution_release }}
+          Components: main
+          Architectures: {{ incus_apt_architecture[ansible_facts.architecture] }}
+          Signed-By: /etc/apt/keyrings/zabbly.asc
+        mode: "0644"
+      become: true
+      vars:
+        incus_apt_architecture:
+          x86_64: amd64
+          aarch64: arm64
+      register: incus_repository
+
+    - name: Install Incus
+      apt:
+        name: incus
+        state: present
+        update_cache: "{{ incus_repository.changed }}"
+      become: true
+
+    # Members of incus-admin can run incus without sudo.
+    - name: Add user to incus-admin group
+      user:
+        name: "{{ incus_admin_user }}"
+        groups: incus-admin
+        append: true
+      become: true
+
+    # The default ufw policy drops DHCP, DNS, and forwarded traffic on the
+    # Incus bridge, so instances get no IPv4 address or network access.
+    # https://linuxcontainers.org/incus/docs/main/howto/network_bridge_firewalld/
+    - name: Install ufw
+      apt:
+        name: ufw
+        state: present
+      become: true
+
+    - name: Allow incoming traffic on the Incus bridge
+      community.general.ufw:
+        rule: allow
+        direction: in
+        interface: "{{ incus_bridge_interface }}"
+      become: true
+
+    - name: Allow routed traffic entering the Incus bridge
+      community.general.ufw:
+        rule: allow
+        route: true
+        interface_in: "{{ incus_bridge_interface }}"
+      become: true
+
+    - name: Allow routed traffic leaving the Incus bridge
+      community.general.ufw:
+        rule: allow
+        route: true
+        interface_out: "{{ incus_bridge_interface }}"
+      become: true
