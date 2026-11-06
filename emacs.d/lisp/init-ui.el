@@ -301,6 +301,11 @@ Delegate to ORIGINAL-FUNCTION in local buffers."
   (text-mode . hl-line-mode)
   )
 
+(use-package my-tty-faces
+  :ensure nil
+  :after (hl-line paren)
+  :config (my-tty-faces-apply))
+
 (use-package emoji
   :ensure nil
   :bind (("C-:" . emoji-search))
@@ -387,6 +392,9 @@ it from being deleted by `delete-other-windows` (C-x 1)."
      vundo-step-forward
      ))
   :config
+  ;; Pulse tty lines in the Spacedust blue.  Pulsar paints every tty pulse in
+  ;; `pulsar-tty-color', and its default red buries the text after C-l.
+  (setq pulsar-tty-color "#0f548b")
   ;; Pulsar runs `pulsar-resolve-function-aliases' every time
   ;; `pulsar-mode' is enabled in a new buffer, and each invocation walks
   ;; the entire obarray twice via `mapatoms'. With many agenda files
