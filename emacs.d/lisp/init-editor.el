@@ -472,8 +472,9 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (require 'my-dired-open)
   (require 'my-dired-actions)
   (my-dired-actions-add
-   '("mp4" "mov" "mkv" "webm") "Speed up 2x (ffmpeg)"
-   "ffmpeg -nostdin -i %i -vf setpts=PTS/2 -af atempo=2 %d/%b-2x.%e")
+   '("mp4" "mov" "mkv" "webm") "Change speed (ffmpeg)"
+   (concat "ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2}"
+           " %d/%b-%{Speed:2}x.%e"))
   (my-dired-actions-add
    '("mp4" "mov" "mkv" "webm") "Extract audio as m4a (ffmpeg)"
    "ffmpeg -nostdin -i %i -vn -c:a aac %d/%b.m4a")
