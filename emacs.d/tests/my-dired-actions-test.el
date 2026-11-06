@@ -110,6 +110,33 @@
         (my-dired-actions-dispatch))
       (should (equal recorded-commands '("mute a"))))))
 
+(ert-deftest my-dired-actions-should-annotate-a-candidate-with-its-command ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
+    (should (string-match-p
+             "ffmpeg -i %i"
+             (my-dired-actions--annotate "Speed up")))))
+
+(ert-deftest my-dired-actions-should-tag-candidates-with-a-category ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
+    (let ((table (my-dired-actions--completion-table
+                  my-dired-actions)))
+      (should (eq (alist-get 'category (cdr (funcall table "" nil 'metadata)))
+                  'my-dired-action)))))
+
+(ert-deftest my-dired-actions-should-choose-with-completing-read-on-right-click ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add '("mp4") "Mute" "mute %b")
+    (my-dired-actions-test--with-recorded-commands
+      (cl-letf (((symbol-function 'mouse-set-point) #'ignore)
+                ((symbol-function 'dired-get-marked-files)
+                 (lambda (&rest _) '("/v/a.mp4")))
+                ((symbol-function 'completing-read)
+                 (lambda (&rest _) "Mute")))
+        (my-dired-actions-mouse-menu 'fake-event))
+      (should (equal recorded-commands '("mute a"))))))
+
 (provide 'my-dired-actions-test)
 
 ;;; my-dired-actions-test.el ends here

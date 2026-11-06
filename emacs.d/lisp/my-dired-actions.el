@@ -3,8 +3,9 @@
 ;;; Commentary:
 ;; A context menu for dired, keyed by file extension.  Register an action
 ;; with `my-dired-actions-add', then pick it with `my-dired-actions-dispatch'
-;; (keyboard) or `my-dired-actions-mouse-menu' (right click).  Only the
-;; actions whose extensions match every target file appear.
+;; (keyboard) or `my-dired-actions-mouse-menu' (right click).  Both
+;; choose through `completing-read', so Vertico and Orderless narrow the
+;; list.  Only the actions whose extensions match every target file appear.
 ;;
 ;;   (my-dired-actions-add '("mp4" "mov") "Speed up 2x"
 ;;     "ffmpeg -i %i -vf setpts=PTS/2 -af atempo=2 %d/%b-2x.%e")
@@ -120,36 +121,52 @@ command such as ffmpeg does not start once per file in parallel."
       (user-error "No dired action for %s"
                   (mapconcat #'file-name-nondirectory files ", "))))
 
-;;;###autoload
-(defun my-dired-actions-dispatch ()
-  "Choose and run an action for the marked files, or the file at point."
-  (interactive)
-  (let* ((files (dired-get-marked-files))
-         (actions (my-dired-actions--applicable-or-error files))
+;; Annotations read the global list because `completing-read' passes only
+;; the candidate string; names are unique, so the lookup is unambiguous.
+(defun my-dired-actions--annotate (candidate)
+  "Return the command of the action named CANDIDATE, for the completion UI."
+  (let* ((action (cl-find candidate my-dired-actions
+                          :key #'my-dired-action-name :test #'equal))
+         (command (and action (my-dired-action-command action))))
+    (when command
+      (concat "  " (propertize (if (stringp command) command "(function)")
+                               'face 'completions-annotations)))))
+
+(defun my-dired-actions--completion-table (actions)
+  "Return a completion table of ACTIONS names with a category and annotations.
+The `my-dired-action' category lets Marginalia and Embark recognize the
+candidates, and the annotation shows the command beside each name."
+  (let ((names (mapcar #'my-dired-action-name actions)))
+    (lambda (string predicate completion-action)
+      (if (eq completion-action 'metadata)
+          '(metadata (category . my-dired-action)
+                     (annotation-function . my-dired-actions--annotate))
+        (complete-with-action completion-action names string predicate)))))
+
+(defun my-dired-actions--choose-and-run (files)
+  "Narrow the actions for FILES with `completing-read' and run the choice."
+  (let* ((actions (my-dired-actions--applicable-or-error files))
          (chosen-name (completing-read
-                       "Action: " (mapcar #'my-dired-action-name actions)
+                       "Action: " (my-dired-actions--completion-table actions)
                        nil t)))
     (my-dired-actions-run
      (cl-find chosen-name actions :key #'my-dired-action-name :test #'equal)
      files)))
 
 ;;;###autoload
+(defun my-dired-actions-dispatch ()
+  "Choose and run an action for the marked files, or the file at point."
+  (interactive)
+  (my-dired-actions--choose-and-run (dired-get-marked-files)))
+
+;;;###autoload
 (defun my-dired-actions-mouse-menu (event)
-  "Pop up the actions for the file under the mouse EVENT."
+  "Choose and run an action for the file under the mouse EVENT.
+The choice goes through `completing-read' rather than a popup menu, so
+Vertico and Orderless narrow the actions as in `my-dired-actions-dispatch'."
   (interactive "e")
   (mouse-set-point event)
-  (let* ((files (dired-get-marked-files))
-         (actions (my-dired-actions--applicable-or-error files))
-         (chosen-action
-          (x-popup-menu event
-                        (list "Dired actions"
-                              (cons "" (mapcar (lambda (action)
-                                                 (cons (my-dired-action-name
-                                                        action)
-                                                       action))
-                                               actions))))))
-    (when chosen-action
-      (my-dired-actions-run chosen-action files))))
+  (my-dired-actions--choose-and-run (dired-get-marked-files)))
 
 (provide 'my-dired-actions)
 

@@ -111,8 +111,12 @@ target file. The targets are the marked files, or the file at point.
 
 Open the menu in one of two ways:
 
-- Press `;` to pick an action with `completing-read`.
-- Right-click a file to pick an action from a popup menu.
+- Press `;`.
+- Right-click a file.
+
+Both ways pick the action with `completing-read`, so Vertico and Orderless
+narrow the list as you type. Each candidate shows its command as an
+annotation.
 
 `init-editor.el` registers ffmpeg actions for videos: speed up 2x, extract
 the audio, and convert to GIF. Register your own action with
