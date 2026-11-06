@@ -4,16 +4,11 @@
 ;; A context menu for dired, keyed by file extension.
 ;; `my-dired-actions-dispatch' lists the actions whose extensions match
 ;; every target file, through `completing-read' so Vertico and Orderless
-;; narrow the list.  The last entry of the list adds a new action.
+;; narrow the list.  Register an action from the init files:
 ;;
-;; Add an action in one of two ways:
-;;
-;; - Pick "[Add a new action...]" in the menu, or run `my-dired-actions-new'.
-;;   The action goes to `my-dired-actions-file' and loads at startup.
-;; - Call `my-dired-actions-add' from the init files:
-;;
-;;   (my-dired-actions-add '("mp4" "mov") "Speed up 2x"
-;;     "ffmpeg -i %i -vf setpts=PTS/2 -af atempo=2 %d/%b-2x.%e")
+;;   (my-dired-actions-add '("mp4" "mov") "Change speed"
+;;     (concat "ffmpeg -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2}"
+;;             " %d/%b-%{Speed:2}x.%e"))
 ;;
 ;; A string command is a shell template that runs once per file:
 ;;
@@ -43,12 +38,6 @@
 
 (defvar my-dired-actions nil
   "Registered `my-dired-action' entries, in menu order.")
-
-(defvar my-dired-actions-file (locate-user-emacs-file "dired-actions.eld")
-  "File that holds the actions added with `my-dired-actions-new'.")
-
-(defconst my-dired-actions-new-candidate "[Add a new action...]"
-  "Menu entry that runs `my-dired-actions-new' instead of an action.")
 
 (defconst my-dired-actions-output-buffer-name "*Dired Action*"
   "Buffer that receives the output of shell actions.")
@@ -188,90 +177,31 @@ once per file in parallel."
   "Return a completion table of ACTIONS names with a category and annotations.
 The `my-dired-action' category lets Marginalia and Embark recognize the
 candidates, and the annotation shows the command beside each name."
-  (let ((names (append (mapcar #'my-dired-action-name actions)
-                       (list my-dired-actions-new-candidate))))
+  (let ((names (mapcar #'my-dired-action-name actions)))
     (lambda (string predicate completion-action)
       (if (eq completion-action 'metadata)
           '(metadata (category . my-dired-action)
                      (annotation-function . my-dired-actions--annotate))
         (complete-with-action completion-action names string predicate)))))
 
-(defun my-dired-actions--read-file ()
-  "Return the (EXTENSIONS NAME COMMAND) entries in `my-dired-actions-file'."
-  (when (file-exists-p my-dired-actions-file)
-    (with-temp-buffer
-      (insert-file-contents my-dired-actions-file)
-      (read (current-buffer)))))
-
-(defun my-dired-actions--write-file (entries)
-  "Replace the contents of `my-dired-actions-file' with ENTRIES."
-  (with-temp-file my-dired-actions-file
-    (insert ";; Dired actions saved by `my-dired-actions-new'.  -*- mode: lisp-data -*-\n")
-    (pp entries (current-buffer))))
-
-;;;###autoload
-(defun my-dired-actions-load-file ()
-  "Register every action saved in `my-dired-actions-file'."
-  (dolist (entry (my-dired-actions--read-file))
-    (apply #'my-dired-actions-add entry)))
-
-(defun my-dired-actions-save (extensions name command)
-  "Register the action NAME and save it to `my-dired-actions-file'.
-EXTENSIONS and COMMAND are as in `my-dired-actions-add', except that
-COMMAND must be a string so that the file can hold it.  A saved action
-with the same NAME is overwritten."
-  (my-dired-actions-add extensions name command)
-  (my-dired-actions--write-file
-   (append (cl-remove name (my-dired-actions--read-file)
-                      :key #'cadr :test #'equal)
-           (list (list extensions name command)))))
-
-(defun my-dired-actions--parse-extensions (text)
-  "Return the extensions typed in TEXT, or t when TEXT is \"*\".
-Extensions are separated by spaces or commas; a leading dot is dropped."
-  (let ((words (split-string text "[ ,]+" t)))
-    (if (equal words '("*")) t
-      (mapcar (lambda (word) (downcase (string-remove-prefix "." word)))
-              words))))
-
-;;;###autoload
-(defun my-dired-actions-new ()
-  "Ask for a new action, then register and save it.
-The extension prompt starts with the extension of the file at point."
-  (interactive)
-  (let* ((default-extension
-          (or (file-name-extension (car (dired-get-marked-files))) ""))
-         (extensions (my-dired-actions--parse-extensions
-                      (read-string "Extensions (space separated, * for any): "
-                                   (downcase default-extension))))
-         (name (read-string "Action name: "))
-         (command (read-string
-                   "Command (%i path, %d dir, %b base, %e ext, %{Prompt:default}): ")))
-    (my-dired-actions-save extensions name command)
-    (message "Saved dired action \"%s\" to %s" name my-dired-actions-file)))
-
-;;;###autoload
-(defun my-dired-actions-edit-file ()
-  "Visit `my-dired-actions-file' to edit or delete saved actions.
-Run `my-dired-actions-load-file' after editing to register the changes."
-  (interactive)
-  (find-file my-dired-actions-file))
+(defun my-dired-actions--applicable-or-error (files)
+  "Return the actions for FILES, or signal `user-error' when there is none."
+  (or (my-dired-actions-for-files files)
+      (user-error "No dired action for %s"
+                  (mapconcat #'file-name-nondirectory files ", "))))
 
 ;;;###autoload
 (defun my-dired-actions-dispatch ()
-  "Choose and run an action for the marked files, or the file at point.
-The menu also offers `my-dired-actions-new-candidate', which adds an action."
+  "Choose and run an action for the marked files, or the file at point."
   (interactive)
   (let* ((files (dired-get-marked-files))
-         (actions (my-dired-actions-for-files files))
+         (actions (my-dired-actions--applicable-or-error files))
          (chosen-name (completing-read
                        "Action: " (my-dired-actions--completion-table actions)
                        nil t)))
-    (if (equal chosen-name my-dired-actions-new-candidate)
-        (my-dired-actions-new)
-      (my-dired-actions-run
-       (cl-find chosen-name actions :key #'my-dired-action-name :test #'equal)
-       files))))
+    (my-dired-actions-run
+     (cl-find chosen-name actions :key #'my-dired-action-name :test #'equal)
+     files)))
 
 (provide 'my-dired-actions)
 

@@ -114,18 +114,7 @@ Each candidate shows its command as an annotation.
 `init-editor.el` registers ffmpeg actions for videos: change the speed,
 extract the audio, and convert to GIF.
 
-To add an action from dired, follow these steps:
-
-1. Move to a file with the extension, and press `;`.
-2. Pick `[Add a new action...]`.
-3. Confirm the extensions. The prompt starts with the extension of the file.
-4. Type the action name and the command.
-
-The new action is ready at once. `my-dired-actions-new` saves it to
-`dired-actions.eld` in `user-emacs-directory`, so git shares it across
-machines. Run `my-dired-actions-edit-file` to edit or delete saved actions.
-
-An init file can also register an action with `my-dired-actions-add`:
+Register an action with `my-dired-actions-add` in an init file:
 
 ```elisp
 (my-dired-actions-add '("png" "jpg") "Shrink to 50% (ImageMagick)"
@@ -152,9 +141,9 @@ files, and offers `2` as the default. The `:DEFAULT` part is optional. The
 "ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2} %d/%b-%{Speed:2}x.%e"
 ```
 
-Pass `t`, or type `*` at the prompt, to match every file. Pass a function
-instead of a string to receive the list of files. The output goes to
-`*Dired Action*`, and the dired buffer refreshes when the command ends.
+Pass `t` to match every file. Pass a function instead of a string to receive
+the list of files. The output goes to `*Dired Action*`, and the dired buffer
+refreshes when the command ends.
 
 ## Org Git Sync
 

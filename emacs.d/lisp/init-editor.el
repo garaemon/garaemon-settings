@@ -480,8 +480,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
    "ffmpeg -nostdin -i %i -vn -c:a aac %d/%b.m4a")
   (my-dired-actions-add
    '("mp4" "mov" "mkv" "webm") "Convert to GIF (ffmpeg)"
-   "ffmpeg -nostdin -i %i -vf fps=10,scale=640:-1 %d/%b.gif")
-  (my-dired-actions-load-file))
+   "ffmpeg -nostdin -i %i -vf fps=10,scale=640:-1 %d/%b.gif"))
 
 (use-package wdired
   :config

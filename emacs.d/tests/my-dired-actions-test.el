@@ -119,74 +119,11 @@
       (should (eq (alist-get 'category (cdr (funcall table "" nil 'metadata)))
                   'my-dired-action)))))
 
-;; Bind the actions file to a fresh temporary path so a test never touches
-;; the real one and always starts from an empty file.
-(defmacro my-dired-actions-test--with-actions-file (&rest body)
-  "Run BODY with `my-dired-actions-file' bound to a temporary path."
-  (declare (indent 0))
-  `(let ((my-dired-actions-file (make-temp-file "dired-actions" nil ".eld"))
-         (my-dired-actions nil))
-     (unwind-protect
-         (progn (delete-file my-dired-actions-file) ,@body)
-       (when (file-exists-p my-dired-actions-file)
-         (delete-file my-dired-actions-file)))))
-
-(ert-deftest my-dired-actions-should-load-saved-actions ()
-  (my-dired-actions-test--with-actions-file
-    (my-dired-actions-save '("mp4") "Speed up" "ffmpeg -i %i")
-    (setq my-dired-actions nil)
-    (my-dired-actions-load-file)
-    (should (equal (mapcar #'my-dired-action-name my-dired-actions)
-                   '("Speed up")))))
-
-(ert-deftest my-dired-actions-should-register-a-saved-action-at-once ()
-  (my-dired-actions-test--with-actions-file
-    (my-dired-actions-save '("mp4") "Speed up" "ffmpeg -i %i")
-    (should (my-dired-actions-for-files '("/v/a.mp4")))))
-
-(ert-deftest my-dired-actions-should-overwrite-a-saved-action-with-the-same-name ()
-  (my-dired-actions-test--with-actions-file
-    (my-dired-actions-save '("mp4") "Speed up" "old %i")
-    (my-dired-actions-save '("mp4") "Speed up" "new %i")
-    (should (equal (my-dired-actions--read-file)
-                   '((("mp4") "Speed up" "new %i"))))))
-
-(ert-deftest my-dired-actions-should-load-nothing-without-a-file ()
-  (my-dired-actions-test--with-actions-file
-    (my-dired-actions-load-file)
-    (should-not my-dired-actions)))
-
-(ert-deftest my-dired-actions-should-split-typed-extensions ()
-  (should (equal (my-dired-actions--parse-extensions " .MP4, mov  mkv")
-                 '("mp4" "mov" "mkv"))))
-
-(ert-deftest my-dired-actions-should-treat-a-star-as-every-file ()
-  (should (eq (my-dired-actions--parse-extensions "*") t)))
-
-(ert-deftest my-dired-actions-should-default-new-extensions-to-the-file-at-point ()
-  (let ((offered-default nil))
-    (my-dired-actions-test--with-actions-file
-      (cl-letf (((symbol-function 'dired-get-marked-files)
-                 (lambda (&rest _) '("/v/a.mp4")))
-                ((symbol-function 'read-string)
-                 (lambda (prompt &optional initial &rest _)
-                   (when (string-prefix-p "Extensions" prompt)
-                     (setq offered-default initial))
-                   (or initial "x"))))
-        (my-dired-actions-new)))
-    (should (equal offered-default "mp4"))))
-
-(ert-deftest my-dired-actions-should-offer-adding-an-action-in-the-menu ()
-  (let ((new-called nil))
-    (my-dired-actions-test--with-actions nil
-      (cl-letf (((symbol-function 'dired-get-marked-files)
-                 (lambda (&rest _) '("/v/a.xyz")))
-                ((symbol-function 'completing-read)
-                 (lambda (&rest _) my-dired-actions-new-candidate))
-                ((symbol-function 'my-dired-actions-new)
-                 (lambda () (setq new-called t))))
-        (my-dired-actions-dispatch)))
-    (should new-called)))
+(ert-deftest my-dired-actions-should-error-when-no-action-matches ()
+  (my-dired-actions-test--with-actions nil
+    (cl-letf (((symbol-function 'dired-get-marked-files)
+               (lambda (&rest _) '("/v/a.xyz"))))
+      (should-error (my-dired-actions-dispatch) :type 'user-error))))
 
 (ert-deftest my-dired-actions-should-list-each-prompt-once ()
   (should (equal (my-dired-actions--prompt-specs
