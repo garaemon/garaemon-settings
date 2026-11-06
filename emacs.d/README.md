@@ -106,21 +106,26 @@ of failing.
 ## Dired Actions
 
 `my-dired-actions.el` adds a context menu to dired. Each action belongs to a
-set of file extensions, and the menu lists only the actions that match every
-target file. The targets are the marked files, or the file at point.
-
-Open the menu in one of two ways:
-
-- Press `;`.
-- Right-click a file.
-
-Both ways pick the action with `completing-read`, so Vertico and Orderless
-narrow the list as you type. Each candidate shows its command as an
-annotation.
+set of file extensions. Press `;` to list the actions that match every target
+file. The targets are the marked files, or the file at point. The list goes
+through `completing-read`, so Vertico and Orderless narrow it as you type.
+Each candidate shows its command as an annotation.
 
 `init-editor.el` registers ffmpeg actions for videos: speed up 2x, extract
-the audio, and convert to GIF. Register your own action with
-`my-dired-actions-add`:
+the audio, and convert to GIF.
+
+To add an action from dired, follow these steps:
+
+1. Move to a file with the extension, and press `;`.
+2. Pick `[Add a new action...]`.
+3. Confirm the extensions. The prompt starts with the extension of the file.
+4. Type the action name and the command.
+
+The new action is ready at once. `my-dired-actions-new` saves it to
+`dired-actions.eld` in `user-emacs-directory`, so git shares it across
+machines. Run `my-dired-actions-edit-file` to edit or delete saved actions.
+
+An init file can also register an action with `my-dired-actions-add`:
 
 ```elisp
 (my-dired-actions-add '("png" "jpg") "Shrink to 50% (ImageMagick)"
@@ -138,7 +143,7 @@ shell-quoted:
 | `%e`        | Extension without the dot                |
 | `%%`        | A literal `%`                            |
 
-Pass `t` as the extensions to match every file. Pass a function instead of a
+Pass `t` (or type `*` at the prompt) to match every file. Pass a function instead of a
 string to receive the list of files. The output goes to `*Dired Action*`, and
 the dired buffer refreshes when the command ends.
 
