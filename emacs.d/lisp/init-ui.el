@@ -301,6 +301,11 @@ Delegate to ORIGINAL-FUNCTION in local buffers."
   (text-mode . hl-line-mode)
   )
 
+(use-package my-tty-faces
+  :ensure nil
+  :after (hl-line paren)
+  :config (my-tty-faces-apply))
+
 (use-package emoji
   :ensure nil
   :bind (("C-:" . emoji-search))
