@@ -14,7 +14,12 @@ VISUAL=vim
 
 export LC_CTYPE=en_US.UTF-8
 
-# for emacs tramp
+# Emacs TRAMP and vterm.  TRAMP forces TERM=dumb on its direct async
+# processes, so a vterm on a remote directory arrives as dumb too.  Restore a
+# real TERM for vterm and keep the bare prompt for TRAMP's own shell.
+if [[ "$TERM" == "dumb" && "$INSIDE_EMACS" == vterm* ]]; then
+  export TERM="xterm-256color"
+fi
 case "$TERM" in
   dumb | emacs)
     unsetopt zle
