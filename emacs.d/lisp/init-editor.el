@@ -465,7 +465,6 @@ if ENV-SH indicates a remote path. Relies on the helper function
               ("M-s" . consult-grep)
               ("O" . my-dired-open-externally)
               (";" . my-dired-actions-dispatch)
-              ("<mouse-3>" . my-dired-actions-mouse-menu)
               ("F" . magit-pull)
               ("b" . magit-branch))
   :hook (dired-mode . auto-revert-mode)
@@ -480,7 +479,8 @@ if ENV-SH indicates a remote path. Relies on the helper function
    "ffmpeg -nostdin -i %i -vn -c:a aac %d/%b.m4a")
   (my-dired-actions-add
    '("mp4" "mov" "mkv" "webm") "Convert to GIF (ffmpeg)"
-   "ffmpeg -nostdin -i %i -vf fps=10,scale=640:-1 %d/%b.gif"))
+   "ffmpeg -nostdin -i %i -vf fps=10,scale=640:-1 %d/%b.gif")
+  (my-dired-actions-load-file))
 
 (use-package wdired
   :config
