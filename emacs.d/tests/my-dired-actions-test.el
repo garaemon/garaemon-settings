@@ -20,7 +20,7 @@
      ,@body))
 
 (defmacro my-dired-actions-test--with-recorded-commands (&rest body)
-  "Run BODY with the shell commands passed to the runner in `recorded-commands'."
+  "Run BODY with the commands given to the runner in `recorded-commands'."
   (declare (indent 0))
   `(let ((recorded-commands nil))
      (cl-letf (((symbol-function 'my-dired-actions--run-shell-command)
@@ -130,7 +130,7 @@
                   "a %{Speed:2} b %{Speed:2} c %{Name}")
                  '(("Speed" . "2") ("Name" . nil)))))
 
-(ert-deftest my-dired-actions-should-not-read-a-prompt-after-a-literal-percent ()
+(ert-deftest my-dired-actions-should-skip-a-prompt-after-a-literal-percent ()
   (should-not (my-dired-actions--prompt-specs "echo %%{Speed}")))
 
 (ert-deftest my-dired-actions-should-fill-prompts-with-quoted-answers ()

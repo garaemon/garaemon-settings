@@ -154,8 +154,8 @@ once per file in parallel."
   (let ((command (my-dired-action-command action)))
     (if (functionp command)
         (funcall command files)
-      (let ((filled-template (my-dired-actions--fill-prompts
-                              command (my-dired-actions--read-answers command))))
+      (let* ((answers (my-dired-actions--read-answers command))
+             (filled-template (my-dired-actions--fill-prompts command answers)))
         (my-dired-actions--run-shell-command
          (mapconcat (lambda (file)
                       (my-dired-actions-expand-command filled-template file))
