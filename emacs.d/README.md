@@ -121,9 +121,6 @@ The `.` binding replaces `dired-clean-directory`. Run that command with
 - ffmpeg actions for videos: change the speed, extract the audio, and
   convert to GIF.
 
-Pass `t` as the extensions to match every entry, or `file` to match every
-entry but a directory.
-
 Register an action with `my-dired-actions-add` in an init file:
 
 ```elisp
@@ -131,8 +128,12 @@ Register an action with `my-dired-actions-add` in an init file:
   "magick %i -resize 50%% %d/%b-small.%e")
 ```
 
-A command string runs once per file in a shell. The placeholders expand
-shell-quoted:
+Pass `t` as the extensions to match every entry, or `file` to match every
+entry but a directory.
+
+A command string expands once per file. The expansions run in one shell,
+joined with `&&`, so the run stops at the first file whose command fails.
+The placeholders expand shell-quoted:
 
 | Placeholder         | Expands to                               |
 | ------------------- | ---------------------------------------- |
@@ -151,9 +152,9 @@ files, and offers `2` as the default. The `:DEFAULT` part is optional. The
 "ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2} %d/%b-%{Speed:2}x.%e"
 ```
 
-Pass `t` to match every file. Pass a function instead of a string to receive
-the list of files. The output goes to `*Dired Action*`, and the dired buffer
-refreshes when the command ends.
+Pass a function instead of a string to receive the list of files. The output
+of a command string goes to `*Dired Action*`, and the dired buffer refreshes
+when the command ends.
 
 ## Org Git Sync
 

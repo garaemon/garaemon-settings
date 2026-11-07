@@ -10,7 +10,8 @@
 ;;     (concat "ffmpeg -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2}"
 ;;             " %d/%b-%{Speed:2}x.%e"))
 ;;
-;; A string command is a shell template that runs once per file:
+;; A string command is a shell template, expanded once per file and run
+;; as one "&&" chain, so a failing file stops the files after it:
 ;;
 ;; - %i: the absolute path of the file.
 ;; - %d: the directory of the file, without the trailing slash.
