@@ -156,6 +156,9 @@ Pass a function instead of a string to receive the list of files. The output
 of a command string goes to `*Dired Action*`, and the dired buffer refreshes
 when the command ends.
 
+A command string reads EOF from its standard input, so a confirmation prompt
+fails instead of hanging.
+
 ## Org Git Sync
 
 `my-org-git-sync.el` keeps the Org repository under `org-directory` in sync

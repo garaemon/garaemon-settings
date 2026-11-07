@@ -2,7 +2,8 @@
 
 ;;; Commentary:
 ;; Tests for `my-dired-actions'.  A recording stub replaces the process
-;; runner, so the tests launch no external command.  Run with:
+;; runner, so the tests launch no external command, except one test that
+;; starts /bin/sh to check that the runner closes stdin.  Run with:
 ;;
 ;;   emacs -Q --batch -L lisp -l ert -l tests/my-dired-actions-test.el \
 ;;     -f ert-run-tests-batch-and-exit
@@ -100,6 +101,18 @@
      '("/v/a.mp4" "/v/b.mp4"))
     (should (equal recorded-commands
                    (list "(false; echo a) && (false; echo b)")))))
+
+(ert-deftest my-dired-actions-should-finish-a-command-that-reads-stdin ()
+  (with-temp-buffer
+    (setq-local revert-buffer-function #'ignore)
+    (let* ((shell-file-name "/bin/sh")
+           (shell-command-switch "-c")
+           (process (my-dired-actions--run-shell-command
+                     "read answer; echo done" "Read" (current-buffer))))
+      (with-timeout (5 (delete-process process))
+        (while (process-live-p process)
+          (accept-process-output process 0.1)))
+      (should (eq (process-status process) 'exit)))))
 
 (ert-deftest my-dired-actions-should-call-a-function-action-with-the-files ()
   (let ((received-files nil))

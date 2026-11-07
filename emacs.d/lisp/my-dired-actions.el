@@ -94,23 +94,30 @@ action."
 
 (defun my-dired-actions--run-shell-command (command action-name dired-buffer)
   "Run shell COMMAND asynchronously and revert DIRED-BUFFER when it ends.
-ACTION-NAME labels the message shown when the process ends."
+ACTION-NAME labels the message shown when the process ends.  Return the
+process, whose standard input is already closed."
   (let ((output-buffer (get-buffer-create my-dired-actions-output-buffer-name)))
     (with-current-buffer output-buffer
       (goto-char (point-max))
       (insert (format "$ %s\n" command)))
     (display-buffer output-buffer)
-    (make-process
-     :name "dired-action"
-     :buffer output-buffer
-     :command (list shell-file-name shell-command-switch command)
-     :sentinel
-     (lambda (process event)
-       (when (memq (process-status process) '(exit signal))
-         (message "Dired action %s: %s" action-name (string-trim event))
-         (when (buffer-live-p dired-buffer)
-           (with-current-buffer dired-buffer
-             (revert-buffer))))))))
+    (let ((process
+           (make-process
+            :name "dired-action"
+            :buffer output-buffer
+            :connection-type 'pipe
+            :command (list shell-file-name shell-command-switch command)
+            :sentinel
+            (lambda (process event)
+              (when (memq (process-status process) '(exit signal))
+                (message "Dired action %s: %s" action-name (string-trim event))
+                (when (buffer-live-p dired-buffer)
+                  (with-current-buffer dired-buffer
+                    (revert-buffer))))))))
+      ;; Close stdin so that a prompt, such as ffmpeg asking to overwrite an
+      ;; existing output, reads EOF and fails instead of waiting forever.
+      (process-send-eof process)
+      process)))
 
 (defconst my-dired-actions--prompt-regexp
   "%%\\|%{\\([^}:]*\\)\\(?::\\([^}]*\\)\\)?}"
