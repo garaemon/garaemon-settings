@@ -71,7 +71,9 @@ configuration on one machine.  Git ignores both files:
   settings run before `init.el` and package.el start, so put frame, GC, and
   native compilation settings here.
 - **custom.el**: `init.el` loads this file before the `init-*.el` modules.
-  Put package variables such as `org-directory` here.
+  Put package variables such as `org-directory` here.  Set `org-directory`
+  with `setq`: `init-org.el` assigns its default whenever the variable is
+  unbound, and `custom-set-variables` leaves it unbound until Org loads.
 
 For example, keep the menu bar on one machine:
 
