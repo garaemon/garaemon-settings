@@ -37,6 +37,10 @@
     (graphviz-dot-preview))
   )
 
+(use-package sqlite3
+  :if (not (sqlite-available-p))
+  :ensure t)
+
 (use-package yasnippet :ensure t
   :config
   ;; `yas-global-mode' warns for every entry that is not a directory, and the

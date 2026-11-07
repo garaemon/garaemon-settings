@@ -232,9 +232,6 @@ Is Ollama running? (ollama serve) Status: %s" status))
 
 (use-package forge
   :after magit
-  ;; forge stores topics through emacsql, which needs the built-in SQLite.
-  ;; Without it, loading forge breaks magit-status as well.
-  :if (sqlite-available-p)
   ;; Demand-load forge as soon as magit loads.  The auto forge-pull hook below
   ;; lives in this :config block, so forge must be loaded for the hook to be
   ;; registered before the first magit-status buffer is created.  With plain
