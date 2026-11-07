@@ -471,6 +471,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :config
   (require 'my-dired-open)
   (require 'my-dired-actions)
+  (my-dired-actions-add 'file "Open externally" #'my-dired-open-files)
   (my-dired-actions-add
    '("mp4" "mov" "mkv" "webm") "Change speed (ffmpeg)"
    (concat "ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2}"

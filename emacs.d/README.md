@@ -114,8 +114,12 @@ Each candidate shows its command as an annotation.
 The `.` binding replaces `dired-clean-directory`. Run that command with
 `M-x dired-clean-directory`.
 
-`init-editor.el` registers ffmpeg actions for videos: change the speed,
-extract the audio, and convert to GIF.
+`init-editor.el` registers these actions:
+
+- Open externally: opens any file but a directory with the OS default
+  application.
+- ffmpeg actions for videos: change the speed, extract the audio, and
+  convert to GIF.
 
 Pass `t` as the extensions to match every entry, or `file` to match every
 entry but a directory.
