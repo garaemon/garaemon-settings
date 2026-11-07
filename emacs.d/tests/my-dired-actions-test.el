@@ -152,6 +152,12 @@
                (lambda (&rest _) (error "The action menu opened"))))
       (should-error (my-dired-actions-dispatch) :type 'user-error))))
 
+(ert-deftest my-dired-actions-should-annotate-a-symbol-command-with-its-name ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add 'file "Open externally" #'my-dired-open-files)
+    (should (string-match-p "my-dired-open-files"
+                            (my-dired-actions--annotate "Open externally")))))
+
 (ert-deftest my-dired-actions-should-list-each-prompt-once ()
   (should (equal (my-dired-actions--collect-prompt-specs
                   "a %{Speed:2} b %{Speed:2} c %{Name}")

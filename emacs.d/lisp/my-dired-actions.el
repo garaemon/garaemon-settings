@@ -175,7 +175,9 @@ once per file in parallel."
                           :key #'my-dired-action-name :test #'equal))
          (command (and action (my-dired-action-command action))))
     (when command
-      (concat "  " (propertize (if (stringp command) command "(function)")
+      (concat "  " (propertize (cond ((stringp command) command)
+                                     ((symbolp command) (symbol-name command))
+                                     (t "(function)"))
                                'face 'completions-annotations)))))
 
 (defun my-dired-actions--make-completion-table (actions)
