@@ -20,18 +20,38 @@
 (defvar early-init-custom-test-marker nil
   "Value that the early-custom.el fixture assigns.")
 
+(defconst early-init-custom-test-touched-variables
+  '(gc-cons-threshold gc-cons-percentage default-frame-alist
+    package-enable-at-startup load-prefer-newer
+    inhibit-startup-screen inhibit-startup-message
+    native-comp-deferred-compilation native-comp-async-report-warnings-errors)
+  "Variables that early-init.el assigns.
+CI loads every test file into one Emacs, so the helper restores these.")
+
+(defun early-init-custom-test--save-variables ()
+  "Return the global state of `early-init-custom-test-touched-variables'."
+  (mapcar (lambda (variable)
+            (list variable (boundp variable)
+                  (and (boundp variable) (default-value variable))))
+          early-init-custom-test-touched-variables))
+
+(defun early-init-custom-test--restore-variables (saved-states)
+  "Restore the global state that SAVED-STATES records."
+  (dolist (saved-state saved-states)
+    (pcase-let ((`(,variable ,was-bound ,saved-value) saved-state))
+      (if was-bound
+          (set-default variable saved-value)
+        (makunbound variable)))))
+
 (defun early-init-custom-test--load-early-init (early-custom-content)
   "Load early-init.el against a temporary `user-emacs-directory'.
 Write EARLY-CUSTOM-CONTENT to early-custom.el there unless it is nil.
-Restore the variables that early-init.el touches afterwards."
+Restore `early-init-custom-test-touched-variables' afterwards, so read the
+values that early-custom.el assigns from a variable outside that list."
   (let* ((temp-emacs-directory (file-name-as-directory
                                 (make-temp-file "early-init-test" t)))
          (user-emacs-directory temp-emacs-directory)
-         (gc-cons-threshold gc-cons-threshold)
-         (gc-cons-percentage gc-cons-percentage)
-         (default-frame-alist default-frame-alist)
-         (package-enable-at-startup package-enable-at-startup)
-         (load-prefer-newer load-prefer-newer))
+         (saved-states (early-init-custom-test--save-variables)))
     (unwind-protect
         (progn
           (when early-custom-content
@@ -39,25 +59,20 @@ Restore the variables that early-init.el touches afterwards."
                                               temp-emacs-directory)
               (insert early-custom-content)))
           (load early-init-custom-test-early-init-file nil t))
+      (early-init-custom-test--restore-variables saved-states)
       (delete-directory temp-emacs-directory t))))
 
-(ert-deftest should_load_early_custom_when_file_exists ()
+(ert-deftest should_load_early_custom_after_early_init_defaults ()
+  ;; early-custom.el sees the default that early-init.el assigned, so a setq
+  ;; in early-custom.el overrides that default.  No Emacs default of
+  ;; gc-cons-percentage equals the 0.6 that early-init.el assigns.
   ;; Arrange
   (setq early-init-custom-test-marker nil)
   ;; Act
   (early-init-custom-test--load-early-init
-   "(setq early-init-custom-test-marker 'loaded)")
+   "(setq early-init-custom-test-marker gc-cons-percentage)")
   ;; Assert
-  (should (eq early-init-custom-test-marker 'loaded)))
-
-(ert-deftest should_override_early_init_defaults_with_early_custom ()
-  ;; Arrange
-  (let ((inhibit-startup-screen nil))
-    ;; Act
-    (early-init-custom-test--load-early-init
-     "(setq inhibit-startup-screen 'overridden)")
-    ;; Assert
-    (should (eq inhibit-startup-screen 'overridden))))
+  (should (equal early-init-custom-test-marker 0.6)))
 
 (ert-deftest should_start_without_error_when_early_custom_is_missing ()
   ;; Arrange
