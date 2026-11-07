@@ -33,7 +33,7 @@
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i %o")
     (should (equal (mapcar #'my-dired-action-name
-                           (my-dired-actions-for-files '("/v/a.mp4")))
+                           (my-dired-actions-find-for-files '("/v/a.mp4")))
                    '("Speed up")))))
 
 (ert-deftest my-dired-actions-should-replace-an-action-with-the-same-name ()
@@ -45,29 +45,29 @@
 (ert-deftest my-dired-actions-should-match-extensions-case-insensitively ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
-    (should (my-dired-actions-for-files '("/v/A.MP4")))))
+    (should (my-dired-actions-find-for-files '("/v/A.MP4")))))
 
 (ert-deftest my-dired-actions-should-skip-actions-for-other-extensions ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
-    (should-not (my-dired-actions-for-files '("/v/a.png")))))
+    (should-not (my-dired-actions-find-for-files '("/v/a.png")))))
 
 (ert-deftest my-dired-actions-should-require-every-file-to-match ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
-    (should-not (my-dired-actions-for-files '("/v/a.mp4" "/v/b.png")))))
+    (should-not (my-dired-actions-find-for-files '("/v/a.mp4" "/v/b.png")))))
 
 (ert-deftest my-dired-actions-should-match-any-file-with-t ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add t "Checksum" "sha256sum %i")
-    (should (my-dired-actions-for-files '("/v/README")))))
+    (should (my-dired-actions-find-for-files '("/v/README")))))
 
 (ert-deftest my-dired-actions-should-match-a-regular-file-with-file ()
   (let ((regular-file (make-temp-file "my-dired-actions-test")))
     (unwind-protect
         (my-dired-actions-test--with-actions nil
           (my-dired-actions-add 'file "Open externally" #'ignore)
-          (should (my-dired-actions-for-files (list regular-file))))
+          (should (my-dired-actions-find-for-files (list regular-file))))
       (delete-file regular-file))))
 
 (ert-deftest my-dired-actions-should-skip-a-directory-with-file ()
@@ -75,7 +75,7 @@
     (unwind-protect
         (my-dired-actions-test--with-actions nil
           (my-dired-actions-add 'file "Open externally" #'ignore)
-          (should-not (my-dired-actions-for-files (list directory))))
+          (should-not (my-dired-actions-find-for-files (list directory))))
       (delete-directory directory))))
 
 (ert-deftest my-dired-actions-should-expand-placeholders-with-quoting ()
@@ -130,7 +130,7 @@
 (ert-deftest my-dired-actions-should-tag-candidates-with-a-category ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")
-    (let ((table (my-dired-actions--completion-table
+    (let ((table (my-dired-actions--make-completion-table
                   my-dired-actions)))
       (should (eq (alist-get 'category (cdr (funcall table "" nil 'metadata)))
                   'my-dired-action)))))
@@ -142,12 +142,12 @@
       (should-error (my-dired-actions-dispatch) :type 'user-error))))
 
 (ert-deftest my-dired-actions-should-list-each-prompt-once ()
-  (should (equal (my-dired-actions--prompt-specs
+  (should (equal (my-dired-actions--collect-prompt-specs
                   "a %{Speed:2} b %{Speed:2} c %{Name}")
                  '(("Speed" . "2") ("Name" . nil)))))
 
 (ert-deftest my-dired-actions-should-skip-a-prompt-after-a-literal-percent ()
-  (should-not (my-dired-actions--prompt-specs "echo %%{Speed}")))
+  (should-not (my-dired-actions--collect-prompt-specs "echo %%{Speed}")))
 
 (ert-deftest my-dired-actions-should-fill-prompts-with-quoted-answers ()
   (should (equal (my-dired-actions--fill-prompts

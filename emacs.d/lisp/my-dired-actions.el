@@ -70,7 +70,7 @@ action."
              file-extension
              (member (downcase file-extension) extensions)))))
 
-(defun my-dired-actions-for-files (files)
+(defun my-dired-actions-find-for-files (files)
   "Return the registered actions that apply to every file in FILES."
   (cl-remove-if-not
    (lambda (action)
@@ -115,7 +115,7 @@ action."
   "Match a literal \"%%\" or a prompt such as \"%{Speed:2}\".
 Matching \"%%\" too keeps \"%%{...}\" from being read as a prompt.")
 
-(defun my-dired-actions--prompt-specs (template)
+(defun my-dired-actions--collect-prompt-specs (template)
   "Return the (PROMPT . DEFAULT) pairs in TEMPLATE, first occurrence only.
 DEFAULT is nil for a prompt written without one, such as \"%{Name}\"."
   (let ((specs nil)
@@ -148,7 +148,7 @@ and its \"%\" doubled so that `format-spec' later keeps it literal."
               (cons (car spec)
                     (read-string (format-prompt (car spec) default)
                                  nil nil default))))
-          (my-dired-actions--prompt-specs template)))
+          (my-dired-actions--collect-prompt-specs template)))
 
 (defun my-dired-actions-run (action files)
   "Run ACTION on FILES.
@@ -177,7 +177,7 @@ once per file in parallel."
       (concat "  " (propertize (if (stringp command) command "(function)")
                                'face 'completions-annotations)))))
 
-(defun my-dired-actions--completion-table (actions)
+(defun my-dired-actions--make-completion-table (actions)
   "Return a completion table of ACTIONS names with a category and annotations.
 The `my-dired-action' category lets Marginalia and Embark recognize the
 candidates, and the annotation shows the command beside each name."
@@ -188,9 +188,9 @@ candidates, and the annotation shows the command beside each name."
                      (annotation-function . my-dired-actions--annotate))
         (complete-with-action completion-action names string predicate)))))
 
-(defun my-dired-actions--applicable-or-error (files)
+(defun my-dired-actions--require-applicable (files)
   "Return the actions for FILES, or signal `user-error' when there is none."
-  (or (my-dired-actions-for-files files)
+  (or (my-dired-actions-find-for-files files)
       (user-error "No dired action for %s"
                   (mapconcat #'file-name-nondirectory files ", "))))
 
@@ -199,9 +199,10 @@ candidates, and the annotation shows the command beside each name."
   "Choose and run an action for the marked files, or the file at point."
   (interactive)
   (let* ((files (dired-get-marked-files))
-         (actions (my-dired-actions--applicable-or-error files))
+         (actions (my-dired-actions--require-applicable files))
          (chosen-name (completing-read
-                       "Action: " (my-dired-actions--completion-table actions)
+                       "Action: "
+                       (my-dired-actions--make-completion-table actions)
                        nil t)))
     (my-dired-actions-run
      (cl-find chosen-name actions :key #'my-dired-action-name :test #'equal)
