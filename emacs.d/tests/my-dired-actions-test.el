@@ -62,6 +62,22 @@
     (my-dired-actions-add t "Checksum" "sha256sum %i")
     (should (my-dired-actions-for-files '("/v/README")))))
 
+(ert-deftest my-dired-actions-should-match-a-regular-file-with-file ()
+  (let ((regular-file (make-temp-file "my-dired-actions-test")))
+    (unwind-protect
+        (my-dired-actions-test--with-actions nil
+          (my-dired-actions-add 'file "Open externally" #'ignore)
+          (should (my-dired-actions-for-files (list regular-file))))
+      (delete-file regular-file))))
+
+(ert-deftest my-dired-actions-should-skip-a-directory-with-file ()
+  (let ((directory (make-temp-file "my-dired-actions-test" t)))
+    (unwind-protect
+        (my-dired-actions-test--with-actions nil
+          (my-dired-actions-add 'file "Open externally" #'ignore)
+          (should-not (my-dired-actions-for-files (list directory))))
+      (delete-directory directory))))
+
 (ert-deftest my-dired-actions-should-expand-placeholders-with-quoting ()
   (should (equal (my-dired-actions-expand-command
                   "ffmpeg -i %i %d/%b-2x.%e" "/v/my clip.mp4")

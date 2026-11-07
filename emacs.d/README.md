@@ -117,6 +117,9 @@ The `.` binding replaces `dired-clean-directory`. Run that command with
 `init-editor.el` registers ffmpeg actions for videos: change the speed,
 extract the audio, and convert to GIF.
 
+Pass `t` as the extensions to match every entry, or `file` to match every
+entry but a directory.
+
 Register an action with `my-dired-actions-add` in an init file:
 
 ```elisp

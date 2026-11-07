@@ -33,7 +33,8 @@
 (cl-defstruct (my-dired-action (:constructor my-dired-action-create))
   "An entry of the dired context menu."
   (name nil :documentation "Label shown in the menu; unique key.")
-  (extensions nil :documentation "Lowercase extensions, or t for any file.")
+  (extensions nil :documentation
+              "Lowercase extensions, t for anything, or `file' for non-dirs.")
   (command nil :documentation "Shell template string, or a function of FILES."))
 
 (defvar my-dired-actions nil
@@ -44,13 +45,14 @@
 
 (defun my-dired-actions-add (extensions name command)
   "Register an action NAME that runs COMMAND on files with EXTENSIONS.
-EXTENSIONS is a list of extension strings without the dot, or t to match
-every file.  COMMAND is a shell template (see the commentary) or a
-function that takes the list of files.  A second call with the same NAME
-replaces the earlier action."
+EXTENSIONS is a list of extension strings without the dot, t to match
+every entry, or the symbol `file' to match every entry but a directory.
+COMMAND is a shell template (see the commentary) or a function that takes
+the list of files.  A second call with the same NAME replaces the earlier
+action."
   (let ((new-action (my-dired-action-create
                      :name name
-                     :extensions (if (eq extensions t) t
+                     :extensions (if (memq extensions '(t file)) extensions
                                    (mapcar #'downcase extensions))
                      :command command)))
     (setq my-dired-actions
@@ -63,7 +65,9 @@ replaces the earlier action."
   (let ((extensions (my-dired-action-extensions action))
         (file-extension (file-name-extension file)))
     (or (eq extensions t)
-        (and file-extension
+        (and (eq extensions 'file) (not (file-directory-p file)))
+        (and (listp extensions)
+             file-extension
              (member (downcase file-extension) extensions)))))
 
 (defun my-dired-actions-for-files (files)
