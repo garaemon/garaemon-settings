@@ -134,7 +134,6 @@ and its \"%\" doubled so that `format-spec' later keeps it literal."
   (replace-regexp-in-string
    my-dired-actions--prompt-regexp
    (lambda (matched)
-     (string-match my-dired-actions--prompt-regexp matched)
      (let ((prompt (match-string 1 matched)))
        (if (null prompt) "%%"
          (string-replace "%" "%%" (shell-quote-argument
