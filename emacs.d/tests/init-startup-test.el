@@ -91,6 +91,20 @@
       ;; Assert
       (should (null plain-http)))))
 
+(ert-deftest init-should-set-custom-file-globally ()
+  ;; A `let' binding of `custom-file' ends after the load, so Customize would
+  ;; save into the tracked init.el instead of custom.el.
+  ;; Arrange
+  (let ((forms (init-startup-test--read-forms "init.el")))
+    ;; Act
+    (let ((top-level-setq (cl-find-if
+                           (lambda (form)
+                             (and (eq (car-safe form) 'setq)
+                                  (eq (cadr form) 'custom-file)))
+                           forms)))
+      ;; Assert
+      (should top-level-setq))))
+
 (ert-deftest init-should-load-treesit-before-package-initialize ()
   ;; Arrange
   (let ((forms (init-startup-test--read-forms "init.el")))

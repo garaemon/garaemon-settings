@@ -44,11 +44,12 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; Load custom file early so per-machine overrides (e.g. org-directory) win
-;; over defaults set via use-package :custom in init-*.el.
-(let ((custom-file (expand-file-name "custom.el" user-emacs-directory)))
-  (when (file-exists-p custom-file)
-    (load custom-file)))
+;; Customize saves to custom.el instead of appending to the tracked init.el.
+;; Load the file early so per-machine overrides (e.g. org-directory) win over
+;; defaults set via use-package :custom in init-*.el.
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file)
+  (load custom-file))
 
 ;; Load configuration files
 (require 'init-basic)
