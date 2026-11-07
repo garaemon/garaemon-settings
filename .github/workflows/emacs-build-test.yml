@@ -53,7 +53,10 @@ jobs:
           ! sudo -u "$BUILD_USER" sudo -n true
           install -m 0755 emacs.d/scripts/build_emacs.py /tmp/build_emacs.py
 
+      # The build user cannot read the checkout under /home/runner, and git
+      # refuses to run from a working directory it cannot access.
       - name: Build Emacs
+        working-directory: /tmp
         run: |
           sudo -u "$BUILD_USER" -H python3 /tmp/build_emacs.py --gui none \
             2>&1 | tee "$BUILD_LOG"
@@ -70,4 +73,5 @@ jobs:
             '~/.local/bin/emacs --batch --eval "(progn (princ (format \"%s\n\" emacs-version)) (kill-emacs (if (and (treesit-available-p) (sqlite-available-p)) 0 1)))"'
 
       - name: Check that a second run skips the build
+        working-directory: /tmp
         run: sudo -u "$BUILD_USER" -H python3 /tmp/build_emacs.py --check
