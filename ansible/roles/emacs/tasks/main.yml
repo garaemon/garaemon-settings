@@ -45,12 +45,12 @@
             state: present
           become: true
         # The apt step above installs GTK 3, the image libraries, GnuTLS,
-        # SQLite, and libgccjit, so a missing one must fail the build instead
-        # of silently dropping its feature.
+        # and libgccjit, so a missing one must fail the build instead of
+        # silently dropping its feature.
         - name: Build and install Emacs
           ansible.builtin.script:
             cmd: >-
               {{ emacs_build_script }}
               --source-dir {{ emacs_source_path | quote }}
-              --gui pgtk --gnutls yes --sqlite yes --native-compilation aot
+              --gui pgtk --gnutls yes --native-compilation aot
             executable: python3

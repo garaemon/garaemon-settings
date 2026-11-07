@@ -6,9 +6,9 @@ then runs this script, so a host with sudo and a host without it build Emacs
 the same way.
 
 Without root, the script cannot install system packages. It builds the small
-tools that a Debian host often lacks (m4, autoconf, makeinfo, tree-sitter)
-into the prefix instead, and it drops the features whose libraries are
-missing (GUI, native compilation, GnuTLS).
+tools and libraries that a Debian host often lacks (m4, autoconf, makeinfo,
+tree-sitter, SQLite) into the prefix instead, and it drops the features
+whose libraries are missing (GUI, native compilation, GnuTLS).
 
 The script uses the standard library only and runs on Python 3.8 or later.
 """
@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -33,6 +34,13 @@ TREE_SITTER_VERSION = "v0.25.9"
 # A tag can be moved, so the clone must resolve to this commit of the tag.
 TREE_SITTER_COMMIT = "a467ea8502d95562171f97953a6dc5b2a8622609"
 GNU_MIRROR_URL = "https://ftp.gnu.org/gnu"
+SQLITE_RELEASE_NAME = "sqlite-autoconf-3540100"
+SQLITE_TARBALL_URL = \
+    f"https://www.sqlite.org/2026/{SQLITE_RELEASE_NAME}.tar.gz"
+# sqlite.org publishes SHA3-256 only. This SHA-256 is of the tarball whose
+# SHA3-256 matched the published b6ced585c750916b...0427657d9c4.
+SQLITE_TARBALL_SHA256 = \
+    "926ef8d3eab93fbf6e06011901273eec076b25594a4e1cdadd50c987f4f6d64e"
 BUILD_STAMP_NAME = ".built-emacs-version"
 # configure fails on a missing image library unless the option says
 # "ifavailable", which only an automatically chosen GUI passes.
@@ -111,9 +119,10 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Build Emacs from emacs-mirror and install it under a prefix "
-            "without root. Missing m4, autoconf, makeinfo, and tree-sitter "
-            "are built into the prefix. The build skips the GUI, native "
-            "compilation, or GnuTLS when their libraries are missing."))
+            "without root. Missing m4, autoconf, makeinfo, tree-sitter, "
+            "and SQLite are built into the prefix. The build skips the GUI, "
+            "native compilation, or GnuTLS when their libraries are "
+            "missing."))
     parser.add_argument(
         "--version", default=DEFAULT_EMACS_VERSION,
         help="git tag or branch to build (default: %(default)s)")
@@ -134,10 +143,6 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
         "--gnutls", choices=("auto", "yes"), default="auto",
         help="auto builds without GnuTLS when its headers are missing, and "
              "yes makes configure fail instead (default: auto)")
-    parser.add_argument(
-        "--sqlite", choices=("auto", "yes"), default="auto",
-        help="auto builds without SQLite when its headers are missing, and "
-             "yes stops before the build instead (default: auto)")
     parser.add_argument(
         "--native-compilation", choices=("auto", "aot", "no"),
         default="auto",
@@ -424,26 +429,47 @@ def has_usable_libgccjit(env: Dict[str, str]) -> bool:
 
 
 def has_sqlite3(env: Dict[str, str]) -> bool:
+    """Return whether the compiler finds sqlite3.h and links libsqlite3.
+
+    The compiler driver ignores CPPFLAGS and LDFLAGS in the environment, so
+    the probe passes them explicitly to see a SQLite built into the prefix.
+    """
+    prefix_flags = shlex.split(env.get("CPPFLAGS", "")) + \
+        shlex.split(env.get("LDFLAGS", ""))
     with tempfile.TemporaryDirectory() as work_dir:
         source_path = Path(work_dir) / "probe.c"
         source_path.write_text(
             "#include <sqlite3.h>\n"
             "int main(void) { return sqlite3_libversion_number() == 0; }\n")
-        return succeeds([find_c_compiler() or "cc", str(source_path),
-                         "-lsqlite3",
+        return succeeds([find_c_compiler() or "cc", *prefix_flags,
+                         str(source_path), "-lsqlite3",
                          "-o", str(Path(work_dir) / "probe")], env=env)
 
 
-def assert_required_features(options: argparse.Namespace,
-                             env: Dict[str, str]) -> None:
-    """Stop when a feature requested as required has no library.
+def ensure_sqlite(prefix: Path, jobs: int, env: Dict[str, str]) -> None:
+    """Build SQLite into prefix when the host lacks its headers.
 
-    configure drops SQLite without an error even for --with-sqlite3=yes, so
-    the script probes for the library itself before building.
+    configure silently drops SQLite when sqlite3.h is missing, and forge and
+    org-roam then fail to open their databases. Stops the script when the
+    built SQLite is still not usable.
     """
-    if options.sqlite == "yes" and not has_sqlite3(env):
-        die("SQLite was required, but sqlite3.h or libsqlite3 is missing. "
-            "Install libsqlite3-dev.")
+    if has_sqlite3(env):
+        return
+    cache_dir = get_download_cache_dir()
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = cache_dir / f"{SQLITE_RELEASE_NAME}.tar.gz"
+    log(f"Building SQLite ({SQLITE_RELEASE_NAME}) into {prefix}")
+    download_verified(SQLITE_TARBALL_URL, SQLITE_TARBALL_SHA256,
+                      archive_path)
+    source_dir = cache_dir / SQLITE_RELEASE_NAME
+    shutil.rmtree(source_dir, ignore_errors=True)
+    extract_tarball(archive_path, cache_dir)
+    run(["./configure", f"--prefix={prefix}"], cwd=source_dir, env=env)
+    run(["make", "-j", str(jobs)], cwd=source_dir, env=env)
+    run(["make", "install"], cwd=source_dir, env=env)
+    if not has_sqlite3(env):
+        die(f"built SQLite into {prefix}, but the compiler still cannot "
+            "link it")
 
 
 def build_configure_arguments(options: argparse.Namespace,
@@ -510,7 +536,7 @@ def warn_about_missing_features(prefix: Path) -> None:
              "Install libgnutls28-dev to enable it.")
     if "SQLITE3" not in emacs_features:
         warn("no SQLite: org-roam and other emacsql users cannot open "
-             "databases. Install libsqlite3-dev to enable it.")
+             "databases.")
     if "NATIVE_COMP" not in emacs_features:
         warn("no native compilation. "
              "Install libgccjit-<gcc version>-dev to enable it.")
@@ -529,9 +555,9 @@ def main(argv: List[str]) -> int:
         die("missing requirements. Ask an administrator to install: "
             f"{' '.join(missing_packages)}")
     env = build_environment(options.prefix)
-    assert_required_features(options, env)
     ensure_build_tools(options.prefix, options.jobs, env)
     ensure_tree_sitter(options.prefix, options.jobs, env)
+    ensure_sqlite(options.prefix, options.jobs, env)
     checkout_emacs_source(options.source_dir, options.version)
     clean_stale_build_tree(options.source_dir, options.version)
     build_and_install_emacs(options, env)
