@@ -35,6 +35,7 @@ This configuration follows a modular structure for better organization and maint
   - GC optimization for startup performance
   - Disables GUI elements to prevent flashing
   - Native compilation settings
+  - Loads `early-custom.el` last when it exists
   - Runs before `init.el`
 
 - **init.el**: Main configuration entry point
@@ -42,6 +43,25 @@ This configuration follows a modular structure for better organization and maint
   - Initializes package system (ELPA, MELPA)
   - Loads modular configuration files from `lisp/`
   - Resets GC threshold after startup
+
+### Per-Machine Overrides
+
+Two untracked files under `user-emacs-directory` override the tracked
+configuration on one machine.  Git ignores both files:
+
+- **early-custom.el**: `early-init.el` loads this file at its end.  The
+  settings run before `init.el` and package.el start, so put frame, GC, and
+  native compilation settings here.
+- **custom.el**: `init.el` loads this file before the `init-*.el` modules.
+  Put package variables such as `org-directory` here.
+
+For example, keep the menu bar on one machine:
+
+```elisp
+;; ~/.emacs.d/early-custom.el
+(push '(menu-bar-lines . 1) default-frame-alist)
+(menu-bar-mode 1)
+```
 
 ### Modular Configuration (lisp/)
 
