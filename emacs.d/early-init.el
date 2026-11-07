@@ -45,4 +45,11 @@
 (when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (when (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 
+;; Load the untracked per-machine early-custom.el last, so its settings win
+;; over the defaults above and take effect before init.el and package.el run.
+(let ((early-custom-file (expand-file-name "early-custom.el"
+                                           user-emacs-directory)))
+  (when (file-exists-p early-custom-file)
+    (load early-custom-file nil t)))
+
 ;;; early-init.el ends here

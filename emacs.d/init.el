@@ -45,8 +45,9 @@
 (setq use-package-always-ensure t)
 
 ;; Customize saves to custom.el instead of appending to the tracked init.el.
-;; Load the file early so per-machine overrides (e.g. org-directory) win over
-;; defaults set via use-package :custom in init-*.el.
+;; The init-*.el modules load later, so a use-package :custom value there
+;; overrides custom.el for the same variable.  init-org.el sets org-directory
+;; only while unbound, so a setq of it in custom.el survives.
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file)
   (load custom-file))

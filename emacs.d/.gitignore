@@ -55,6 +55,7 @@ bookmarks
 projects
 
 custom.el
+early-custom.el
 annotations
 
 .gptel/

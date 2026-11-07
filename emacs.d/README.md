@@ -35,6 +35,7 @@ This configuration follows a modular structure for better organization and maint
   - GC optimization for startup performance
   - Disables GUI elements to prevent flashing
   - Native compilation settings
+  - Loads `early-custom.el` last when it exists
   - Runs before `init.el`
 
 - **init.el**: Main configuration entry point
@@ -42,6 +43,45 @@ This configuration follows a modular structure for better organization and maint
   - Initializes package system (ELPA, MELPA)
   - Loads modular configuration files from `lisp/`
   - Resets GC threshold after startup
+
+### Load Order
+
+Emacs reads the configuration files in this order at startup.  A later file
+overrides the settings of an earlier one:
+
+1. `early-init.el`: sets the startup defaults before package.el and the
+   first frame start.
+2. `early-custom.el`: per-machine overrides of the `early-init.el` defaults.
+   Loaded only when the file exists.
+3. `init.el` up to the package setup: load paths, `package-archives`, and
+   `use-package`.
+4. `custom.el`: per-machine Customize settings.  Loaded only when the file
+   exists.  `M-x customize` also saves to this file.
+5. `lisp/init-*.el`: the modules, in the order that `init.el` requires them.
+   A use-package `:custom` value here overrides `custom.el` for the same
+   variable, even when `custom.el` sets it with `custom-set-variables`.
+6. The rest of `init.el`: resets the GC threshold and starts the server.
+
+### Per-Machine Overrides
+
+Two untracked files under `user-emacs-directory` override the tracked
+configuration on one machine.  Git ignores both files:
+
+- **early-custom.el**: `early-init.el` loads this file at its end.  The
+  settings run before `init.el` and package.el start, so put frame, GC, and
+  native compilation settings here.
+- **custom.el**: `init.el` loads this file before the `init-*.el` modules.
+  Put package variables such as `org-directory` here.  Set `org-directory`
+  with `setq`: `init-org.el` assigns its default whenever the variable is
+  unbound, and `custom-set-variables` leaves it unbound until Org loads.
+
+For example, keep the menu bar on one machine:
+
+```elisp
+;; ~/.emacs.d/early-custom.el
+(push '(menu-bar-lines . 1) default-frame-alist)
+(menu-bar-mode 1)
+```
 
 ### Modular Configuration (lisp/)
 
