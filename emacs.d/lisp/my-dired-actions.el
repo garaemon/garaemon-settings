@@ -91,8 +91,9 @@ action."
                    (?e . ,(shell-quote-argument
                            (or (file-name-extension absolute-file) "")))))))
 
-(defun my-dired-actions--run-shell-command (command dired-buffer)
-  "Run shell COMMAND asynchronously and revert DIRED-BUFFER when it ends."
+(defun my-dired-actions--run-shell-command (command action-name dired-buffer)
+  "Run shell COMMAND asynchronously and revert DIRED-BUFFER when it ends.
+ACTION-NAME labels the message shown when the process ends."
   (let ((output-buffer (get-buffer-create my-dired-actions-output-buffer-name)))
     (with-current-buffer output-buffer
       (goto-char (point-max))
@@ -105,7 +106,7 @@ action."
      :sentinel
      (lambda (process event)
        (when (memq (process-status process) '(exit signal))
-         (message "Dired action %s: %s" (string-trim event) command)
+         (message "Dired action %s: %s" action-name (string-trim event))
          (when (buffer-live-p dired-buffer)
            (with-current-buffer dired-buffer
              (revert-buffer))))))))
@@ -163,6 +164,7 @@ once per file in parallel."
          (mapconcat (lambda (file)
                       (my-dired-actions-expand-command filled-template file))
                     files " && ")
+         (my-dired-action-name action)
          (current-buffer))))))
 
 ;; Annotations read the global list because `completing-read' passes only
