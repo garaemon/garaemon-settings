@@ -31,7 +31,7 @@
 
 (ert-deftest my-dired-actions-should-register-an-action ()
   (my-dired-actions-test--with-actions nil
-    (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i %o")
+    (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i %d/%b-2x.%e")
     (should (equal (mapcar #'my-dired-action-name
                            (my-dired-actions-find-for-files '("/v/a.mp4")))
                    '("Speed up")))))
@@ -40,7 +40,8 @@
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "old %i")
     (my-dired-actions-add '("mp4") "Speed up" "new %i")
-    (should (= (length my-dired-actions) 1))))
+    (should (equal (mapcar #'my-dired-action-command my-dired-actions)
+                   '("new %i")))))
 
 (ert-deftest my-dired-actions-should-match-extensions-case-insensitively ()
   (my-dired-actions-test--with-actions nil
