@@ -105,6 +105,18 @@
       ;; Assert
       (should top-level-setq))))
 
+(ert-deftest init-should-not-carry-customize-output ()
+  ;; Arrange
+  (let ((forms (init-startup-test--read-forms "init.el")))
+    ;; Act
+    (let ((customize-forms (cl-remove-if-not
+                            (lambda (form)
+                              (memq (car-safe form)
+                                    '(custom-set-variables custom-set-faces)))
+                            forms)))
+      ;; Assert
+      (should-not customize-forms))))
+
 (ert-deftest init-should-load-treesit-before-package-initialize ()
   ;; Arrange
   (let ((forms (init-startup-test--read-forms "init.el")))
