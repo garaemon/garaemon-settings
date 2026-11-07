@@ -147,6 +147,21 @@
         (my-dired-actions-dispatch))
       (should (equal recorded-commands '("(mute a)"))))))
 
+(ert-deftest my-dired-actions-should-run-the-first-action-on-an-empty-answer ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add '("mp4") "Speed up" "speed %b")
+    (my-dired-actions-add '("mp4") "Mute" "mute %b")
+    (my-dired-actions-test--with-recorded-commands
+      ;; An empty RET makes `completing-read' return DEF, or "" without one.
+      (cl-letf (((symbol-function 'dired-get-marked-files)
+                 (lambda (&rest _) '("/v/a.mp4")))
+                ((symbol-function 'completing-read)
+                 (lambda (_prompt _table &optional _pred _require _initial
+                                  _history default &rest _)
+                   (or default ""))))
+        (my-dired-actions-dispatch))
+      (should (equal recorded-commands '("(speed a)"))))))
+
 (ert-deftest my-dired-actions-should-annotate-a-candidate-with-its-command ()
   (my-dired-actions-test--with-actions nil
     (my-dired-actions-add '("mp4") "Speed up" "ffmpeg -i %i")

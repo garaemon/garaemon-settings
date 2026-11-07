@@ -232,7 +232,7 @@ An empty FILES also signals, because every action matches an empty list."
          (chosen-name (completing-read
                        "Action: "
                        (my-dired-actions--make-completion-table actions)
-                       nil t)))
+                       nil t nil nil (my-dired-action-name (car actions)))))
     (my-dired-actions-run
      (cl-find chosen-name actions :key #'my-dired-action-name :test #'equal)
      files)))
