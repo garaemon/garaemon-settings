@@ -103,6 +103,63 @@ requires. Give it an `:available-p` that returns nil when the code it measures
 is absent, so that the branch a pull request starts from reports `n/a` instead
 of failing.
 
+## Dired Actions
+
+`my-dired-actions.el` adds a context menu to dired. Each action belongs to a
+set of file extensions. Press `.` to list the actions that match every target
+file. The targets are the marked files, or the file at point. The list goes
+through `completing-read`, so Vertico and Orderless narrow it as you type.
+Each candidate shows its command as an annotation.
+
+The `.` binding replaces `dired-clean-directory`. Run that command with
+`M-x dired-clean-directory`.
+
+`init-editor.el` registers these actions:
+
+- Open externally: opens any file but a directory with the OS default
+  application.
+- ffmpeg actions for videos: change the speed, extract the audio, and
+  convert to GIF.
+
+Register an action with `my-dired-actions-add` in an init file:
+
+```elisp
+(my-dired-actions-add '("png" "jpg") "Shrink to 50% (ImageMagick)"
+  "magick %i -resize 50%% %d/%b-small.%e")
+```
+
+Pass `t` as the extensions to match every entry, or `file` to match every
+entry but a directory.
+
+A command string expands once per file. The expansions run in one shell,
+joined with `&&`, so the run stops at the first file whose command fails.
+The placeholders expand shell-quoted:
+
+| Placeholder         | Expands to                               |
+| ------------------- | ---------------------------------------- |
+| `%i`                | Absolute path of the file                |
+| `%d`                | Directory of the file, no trailing `/`   |
+| `%b`                | File name without directory or extension |
+| `%e`                | Extension without the dot                |
+| `%%`                | A literal `%`                            |
+| `%{PROMPT:DEFAULT}` | A value typed after you pick the action  |
+
+A prompt such as `%{Speed:2}` asks for a value once per run, even for many
+files, and offers `2` as the default. The `:DEFAULT` part is optional. The
+"Change speed" action uses the same prompt three times:
+
+```elisp
+"ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2} -af atempo=%{Speed:2} %d/%b-%{Speed:2}x.%e"
+```
+
+Pass a function instead of a string to receive the list of files. The output
+of a command string goes to `*Dired Action*`, and the dired buffer refreshes
+when the command ends.
+
+A command string reads EOF from its standard input, so a confirmation prompt
+fails instead of hanging. In a remote dired buffer over TRAMP, the command
+runs on the remote host.
+
 ## Org Git Sync
 
 `my-org-git-sync.el` keeps the Org repository under `org-directory` in sync

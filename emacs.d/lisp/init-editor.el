@@ -464,12 +464,24 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (:map dired-mode-map
               ("M-s" . consult-grep)
               ("O" . my-dired-open-externally)
+              ("." . my-dired-actions-dispatch)
               ("F" . magit-pull)
               ("b" . magit-branch))
   :hook (dired-mode . auto-revert-mode)
   :config
   (require 'my-dired-open)
-  )
+  (require 'my-dired-actions)
+  (my-dired-actions-add 'file "Open externally" #'my-dired-open-files)
+  (my-dired-actions-add
+   '("mp4" "mov" "mkv" "webm") "Change speed (ffmpeg)"
+   (concat "ffmpeg -nostdin -i %i -vf setpts=PTS/%{Speed:2}"
+           " -af atempo=%{Speed:2} %d/%b-%{Speed:2}x.%e"))
+  (my-dired-actions-add
+   '("mp4" "mov" "mkv" "webm") "Extract audio as m4a (ffmpeg)"
+   "ffmpeg -nostdin -i %i -vn -c:a aac %d/%b.m4a")
+  (my-dired-actions-add
+   '("mp4" "mov" "mkv" "webm") "Convert to GIF (ffmpeg)"
+   "ffmpeg -nostdin -i %i -vf fps=10,scale=640:-1 %d/%b.gif"))
 
 (use-package wdired
   :config
