@@ -188,7 +188,10 @@ candidates, and the annotation shows the command beside each name."
         (complete-with-action completion-action names string predicate)))))
 
 (defun my-dired-actions--require-applicable (files)
-  "Return the actions for FILES, or signal `user-error' when there is none."
+  "Return the actions for FILES, or signal `user-error' when there is none.
+An empty FILES also signals, because every action matches an empty list."
+  (unless files
+    (user-error "No file at point"))
   (or (my-dired-actions-find-for-files files)
       (user-error "No dired action for %s"
                   (mapconcat #'file-name-nondirectory files ", "))))

@@ -142,6 +142,16 @@
                (lambda (&rest _) '("/v/a.xyz"))))
       (should-error (my-dired-actions-dispatch) :type 'user-error))))
 
+(ert-deftest my-dired-actions-should-error-when-no-file-is-at-point ()
+  (my-dired-actions-test--with-actions nil
+    (my-dired-actions-add t "Checksum" "sha256sum %i")
+    ;; Fail instead of waiting on stdin if the menu opens in batch mode.
+    (cl-letf (((symbol-function 'dired-get-marked-files)
+               (lambda (&rest _) nil))
+              ((symbol-function 'completing-read)
+               (lambda (&rest _) (error "The action menu opened"))))
+      (should-error (my-dired-actions-dispatch) :type 'user-error))))
+
 (ert-deftest my-dired-actions-should-list-each-prompt-once ()
   (should (equal (my-dired-actions--collect-prompt-specs
                   "a %{Speed:2} b %{Speed:2} c %{Name}")
