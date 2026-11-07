@@ -92,13 +92,14 @@
   (should (equal (my-dired-actions-expand-command "echo 100%%" "/v/a.mp4")
                  "echo 100%")))
 
-(ert-deftest my-dired-actions-should-run-one-command-per-file ()
+(ert-deftest my-dired-actions-should-group-each-file-command-in-the-chain ()
   (my-dired-actions-test--with-recorded-commands
     (my-dired-actions-run
-     (my-dired-action-create :name "Echo" :extensions t :command "echo %b")
+     (my-dired-action-create :name "Echo" :extensions t
+                             :command "false; echo %b")
      '("/v/a.mp4" "/v/b.mp4"))
     (should (equal recorded-commands
-                   (list "echo a && echo b")))))
+                   (list "(false; echo a) && (false; echo b)")))))
 
 (ert-deftest my-dired-actions-should-call-a-function-action-with-the-files ()
   (let ((received-files nil))
@@ -119,7 +120,7 @@
                 ((symbol-function 'completing-read)
                  (lambda (&rest _) "Mute")))
         (my-dired-actions-dispatch))
-      (should (equal recorded-commands '("mute a"))))))
+      (should (equal recorded-commands '("(mute a)"))))))
 
 (ert-deftest my-dired-actions-should-annotate-a-candidate-with-its-command ()
   (my-dired-actions-test--with-actions nil
@@ -194,7 +195,7 @@
                                  :command "speed %{Speed:2} %b")
          '("/v/a.mp4" "/v/b.mp4")))
       (should (equal (list (length asked-prompts) recorded-commands)
-                     '(1 ("speed 3 a && speed 3 b")))))))
+                     '(1 ("(speed 3 a) && (speed 3 b)")))))))
 
 (ert-deftest my-dired-actions-should-use-the-default-for-an-empty-answer ()
   (my-dired-actions-test--with-recorded-commands
@@ -204,7 +205,7 @@
        (my-dired-action-create :name "Speed" :extensions t
                                :command "speed %{Speed:2}")
        '("/v/a.mp4")))
-    (should (equal recorded-commands '("speed 2")))))
+    (should (equal recorded-commands '("(speed 2)")))))
 
 (provide 'my-dired-actions-test)
 

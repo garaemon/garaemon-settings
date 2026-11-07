@@ -161,8 +161,11 @@ once per file in parallel."
       (let* ((answers (my-dired-actions--read-answers command))
              (filled-template (my-dired-actions--fill-prompts command answers)))
         (my-dired-actions--run-shell-command
+         ;; Group each expansion so that a ";" or "||" in the template
+         ;; cannot escape the "&&" chain.
          (mapconcat (lambda (file)
-                      (my-dired-actions-expand-command filled-template file))
+                      (format "(%s)" (my-dired-actions-expand-command
+                                      filled-template file)))
                     files " && ")
          (my-dired-action-name action)
          (current-buffer))))))
