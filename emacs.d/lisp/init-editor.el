@@ -464,7 +464,7 @@ if ENV-SH indicates a remote path. Relies on the helper function
   :bind (:map dired-mode-map
               ("M-s" . consult-grep)
               ("O" . my-dired-open-externally)
-              (";" . my-dired-actions-dispatch)
+              ("." . my-dired-actions-dispatch)
               ("F" . magit-pull)
               ("b" . magit-branch))
   :hook (dired-mode . auto-revert-mode)

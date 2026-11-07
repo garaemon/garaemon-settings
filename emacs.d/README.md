@@ -106,10 +106,13 @@ of failing.
 ## Dired Actions
 
 `my-dired-actions.el` adds a context menu to dired. Each action belongs to a
-set of file extensions. Press `;` to list the actions that match every target
+set of file extensions. Press `.` to list the actions that match every target
 file. The targets are the marked files, or the file at point. The list goes
 through `completing-read`, so Vertico and Orderless narrow it as you type.
 Each candidate shows its command as an annotation.
+
+The `.` binding replaces `dired-clean-directory`. Run that command with
+`M-x dired-clean-directory`.
 
 `init-editor.el` registers ffmpeg actions for videos: change the speed,
 extract the audio, and convert to GIF.
