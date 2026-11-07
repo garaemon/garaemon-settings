@@ -80,8 +80,10 @@ action."
    my-dired-actions))
 
 (defun my-dired-actions-expand-command (template file)
-  "Return TEMPLATE with its placeholders replaced by parts of FILE."
-  (let ((absolute-file (expand-file-name file)))
+  "Return TEMPLATE with its placeholders replaced by parts of FILE.
+A remote FILE expands to its path on the remote host, where the command
+runs."
+  (let ((absolute-file (file-local-name (expand-file-name file))))
     (format-spec template
                  `((?i . ,(shell-quote-argument absolute-file))
                    (?d . ,(shell-quote-argument
@@ -92,6 +94,13 @@ action."
                    (?e . ,(shell-quote-argument
                            (or (file-name-extension absolute-file) "")))))))
 
+(defun my-dired-actions--make-shell-command-line (command)
+  "Return the argument list that runs shell COMMAND in `default-directory'.
+A remote directory picks the shell of its TRAMP connection, such as
+/bin/sh, instead of the local `shell-file-name'."
+  (with-connection-local-variables
+   (list shell-file-name shell-command-switch command)))
+
 (defun my-dired-actions--run-shell-command (command action-name dired-buffer)
   "Run shell COMMAND asynchronously and revert DIRED-BUFFER when it ends.
 ACTION-NAME labels the message shown when the process ends.  Return the
@@ -101,12 +110,15 @@ process, whose standard input is already closed."
       (goto-char (point-max))
       (insert (format "$ %s\n" command)))
     (display-buffer output-buffer)
+    ;; `:file-handler' runs the command on the TRAMP host of
+    ;; `default-directory', which is the remote directory in a remote dired.
     (let ((process
            (make-process
             :name "dired-action"
             :buffer output-buffer
             :connection-type 'pipe
-            :command (list shell-file-name shell-command-switch command)
+            :file-handler t
+            :command (my-dired-actions--make-shell-command-line command)
             :sentinel
             (lambda (process event)
               (when (memq (process-status process) '(exit signal))

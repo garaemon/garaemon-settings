@@ -157,7 +157,8 @@ of a command string goes to `*Dired Action*`, and the dired buffer refreshes
 when the command ends.
 
 A command string reads EOF from its standard input, so a confirmation prompt
-fails instead of hanging.
+fails instead of hanging. In a remote dired buffer over TRAMP, the command
+runs on the remote host.
 
 ## Org Git Sync
 

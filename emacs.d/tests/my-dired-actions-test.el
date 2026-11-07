@@ -93,6 +93,11 @@
   (should (equal (my-dired-actions-expand-command "echo 100%%" "/v/a.mp4")
                  "echo 100%")))
 
+(ert-deftest my-dired-actions-should-expand-a-remote-file-to-its-local-name ()
+  (should (equal (my-dired-actions-expand-command "echo %i %d"
+                                                  "/ssh:host:/v/a.mp4")
+                 "echo /v/a.mp4 /v")))
+
 (ert-deftest my-dired-actions-should-group-each-file-command-in-the-chain ()
   (my-dired-actions-test--with-recorded-commands
     (my-dired-actions-run
@@ -101,6 +106,13 @@
      '("/v/a.mp4" "/v/b.mp4"))
     (should (equal recorded-commands
                    (list "(false; echo a) && (false; echo b)")))))
+
+(ert-deftest my-dired-actions-should-use-the-remote-shell-in-a-remote-dired ()
+  (require 'tramp)
+  (let ((default-directory "/ssh:host:/v/")
+        (shell-file-name "/bin/zsh"))
+    (should (equal (car (my-dired-actions--make-shell-command-line "true"))
+                   "/bin/sh"))))
 
 (ert-deftest my-dired-actions-should-finish-a-command-that-reads-stdin ()
   (with-temp-buffer
