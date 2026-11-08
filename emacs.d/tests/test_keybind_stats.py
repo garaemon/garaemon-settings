@@ -17,6 +17,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import keybind_stats  # noqa: E402
 
 
+LOCAL_DESKTOP_ENVIRON = {"DISPLAY": ":0"}
+
+
+@pytest.fixture(autouse=True)
+def opened_urls(monkeypatch):
+    """Record browser launches so that no test opens a real browser."""
+    urls = []
+    monkeypatch.setattr(keybind_stats.webbrowser, "open", urls.append)
+    return urls
+
+
 def write_lines(path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(row) + "\n" for row in rows))
@@ -278,6 +289,53 @@ def test_main_should_write_html_report(tmp_path):
     output = tmp_path / "report.html"
     keybind_stats.main(["--dir", str(tmp_path), "--html", str(output)])
     assert "forward-char" in output.read_text()
+
+
+def test_main_should_write_html_next_to_log_when_file_is_omitted(tmp_path):
+    make_stats_dir(tmp_path, events=[event("forward-char", "C-f", count=3)])
+    keybind_stats.main(["--dir", str(tmp_path), "--html", "--no-open"])
+    assert "forward-char" in (tmp_path / "report.html").read_text()
+
+
+def test_main_should_open_html_in_browser_when_local(tmp_path, monkeypatch,
+                                                     opened_urls):
+    make_stats_dir(tmp_path, events=[event("forward-char", "C-f", count=3)])
+    monkeypatch.setattr(keybind_stats, "is_local_session", lambda: True)
+    keybind_stats.main(["--dir", str(tmp_path), "--html"])
+    assert opened_urls == [(tmp_path / "report.html").resolve().as_uri()]
+
+
+def test_main_should_not_open_browser_when_remote(tmp_path, monkeypatch,
+                                                  opened_urls):
+    make_stats_dir(tmp_path, events=[event("forward-char", "C-f", count=3)])
+    monkeypatch.setattr(keybind_stats, "is_local_session", lambda: False)
+    keybind_stats.main(["--dir", str(tmp_path), "--html"])
+    assert opened_urls == []
+
+
+def test_main_should_not_open_browser_with_no_open(tmp_path, monkeypatch,
+                                                   opened_urls):
+    make_stats_dir(tmp_path, events=[event("forward-char", "C-f", count=3)])
+    monkeypatch.setattr(keybind_stats, "is_local_session", lambda: True)
+    keybind_stats.main(["--dir", str(tmp_path), "--html", "--no-open"])
+    assert opened_urls == []
+
+
+def test_is_local_session_should_be_true_on_linux_desktop():
+    assert keybind_stats.is_local_session(LOCAL_DESKTOP_ENVIRON, "linux")
+
+
+def test_is_local_session_should_be_false_over_ssh():
+    environ = {**LOCAL_DESKTOP_ENVIRON, "SSH_CONNECTION": "1.2.3.4 22 5.6.7.8 22"}
+    assert not keybind_stats.is_local_session(environ, "linux")
+
+
+def test_is_local_session_should_be_false_on_linux_without_display():
+    assert not keybind_stats.is_local_session({}, "linux")
+
+
+def test_is_local_session_should_be_true_on_macos_without_display():
+    assert keybind_stats.is_local_session({}, "darwin")
 
 
 def test_main_should_limit_to_recent_days(tmp_path, capsys):

@@ -3,16 +3,19 @@
 
 Reads the JSON lines that lisp/my-keybind-stats.el writes under
 ~/.emacs.d/keybind-stats/ and prints a text report. With --html the same
-report is written as a self-contained page.
+report is written as a self-contained page, report.html in the stats directory
+unless a file is given, and opened in the browser when the session is local.
 
 Usage:
     python scripts/keybind_stats.py [--dir DIR] [--days N] [--top N]
-                                    [--html report.html]
+                                    [--html [report.html]] [--no-open]
 """
 
 import argparse
 import html
+import os
 import sys
+import webbrowser
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -20,6 +23,11 @@ from pathlib import Path
 import json
 
 DEFAULT_DIRECTORY = Path.home() / ".emacs.d" / "keybind-stats"
+DEFAULT_HTML_NAME = "report.html"
+
+# A browser started from an SSH session opens on the remote host, if at all.
+SSH_ENVIRONMENT_VARIABLES = ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY")
+DISPLAY_ENVIRONMENT_VARIABLES = ("DISPLAY", "WAYLAND_DISPLAY")
 
 # Bindings that say nothing about typing habits: menu and tool bars, mouse
 # buttons, and remaps, which key-description renders as <remap> <command>.
@@ -513,9 +521,43 @@ def parse_args(argv):
                         help="only count the last N days")
     parser.add_argument("--top", type=int, default=30,
                         help="rows per ranking (default: %(default)s)")
-    parser.add_argument("--html", default=None, metavar="FILE",
-                        help="write an HTML report to FILE instead of text")
+    parser.add_argument("--html", nargs="?", const="", default=None,
+                        metavar="FILE",
+                        help="write an HTML report instead of text, to FILE or "
+                        "to %s in the stats directory" % DEFAULT_HTML_NAME)
+    parser.add_argument("--no-open", dest="open_browser", action="store_false",
+                        help="do not open the HTML report in the browser, "
+                        "which happens by default on a local desktop session")
     return parser.parse_args(argv)
+
+
+def is_local_session(environ=None, platform=None):
+    """Return True when a browser started here shows up in front of the user.
+
+    The session counts as remote over SSH, and on Linux and other X11 or
+    Wayland systems it also needs a display to show the browser on.
+    """
+    environ = os.environ if environ is None else environ
+    platform = sys.platform if platform is None else platform
+    if any(environ.get(name) for name in SSH_ENVIRONMENT_VARIABLES):
+        return False
+    if platform == "darwin" or platform.startswith("win"):
+        return True
+    return any(environ.get(name) for name in DISPLAY_ENVIRONMENT_VARIABLES)
+
+
+def write_html_report(report, html_argument, stats_directory, open_browser):
+    """Write the HTML page and open it in the browser on a local session.
+
+    An empty HTML_ARGUMENT places the page in STATS_DIRECTORY, creating the
+    directory when the log has not been written yet.
+    """
+    html_path = Path(html_argument or Path(stats_directory) / DEFAULT_HTML_NAME)
+    html_path.parent.mkdir(parents=True, exist_ok=True)
+    html_path.write_text(render_html(report), encoding="utf-8")
+    print("wrote %s" % html_path)
+    if open_browser and is_local_session():
+        webbrowser.open(html_path.resolve().as_uri())
 
 
 def main(argv=None):
@@ -526,9 +568,8 @@ def main(argv=None):
     events = load_events(args.dir, since)
     bindings = load_bindings(args.dir)
     report = summarize(events, bindings, top=args.top)
-    if args.html:
-        Path(args.html).write_text(render_html(report), encoding="utf-8")
-        print("wrote %s" % args.html)
+    if args.html is not None:
+        write_html_report(report, args.html, args.dir, args.open_browser)
     else:
         sys.stdout.write(render_text(report))
     return 0
