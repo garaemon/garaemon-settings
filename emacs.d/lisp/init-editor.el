@@ -364,13 +364,23 @@ if ENV-SH indicates a remote path. Relies on the helper function
   (set-face-foreground bm-face "black")
   )
 
+;; The keys live under C-c w because winner-mode owns C-c <left> and
+;; C-c <right>.  After the first swap, repeat-mode keeps swapping on bare
+;; arrows or b/f/p/n.
 (use-package buffer-move :ensure t
-  :bind
-  ("\C-c <down>" . buf-move-down)
-  ("\C-c <up>" . buf-move-up)
-  ("\C-c <right>" . buf-move-right)
-  ("\C-c <left>" . buf-move-left)
-  )
+  :bind (("C-c w <left>" . buf-move-left)
+         ("C-c w <right>" . buf-move-right)
+         ("C-c w <up>" . buf-move-up)
+         ("C-c w <down>" . buf-move-down)
+         :repeat-map my-buf-move-repeat-map
+         ("<left>" . buf-move-left)
+         ("<right>" . buf-move-right)
+         ("<up>" . buf-move-up)
+         ("<down>" . buf-move-down)
+         ("b" . buf-move-left)
+         ("f" . buf-move-right)
+         ("p" . buf-move-up)
+         ("n" . buf-move-down)))
 
 (use-package recentf-ext :ensure t)
 
