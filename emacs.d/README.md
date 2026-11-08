@@ -245,8 +245,9 @@ The fetch and the commit chain run as asynchronous git processes:
 
 `C-c n e` in an Org buffer creates a drawing under
 `org-excalidraw-default-directory` and inserts its `excalidraw:` link at
-point. `my-org-excalidraw-name.el` names the drawing after the Org file, so
-no file name prompt appears:
+point. `my-org-excalidraw-name.el` names the drawing after the Org file
+with the helpers in `my-org-drawing-name.el`, so no file name prompt
+appears:
 
 - `C-c n e` in `2026-10-25.org` creates `2026-10-25-1.excalidraw`, then
   `2026-10-25-2.excalidraw`.
