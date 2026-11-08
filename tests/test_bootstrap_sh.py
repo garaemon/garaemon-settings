@@ -54,7 +54,7 @@ class TestMainArguments:
     HARNESS = (
         "has_root_access() { return 0; }\n"
         'install_prerequisites() { echo "PREREQ:$*"; }\n'
-        "clone_repository() { echo CLONE; }\n"
+        'clone_repository() { echo "CLONE:$*"; }\n'
         "apply_dotfiles() { echo DOTFILES; }\n"
         "install_ansible() { echo ANSIBLE; }\n"
         'run_playbook() { echo "PLAYBOOK:$1"; }\n'
@@ -85,7 +85,7 @@ class TestMainArguments:
             if not line.startswith("[bootstrap]")
         ]
         assert steps == [
-            "PREREQ:true true true", "CLONE", "DOTFILES", "ANSIBLE",
+            "PREREQ:true true true", "CLONE:", "DOTFILES", "ANSIBLE",
             "PLAYBOOK:main",
         ]
 
@@ -112,6 +112,26 @@ class TestMainArguments:
     def test_should_exit_2_for_unknown_argument(self, tmp_path):
         result = self.run_main("--nope", tmp_path)
         assert result.returncode == 2
+
+    def test_should_clone_default_branch_by_default(self, tmp_path):
+        result = self.run_main("", tmp_path)
+        assert "CLONE:\n" in result.stdout
+
+    def test_should_pass_branch_to_clone(self, tmp_path):
+        result = self.run_main("--branch feature-x", tmp_path)
+        assert "CLONE:feature-x" in result.stdout
+
+    def test_should_accept_branch_with_equals(self, tmp_path):
+        result = self.run_main("--branch=feature-x", tmp_path)
+        assert "CLONE:feature-x" in result.stdout
+
+    def test_should_exit_2_when_branch_value_is_missing(self, tmp_path):
+        result = self.run_main("--branch", tmp_path)
+        assert result.returncode == 2
+
+    def test_should_list_branch_option_in_usage(self, tmp_path):
+        result = self.run_main("--help", tmp_path)
+        assert "--branch" in result.stdout
 
     def test_should_skip_ansible_when_requested(self, tmp_path):
         result = self.run_main("--skip-ansible", tmp_path)
@@ -291,6 +311,65 @@ class TestCloneRepository:
             "GIT clone https://github.com/garaemon/garaemon-settings.git "
             f"{expected_destination}"
         ) in result.stdout
+
+
+    def test_should_clone_requested_branch(self, tmp_path, stub_dir):
+        write_stub(stub_dir, "git", 'echo "GIT $*"')
+        result = source_and_run(
+            "clone_repository feature-x", tmp_path, stub_dir
+        )
+        assert (
+            "GIT clone --branch feature-x "
+            "https://github.com/garaemon/garaemon-settings.git"
+        ) in result.stdout
+
+    def test_should_fetch_branch_into_existing_checkout(
+        self, tmp_path, stub_dir
+    ):
+        checkout = tmp_path / "ghq/github.com/garaemon/garaemon-settings"
+        (checkout / ".git").mkdir(parents=True)
+        write_stub(stub_dir, "git", 'echo "GIT $*"')
+        result = source_and_run(
+            "clone_repository feature-x", tmp_path, stub_dir
+        )
+        assert f"GIT -C {checkout} fetch origin feature-x" in result.stdout
+
+    def test_should_switch_existing_checkout_to_branch(
+        self, tmp_path, stub_dir
+    ):
+        checkout = tmp_path / "ghq/github.com/garaemon/garaemon-settings"
+        (checkout / ".git").mkdir(parents=True)
+        write_stub(stub_dir, "git", 'echo "GIT $*"')
+        result = source_and_run(
+            "clone_repository feature-x", tmp_path, stub_dir
+        )
+        assert f"GIT -C {checkout} checkout feature-x" in result.stdout
+
+    def test_should_fast_forward_existing_checkout_to_remote_branch(
+        self, tmp_path, stub_dir
+    ):
+        checkout = tmp_path / "ghq/github.com/garaemon/garaemon-settings"
+        (checkout / ".git").mkdir(parents=True)
+        write_stub(stub_dir, "git", 'echo "GIT $*"')
+        result = source_and_run(
+            "clone_repository feature-x", tmp_path, stub_dir
+        )
+        assert (
+            f"GIT -C {checkout} merge --ff-only origin/feature-x"
+        ) in result.stdout
+
+    def test_should_stop_when_branch_checkout_fails(self, tmp_path, stub_dir):
+        checkout = tmp_path / "ghq/github.com/garaemon/garaemon-settings"
+        (checkout / ".git").mkdir(parents=True)
+        write_stub(
+            stub_dir,
+            "git",
+            'if [[ "$3" == checkout ]]; then exit 1; fi; echo "GIT $*"',
+        )
+        result = source_and_run(
+            "clone_repository feature-x", tmp_path, stub_dir
+        )
+        assert "merge --ff-only" not in result.stdout
 
 
 class TestConfigureChezmoiSource:

@@ -126,16 +126,39 @@ install_prerequisites() {
     esac
 }
 
+# Usage: clone_repository [branch]
 # Clones over HTTPS because a fresh machine has no GitHub SSH key yet. Switch
-# the remote to SSH later with `git remote set-url`.
+# the remote to SSH later with `git remote set-url`. Without a branch, the
+# function keeps an existing checkout untouched. With one, the function also
+# moves an existing checkout to that branch, so a test run picks up the branch
+# even on a machine that ran this script before.
 clone_repository() {
+    local branch_name="${1:-}"
     if [[ -d "${CHECKOUT_DIR}/.git" ]]; then
         log "Repository already cloned at ${CHECKOUT_DIR}"
+        if [[ -n "${branch_name}" ]]; then
+            switch_checkout_branch "${branch_name}"
+        fi
         return 0
+    fi
+    local -a branch_arguments=()
+    if [[ -n "${branch_name}" ]]; then
+        branch_arguments+=(--branch "${branch_name}")
     fi
     log "Cloning ${REPOSITORY_URL} into ${CHECKOUT_DIR}"
     mkdir -p "$(dirname "${CHECKOUT_DIR}")"
-    git clone "${REPOSITORY_URL}" "${CHECKOUT_DIR}"
+    git clone ${branch_arguments[@]+"${branch_arguments[@]}"} "${REPOSITORY_URL}" "${CHECKOUT_DIR}"
+}
+
+# Checks out the branch in the existing checkout and fast-forwards it to the
+# remote. A dirty tree or a diverged local branch makes git fail, and set -e
+# stops the script rather than discarding local work.
+switch_checkout_branch() {
+    local branch_name="$1"
+    log "Switching ${CHECKOUT_DIR} to branch ${branch_name}"
+    git -C "${CHECKOUT_DIR}" fetch origin "${branch_name}"
+    git -C "${CHECKOUT_DIR}" checkout "${branch_name}"
+    git -C "${CHECKOUT_DIR}" merge --ff-only "origin/${branch_name}"
 }
 
 # Points chezmoi at the checkout, so a later plain `chezmoi apply` uses it. A
@@ -238,7 +261,7 @@ build_emacs() {
 usage() {
     cat <<'EOF'
 Usage: bootstrap.sh [--playbook main|minimal|orbstack|ax8-max]
-                    [--skip-dotfiles] [--skip-ansible] [--no-sudo]
+                    [--branch NAME] [--skip-dotfiles] [--skip-ansible] [--no-sudo]
                     [--build-emacs] [-h|--help]
 
 Sets up this machine from nothing:
@@ -255,6 +278,8 @@ prerequisite is missing and skips the playbook.
 
 Options:
   --playbook NAME   Playbook under ansible/ to run (default: main).
+  --branch NAME     Check out branch NAME of garaemon-settings and run its
+                    code. Also switches an existing checkout to NAME.
   --skip-dotfiles   Skip step 3.
   --skip-ansible    Skip step 4.
   --no-sudo         Never use sudo, even when it is installed.
@@ -276,6 +301,7 @@ assert_allowed_playbook() {
 
 main() {
     local playbook_name="main"
+    local branch_name=""
     local should_apply_dotfiles=true
     local should_run_ansible=true
     local is_sudo_allowed=true
@@ -291,6 +317,15 @@ main() {
                 shift
                 ;;
             --playbook=*) playbook_name="${1#*=}" ;;
+            --branch)
+                if [[ $# -lt 2 ]]; then
+                    warn "--branch needs a value"
+                    exit 2
+                fi
+                branch_name="$2"
+                shift
+                ;;
+            --branch=*) branch_name="${1#*=}" ;;
             --skip-dotfiles) should_apply_dotfiles=false ;;
             --skip-ansible) should_run_ansible=false ;;
             --no-sudo) is_sudo_allowed=false ;;
@@ -333,7 +368,7 @@ main() {
         needs_python=true
     fi
     install_prerequisites "${has_root}" "${needs_python}" "${will_run_ansible}"
-    clone_repository
+    clone_repository "${branch_name}"
     if [[ "${should_apply_dotfiles}" == true ]]; then
         apply_dotfiles
     fi
