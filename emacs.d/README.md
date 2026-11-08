@@ -83,6 +83,18 @@ For example, keep the menu bar on one machine:
 (menu-bar-mode 1)
 ```
 
+Behind a proxy, package.el may fail to verify the signatures of GNU ELPA
+packages, for example when the proxy blocks the GnuPG keyserver.  Skip the
+check on that machine only:
+
+```elisp
+;; ~/.emacs.d/early-custom.el
+(setq package-check-signature nil)
+```
+
+Turning off the check also accepts tampered packages, so keep this setting
+out of the tracked configuration.
+
 ### Modular Configuration (lisp/)
 
 Configuration is split into focused modules in the `lisp/` directory:
