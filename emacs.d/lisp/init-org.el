@@ -529,12 +529,12 @@ Skip when the cached SVG is already newer than FILE."
               :override #'my-org-excalidraw-to-svg-thumbnail)
 
   ;; Auto-refresh thumbnails when Emacs regains focus, on the assumption that the
-  ;; `.excalidraw' source was just edited in the Chrome PWA. Combined with the
-  ;; mtime guard above this only pays the brute-CLI cost for files that actually
-  ;; changed. Limited to visible org buffers that contain at least one
-  ;; `excalidraw:' link so we don't cause flicker for unrelated org buffers.
-  (defun my-org-excalidraw-redisplay-on-focus ()
-    "Redisplay inline images in visible org buffers referencing excalidraw."
+  ;; drawing was just edited in the Excalidraw PWA or the draw.io app. Combined
+  ;; with the mtime guard above this only pays the brute-CLI cost for files that
+  ;; actually changed. Limited to visible org buffers that link at least one
+  ;; drawing so we don't cause flicker for unrelated org buffers.
+  (defun my-org-drawing-redisplay-on-focus ()
+    "Redisplay inline images in visible org buffers that link a drawing."
     (when (frame-focus-state)
       (dolist (window (window-list nil 'no-mini))
         (with-current-buffer (window-buffer window)
@@ -542,17 +542,35 @@ Skip when the cached SVG is already newer than FILE."
                      org-link-preview-overlays
                      (save-excursion
                        (goto-char (point-min))
-                       (re-search-forward "\\[\\[excalidraw:" nil t)))
+                       (re-search-forward
+                        "\\[\\[excalidraw:\\|\\.drawio\\.svg\\]" nil t)))
             (org-link-preview-refresh))))))
 
   (add-function :after after-focus-change-function
-                #'my-org-excalidraw-redisplay-on-focus)
+                #'my-org-drawing-redisplay-on-focus)
 
   ;; `C-c n e' names the drawing after the Org file, such as
   ;; 2026-10-25-1.excalidraw for a daily note, instead of prompting for a path.
   (require 'my-org-excalidraw-name)
   (keymap-set org-mode-map "C-c n e" #'my-org-excalidraw-name-create-drawing)
   )
+
+;; draw.io drawings use the .drawio.svg format, an SVG that embeds the
+;; diagram, so Org shows them as plain inline images without an export step.
+;; Editing needs the draw.io desktop app: `drawio' on Linux, draw.io.app on
+;; macOS. The focus hook in the org-excalidraw block refreshes the images.
+(use-package my-org-drawio
+  :ensure nil
+  :after org
+  :demand t
+  :custom
+  (my-org-drawio-directory (concat org-directory "drawio/"))
+  :config
+  ;; Following a file: link to a drawing opens draw.io instead of an Emacs
+  ;; image buffer.
+  (add-to-list 'org-file-apps
+               '("\\.drawio\\.svg\\'" . my-org-drawio-open-file-app))
+  (keymap-set org-mode-map "C-c n D" #'my-org-drawio-create-drawing))
 
 (use-package my-org-github-link
   :ensure nil
