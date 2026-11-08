@@ -25,9 +25,13 @@
             suffix: ghostty
           register: ghostty_install_temp_dir
 
-        - name: Get latest ghostty-ubuntu release tag
+        - name: Get ghostty-ubuntu release tag
           uri:
-            url: https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/latest
+            url: >-
+              https://api.github.com/repos/mkasberg/ghostty-ubuntu/releases/{{
+              'tags/' + ghostty_install_pinned_tags[ansible_facts.distribution_version]
+              if ansible_facts.distribution_version in ghostty_install_pinned_tags
+              else 'latest' }}
             return_content: true
             # Anonymous requests share a limit of 60 per hour per IP address,
             # which GitHub Actions runners exhaust. A token raises the limit.
