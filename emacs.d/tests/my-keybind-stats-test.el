@@ -423,6 +423,12 @@ to `browse-url' in `opened-url'."
       (should (string-prefix-p "file://" opened-url))
       (should (string-suffix-p "report.html" opened-url)))))
 
+(ert-deftest my-keybind-stats-report-should-keep-the-script-from-opening-a-browser ()
+  (my-keybind-stats-test--with-directory
+    (my-keybind-stats-test--with-script-stub 0 ""
+      (my-keybind-stats-report)
+      (should (member "--no-open" script-args)))))
+
 (ert-deftest my-keybind-stats-report-should-pass-the-stats-directory ()
   (my-keybind-stats-test--with-directory
     (my-keybind-stats-test--with-script-stub 0 ""
