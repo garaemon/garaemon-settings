@@ -317,7 +317,9 @@ Signal an error with the script output when the script fails."
 (defun my-keybind-stats--open-html-report ()
   "Write the HTML report next to the log and open it in the browser."
   (let ((file (expand-file-name "report.html" my-keybind-stats-directory)))
-    (my-keybind-stats--run-script (list "--html" file))
+    ;; browse-url follows the browser chosen in Emacs, so the script must not
+    ;; open a second window.
+    (my-keybind-stats--run-script (list "--html" file "--no-open"))
     (browse-url (concat "file://" file))))
 
 ;;;###autoload

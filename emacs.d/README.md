@@ -439,8 +439,14 @@ report in a buffer. The same report comes from the command line:
 ```sh
 python scripts/keybind_stats.py                 # text report on stdout
 python scripts/keybind_stats.py --days 30       # only the last 30 days
-python scripts/keybind_stats.py --html /tmp/keybind-stats.html
+python scripts/keybind_stats.py --html           # HTML report, opened in the browser
+python scripts/keybind_stats.py --html /tmp/keybind-stats.html --no-open
 ```
+
+With `--html` and no file, the script writes `report.html` in the stats
+directory. The script opens the page in the browser when the session is local.
+The script skips the browser over SSH and on Linux without `DISPLAY` or
+`WAYLAND_DISPLAY`. Pass `--no-open` to skip the browser always.
 
 The report has these sections:
 
