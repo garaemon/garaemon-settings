@@ -41,12 +41,26 @@ The script accepts these options:
   default is `main`. `orbstack` is `minimal` without the font,
   spell-checker, and Claude Code roles, for virtual machines such as OrbStack
   machines.
+- `--branch NAME`: checks out branch `NAME` of this repository and runs its
+  code. When the checkout already exists, the script fetches the branch,
+  switches to it, and fast-forwards it. The switch fails on uncommitted changes
+  or a diverged local branch, so it never discards local work.
 - `--skip-dotfiles`: skips step 3.
 - `--skip-ansible`: skips step 4.
 - `--no-sudo`: never uses sudo, even when it is installed.
 - `--build-emacs`: builds Emacs from source into `~/.local` after the other
   steps. The build needs no root and runs on Linux only. See
   [Building Emacs](emacs.d/README.md#building-emacs).
+
+To try a branch before you merge it, fetch `bootstrap.sh` from the same branch
+and pass `--branch`. The first URL runs the branch's own copy of the script,
+and `--branch` makes that script use the branch's playbooks and dotfiles:
+
+```sh
+BRANCH=my-feature
+bash -c "$(curl -fsSL "https://raw.githubusercontent.com/garaemon/garaemon-settings/${BRANCH}/bootstrap.sh")" \
+  bootstrap --branch "${BRANCH}"
+```
 
 The script also runs without root, for example in a container that has no
 `sudo` command, or with `--no-sudo`. In that case it runs these steps only:
