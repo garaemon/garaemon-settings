@@ -4,10 +4,11 @@ Monorepo for garaemon's environment setup.
 
 ## INSTALL
 
-Run one command on a fresh machine. The command needs only `bash` and `curl`:
+Run one command on a fresh machine from bash or zsh. The command needs only
+`bash` and `curl`:
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)"
+bash <(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)
 ```
 
 You do not need ghq, chezmoi, or Ansible beforehand. `bootstrap.sh` runs these
@@ -28,11 +29,10 @@ steps, and each step skips work that is already done:
    `ansible/main.yml`. The playbook prompts for the sudo password unless sudo
    works without one.
 
-Pass arguments after a placeholder `$0` such as `bootstrap`:
+Pass arguments after the process substitution:
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
-  bootstrap --playbook minimal
+bash <(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh) --playbook minimal
 ```
 
 The script accepts these options:
@@ -58,8 +58,8 @@ and `--branch` makes that script use the branch's playbooks and dotfiles:
 
 ```sh
 BRANCH=my-feature
-bash -c "$(curl -fsSL "https://raw.githubusercontent.com/garaemon/garaemon-settings/${BRANCH}/bootstrap.sh")" \
-  bootstrap --branch "${BRANCH}"
+bash <(curl -fsSL "https://raw.githubusercontent.com/garaemon/garaemon-settings/${BRANCH}/bootstrap.sh") \
+  --branch "${BRANCH}"
 ```
 
 The script also runs without root, for example in a container that has no
@@ -81,16 +81,16 @@ To bootstrap a host without sudo, copy and paste this command. It skips the
 Ansible step and builds Emacs into `~/.local`:
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
-  bootstrap --no-sudo --build-emacs
+bash <(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh) --no-sudo --build-emacs
 ```
 
 Drop `--build-emacs` if the host already has Emacs. The command needs `git` and
 `curl` on the host. Afterward, open a new shell so that `~/.local/bin` is on
 `PATH`.
 
-Use `bash -c "$(curl ...)"`, not `curl ... | bash`. A pipe replaces stdin, so
-the sudo and Ansible password prompts cannot read the keyboard.
+Use `bash <(curl ...)`, not `curl ... | bash`. A pipe replaces stdin, so the
+sudo and Ansible password prompts cannot read the keyboard. From fish or another
+shell without process substitution, run `bash` first.
 
 On macOS, install the Xcode Command Line Tools (`xcode-select --install`) and
 [Homebrew](https://brew.sh) first. The script stops with a message when either
@@ -221,6 +221,5 @@ Runs `main.yml` plus host-specific roles for the ax8-max machine (e.g. the
 MicroArray MAFP fingerprint reader, see `ansible/roles/fingerprint_mafp`).
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)" \
-  bootstrap --playbook ax8-max
+bash <(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh) --playbook ax8-max
 ```

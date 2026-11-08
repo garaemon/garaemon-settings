@@ -3,11 +3,12 @@ set -euo pipefail
 
 # One-shot setup for a fresh machine. Run it without cloning anything first:
 #
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh)"
+#   bash <(curl -fsSL https://raw.githubusercontent.com/garaemon/garaemon-settings/main/bootstrap.sh) [options]
 #
-# Use `bash -c "$(curl ...)"` rather than `curl ... | bash`. A pipe takes over
+# Use process substitution rather than `curl ... | bash`. A pipe takes over
 # stdin, so the sudo and Ansible become password prompts would read the script
-# instead of the keyboard.
+# instead of the keyboard. Process substitution also passes the options to the
+# script as is, which `bash -c "$(curl ...)"` does only after a placeholder $0.
 #
 # The script needs neither ghq nor Ansible beforehand; it installs both. It
 # stays compatible with bash 3.2 because macOS runs it with the system bash
