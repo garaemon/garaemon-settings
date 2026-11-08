@@ -531,27 +531,67 @@ class TestEnsureBuildTools:
         assert self.ensure(monkeypatch, ("makeinfo",)) == ["texinfo"]
 
 
-class TestRequiredFeatures:
-    def assert_features(self, monkeypatch, argv, has_sqlite3):
+class TestEnsureSqlite:
+    @pytest.fixture
+    def commands(self, monkeypatch, tmp_path):
+        calls = []
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
         monkeypatch.setattr(
-            build_emacs, "has_sqlite3", lambda env: has_sqlite3
+            build_emacs, "download_verified", lambda url, sha256, path: None
         )
-        options = build_emacs.parse_arguments(argv)
-        build_emacs.assert_required_features(options, env={})
+        monkeypatch.setattr(
+            build_emacs, "extract_tarball", lambda archive, destination: None
+        )
+        monkeypatch.setattr(
+            build_emacs, "run", lambda command, **kwargs: calls.append(command)
+        )
+        return calls
 
-    def test_should_stop_when_required_sqlite_is_missing(self, monkeypatch):
+    def ensure(self, monkeypatch, probe_results):
+        remaining_results = list(probe_results)
+        monkeypatch.setattr(
+            build_emacs, "has_sqlite3", lambda env: remaining_results.pop(0)
+        )
+        build_emacs.ensure_sqlite(Path("/opt/e"), 2, env={})
+
+    def test_should_build_nothing_when_sqlite_exists(
+        self, monkeypatch, commands
+    ):
+        self.ensure(monkeypatch, [True])
+        assert commands == []
+
+    def test_should_install_sqlite_into_prefix_when_missing(
+        self, monkeypatch, commands
+    ):
+        self.ensure(monkeypatch, [False, True])
+        assert commands[0] == ["./configure", "--prefix=/opt/e"]
+
+    def test_should_run_make_install_last(self, monkeypatch, commands):
+        self.ensure(monkeypatch, [False, True])
+        assert commands[-1] == ["make", "install"]
+
+    def test_should_stop_when_built_sqlite_is_unusable(
+        self, monkeypatch, commands
+    ):
         with pytest.raises(SystemExit):
-            self.assert_features(monkeypatch, ["--sqlite", "yes"], False)
+            self.ensure(monkeypatch, [False, False])
 
-    def test_should_pass_when_required_sqlite_exists(self, monkeypatch):
-        self.assert_features(monkeypatch, ["--sqlite", "yes"], True)
 
-    def test_should_tolerate_missing_sqlite_by_default(self, monkeypatch):
-        self.assert_features(monkeypatch, [], False)
+class TestHasSqlite3:
+    def test_should_pass_prefix_flags_to_compiler(self, monkeypatch):
+        commands = []
+        monkeypatch.setattr(
+            build_emacs, "succeeds",
+            lambda command, **kwargs: commands.append(command) or True,
+        )
+        build_emacs.has_sqlite3(
+            {"CPPFLAGS": "-I/opt/e/include", "LDFLAGS": "-L/opt/e/lib"}
+        )
+        assert {"-I/opt/e/include", "-L/opt/e/lib"} <= set(commands[0])
 
 
 class TestMainOrder:
-    def test_should_check_required_features_before_building_tools(
+    def test_should_build_sqlite_before_emacs(
         self, monkeypatch, tmp_path
     ):
         steps = []
@@ -562,8 +602,8 @@ class TestMainOrder:
         monkeypatch.setattr(
             build_emacs, "build_environment", lambda prefix: {}
         )
-        for step_name in ("assert_required_features", "ensure_build_tools",
-                          "ensure_tree_sitter", "checkout_emacs_source",
+        for step_name in ("ensure_build_tools", "ensure_tree_sitter",
+                          "ensure_sqlite", "checkout_emacs_source",
                           "clean_stale_build_tree", "build_and_install_emacs",
                           "warn_about_missing_features"):
             monkeypatch.setattr(
@@ -571,6 +611,6 @@ class TestMainOrder:
                 lambda *args, step_name=step_name: steps.append(step_name),
             )
         build_emacs.main(["--prefix", str(tmp_path)])
-        assert steps.index("assert_required_features") < steps.index(
-            "ensure_build_tools"
+        assert steps.index("ensure_sqlite") < steps.index(
+            "build_and_install_emacs"
         )
