@@ -245,8 +245,9 @@ The fetch and the commit chain run as asynchronous git processes:
 
 `C-c n e` in an Org buffer creates a drawing under
 `org-excalidraw-default-directory` and inserts its `excalidraw:` link at
-point. `my-org-excalidraw-name.el` names the drawing after the Org file, so
-no file name prompt appears:
+point. `my-org-excalidraw-name.el` names the drawing after the Org file
+with the helpers in `my-org-drawing-name.el`, so no file name prompt
+appears:
 
 - `C-c n e` in `2026-10-25.org` creates `2026-10-25-1.excalidraw`, then
   `2026-10-25-2.excalidraw`.
@@ -255,6 +256,32 @@ no file name prompt appears:
   into.
 - A buffer without a file falls back to the path prompt of
   `org-excalidraw-create-drawing`.
+
+## draw.io Drawings
+
+`my-org-drawio.el` stores draw.io drawings as `.drawio.svg` files. Such a
+file is an SVG image that embeds the diagram, so Org shows it as an
+ordinary inline image and no export step runs. Editing needs the draw.io
+desktop app: the `drawio` command on Linux, or `draw.io.app` on macOS
+(`brew install --cask drawio`).
+
+`C-c n D` in an Org buffer works like `C-c n e`:
+
+- The command creates `2026-10-25-1.drawio.svg` under
+  `my-org-drawio-directory` and opens it in draw.io.
+- The command inserts a `file:` link relative to the Org file, such as
+  `[[file:../drawio/2026-10-25-1.drawio.svg]]`.
+- `C-u C-c n D` asks for a label and creates
+  `2026-10-25-LABEL.drawio.svg`.
+- A buffer without a file asks for the path of the drawing.
+
+`C-c C-o` on a link to a `.drawio.svg` file opens draw.io. Emacs refreshes
+the inline images when it regains focus after you save in draw.io.
+
+draw.io appends a "Text is not SVG - cannot display" warning to drawings
+with formatted text labels. Emacs cannot render those labels, so it would
+show the warning. `my-org-drawio.el` removes the warning from the inline
+image but leaves the file unchanged.
 
 ## GitHub Links
 
