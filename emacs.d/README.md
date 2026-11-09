@@ -278,6 +278,11 @@ desktop app: the `drawio` command on Linux, or `draw.io.app` on macOS
 `C-c C-o` on a link to a `.drawio.svg` file opens draw.io. Emacs refreshes
 the inline images when it regains focus after you save in draw.io.
 
+draw.io appends a "Text is not SVG - cannot display" warning to drawings
+with formatted text labels. Emacs cannot render those labels, so it would
+show the warning. `my-org-drawio.el` removes the warning from the inline
+image but leaves the file unchanged.
+
 ## GitHub Links
 
 `my-org-github-link.el` turns a GitHub URL that you yank into an Org buffer

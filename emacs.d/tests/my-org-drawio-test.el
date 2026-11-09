@@ -88,6 +88,38 @@ Drawings land in DIRECTORY.  Return the inserted text and the opened path."
             (setq buffer-file-name nil))))
       (should (equal previewed-text "[[file:a-1.drawio.svg]]")))))
 
+(defconst my-org-drawio-test-warning
+  (concat "<switch><g requiredFeatures=\"http://www.w3.org/TR/SVG11/feature#Extensibility\"/>"
+          "<a transform=\"translate(0,-5)\" xlink:href=\"https://www.drawio.com/doc/faq/svg-export-text-problems\" target=\"_blank\">"
+          "<text text-anchor=\"middle\" font-size=\"10px\" x=\"50%\" y=\"100%\">"
+          "Text is not SVG - cannot display</text></a></switch>")
+  "Warning that draw.io appends to an SVG with HTML labels.")
+
+(defconst my-org-drawio-test-label
+  (concat "<switch><foreignObject requiredFeatures=\"http://www.w3.org/TR/SVG11/feature#Extensibility\">"
+          "<div>Hello</div></foreignObject><text>Hello</text></switch>")
+  "Label that draw.io writes with a plain text fallback.")
+
+(ert-deftest my-org-drawio-test-strip-warning-removes-warning ()
+  (should (equal (my-org-drawio-strip-text-warning
+                  (concat "<svg><g/>" my-org-drawio-test-warning "</svg>"))
+                 "<svg><g/></svg>")))
+
+(ert-deftest my-org-drawio-test-strip-warning-keeps-label-fallback ()
+  (let ((svg (concat "<svg>" my-org-drawio-test-label "</svg>")))
+    (should (equal (my-org-drawio-strip-text-warning svg) svg))))
+
+(ert-deftest my-org-drawio-test-image-args-read-drawing-as-data ()
+  (my-org-drawio-test-with-directory directory
+    (let ((path (concat directory "a.drawio.svg")))
+      (write-region (concat "<svg>" my-org-drawio-test-warning "</svg>") nil path)
+      (should (equal (my-org-drawio-image-args (list path nil nil :scale 1))
+                     '("<svg></svg>" svg t :scale 1))))))
+
+(ert-deftest my-org-drawio-test-image-args-keep-other-images ()
+  (let ((args (list "/org/a.svg" nil nil :scale 1)))
+    (should (equal (my-org-drawio-image-args args) args))))
+
 (ert-deftest my-org-drawio-test-template-embeds-diagram ()
   (should (string-match-p "content=\"&lt;mxfile" my-org-drawio-template)))
 

@@ -570,6 +570,9 @@ Skip when the cached SVG is already newer than FILE."
   ;; image buffer.
   (add-to-list 'org-file-apps
                '("\\.drawio\\.svg\\'" . my-org-drawio-open-file-app))
+  ;; Hand drawings to `create-image' as data without the "Text is not SVG"
+  ;; warning that draw.io appends for HTML labels and librsvg displays.
+  (advice-add 'create-image :filter-args #'my-org-drawio-image-args)
   (keymap-set org-mode-map "C-c n D" #'my-org-drawio-create-drawing))
 
 (use-package my-org-github-link

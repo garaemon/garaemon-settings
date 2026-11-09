@@ -51,6 +51,36 @@ The path of the drawing follows the last argument."
    "<defs/><g/></svg>\n")
   "Contents of a new, empty drawing.")
 
+(defconst my-org-drawio-text-warning-regexp
+  (concat "<switch><g requiredFeatures=\"http://www\\.w3\\.org/TR/SVG11/"
+          "feature#Extensibility\"[[:space:]]*/>[[:space:]]*<a\\b[^>]*>"
+          "[[:space:]]*<text\\b[^>]*>Text is not SVG - cannot display</text>"
+          "[[:space:]]*</a>[[:space:]]*</switch>")
+  "Regexp for the warning that draw.io appends to an SVG with HTML labels.")
+
+(defun my-org-drawio-strip-text-warning (svg)
+  "Return SVG without the warning about HTML labels that draw.io appends.
+librsvg cannot render HTML labels, so Emacs draws the warning across the
+bottom of every drawing.  The labels keep their plain text fallback."
+  (replace-regexp-in-string my-org-drawio-text-warning-regexp "" svg t t))
+
+(defun my-org-drawio-image-args (args)
+  "Return ARGS of `create-image' with a drawing file read as stripped data.
+Leave ARGS unchanged unless they name an existing .drawio.svg file."
+  (pcase-let ((`(,file-or-data ,_type ,data-p . ,props) args))
+    (if (and (stringp file-or-data)
+             (not data-p)
+             (string-suffix-p my-org-drawio-extension file-or-data)
+             (file-readable-p file-or-data))
+        ;; Raw bytes keep non-ASCII labels intact for librsvg, which reads
+        ;; image data as UTF-8.
+        (let ((svg (with-temp-buffer
+                     (set-buffer-multibyte nil)
+                     (insert-file-contents-literally file-or-data)
+                     (buffer-string))))
+          `(,(my-org-drawio-strip-text-warning svg) svg t ,@props))
+      args)))
+
 (defun my-org-drawio-link (drawing-path source-file)
   "Return an Org link to DRAWING-PATH relative to the directory of SOURCE-FILE.
 A relative link survives a move of the whole Org directory to another
