@@ -14,6 +14,9 @@
 
 (require 'my-org-drawing-name)
 
+(declare-function org-link-preview-region "ol" (&optional include-linked refresh beg end))
+(declare-function org-display-inline-images "org" (&optional include-linked refresh beg end))
+
 (defgroup my-org-drawio nil
   "Create and edit draw.io drawings from Org."
   :group 'org)
@@ -68,6 +71,13 @@ that is not installed."
                   :noquery t
                   :connection-type 'pipe)))
 
+(defun my-org-drawio-preview-region (beg end)
+  "Show the image links between BEG and END inline.
+Org 9.8 renamed `org-display-inline-images' to `org-link-preview-region'."
+  (if (fboundp 'org-link-preview-region)
+      (org-link-preview-region nil t beg end)
+    (org-display-inline-images nil t beg end)))
+
 ;;;###autoload
 (defun my-org-drawio-open-file-app (file &optional _link)
   "Open FILE in draw.io.  Meant for an `org-file-apps' entry."
@@ -97,9 +107,13 @@ asks for the path of the drawing instead and links it by absolute path."
     (make-directory (file-name-directory path) t)
     (with-temp-file path
       (insert my-org-drawio-template))
-    (insert (if source-file
-                (my-org-drawio-link path source-file)
-              (format "[[file:%s]]" path)))
+    (let ((link-start (point)))
+      (insert (if source-file
+                  (my-org-drawio-link path source-file)
+                (format "[[file:%s]]" path)))
+      ;; The focus hook in init-org.el refreshes only buffers that already
+      ;; show an image, so the new link needs a preview of its own.
+      (my-org-drawio-preview-region link-start (point)))
     (my-org-drawio-open-file path)))
 
 (provide 'my-org-drawio)

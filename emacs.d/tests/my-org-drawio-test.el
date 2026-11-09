@@ -30,7 +30,8 @@ Drawings land in DIRECTORY.  Return the inserted text and the opened path."
   (let ((my-org-drawio-directory directory)
         (opened-path nil))
     (cl-letf (((symbol-function 'my-org-drawio-open-file)
-               (lambda (path) (setq opened-path path))))
+               (lambda (path) (setq opened-path path)))
+              ((symbol-function 'my-org-drawio-preview-region) #'ignore))
       (with-temp-buffer
         (setq buffer-file-name source-file)
         (unwind-protect
@@ -70,6 +71,22 @@ Drawings land in DIRECTORY.  Return the inserted text and the opened path."
     (my-org-drawio-test-create-in (concat directory "new/")
                                   (concat directory "a.org") nil)
     (should (file-exists-p (concat directory "new/a-1.drawio.svg")))))
+
+(ert-deftest my-org-drawio-test-create-drawing-previews-inserted-link ()
+  (my-org-drawio-test-with-directory directory
+    (let ((my-org-drawio-directory directory)
+          (previewed-text nil))
+      (cl-letf (((symbol-function 'my-org-drawio-open-file) #'ignore)
+                ((symbol-function 'my-org-drawio-preview-region)
+                 (lambda (beg end)
+                   (setq previewed-text (buffer-substring beg end)))))
+        (with-temp-buffer
+          (setq buffer-file-name (concat directory "a.org"))
+          (insert "Before ")
+          (unwind-protect
+              (my-org-drawio-create-drawing nil)
+            (setq buffer-file-name nil))))
+      (should (equal previewed-text "[[file:a-1.drawio.svg]]")))))
 
 (ert-deftest my-org-drawio-test-template-embeds-diagram ()
   (should (string-match-p "content=\"&lt;mxfile" my-org-drawio-template)))
