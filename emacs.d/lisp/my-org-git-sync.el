@@ -1,37 +1,42 @@
-;;; my-org-git-sync.el --- Fetch Org repositories without prompting -*- lexical-binding: t; -*-
+;;; my-org-git-sync.el --- Pull and push Org repositories without prompting -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Opening an Org file once asked before every `git pull', even when the
-;; upstream carried nothing new, so the answer was almost always the same
-;; keystroke.  This module splits the pull in two: `git fetch' runs on its
-;; own, once per repository per day, and a prompt appears only when the
-;; branch actually fell behind its upstream.
+;; The Org repository changes on several machines, and Claude Code commits
+;; into it too, so this module keeps the checkout current without a manual
+;; Magit round:
 ;;
-;; The same module commits and pushes the repository once Emacs has been
-;; idle for a while after a save, so the notes reach the other machines
-;; without a manual Magit round.
+;; - Opening an Org file runs `git pull --rebase' in the background, at
+;;   most once per `my-org-git-sync-pull-interval' per repository.
+;; - A save commits the repository once Emacs has been idle for a while,
+;;   then pulls with a rebase and pushes.
 ;;
-;; Every command that can wait on the network (the fetch, and the add,
-;; commit and push chain) goes through `my-org-git-sync-start-git', which
-;; runs git asynchronously with a watchdog, because a slow network would
+;; A pull that conflicts is aborted, which restores the checkout and leaves
+;; the merge to Magit.  No step asks a question.
+;;
+;; Every git command goes through `my-org-git-sync-start-git', which runs
+;; git asynchronously with a watchdog, because a slow network would
 ;; otherwise freeze `find-file' or the first keystroke after the idle
-;; period.  The two local commands behind the merge prompt, `git rev-list'
-;; and `git merge --ff-only', run synchronously: they never touch the
-;; network, and the prompt they lead to blocks anyway.  The decision logic
-;; lives in small functions that take their inputs as arguments so
-;; tests/my-org-git-sync-test.el can exercise it without a repository.
+;; period.  The decision logic lives in small functions that take their
+;; inputs as arguments so tests/my-org-git-sync-test.el can exercise it
+;; without a repository.
 
 ;;; Code:
 
 (require 'subr-x)
 (require 'vc-git)
 
-(defvar my-org-git-sync-fetch-dates nil
-  "Alist of (REPOSITORY-ROOT . DATE) recording the last fetch per repository.
-DATE is a YYYY-MM-DD string.")
+(defvar my-org-git-sync-pull-times nil
+  "Alist of (REPOSITORY-ROOT . TIME) recording the last pull per repository.
+TIME is a float in seconds since the epoch, as `float-time' returns.")
 
-(defvar my-org-git-sync-prompt-idle-delay 1
-  "Seconds of idle time to wait before asking about a merge.")
+(defvar my-org-git-sync-pull-interval 600
+  "Seconds that must pass before opening a file pulls its repository again.")
+
+(defconst my-org-git-sync-pull-arguments
+  '("pull" "--rebase" "--autostash" "--quiet")
+  "Arguments of the `git pull' that brings a repository up to date.
+The autostash carries uncommitted edits, such as a note Claude Code wrote
+a moment ago, across the rebase.")
 
 (defconst my-org-git-sync-buffer-name "*org-git-sync*"
   "Buffer that collects the output of the git commands this module runs.")
@@ -52,7 +57,7 @@ One timer serves every repository, so a save in a second repository under
 `org-directory' replaces the pending commit of the first.")
 
 (defvar my-org-git-sync-commit-in-progress nil
-  "Non-nil while a commit-and-push chain runs, in any repository.
+  "Non-nil while a pull or a commit-and-push chain runs, in any repository.
 A second chain started meanwhile would race the first one for the index.")
 
 (defvar my-org-git-sync-command-timeout 120
@@ -85,15 +90,18 @@ Returns nil for a buffer without a file, a non-Org file, a file outside
         (and (boundp 'org-directory) org-directory))
        (my-org-git-sync-locate-repository-root buffer-file-name)))
 
-(defun my-org-git-sync-fetched-today-p (repository-root today dates)
-  "Return non-nil when DATES records a fetch of REPOSITORY-ROOT on TODAY."
-  (equal (cdr (assoc repository-root dates)) today))
+(defun my-org-git-sync-pulled-recently-p (repository-root now times interval)
+  "Return non-nil when TIMES records a pull of REPOSITORY-ROOT close to NOW.
+NOW is a float in seconds since the epoch.  A pull counts as close when
+fewer than INTERVAL seconds separate the pull from NOW."
+  (let ((pull-time (cdr (assoc repository-root times))))
+    (and pull-time (< (- now pull-time) interval))))
 
-(defun my-org-git-sync-record-fetch-date (repository-root today dates)
-  "Return DATES with REPOSITORY-ROOT recorded as fetched on TODAY.
-DATES stays unchanged."
-  (cons (cons repository-root today)
-        (assoc-delete-all repository-root (copy-alist dates))))
+(defun my-org-git-sync-record-pull-time (repository-root now times)
+  "Return TIMES with REPOSITORY-ROOT recorded as pulled at NOW.
+TIMES stays unchanged."
+  (cons (cons repository-root now)
+        (assoc-delete-all repository-root (copy-alist times))))
 
 (defun my-org-git-sync-append-log (arguments output)
   "Append a `$ git ARGUMENTS' header and OUTPUT to the sync buffer.
@@ -225,96 +233,6 @@ message as output, so that a chain never loses its callback."
     (my-org-git-sync-report-git-exit
      process (process-get process 'my-org-git-sync-callback))))
 
-(defun my-org-git-sync-parse-behind-count (output)
-  "Return the commit count in OUTPUT, or nil when OUTPUT has no count.
-OUTPUT is the whole output of `git rev-list --count', which prints an error
-message instead of a number when the branch tracks no upstream."
-  (let ((trimmed (string-trim (or output ""))))
-    (when (string-match-p "\\`[0-9]+\\'" trimmed)
-      (string-to-number trimmed))))
-
-(defun my-org-git-sync-count-behind-commits (repository-root)
-  "Return how many commits REPOSITORY-ROOT trails its upstream by.
-Returns nil when the branch tracks no upstream."
-  (let ((default-directory repository-root))
-    (with-temp-buffer
-      (let ((status (process-file "git" nil t nil
-                                  "rev-list" "--count" "HEAD..@{u}")))
-        (when (eq status 0)
-          (my-org-git-sync-parse-behind-count (buffer-string)))))))
-
-(defun my-org-git-sync-merge-upstream (repository-root)
-  "Merge the upstream branch into REPOSITORY-ROOT, fast-forward only.
-A diverged branch is left alone rather than turned into a conflict in the
-middle of `find-file'; Magit handles that case better."
-  (let* ((default-directory repository-root)
-         (arguments '("merge" "--ff-only" "@{u}"))
-         (status (with-temp-buffer
-                   (prog1 (apply #'process-file "git" nil t nil arguments)
-                     (my-org-git-sync-append-log arguments (buffer-string))))))
-    (if (eq status 0)
-        (message "Org git sync: merged the upstream of %s" repository-root)
-      (message "Org git sync: merge failed in %s, see %s"
-               repository-root my-org-git-sync-buffer-name))))
-
-(defun my-org-git-sync-ask-merge (repository-root behind-count)
-  "Offer to merge REPOSITORY-ROOT when BEHIND-COUNT counts waiting commits.
-BEHIND-COUNT is nil when the branch tracks no upstream.  A branch that is
-up to date raises no prompt, which is the reason the fetch runs on its own."
-  (when (and behind-count
-             (> behind-count 0)
-             (y-or-n-p (format "Org repository %s is %d commit(s) behind.  Merge? "
-                               repository-root behind-count)))
-    ;; Idle timers keep running while the prompt waits, so a commit chain
-    ;; may have started meanwhile; a merge now would race it for the index.
-    (if my-org-git-sync-commit-in-progress
-        (my-org-git-sync-report-merge-deferred repository-root)
-      (my-org-git-sync-merge-upstream repository-root))))
-
-(defun my-org-git-sync-report-merge-deferred (repository-root)
-  "Tell the user that REPOSITORY-ROOT was not merged because a commit runs."
-  (message "Org git sync: a commit is running in %s, merge later from Magit"
-           repository-root))
-
-(defun my-org-git-sync-prompt-merge (repository-root)
-  "Count the commits REPOSITORY-ROOT trails by, then offer to merge them.
-While a commit chain runs, the merge would fight it for .git/index.lock,
-so the prompt is skipped and the merge left to Magit."
-  (if my-org-git-sync-commit-in-progress
-      (my-org-git-sync-report-merge-deferred repository-root)
-    (my-org-git-sync-ask-merge repository-root
-                               (my-org-git-sync-count-behind-commits repository-root))))
-
-(defun my-org-git-sync-handle-fetch-result (repository-root status)
-  "Offer to merge REPOSITORY-ROOT once its fetch ended with exit STATUS."
-  (if (zerop status)
-      ;; Ask from an idle timer.  The result arrives in a process sentinel,
-      ;; in the middle of whatever command is active, and a prompt there
-      ;; eats the keys meant for that command.
-      (run-with-idle-timer my-org-git-sync-prompt-idle-delay nil
-                           #'my-org-git-sync-prompt-merge repository-root)
-    (message "Org git sync: git fetch failed in %s, see %s"
-             repository-root my-org-git-sync-buffer-name)))
-
-(defun my-org-git-sync-start-fetch (repository-root)
-  "Start a background `git fetch' in REPOSITORY-ROOT."
-  (my-org-git-sync-start-git
-   repository-root '("fetch" "--quiet")
-   (lambda (status _output)
-     (my-org-git-sync-handle-fetch-result repository-root status))))
-
-(defun my-org-git-sync-fetch-on-find-file ()
-  "Fetch the repository of the Org file being opened, at most once a day."
-  (let ((repository-root (my-org-git-sync-locate-current-org-repository))
-        (today (format-time-string "%Y-%m-%d")))
-    (when (and repository-root
-               (not (my-org-git-sync-fetched-today-p
-                     repository-root today my-org-git-sync-fetch-dates)))
-      (setq my-org-git-sync-fetch-dates
-            (my-org-git-sync-record-fetch-date
-             repository-root today my-org-git-sync-fetch-dates))
-      (my-org-git-sync-start-fetch repository-root))))
-
 (defun my-org-git-sync-changes-p (status-output)
   "Return non-nil when STATUS-OUTPUT lists a change.
 STATUS-OUTPUT is the whole output of `git status --porcelain'."
@@ -339,10 +257,13 @@ repository itself, because git rejects a pathspec outside its work tree."
 
 (defun my-org-git-sync-build-commit-steps (time pathspec)
   "Return the git argument lists that commit and push PATHSPEC as of TIME.
-The commit message carries TIME in the local zone."
+The commit message carries TIME in the local zone.  The pull sits between
+the commit and the push because the remote rejects a push from a branch
+that trails it."
   (list (list "add" "--all" "--" pathspec)
         (list "commit" "--quiet" "-m"
               (format-time-string "Auto-commit org changes at %Y-%m-%d %H:%M:%S" time))
+        my-org-git-sync-pull-arguments
         '("push" "--quiet")))
 
 (defun my-org-git-sync-run-git-steps (repository-root steps on-finish)
@@ -369,14 +290,59 @@ starts at once."
       (setq my-org-git-sync-pending-commit-root nil)
       (my-org-git-sync-commit-and-push pending-repository-root))))
 
+(defun my-org-git-sync-report-failed-step (repository-root failed-step)
+  "Tell the user that `git FAILED-STEP' broke a chain in REPOSITORY-ROOT."
+  (message "Org git sync: git %s failed in %s, see %s"
+           (car failed-step) repository-root my-org-git-sync-buffer-name))
+
+(defun my-org-git-sync-finish-chain (repository-root failed-step)
+  "Clean up after a chain in REPOSITORY-ROOT and release the guard.
+FAILED-STEP is the git argument list that broke the chain, or nil.  A
+failed pull may have stopped in the middle of a rebase, so the rebase is
+aborted first: that restores the branch and the stashed edits, and leaves
+the conflict to Magit.  The abort fails harmlessly when the pull broke
+before the rebase began, as on a network error."
+  (if (equal failed-step my-org-git-sync-pull-arguments)
+      (my-org-git-sync-start-git
+       repository-root '("rebase" "--abort")
+       (lambda (_status _output)
+         (my-org-git-sync-report-failed-step repository-root failed-step)
+         (my-org-git-sync-release-commit-guard)))
+    (when failed-step
+      (my-org-git-sync-report-failed-step repository-root failed-step))
+    (my-org-git-sync-release-commit-guard)))
+
 (defun my-org-git-sync-finish-commit (repository-root failed-step)
-  "Release the guard and report how the commit of REPOSITORY-ROOT went.
+  "Report how the commit of REPOSITORY-ROOT went and finish the chain.
 FAILED-STEP is the git argument list that broke the chain, or nil."
-  (if failed-step
-      (message "Org git sync: git %s failed in %s, see %s"
-               (car failed-step) repository-root my-org-git-sync-buffer-name)
+  (unless failed-step
     (message "Org git sync: committed and pushed %s" repository-root))
-  (my-org-git-sync-release-commit-guard))
+  (my-org-git-sync-finish-chain repository-root failed-step))
+
+(defun my-org-git-sync-pull (repository-root)
+  "Pull REPOSITORY-ROOT with a rebase, without blocking Emacs.
+Does nothing while another chain runs, because the two would fight for
+.git/index.lock.  A pull that succeeds stays quiet; `global-auto-revert-mode'
+shows the new content."
+  (unless my-org-git-sync-commit-in-progress
+    (setq my-org-git-sync-commit-in-progress t)
+    (my-org-git-sync-run-git-steps
+     repository-root (list my-org-git-sync-pull-arguments)
+     (lambda (failed-step)
+       (my-org-git-sync-finish-chain repository-root failed-step)))))
+
+(defun my-org-git-sync-pull-on-find-file ()
+  "Pull the repository of the Org file being opened, at most once per interval."
+  (let ((repository-root (my-org-git-sync-locate-current-org-repository))
+        (now (float-time)))
+    (when (and repository-root
+               (not (my-org-git-sync-pulled-recently-p
+                     repository-root now my-org-git-sync-pull-times
+                     my-org-git-sync-pull-interval)))
+      (setq my-org-git-sync-pull-times
+            (my-org-git-sync-record-pull-time
+             repository-root now my-org-git-sync-pull-times))
+      (my-org-git-sync-pull repository-root))))
 
 (defun my-org-git-sync-commit-changes (repository-root pathspec status output)
   "Commit and push PATHSPEC in REPOSITORY-ROOT after `git status' ended.
@@ -399,7 +365,7 @@ otherwise stop every auto commit without a word."
     (my-org-git-sync-release-commit-guard))))
 
 (defun my-org-git-sync-commit-and-push (repository-root)
-  "Commit every change in REPOSITORY-ROOT and push, without blocking Emacs.
+  "Commit every change in REPOSITORY-ROOT, pull and push, without blocking Emacs.
 While an earlier chain still runs, the request is kept as pending and the
 chain that ends starts the next one, so a save made during a slow push
 still reaches the remote."

@@ -1,16 +1,15 @@
-;;; my-org-git-sync-test.el --- Tests for the Org git fetch and merge flow -*- lexical-binding: t; -*-
+;;; my-org-git-sync-test.el --- Tests for the Org git pull and push flow -*- lexical-binding: t; -*-
 
 ;;; Commentary:
-;; Tests for lisp/my-org-git-sync.el.  Two rules are under test: opening an
-;; Org file fetches without asking, and only a repository that actually
-;; fell behind its upstream produces a merge prompt; a save leads to one
-;; commit-and-push chain at a time, and a chain never blocks Emacs.
+;; Tests for lisp/my-org-git-sync.el.  Three rules are under test: opening
+;; an Org file pulls without asking, at most once per interval; a save leads
+;; to one commit, pull and push chain at a time; and a chain never blocks
+;; Emacs.
 ;;
 ;; Only the tests that call `my-org-git-sync-start-git' unstubbed run git,
 ;; against a temporary repository or with `git --version'.  Everywhere
-;; else the command output arrives as a string, and the prompt and commit
-;; tests stub `y-or-n-p', the merge call, and `my-org-git-sync-start-git'
-;; with `cl-letf'.  Run with:
+;; else the command output arrives as a string, and the pull and commit
+;; tests stub `my-org-git-sync-start-git' with `cl-letf'.  Run with:
 ;;
 ;;   emacs -Q --batch --eval "(package-initialize)" \
 ;;     -L lisp -l ert -l tests/my-org-git-sync-test.el \
@@ -26,44 +25,30 @@
 ;; unloaded in the batch run.
 (defvar org-directory)
 
-(ert-deftest my-org-git-sync-test-parse-behind-count-reads-number ()
-  (should (equal (my-org-git-sync-parse-behind-count "3\n") 3)))
+(ert-deftest my-org-git-sync-test-record-pull-time-adds-repository ()
+  (should (equal (my-org-git-sync-record-pull-time "/org/" 1000.0 nil)
+                 '(("/org/" . 1000.0)))))
 
-(ert-deftest my-org-git-sync-test-parse-behind-count-reads-zero ()
-  (should (equal (my-org-git-sync-parse-behind-count "0\n") 0)))
+(ert-deftest my-org-git-sync-test-record-pull-time-replaces-old-time ()
+  (should (equal (my-org-git-sync-record-pull-time
+                  "/org/" 1000.0 '(("/org/" . 100.0)))
+                 '(("/org/" . 1000.0)))))
 
-(ert-deftest my-org-git-sync-test-parse-behind-count-rejects-error-output ()
-  (should (equal (my-org-git-sync-parse-behind-count
-                  "fatal: no upstream configured for branch 'main'\n")
-                 nil)))
+(ert-deftest my-org-git-sync-test-record-pull-time-keeps-input-unchanged ()
+  (let ((times '(("/org/" . 100.0))))
+    (my-org-git-sync-record-pull-time "/org/" 1000.0 times)
+    (should (equal times '(("/org/" . 100.0))))))
 
-(ert-deftest my-org-git-sync-test-parse-behind-count-rejects-empty-output ()
-  (should (equal (my-org-git-sync-parse-behind-count "") nil)))
+(ert-deftest my-org-git-sync-test-pulled-recently-p-accepts-pull-inside-interval ()
+  (should (my-org-git-sync-pulled-recently-p
+           "/org/" 1000.0 '(("/org/" . 500.0)) 600)))
 
-(ert-deftest my-org-git-sync-test-record-fetch-date-adds-repository ()
-  (should (equal (my-org-git-sync-record-fetch-date "/org/" "2026-09-11" nil)
-                 '(("/org/" . "2026-09-11")))))
+(ert-deftest my-org-git-sync-test-pulled-recently-p-rejects-pull-before-interval ()
+  (should-not (my-org-git-sync-pulled-recently-p
+               "/org/" 1000.0 '(("/org/" . 300.0)) 600)))
 
-(ert-deftest my-org-git-sync-test-record-fetch-date-replaces-old-date ()
-  (should (equal (my-org-git-sync-record-fetch-date
-                  "/org/" "2026-09-11" '(("/org/" . "2026-09-10")))
-                 '(("/org/" . "2026-09-11")))))
-
-(ert-deftest my-org-git-sync-test-record-fetch-date-keeps-input-unchanged ()
-  (let ((dates '(("/org/" . "2026-09-10"))))
-    (my-org-git-sync-record-fetch-date "/org/" "2026-09-11" dates)
-    (should (equal dates '(("/org/" . "2026-09-10"))))))
-
-(ert-deftest my-org-git-sync-test-fetched-today-p-accepts-same-date ()
-  (should (my-org-git-sync-fetched-today-p
-           "/org/" "2026-09-11" '(("/org/" . "2026-09-11")))))
-
-(ert-deftest my-org-git-sync-test-fetched-today-p-rejects-older-date ()
-  (should-not (my-org-git-sync-fetched-today-p
-               "/org/" "2026-09-11" '(("/org/" . "2026-09-10")))))
-
-(ert-deftest my-org-git-sync-test-fetched-today-p-rejects-unknown-repository ()
-  (should-not (my-org-git-sync-fetched-today-p "/org/" "2026-09-11" nil)))
+(ert-deftest my-org-git-sync-test-pulled-recently-p-rejects-unknown-repository ()
+  (should-not (my-org-git-sync-pulled-recently-p "/org/" 1000.0 nil 600)))
 
 (ert-deftest my-org-git-sync-test-target-file-p-accepts-org-file-in-directory ()
   (should (my-org-git-sync-target-file-p "/org/notes.org" 'org-mode "/org/")))
@@ -76,55 +61,6 @@
 
 (ert-deftest my-org-git-sync-test-target-file-p-rejects-buffer-without-file ()
   (should-not (my-org-git-sync-target-file-p nil 'org-mode "/org/")))
-
-(ert-deftest my-org-git-sync-test-ask-merge-skips-prompt-when-up-to-date ()
-  (let ((prompted nil))
-    (cl-letf (((symbol-function 'y-or-n-p)
-               (lambda (&rest _) (setq prompted t) t))
-              ((symbol-function 'my-org-git-sync-merge-upstream)
-               (lambda (&rest _) (error "Merged an up-to-date repository"))))
-      (my-org-git-sync-ask-merge "/org/" 0)
-      (should-not prompted))))
-
-(ert-deftest my-org-git-sync-test-ask-merge-skips-prompt-without-upstream ()
-  (let ((prompted nil))
-    (cl-letf (((symbol-function 'y-or-n-p)
-               (lambda (&rest _) (setq prompted t) t))
-              ((symbol-function 'my-org-git-sync-merge-upstream)
-               (lambda (&rest _) (error "Merged a repository without upstream"))))
-      (my-org-git-sync-ask-merge "/org/" nil)
-      (should-not prompted))))
-
-(ert-deftest my-org-git-sync-test-ask-merge-merges-on-yes ()
-  (let ((merged-repositories nil))
-    (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
-              ((symbol-function 'my-org-git-sync-merge-upstream)
-               (lambda (repo-root) (push repo-root merged-repositories))))
-      (my-org-git-sync-ask-merge "/org/" 2)
-      (should (equal merged-repositories '("/org/"))))))
-
-(ert-deftest my-org-git-sync-test-ask-merge-keeps-repository-on-no ()
-  (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) nil))
-            ((symbol-function 'my-org-git-sync-merge-upstream)
-             (lambda (&rest _) (error "Merged after a declined prompt"))))
-    (my-org-git-sync-ask-merge "/org/" 2)))
-
-(ert-deftest my-org-git-sync-test-ask-merge-skips-merge-when-commit-started-during-prompt ()
-  (let ((my-org-git-sync-commit-in-progress nil))
-    (cl-letf (((symbol-function 'y-or-n-p)
-               (lambda (&rest _) (setq my-org-git-sync-commit-in-progress t) t))
-              ((symbol-function 'my-org-git-sync-merge-upstream)
-               (lambda (&rest _) (error "Merged while a commit chain ran")))
-              ((symbol-function 'message) #'ignore))
-      (my-org-git-sync-ask-merge "/org/" 2))))
-
-(ert-deftest my-org-git-sync-test-ask-merge-reports-commit-count ()
-  (let ((prompt nil))
-    (cl-letf (((symbol-function 'y-or-n-p)
-               (lambda (message) (setq prompt message) nil)))
-      (my-org-git-sync-ask-merge "/org/" 2)
-      (should (string-match-p "2" prompt))
-      (should (string-match-p "/org/" prompt)))))
 
 (ert-deftest my-org-git-sync-test-changes-p-accepts-modified-file ()
   (should (my-org-git-sync-changes-p " M notes.org\n")))
@@ -143,6 +79,12 @@
                                   (encode-time '(0 0 0 1 1 2026 nil -1 nil))
                                   "/org/"))))
                  "push")))
+
+(ert-deftest my-org-git-sync-test-build-commit-steps-pulls-before-push ()
+  (should (equal (mapcar #'car (my-org-git-sync-build-commit-steps
+                                (encode-time '(0 0 0 1 1 2026 nil -1 nil))
+                                "/org/"))
+                 '("add" "commit" "pull" "push"))))
 
 (ert-deftest my-org-git-sync-test-build-commit-steps-adds-only-the-pathspec ()
   (should (equal (car (my-org-git-sync-build-commit-steps
@@ -404,14 +346,79 @@ Keeps the `*org-git-sync*' buffer of an interactive Emacs clean."
       (my-org-git-sync-finish-commit "/org/" nil)
       (should-not my-org-git-sync-pending-commit-root))))
 
-(ert-deftest my-org-git-sync-test-prompt-merge-skips-prompt-while-commit-runs ()
-  (let ((my-org-git-sync-commit-in-progress t))
-    (cl-letf (((symbol-function 'my-org-git-sync-count-behind-commits)
-               (lambda (&rest _) (error "Counted commits during a commit chain")))
-              ((symbol-function 'y-or-n-p)
-               (lambda (&rest _) (error "Prompted during a commit chain")))
+(ert-deftest my-org-git-sync-test-finish-commit-aborts-rebase-when-pull-failed ()
+  (let ((my-org-git-sync-test-recorded-arguments nil)
+        (my-org-git-sync-commit-in-progress t)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git))
               ((symbol-function 'message) #'ignore))
-      (my-org-git-sync-prompt-merge "/org/"))))
+      (my-org-git-sync-finish-commit "/org/" my-org-git-sync-pull-arguments)
+      (should (equal my-org-git-sync-test-recorded-arguments
+                     '(("rebase" "--abort")))))))
+
+(ert-deftest my-org-git-sync-test-finish-commit-keeps-rebase-state-when-push-failed ()
+  (let ((my-org-git-sync-test-recorded-arguments nil)
+        (my-org-git-sync-commit-in-progress t)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git))
+              ((symbol-function 'message) #'ignore))
+      (my-org-git-sync-finish-commit "/org/" '("push" "--quiet"))
+      (should-not my-org-git-sync-test-recorded-arguments))))
+
+(ert-deftest my-org-git-sync-test-finish-commit-releases-guard-after-rebase-abort ()
+  (let ((my-org-git-sync-commit-in-progress t)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git))
+              ((symbol-function 'message) #'ignore))
+      (my-org-git-sync-finish-commit "/org/" my-org-git-sync-pull-arguments)
+      (should-not my-org-git-sync-commit-in-progress))))
+
+(ert-deftest my-org-git-sync-test-pull-runs-rebasing-pull ()
+  (let ((my-org-git-sync-test-recorded-arguments nil)
+        (my-org-git-sync-commit-in-progress nil)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git)))
+      (my-org-git-sync-pull "/org/")
+      (should (equal my-org-git-sync-test-recorded-arguments
+                     '(("pull" "--rebase" "--autostash" "--quiet")))))))
+
+(ert-deftest my-org-git-sync-test-pull-releases-guard-when-done ()
+  (let ((my-org-git-sync-commit-in-progress nil)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git)))
+      (my-org-git-sync-pull "/org/")
+      (should-not my-org-git-sync-commit-in-progress))))
+
+(ert-deftest my-org-git-sync-test-pull-stays-quiet-when-pull-succeeds ()
+  (let ((my-org-git-sync-commit-in-progress nil)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git))
+              ((symbol-function 'message)
+               (lambda (&rest _) (error "Reported a pull that brought no news"))))
+      (my-org-git-sync-pull "/org/"))))
+
+(ert-deftest my-org-git-sync-test-pull-aborts-rebase-when-pull-fails ()
+  (let ((my-org-git-sync-test-recorded-arguments nil)
+        (my-org-git-sync-commit-in-progress nil)
+        (my-org-git-sync-pending-commit-root nil))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (my-org-git-sync-test-stub-start-git my-org-git-sync-pull-arguments))
+              ((symbol-function 'message) #'ignore))
+      (my-org-git-sync-pull "/org/")
+      (should (equal (car (last my-org-git-sync-test-recorded-arguments))
+                     '("rebase" "--abort"))))))
+
+(ert-deftest my-org-git-sync-test-pull-skips-while-chain-runs ()
+  (let ((my-org-git-sync-commit-in-progress t))
+    (cl-letf (((symbol-function 'my-org-git-sync-start-git)
+               (lambda (&rest _) (error "Pulled during another chain"))))
+      (my-org-git-sync-pull "/org/"))))
 
 (ert-deftest my-org-git-sync-test-append-log-ends-output-with-newline ()
   (my-org-git-sync-test-with-log-buffer
@@ -428,10 +435,10 @@ Keeps the `*org-git-sync*' buffer of an interactive Emacs clean."
                    "$ git push\n"))))
 
 (defun my-org-git-sync-test-make-repository-with-hanging-remote ()
-  "Create a git repository whose push hangs, and return its root.
+  "Create a git repository whose remote hangs, and return its root.
 The remote uses ssh, and the returned root holds a `hang-ssh' script that
 sleeps instead of connecting.  Pointing GIT_SSH_COMMAND at that script makes
-`git push' hang the way it does on a network that is down."
+`git pull' hang the way it does on a network that is down."
   (let ((root (file-name-as-directory (make-temp-file "org-git-sync" t))))
     (let ((default-directory root))
       (call-process "git" nil nil nil "init" "--quiet" "-b" "main")
@@ -509,7 +516,7 @@ Returns the content of the log buffer."
       (delete-process process))))
 
 (defun my-org-git-sync-test-run-commit-against-hanging-remote ()
-  "Commit a dirty repository whose push hangs, with a one-second watchdog.
+  "Commit a dirty repository whose pull hangs, with a one-second watchdog.
 Returns a plist with :call-seconds (how long `my-org-git-sync-commit-and-push'
 took to return), :in-progress (the guard after the chain settled or ten
 seconds passed) and :messages (what the chain reported, newest first)."
@@ -538,22 +545,78 @@ seconds passed) and :messages (what the chain reported, newest first)."
       (my-org-git-sync-test-delete-git-processes)
       (delete-directory root t))))
 
-(ert-deftest my-org-git-sync-test-commit-and-push-returns-while-push-hangs ()
+(ert-deftest my-org-git-sync-test-commit-and-push-returns-while-pull-hangs ()
   (skip-unless (executable-find "git"))
   (should (< (plist-get (my-org-git-sync-test-run-commit-against-hanging-remote)
                         :call-seconds)
              1.0)))
 
-(ert-deftest my-org-git-sync-test-commit-and-push-releases-guard-after-push-timeout ()
+(ert-deftest my-org-git-sync-test-commit-and-push-releases-guard-after-pull-timeout ()
   (skip-unless (executable-find "git"))
   (should-not (plist-get (my-org-git-sync-test-run-commit-against-hanging-remote)
                          :in-progress)))
 
-(ert-deftest my-org-git-sync-test-commit-and-push-reports-push-failure-after-timeout ()
+(ert-deftest my-org-git-sync-test-commit-and-push-reports-pull-failure-after-timeout ()
   (skip-unless (executable-find "git"))
-  (should (seq-find (lambda (line) (string-match-p "git push failed" line))
+  (should (seq-find (lambda (line) (string-match-p "git pull failed" line))
                     (plist-get (my-org-git-sync-test-run-commit-against-hanging-remote)
                                :messages))))
+
+(defun my-org-git-sync-test-run-git-in (directory &rest arguments)
+  "Run `git ARGUMENTS' in DIRECTORY and return its output."
+  (let ((default-directory (file-name-as-directory directory)))
+    (with-temp-buffer
+      (apply #'call-process "git" nil t nil
+             "-c" "user.email=test@example.com" "-c" "user.name=Test"
+             "-c" "commit.gpgsign=false" arguments)
+      (buffer-string))))
+
+(defun my-org-git-sync-test-make-clone-behind-remote (sandbox)
+  "Create a bare remote and a clone one commit behind it under SANDBOX.
+Returns the root of the clone.  The remote is SANDBOX/remote.git."
+  (let ((remote (concat sandbox "remote.git"))
+        (clone (concat sandbox "org/"))
+        (other-clone (concat sandbox "other/")))
+    (my-org-git-sync-test-run-git-in sandbox "init" "--quiet" "--bare" "-b" "main" remote)
+    (my-org-git-sync-test-run-git-in sandbox "clone" "--quiet" remote clone)
+    (dolist (key-value '(("user.email" "test@example.com") ("user.name" "Test")
+                         ("commit.gpgsign" "false")))
+      (apply #'my-org-git-sync-test-run-git-in clone "config" key-value))
+    (with-temp-file (concat clone "seed.org") (insert "* Seed\n"))
+    (my-org-git-sync-test-run-git-in clone "add" "seed.org")
+    (my-org-git-sync-test-run-git-in clone "commit" "--quiet" "-m" "Seed")
+    (my-org-git-sync-test-run-git-in clone "push" "--quiet" "-u" "origin" "main")
+    (my-org-git-sync-test-run-git-in sandbox "clone" "--quiet" remote other-clone)
+    (with-temp-file (concat other-clone "other.org") (insert "* Other machine\n"))
+    (my-org-git-sync-test-run-git-in other-clone "add" "other.org")
+    (my-org-git-sync-test-run-git-in other-clone "commit" "--quiet" "-m" "Other")
+    (my-org-git-sync-test-run-git-in other-clone "push" "--quiet")
+    clone))
+
+(defun my-org-git-sync-test-list-remote-files-after-commit ()
+  "Commit a new note in a clone that trails its remote, and wait for the chain.
+Returns the files on the main branch of the remote, one per line."
+  (let* ((sandbox (file-name-as-directory (make-temp-file "org-git-sync" t)))
+         (clone (my-org-git-sync-test-make-clone-behind-remote sandbox))
+         (my-org-git-sync-commit-in-progress nil)
+         (my-org-git-sync-pending-commit-root nil)
+         (org-directory clone))
+    (unwind-protect
+        (my-org-git-sync-test-with-log-buffer
+          (with-temp-file (concat clone "notes.org") (insert "* Note\n"))
+          (cl-letf (((symbol-function 'message) #'ignore))
+            (my-org-git-sync-commit-and-push clone)
+            (my-org-git-sync-test-wait-until
+             (lambda () (not my-org-git-sync-commit-in-progress)) 30))
+          (my-org-git-sync-test-run-git-in
+           (concat sandbox "remote.git") "ls-tree" "--name-only" "main"))
+      (my-org-git-sync-test-delete-git-processes)
+      (delete-directory sandbox t))))
+
+(ert-deftest my-org-git-sync-test-commit-and-push-rebases-onto-moved-remote ()
+  (skip-unless (executable-find "git"))
+  (should (equal (my-org-git-sync-test-list-remote-files-after-commit)
+                 "notes.org\nother.org\nseed.org\n")))
 
 (provide 'my-org-git-sync-test)
 ;;; my-org-git-sync-test.el ends here

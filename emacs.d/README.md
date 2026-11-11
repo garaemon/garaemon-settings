@@ -215,14 +215,19 @@ runs on the remote host.
 ## Org Git Sync
 
 `my-org-git-sync.el` keeps the Org repository under `org-directory` in sync
-with its remote without blocking the editor:
+with its remote without blocking the editor and without asking:
 
-- Opening an Org file runs `git fetch` in the background, at most once a day
-  per repository, and asks about a merge only when the branch fell behind.
-- Saving an Org file schedules a commit and push that run after
+- Opening an Org file runs `git pull --rebase --autostash` in the background,
+  at most once per `my-org-git-sync-pull-interval` seconds (10 minutes) per
+  repository.
+- Saving an Org file schedules a chain that runs after
   `my-org-git-sync-auto-commit-idle-delay` seconds of idle time (5 minutes).
+  The chain commits, pulls with a rebase, and pushes.
 
-The fetch and the commit chain run as asynchronous git processes:
+The Claude Code worklog hook pushes its own entries into the same repository.
+See [Claude Code worklog](../dotfiles/README.md#claude-code-worklog).
+
+The pull and the commit chain run as asynchronous git processes:
 
 - Each process runs on a pipe with `GIT_TERMINAL_PROMPT=0` and ssh in batch
   mode, so a credential prompt fails instead of freezing Emacs.
@@ -232,8 +237,10 @@ The fetch and the commit chain run as asynchronous git processes:
   and a SIGKILL `my-org-git-sync-kill-grace-period` seconds later.
 - A save that lands while a chain runs starts another chain when that chain
   ends.
-- Only `git rev-list` and `git merge --ff-only`, behind the merge prompt, run
-  synchronously.
+- A pull that fails is followed by `git rebase --abort`. The abort restores
+  the branch and the uncommitted edits after a conflict, and the commit stays
+  local. Resolve the conflict from Magit.
+- `global-auto-revert-mode` reloads the buffers that a pull changed on disk.
 - The chain stages only the files under `org-directory`, so an Org
   directory inside a larger repository leaves the rest of that repository
   alone.

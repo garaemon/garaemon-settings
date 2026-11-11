@@ -178,12 +178,12 @@ If the file is new, it will be populated with a default template."
         (insert (format "#+TITLE: %s\n" title))
         (insert "#+FILETAGS:\n"))))
 
-  ;; Fetch the Org repository when a file in it is opened, and commit and
-  ;; push it once Emacs sits idle after a save.  lisp/my-org-git-sync.el is a
-  ;; local file rather than part of this `use-package' body so that
-  ;; tests/my-org-git-sync-test.el can exercise the merge and commit decisions.
+  ;; Pull the Org repository when a file in it is opened, and commit, pull
+  ;; and push it once Emacs sits idle after a save.  lisp/my-org-git-sync.el
+  ;; is a local file rather than part of this `use-package' body so that
+  ;; tests/my-org-git-sync-test.el can exercise the pull and commit decisions.
   (require 'my-org-git-sync)
-  (add-hook 'find-file-hook #'my-org-git-sync-fetch-on-find-file)
+  (add-hook 'find-file-hook #'my-org-git-sync-pull-on-find-file)
   (add-hook 'after-save-hook #'my-org-git-sync-schedule-auto-commit)
 
   ;; Use proportional font for the headings in org-mode.
