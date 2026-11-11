@@ -230,6 +230,8 @@ the work shows up in org-agenda:
    summary fails.
 1. The child writes one entry into `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org`.
    `ORG_DIR` defaults to `~/ghq/github.com/garaemon/org`.
+1. The child commits the daily note, runs `git pull --rebase --autostash`,
+   and pushes, so the entry reaches the other machines.
 
 Each entry looks like this:
 
@@ -269,6 +271,18 @@ does not trigger the hook again.
 The summarizer runs without tools and MCP servers, because the transcript is
 untrusted input. The child process writes its errors to
 `~/.cache/claude_worklog.log`. Check that file when an entry is missing.
+
+The git step follows these rules:
+
+- The commit holds the daily note alone. Other uncommitted edits stay in the
+  work tree for the Emacs auto commit. See
+  [Org Git Sync](../emacs.d/README.md#org-git-sync).
+- Git and ssh run without prompts, so a missing credential fails instead of
+  waiting. Load the key for the Org remote into the ssh agent.
+- A pull that fails is followed by `git rebase --abort`, and the commit stays
+  local. Resolve the conflict by hand, then push.
+- A git command that fails writes its output to `~/.cache/claude_worklog.log`.
+- The step does nothing when no git repository holds the daily note.
 
 ### Pre-commit hooks
 

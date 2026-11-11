@@ -10,6 +10,9 @@ Japanese summary. Then the child writes an org entry with an active timestamp
 and CLOCK lines into `$ORG_DIR/org-roam/daily/YYYY-MM-DD.org`, so the session
 shows up in org-agenda and its clock reports. A session that ends again after
 a resume replaces its earlier entry of the same day instead of duplicating it.
+
+Last, the child commits the daily note, rebases onto the remote, and pushes,
+so the entry reaches the other machines without a manual commit.
 """
 
 # macOS ships Python 3.9 as /usr/bin/python3, which cannot evaluate `X | None`
@@ -41,6 +44,8 @@ MAX_CLOCK_GAP = timedelta(minutes=30)
 MAX_TRANSCRIPT_CHARS_FOR_SUMMARY = 40000
 MAX_FALLBACK_TITLE_CHARS = 60
 GENERATED_BY = "claude-code/worklog"
+# Bounds a pull or a push that waits on a network that never comes back.
+GIT_TIMEOUT_SECONDS = 120
 LOG_PATH = Path.home() / ".cache" / "claude_worklog.log"
 HEADING_PATTERN = re.compile(r"^(\*+) ")
 # Claude Code records its own output, such as command echoes, local command
@@ -110,6 +115,12 @@ class ClockInterval:
 class Summary:
     title: str
     bullets: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class GitResult:
+    succeeded: bool
+    output: str
 
 
 def resolve_daily_directory(environment: dict, home_dir: Path) -> Path:
@@ -437,8 +448,95 @@ def write_daily_note(daily_file: Path, day: date, session_id: str, entry: str) -
         daily_handle.write(updated_text)
 
 
+def make_non_interactive_git_environment(environment: dict) -> dict:
+    """Returns the environment with git and ssh told to fail instead of asking for input.
+
+    The detached child has no terminal, so a credential or passphrase prompt
+    would wait until the timeout.
+    """
+    ssh_command = environment.get("GIT_SSH_COMMAND", "ssh")
+    return {**environment, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": f"{ssh_command} -oBatchMode=yes"}
+
+
+def run_git(repository_root: Path, arguments: tuple[str, ...]) -> GitResult:
+    """Runs `git ARGUMENTS` in the repository and prints a failure for `LOG_PATH`.
+
+    A command that outlives `GIT_TIMEOUT_SECONDS` counts as failed.
+    """
+    command = ["git", "-C", str(repository_root), *arguments]
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=GIT_TIMEOUT_SECONDS,
+            env=make_non_interactive_git_environment(dict(os.environ)),
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        print(f"git {' '.join(arguments)} did not finish: {error}", flush=True)
+        return GitResult(succeeded=False, output="")
+    if completed.returncode != 0:
+        print(f"git {' '.join(arguments)} failed:\n{completed.stdout}", flush=True)
+    return GitResult(succeeded=completed.returncode == 0, output=completed.stdout)
+
+
+def locate_repository_root(directory: Path) -> Path | None:
+    """Returns the root of the git work tree that holds the directory, or None."""
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=GIT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return Path(completed.stdout.strip()) if completed.returncode == 0 else None
+
+
+def commit_daily_note(repository_root: Path, daily_file: Path, day: date) -> bool:
+    """Commits the daily note alone and returns whether the note is committed.
+
+    Other edits in the work tree stay uncommitted: they may be half-written
+    notes that Emacs commits on its own schedule.
+    """
+    note_path = str(daily_file)
+    if not run_git(repository_root, ("add", "--", note_path)).succeeded:
+        return False
+    note_status = run_git(repository_root, ("status", "--porcelain", "--", note_path))
+    if not note_status.succeeded:
+        return False
+    # `git commit` exits non-zero when the note is unchanged, as after a
+    # resumed session that ends with the same entry.
+    if not note_status.output.strip():
+        return True
+    message = f"Add Claude worklog for {day:%Y-%m-%d}"
+    return run_git(repository_root, ("commit", "--quiet", "-m", message, "--", note_path)).succeeded
+
+
+def sync_daily_note(daily_file: Path, day: date) -> None:
+    """Commits the daily note, rebases onto the remote, and pushes.
+
+    Does nothing when no git repository holds the note. A rebase that
+    conflicts is aborted, which leaves the commit local for a manual merge.
+    """
+    repository_root = locate_repository_root(daily_file.parent)
+    if repository_root is None:
+        return
+    if not commit_daily_note(repository_root, daily_file, day):
+        return
+    # --autostash carries the uncommitted edits of other notes across the rebase.
+    if not run_git(repository_root, ("pull", "--rebase", "--autostash", "--quiet")).succeeded:
+        run_git(repository_root, ("rebase", "--abort"))
+        return
+    run_git(repository_root, ("push", "--quiet"))
+
+
 def write_worklog(hook_input: dict, now: datetime | None = None) -> None:
-    """Summarizes the session in the hook input and logs it for the day of `now`.
+    """Summarizes the session in the hook input, logs it for the day of `now`, and pushes the note.
 
     `now` defaults to the current local time; tests pass a fixed time.
     """
@@ -456,7 +554,9 @@ def write_worklog(hook_input: dict, now: datetime | None = None) -> None:
     complete_digest = replace(digest, session_id=session_id, hostname=shorten_hostname(socket.gethostname()))
     entry = render_entry(complete_digest, summarize_session(complete_digest), MAX_CLOCK_GAP)
     daily_directory = resolve_daily_directory(dict(os.environ), Path.home())
-    write_daily_note(daily_directory / f"{today:%Y-%m-%d}.org", today, session_id, entry)
+    daily_file = daily_directory / f"{today:%Y-%m-%d}.org"
+    write_daily_note(daily_file, today, session_id, entry)
+    sync_daily_note(daily_file, today)
 
 
 def spawn_detached_writer(hook_input: dict) -> None:

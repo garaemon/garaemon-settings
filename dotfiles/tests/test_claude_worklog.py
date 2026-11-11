@@ -650,3 +650,170 @@ def test_should_skip_bash_output_when_collecting_prompts():
     digest = parse_lines(lines)
 
     assert digest.user_prompts == ()
+
+
+def run_test_git(directory, *arguments):
+    completed = subprocess.run(
+        ["git", "-C", str(directory), *arguments], check=True, capture_output=True, text=True
+    )
+    return completed.stdout.strip()
+
+
+@pytest.fixture
+def isolated_git(monkeypatch):
+    """Keeps the developer's git configuration, such as commit signing, out of the test repositories."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", "/dev/null")
+    for role in ("AUTHOR", "COMMITTER"):
+        monkeypatch.setenv(f"GIT_{role}_NAME", "Test User")
+        monkeypatch.setenv(f"GIT_{role}_EMAIL", "test@example.com")
+
+
+def clone_org_repository(remote, directory):
+    subprocess.run(["git", "clone", "--quiet", str(remote), str(directory)], check=True, capture_output=True)
+    return directory
+
+
+@pytest.fixture
+def org_remote(tmp_path, isolated_git):
+    """Returns a bare remote that already holds one commit on `main`."""
+    remote = tmp_path / "remote.git"
+    subprocess.run(
+        ["git", "init", "--quiet", "--bare", "--initial-branch=main", str(remote)], check=True, capture_output=True
+    )
+    seed_clone = clone_org_repository(remote, tmp_path / "seed")
+    (seed_clone / "Tasks.org").write_text("* TODO seed\n")
+    run_test_git(seed_clone, "add", "Tasks.org")
+    run_test_git(seed_clone, "commit", "--quiet", "-m", "Seed")
+    run_test_git(seed_clone, "push", "--quiet", "origin", "HEAD:main")
+    return remote
+
+
+def write_daily_file(org_clone, text="* worklog entry\n"):
+    daily_file = org_clone / "org-roam" / "daily" / "2026-10-31.org"
+    daily_file.parent.mkdir(parents=True, exist_ok=True)
+    daily_file.write_text(text)
+    return daily_file
+
+
+def push_commit_from_other_machine(remote, directory, relative_path, text):
+    other_clone = clone_org_repository(remote, directory)
+    other_file = other_clone / relative_path
+    other_file.parent.mkdir(parents=True, exist_ok=True)
+    other_file.write_text(text)
+    run_test_git(other_clone, "add", relative_path)
+    run_test_git(other_clone, "commit", "--quiet", "-m", "Edit on another machine")
+    run_test_git(other_clone, "push", "--quiet")
+
+
+def test_should_push_daily_note_when_syncing(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_remote, "show", "main:org-roam/daily/2026-10-31.org") == "* worklog entry"
+
+
+def test_should_name_the_day_in_commit_message_when_syncing(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_remote, "log", "-1", "--format=%s", "main") == "Add Claude worklog for 2026-10-31"
+
+
+def test_should_keep_other_edits_uncommitted_when_syncing(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    (org_clone / "Tasks.org").write_text("* TODO half-written edit\n")
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_clone, "status", "--porcelain") == "M Tasks.org"
+
+
+def test_should_rebase_onto_remote_commits_when_remote_moved(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    push_commit_from_other_machine(org_remote, tmp_path / "other", "INBOX.org", "* note\n")
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_remote, "ls-tree", "-r", "--name-only", "main").splitlines() == [
+        "INBOX.org",
+        "Tasks.org",
+        "org-roam/daily/2026-10-31.org",
+    ]
+
+
+def test_should_keep_local_commit_when_rebase_conflicts(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    push_commit_from_other_machine(
+        org_remote, tmp_path / "other", "org-roam/daily/2026-10-31.org", "* entry from another machine\n"
+    )
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert daily_file.read_text() == "* worklog entry\n"
+
+
+def test_should_leave_no_rebase_in_progress_when_rebase_conflicts(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    push_commit_from_other_machine(
+        org_remote, tmp_path / "other", "org-roam/daily/2026-10-31.org", "* entry from another machine\n"
+    )
+    daily_file = write_daily_file(org_clone)
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_clone, "log", "-1", "--format=%s") == "Add Claude worklog for 2026-10-31"
+
+
+def test_should_push_earlier_commits_when_note_is_unchanged(tmp_path, org_remote):
+    org_clone = clone_org_repository(org_remote, tmp_path / "org")
+    daily_file = write_daily_file(org_clone)
+    run_test_git(org_clone, "add", "org-roam")
+    run_test_git(org_clone, "commit", "--quiet", "-m", "Commit left unpushed while offline")
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert run_test_git(org_remote, "log", "-1", "--format=%s", "main") == "Commit left unpushed while offline"
+
+
+def test_should_skip_sync_when_note_is_outside_git(tmp_path, isolated_git):
+    daily_file = write_daily_file(tmp_path / "org")
+
+    worklog.sync_daily_note(daily_file, TARGET_DAY)
+
+    assert not (tmp_path / "org" / ".git").exists()
+
+
+def test_should_disable_git_prompts_when_building_environment():
+    environment = worklog.make_non_interactive_git_environment({})
+
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_should_put_ssh_in_batch_mode_when_building_environment():
+    environment = worklog.make_non_interactive_git_environment({"GIT_SSH_COMMAND": "ssh -i ~/.ssh/org"})
+
+    assert environment["GIT_SSH_COMMAND"] == "ssh -i ~/.ssh/org -oBatchMode=yes"
+
+
+def test_should_sync_daily_note_after_writing_entry(tmp_path, monkeypatch):
+    transcript_path = tmp_path / "transcript.jsonl"
+    transcript_path.write_text(make_user_line("Fix the bug", "2026-10-31T10:00:00Z") + "\n")
+    monkeypatch.setenv("ORG_DIR", str(tmp_path / "org"))
+    monkeypatch.setattr(worklog, "summarize_session", lambda _digest: worklog.Summary(title="Fix login", bullets=()))
+    synced_files = []
+    monkeypatch.setattr(worklog, "sync_daily_note", lambda daily_file, _day: synced_files.append(daily_file))
+
+    worklog.write_worklog(
+        {"transcript_path": str(transcript_path), "session_id": "hook-session"},
+        now=datetime(2026, 10, 31, 12, 0, tzinfo=UTC),
+    )
+
+    assert synced_files == [tmp_path / "org" / "org-roam" / "daily" / "2026-10-31.org"]
