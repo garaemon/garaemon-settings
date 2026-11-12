@@ -1,4 +1,4 @@
-name: Delete merged branch
+name: Delete closed branch
 
 on:
   pull_request:
@@ -10,22 +10,20 @@ permissions:
 
 jobs:
   delete-branch:
-    name: Retarget stacked pull requests and delete the merged branch
+    name: Retarget stacked pull requests and delete the closed branch
     # A fork's branch lives in another repository, which GITHUB_TOKEN cannot
     # write to.
-    if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
-            const mergedBranch = context.payload.pull_request.head.ref;
+            const closedBranch = context.payload.pull_request.head.ref;
             const defaultBranch = context.payload.repository.default_branch;
-            if (mergedBranch === defaultBranch) {
-              core.info(`Skip: ${mergedBranch} is the default branch.`);
+            if (closedBranch === defaultBranch) {
+              core.info(`Skip: ${closedBranch} is the default branch.`);
               return;
             }
 
@@ -36,11 +34,11 @@ jobs:
               owner,
               repo,
               state: 'open',
-              base: mergedBranch,
+              base: closedBranch,
               per_page: 100,
             });
             for (const stackedPull of stackedPulls) {
-              core.info(`Retarget #${stackedPull.number} from ${mergedBranch} to ${defaultBranch}.`);
+              core.info(`Retarget #${stackedPull.number} from ${closedBranch} to ${defaultBranch}.`);
               await github.rest.pulls.update({
                 owner,
                 repo,
@@ -50,13 +48,13 @@ jobs:
             }
 
             try {
-              await github.rest.git.deleteRef({ owner, repo, ref: `heads/${mergedBranch}` });
-              core.info(`Deleted ${mergedBranch}.`);
+              await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closedBranch}` });
+              core.info(`Deleted ${closedBranch}.`);
             } catch (error) {
               // 422 means that someone already deleted the branch, for
               // example with the "Delete branch" button on the pull request.
               if (error.status !== 422) {
                 throw error;
               }
-              core.info(`Skip: ${mergedBranch} no longer exists.`);
+              core.info(`Skip: ${closedBranch} no longer exists.`);
             }
