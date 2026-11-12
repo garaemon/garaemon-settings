@@ -156,6 +156,14 @@ When the user reports an error or bug, first try to reproduce it with automated 
 
 Before you make a PR, always run tests including linters. Ignore test programs in linter.
 
+### PR Granularity
+
+Keep one feature per PR.
+
+- Add one option per PR. For example, two new command-line options go to two separate PRs.
+- Combine features in one PR only when they are closely related or cannot be separated, such as an option that depends on another new option.
+- When a task contains several features, split it into a series of PRs instead of one large PR.
+
 ## Git
 
 ### Branch Naming
