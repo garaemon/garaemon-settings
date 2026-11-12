@@ -10,6 +10,8 @@
 ;; background, so a slow site never blocks Emacs.  When the title arrives,
 ;; the URL at the yank position becomes a link.  A failed request, a page
 ;; without a title, or a URL edited in the meantime keeps the bare URL.
+;; So does a page that needs a login: a non-2xx response, or a redirect
+;; to a URL that `my-org-url-title-login-url-regexp' matches.
 ;;
 ;; Only a yank that consists of one http(s) URL triggers a fetch.  The mode
 ;; runs after `my-org-github-link-mode', so GitHub URLs keep their short
@@ -17,6 +19,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dom)
 (require 'subr-x)
 (require 'url-queue)
@@ -31,6 +34,14 @@
 The width counts a full-width character as two columns.  nil keeps the
 whole title."
   :type '(choice (natural :tag "Columns") (const :tag "No limit" nil)))
+
+(defcustom my-org-url-title-login-url-regexp
+  (concat "log[-_]?[io]n\\|sign[-_]?in\\|\\bsso\\b\\|saml\\|oauth"
+          "\\|/auth\\b\\|/authorize\\|accounts\\.google\\.com")
+  "Regexp that matches the URL of a login page, ignoring case.
+A redirect to a matching URL means the page needs a login, so the yank
+keeps the bare URL instead of the title of the login page."
+  :type 'regexp)
 
 (defconst my-org-url-title-bare-url-regexp
   "\\`https?://[^][:space:]<>\"]+\\'"
@@ -94,13 +105,26 @@ falls back to `utf-8' for a missing or unknown charset."
          (coding (and charset (coding-system-from-name charset))))
     (or coding 'utf-8)))
 
+(defun my-org-url-title-redirected-to-login-p (status)
+  "Return non-nil when STATUS records a redirect to a login page.
+STATUS is the plist that `url-retrieve' passes to its callback.  The
+plist holds one `:redirect' entry per hop, and any hop may be the login."
+  (let ((case-fold-search t))
+    (cl-loop for (key value) on status by #'cddr
+             thereis (and (eq key :redirect)
+                          (stringp value)
+                          (string-match-p my-org-url-title-login-url-regexp
+                                          value)))))
+
 (defun my-org-url-title-parse-response ()
   "Return the page title in the current HTTP response buffer, or nil.
 The buffer holds the raw unibyte response, headers included, as
-`url-retrieve' leaves it.  A response that is not HTML yields nil."
+`url-retrieve' leaves it.  A response that is not a 2xx HTML page yields
+nil, because a 401 or 403 page carries the title of a login form."
   (save-excursion
     (goto-char (point-min))
-    (when (re-search-forward "\r?\n\r?\n" nil t)
+    (when (and (looking-at "HTTP/[0-9.]+ 2[0-9][0-9]")
+               (re-search-forward "\r?\n\r?\n" nil t))
       (let ((headers (buffer-substring-no-properties (point-min) (point)))
             (body-start (point)))
         (when (string-match-p "^content-type:[^\n]*html" (downcase headers))
@@ -125,6 +149,7 @@ user edited the text before the title arrived."
   "Insert the fetched title for URL at marker START unless STATUS has an error.
 The function runs in the response buffer, and kills that buffer."
   (let ((title (and (not (plist-get status :error))
+                    (not (my-org-url-title-redirected-to-login-p status))
                     (my-org-url-title-parse-response))))
     (kill-buffer (current-buffer))
     (if title

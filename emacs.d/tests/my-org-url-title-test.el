@@ -133,6 +133,50 @@ A nil RESPONSE reports a network error to the callback."
              "<title>x</title>" 'utf-8))
     (should-not (my-org-url-title-parse-response))))
 
+(ert-deftest my-org-url-title-test-ignores-unauthorized-response ()
+  (with-temp-buffer
+    (set-buffer-multibyte nil)
+    (insert (my-org-url-title-test-make-response
+             "HTTP/1.1 401 Unauthorized\nContent-Type: text/html"
+             "<title>Sign in</title>" 'utf-8))
+    (should-not (my-org-url-title-parse-response))))
+
+(ert-deftest my-org-url-title-test-detects-redirect-to-login ()
+  (should (my-org-url-title-redirected-to-login-p
+           '(:redirect "https://example.com/users/sign_in?return_to=%2Fa"))))
+
+(ert-deftest my-org-url-title-test-detects-redirect-to-sso-host ()
+  (should (my-org-url-title-redirected-to-login-p
+           '(:redirect "https://accounts.google.com/ServiceLogin?continue=x"))))
+
+(ert-deftest my-org-url-title-test-detects-login-in-redirect-chain ()
+  (should (my-org-url-title-redirected-to-login-p
+           '(:redirect "https://example.com/a?ticket=1"
+             :redirect "https://example.com/login"))))
+
+(ert-deftest my-org-url-title-test-accepts-ordinary-redirect ()
+  (should-not (my-org-url-title-redirected-to-login-p
+               '(:redirect "https://www.example.com/author/page"))))
+
+(ert-deftest my-org-url-title-test-accepts-no-redirect ()
+  (should-not (my-org-url-title-redirected-to-login-p nil)))
+
+(ert-deftest my-org-url-title-test-keeps-url-after-login-redirect ()
+  (with-temp-buffer
+    (insert "https://example.com/doc")
+    (let ((start (copy-marker (point-min)))
+          (target-buffer (current-buffer)))
+      (with-current-buffer (generate-new-buffer " *response*" t)
+        (set-buffer-multibyte nil)
+        (insert (my-org-url-title-test-make-response
+                 "HTTP/1.1 200 OK\nContent-Type: text/html"
+                 "<title>Log in</title>" 'utf-8))
+        (my-org-url-title-handle-response
+         '(:redirect "https://example.com/login?next=%2Fdoc")
+         start "https://example.com/doc"))
+      (should (equal (with-current-buffer target-buffer (buffer-string))
+                     "https://example.com/doc")))))
+
 (ert-deftest my-org-url-title-test-yank-replaces-url-with-link ()
   (with-temp-buffer
     (org-mode)

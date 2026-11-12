@@ -323,6 +323,8 @@ and the URL becomes a link when the title arrives. The bare URL stays in
 these cases:
 
 - The request fails, or the response is not HTML.
+- The server answers with a non-2xx status, such as 401 or 403.
+- The server redirects to a login page, such as `/login` or an SSO host.
 - The page has neither a `<title>` nor an `og:title` meta tag.
 - You edit the URL before the title arrives.
 - The URL is a GitHub URL that `my-org-github-link.el` already formatted.
@@ -332,6 +334,14 @@ A title wider than 80 columns ends in `...`. Change the width, or set it to
 
 ```elisp
 (setopt my-org-url-title-max-length 120)
+```
+
+`my-org-url-title-login-url-regexp` decides which redirect targets count as
+login pages. Extend it when a site's login URL slips through:
+
+```elisp
+(setopt my-org-url-title-login-url-regexp
+        (concat my-org-url-title-login-url-regexp "\\|idp\\.example\\.com"))
 ```
 
 ## Slide Shows
