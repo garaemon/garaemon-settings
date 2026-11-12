@@ -1,0 +1,60 @@
+name: Delete closed branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  delete-branch:
+    name: Retarget stacked pull requests and delete the closed branch
+    # A fork's branch lives in another repository, which GITHUB_TOKEN cannot
+    # write to.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const closedBranch = context.payload.pull_request.head.ref;
+            const defaultBranch = context.payload.repository.default_branch;
+            if (closedBranch === defaultBranch) {
+              core.info(`Skip: ${closedBranch} is the default branch.`);
+              return;
+            }
+
+            // GitHub closes every open pull request whose base branch is
+            // deleted, so the stacked pull requests move to the default
+            // branch before the deletion.
+            const stackedPulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              base: closedBranch,
+              per_page: 100,
+            });
+            for (const stackedPull of stackedPulls) {
+              core.info(`Retarget #${stackedPull.number} from ${closedBranch} to ${defaultBranch}.`);
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: stackedPull.number,
+                base: defaultBranch,
+              });
+            }
+
+            try {
+              await github.rest.git.deleteRef({ owner, repo, ref: `heads/${closedBranch}` });
+              core.info(`Deleted ${closedBranch}.`);
+            } catch (error) {
+              // 422 means that someone already deleted the branch, for
+              // example with the "Delete branch" button on the pull request.
+              if (error.status !== 422) {
+                throw error;
+              }
+              core.info(`Skip: ${closedBranch} no longer exists.`);
+            }
