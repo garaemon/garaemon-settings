@@ -211,7 +211,37 @@ Draft one reply per comment. Keep each reply short:
 - For a deferred change, link the follow-up issue or name the `TODO`.
 
 Show all drafts to the user at once, and post them only after the user
-approves. Apply any edits the user asks for. Then post each reply:
+approves. The user approves the exact text that goes to GitHub, so show every
+draft in full:
+
+- Write out each draft verbatim, word for word as it will be posted. Never
+  summarize, shorten, or elide a draft with "..." or "(same as above)", even
+  when there are many drafts or they look alike.
+- Put each draft in its own fenced code block, so that Markdown in the reply
+  stays visible as written.
+- Head each draft with its number from Step 4, the `path:line` or the comment
+  kind, the reviewer, and a one-line quote of the reviewer's comment.
+
+```text
+1. src/api.ts:42 (alice) > This crashes when `items` is empty.
+```
+
+````markdown
+```markdown
+Fixed in abc1234: `parse()` now returns an empty list early.
+```
+````
+
+Write the drafts in a normal message, not only inside `AskUserQuestion`.
+The question dialog can hide the text that precedes it, so the approval
+question must also stand on its own. Either put each draft in the `preview`
+of its option, or keep the question short and refer to the drafts by number.
+If the drafts are too long for one message, write them to a file in the
+scratchpad or working directory, show its path, and still print each draft
+in full.
+
+Apply any edits the user asks for, and show the edited draft in full again
+before posting it. Then post each reply:
 
 ```bash
 # Reply in an inline comment thread. Use the ID of the thread's root comment.
