@@ -1,2 +1,5 @@
 .env
 __pycache__/
+# ~/.claude/skills points at skills/, so Claude Code writes its cloud-synced
+# skill cache into this tree.
+skills/synced/
