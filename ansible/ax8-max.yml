@@ -6,3 +6,5 @@
   roles:
     - role: fingerprint_mafp
       when: ansible_facts.os_family == "Debian" and ansible_facts.architecture == "x86_64"
+    - role: incus
+      when: ansible_facts.os_family == "Debian"
