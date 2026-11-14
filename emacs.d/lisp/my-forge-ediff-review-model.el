@@ -214,12 +214,55 @@ as \"(no description)\" so the buffer never looks broken or truncated."
               body
             "(no description)")))
 
+(defun my-forge-ediff-review-model--format-comment (comment)
+  "Return the markdown section for one conversation COMMENT.
+COMMENT is a plist (:author :body :created-at).  The body is emitted
+verbatim, only stripped of trailing blank lines, so that whatever
+markdown the author wrote still renders."
+  (let ((author (or (plist-get comment :author) "unknown"))
+        (time (my-forge-ediff-review-model-format-time
+               (plist-get comment :created-at)))
+        (body (or (plist-get comment :body) "")))
+    (concat "\n### " author
+            (if (string-empty-p time) "" (concat " \u2014 " time))
+            "\n\n"
+            (if (string-empty-p (string-trim body))
+                "(empty comment)"
+              (string-trim-right body))
+            "\n")))
+
+(defun my-forge-ediff-review-model-format-conversation
+    (num title body comments)
+  "Return the markdown text of PR NUM's conversation, titled TITLE.
+BODY is the PR description and COMMENTS the list of plists from
+`my-forge-ediff-review-model-parse-conversation', oldest first.  The
+header reuses `my-forge-ediff-review-model-format-description' so the
+description buffer's opening is unchanged.  Comment bodies are laid out
+as plain markdown sections rather than the box-drawn cards used for
+inline overlays: a box would re-wrap the text to a fixed width and break
+the code blocks, lists and quotes people write in PR discussions."
+  (concat
+   (my-forge-ediff-review-model-format-description num title body)
+   "\n"
+   (if (null comments)
+       "## Comments\n\nNo comments yet.\n"
+     (concat
+      (format "## Comments (%d)\n" (length comments))
+      (mapconcat #'my-forge-ediff-review-model--format-comment comments "")))
+   (format "\n-- PR #%s \u00b7 g to refresh --\n" num)))
+
 (defun my-forge-ediff-review-model-format-time (iso)
   "Return a short local-time string for GitHub ISO8601 timestamp ISO.
 ISO looks like \"2026-01-15T10:30:00Z\".  A nil or empty ISO yields the
-empty string so callers can omit the time without extra whitespace."
+empty string so callers can omit the time without extra whitespace.  An
+unparsable ISO yields the empty string too, rather than signalling: a
+timestamp is decoration, and a single odd value coming from forge's
+local database must not abort the rendering of a whole buffer."
   (if (and (stringp iso) (not (string-empty-p iso)))
-      (format-time-string "%Y-%m-%d %H:%M" (encode-time (iso8601-parse iso)))
+      (condition-case nil
+          (format-time-string "%Y-%m-%d %H:%M"
+                              (encode-time (iso8601-parse iso)))
+        (error ""))
     ""))
 
 ;;;; GitHub review payload
@@ -296,6 +339,37 @@ entries keep their thread/comment order."
                           :resolved resolved
                           :thread-id thread-id :reply-to-id reply-to-id)
                     entries))))))))
+
+;;;; Conversation comments (parsed from GitHub GraphQL)
+
+(defun my-forge-ediff-review-model-parse-conversation (response)
+  "Parse a GitHub pull-request comments GraphQL RESPONSE into comment plists.
+Each entry is a plist (:id :author :body :created-at :url) describing one
+conversation-tab comment, kept in the order GitHub returned them, which
+is oldest first.  These are `IssueComment' objects -- the PR-level
+discussion -- and not the inline review comments handled by
+`my-forge-ediff-review-model-parse-review-threads'.  A comment whose
+author was deleted carries no `author' object, so :author falls back to
+\"unknown\" instead of rendering an empty byline."
+  (let* ((data (my-forge-ediff-review-model--response-data response))
+         (pullreq (alist-get 'pullRequest (alist-get 'repository data))))
+    (mapcar
+     (lambda (comment)
+       (list :id (alist-get 'id comment)
+             :author (or (alist-get 'login (alist-get 'author comment))
+                         "unknown")
+             :body (alist-get 'body comment)
+             :created-at (alist-get 'createdAt comment)
+             :url (alist-get 'url comment)))
+     (my-forge-ediff-review-model--graphql-nodes pullreq 'comments))))
+
+(defun my-forge-ediff-review-model-parse-pr-node-id (response)
+  "Return the pull request's GraphQL node id from RESPONSE, or nil.
+The node id is what GitHub's GraphQL mutations take as `pullRequestId',
+so it is worth keeping once the conversation query has fetched it."
+  (let* ((data (my-forge-ediff-review-model--response-data response))
+         (pullreq (alist-get 'pullRequest (alist-get 'repository data))))
+    (alist-get 'id pullreq)))
 
 ;;;; API host resolution
 

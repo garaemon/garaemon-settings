@@ -6,8 +6,9 @@ on:
     paths:
       - 'emacs.d/**'
       - '.github/workflows/emacs-test.yml'
+  # No branch filter: stacked pull requests target each other rather than
+  # main, and a filtered trigger would leave every one of them untested.
   pull_request:
-    branches: [ main ]
     paths:
       - 'emacs.d/**'
       - '.github/workflows/emacs-test.yml'
