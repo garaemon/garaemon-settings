@@ -4,7 +4,7 @@ name: Delete closed branch (reusable)
 #
 #   jobs:
 #     delete-branch:
-#       uses: garaemon/garaemon-settings/.github/workflows/delete-closed-branch-reusable.yml@main
+#       uses: garaemon/garaemon-settings/.github/workflows/delete-closed-branch-reusable.yml@delete-closed-branch/v1
 #
 # The caller grants "contents: write" and "pull-requests: write", because a
 # called workflow cannot raise the permissions of the caller's GITHUB_TOKEN.
