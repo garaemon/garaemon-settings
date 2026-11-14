@@ -1064,18 +1064,25 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
   (setq truncate-lines t))
 
 (defun my-forge-ediff-review--file-counts (path)
-  "Return a cons (COMMENT-COUNT . MEMO-COUNT) of entries for PATH."
-  (cons (my-forge-ediff-review-model-count-for-file
-         (plist-get my-forge-ediff-review--session :comments) path)
-        (my-forge-ediff-review-model-count-for-file
-         (plist-get my-forge-ediff-review--session :memos) path)))
+  "Return (COMMENTS MEMOS THREADS UNRESOLVED) counts for PATH.
+COMMENTS and MEMOS are the reviewer\='s own pending entries; THREADS and
+UNRESOLVED describe the discussion already on GitHub, counted per thread
+so one long back-and-forth does not read as many separate ones."
+  (let ((threads (my-forge-ediff-review-model-count-threads-for-file
+                  (plist-get my-forge-ediff-review--session :existing) path)))
+    (list (my-forge-ediff-review-model-count-for-file
+           (plist-get my-forge-ediff-review--session :comments) path)
+          (my-forge-ediff-review-model-count-for-file
+           (plist-get my-forge-ediff-review--session :memos) path)
+          (car threads)
+          (cdr threads))))
 
 (defun my-forge-ediff-review--insert-sidebar-file (file current-p reviewed-p)
   "Insert one sidebar line for FILE carrying its path as a text property.
 CURRENT-P highlights the file open in ediff; REVIEWED-P picks the box."
   (let* ((counts (my-forge-ediff-review--file-counts file))
-         (text (my-forge-ediff-review-model-format-file-line
-                file current-p reviewed-p (car counts) (cdr counts)))
+         (text (apply #'my-forge-ediff-review-model-format-file-line
+                      file current-p reviewed-p counts))
          (start (point)))
     (insert text "\n")
     (put-text-property start (point) 'my-forge-ediff-review-file file)

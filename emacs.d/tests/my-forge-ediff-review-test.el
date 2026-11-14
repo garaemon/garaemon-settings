@@ -221,5 +221,70 @@ and point into the next test."
                     :body)))
     (should-not (plist-get my-forge-ediff-review--session :pr-node-id))))
 
+;;;; Sidebar rendering
+
+(defmacro my-forge-ediff-review-test--with-sidebar (session files &rest body)
+  "Run BODY with SESSION active, FILES as the engine file list, and cleanup.
+The sidebar buffer is global and named, so it is killed afterwards."
+  (declare (indent 2))
+  `(let ((my-forge-ediff-review--session ,session)
+         (my-magit-ediff--files ,files)
+         (my-magit-ediff--current-index 0))
+     (unwind-protect
+         (progn ,@body)
+       (let ((buf (get-buffer my-forge-ediff-review--sidebar-name)))
+         (when (buffer-live-p buf)
+           (kill-buffer buf))))))
+
+(defun my-forge-ediff-review-test--sidebar-text ()
+  "Render the sidebar and return its text."
+  (my-forge-ediff-review--render-sidebar)
+  (with-current-buffer my-forge-ediff-review--sidebar-name
+    (buffer-string)))
+
+(ert-deftest my-forge-ediff-review-sidebar-shows-unresolved-thread-counts ()
+  "A file with discussion on GitHub advertises it before being opened."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-sidebar
+      (list :num 42 :title "T" :reviewed nil :comments nil :memos nil
+            :existing (list (list :path "a.el" :line 1 :side "RIGHT"
+                                  :thread-id "T1" :resolved nil)
+                            (list :path "a.el" :line 1 :side "RIGHT"
+                                  :thread-id "T1" :resolved nil)
+                            (list :path "a.el" :line 9 :side "RIGHT"
+                                  :thread-id "T2" :resolved t)))
+      '("a.el" "b.el")
+    (let ((text (my-forge-ediff-review-test--sidebar-text)))
+      ;; Two distinct threads, one of them still unresolved.
+      (should (string-match-p "a\\.el \\[2t/1u\\]" text))
+      ;; An untouched file stays quiet.
+      (should (string-match-p "b\\.el$" (car (last (split-string text "\n" t))))))))
+
+(ert-deftest my-forge-ediff-review-sidebar-counts-threads-not-replies ()
+  "Ten replies on one thread must not read as ten things to look at."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-sidebar
+      (list :num 42 :title "T" :reviewed nil :comments nil :memos nil
+            :existing (mapcar (lambda (_)
+                                (list :path "a.el" :line 1 :side "RIGHT"
+                                      :thread-id "T1" :resolved nil))
+                              (number-sequence 1 10)))
+      '("a.el")
+    (should (string-match-p "a\\.el \\[1t/1u\\]"
+                            (my-forge-ediff-review-test--sidebar-text)))))
+
+(ert-deftest my-forge-ediff-review-sidebar-combines-pending-and-existing ()
+  "Own pending entries and GitHub threads appear in one suffix."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--with-sidebar
+      (list :num 42 :title "T" :reviewed nil
+            :comments (list (list :path "a.el" :line 3 :side "RIGHT" :body "c"))
+            :memos (list (list :path "a.el" :line 4 :side "RIGHT" :body "m"))
+            :existing (list (list :path "a.el" :line 1 :side "RIGHT"
+                                  :thread-id "T1" :resolved t)))
+      '("a.el")
+    (should (string-match-p "a\\.el \\[1c/1m/1t\\]"
+                            (my-forge-ediff-review-test--sidebar-text)))))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here
