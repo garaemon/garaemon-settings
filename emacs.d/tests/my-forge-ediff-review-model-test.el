@@ -82,6 +82,46 @@
                    (my-forge-ediff-review-model-entries-for-side
                     entries "a.el" "RIGHT")))))
 
+;;;; Annotated-line navigation
+
+(ert-deftest review-model-annotated-lines-should-sort-and-dedupe ()
+  "One line carrying a comment and a memo is still one stop."
+  (let ((entries (list (review-model-test--entry "a.el" 12 "RIGHT" "x")
+                       (review-model-test--entry "a.el" 5 "RIGHT" "y")
+                       (review-model-test--entry "a.el" 5 "RIGHT" "z"))))
+    (should (equal '(5 12)
+                   (my-forge-ediff-review-model-annotated-lines
+                    entries "a.el" "RIGHT")))))
+
+(ert-deftest review-model-annotated-lines-should-respect-path-and-side ()
+  (let ((entries (list (review-model-test--entry "a.el" 5 "RIGHT" "x")
+                       (review-model-test--entry "a.el" 7 "LEFT" "y")
+                       (review-model-test--entry "b.el" 9 "RIGHT" "z"))))
+    (should (equal '(5) (my-forge-ediff-review-model-annotated-lines
+                         entries "a.el" "RIGHT")))
+    (should (equal '(7) (my-forge-ediff-review-model-annotated-lines
+                         entries "a.el" "LEFT")))))
+
+(ert-deftest review-model-line-after-should-find-the-next-one ()
+  (should (= 12 (my-forge-ediff-review-model-line-after '(5 12 20) 5)))
+  (should (= 5 (my-forge-ediff-review-model-line-after '(5 12 20) 1))))
+
+(ert-deftest review-model-line-after-should-wrap-past-the-last ()
+  (should (= 5 (my-forge-ediff-review-model-line-after '(5 12 20) 20)))
+  (should (= 5 (my-forge-ediff-review-model-line-after '(5 12 20) 99))))
+
+(ert-deftest review-model-line-before-should-find-the-previous-one ()
+  (should (= 5 (my-forge-ediff-review-model-line-before '(5 12 20) 12)))
+  (should (= 20 (my-forge-ediff-review-model-line-before '(5 12 20) 99))))
+
+(ert-deftest review-model-line-before-should-wrap-past-the-first ()
+  (should (= 20 (my-forge-ediff-review-model-line-before '(5 12 20) 5)))
+  (should (= 20 (my-forge-ediff-review-model-line-before '(5 12 20) 1))))
+
+(ert-deftest review-model-line-navigation-should-be-nil-without-lines ()
+  (should-not (my-forge-ediff-review-model-line-after nil 3))
+  (should-not (my-forge-ediff-review-model-line-before nil 3)))
+
 ;;;; Sidebar line formatting
 
 (ert-deftest review-model-format-line-should-mark-current-file ()

@@ -221,5 +221,75 @@ and point into the next test."
                     :body)))
     (should-not (plist-get my-forge-ediff-review--session :pr-node-id))))
 
+;;;; Annotated-line navigation
+
+(defmacro my-forge-ediff-review-test--in-revision-buffer (session &rest body)
+  "Run BODY in a 20-line revision buffer with SESSION active.
+The buffer carries the file/rev locals that `--current-context' reads,
+so navigation resolves a path and side the way it does during a review."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (insert (mapconcat #'number-to-string (number-sequence 1 20) "\n"))
+     (setq-local my-magit-ediff--buf-file "a.el")
+     (setq-local my-magit-ediff--buf-rev "head")
+     (let ((my-forge-ediff-review--session ,session))
+       ,@body)))
+
+(defun my-forge-ediff-review-test--nav-session ()
+  "Return a session annotating a.el at lines 5 (twice) and 12."
+  (list :base-rev "base" :head-rev "head"
+        :existing (list (list :path "a.el" :line 5 :side "RIGHT"
+                              :thread-id "T1" :body "x"))
+        :comments (list (list :path "a.el" :line 12 :side "RIGHT" :body "c"))
+        :memos (list (list :path "a.el" :line 5 :side "RIGHT" :body "m"))))
+
+(ert-deftest my-forge-ediff-review-next-annotation-walks-forward ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--in-revision-buffer
+      (my-forge-ediff-review-test--nav-session)
+    (goto-char (point-min))
+    (my-forge-ediff-review-next-annotation)
+    (should (= 5 (line-number-at-pos)))
+    (my-forge-ediff-review-next-annotation)
+    (should (= 12 (line-number-at-pos)))))
+
+(ert-deftest my-forge-ediff-review-next-annotation-wraps-at-the-end ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--in-revision-buffer
+      (my-forge-ediff-review-test--nav-session)
+    (goto-char (point-max))
+    (my-forge-ediff-review-next-annotation)
+    (should (= 5 (line-number-at-pos)))))
+
+(ert-deftest my-forge-ediff-review-prev-annotation-walks-backward ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--in-revision-buffer
+      (my-forge-ediff-review-test--nav-session)
+    (goto-char (point-min))
+    (forward-line 14)
+    (my-forge-ediff-review-prev-annotation)
+    (should (= 12 (line-number-at-pos)))
+    (my-forge-ediff-review-prev-annotation)
+    (should (= 5 (line-number-at-pos)))))
+
+(ert-deftest my-forge-ediff-review-annotation-visits-a-shared-line-once ()
+  "A line carrying both a memo and a thread is one stop, not two."
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--in-revision-buffer
+      (my-forge-ediff-review-test--nav-session)
+    (goto-char (point-min))
+    (my-forge-ediff-review-next-annotation)
+    (should (= 5 (line-number-at-pos)))
+    (my-forge-ediff-review-next-annotation)
+    (should (= 12 (line-number-at-pos)))))
+
+(ert-deftest my-forge-ediff-review-annotation-errors-when-file-is-clean ()
+  (skip-unless my-forge-ediff-review-test--available)
+  (my-forge-ediff-review-test--in-revision-buffer
+      (list :base-rev "base" :head-rev "head"
+            :existing nil :comments nil :memos nil)
+    (should-error (my-forge-ediff-review-next-annotation)
+                  :type 'user-error)))
+
 (provide 'my-forge-ediff-review-test)
 ;;; my-forge-ediff-review-test.el ends here

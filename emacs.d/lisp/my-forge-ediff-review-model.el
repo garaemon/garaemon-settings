@@ -61,6 +61,34 @@ list is not modified."
           (equal (plist-get entry :side) side)))
    entries))
 
+(defun my-forge-ediff-review-model-annotated-lines (entries path side)
+  "Return the sorted, distinct :line numbers of ENTRIES on PATH and SIDE.
+Several entries can share one line -- a pending comment, a memo and a
+posted thread all at once -- so the result is deduplicated: navigation
+should visit a line once, not once per annotation on it."
+  (sort (delete-dups
+         (delq nil
+               (mapcar (lambda (entry) (plist-get entry :line))
+                       (my-forge-ediff-review-model-entries-for-side
+                        entries path side))))
+        #'<))
+
+(defun my-forge-ediff-review-model-line-after (lines line)
+  "Return the first of sorted LINES greater than LINE, wrapping to the first.
+Returns nil when LINES is empty.  Wrapping makes the annotations on a
+file a cycle, which is what you want when walking a review: the point of
+`next\=' is to reach the next thing to read, not to stop at the bottom."
+  (when lines
+    (or (seq-find (lambda (candidate) (> candidate line)) lines)
+        (car lines))))
+
+(defun my-forge-ediff-review-model-line-before (lines line)
+  "Return the last of sorted LINES less than LINE, wrapping to the last.
+Returns nil when LINES is empty."
+  (when lines
+    (or (car (last (seq-filter (lambda (candidate) (< candidate line)) lines)))
+        (car (last lines)))))
+
 ;;;; Sidebar line formatting
 
 (defun my-forge-ediff-review-model--counts-suffix (comment-count memo-count)
