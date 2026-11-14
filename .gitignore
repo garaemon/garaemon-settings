@@ -14,3 +14,5 @@ ansible/.ansible/
 # Reports the branch-review skill writes at the repository root.
 /REVIEW.md
 /REVIEW.html
+.worktrees/
+__pycache__/

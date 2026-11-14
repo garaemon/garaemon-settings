@@ -36,6 +36,7 @@ elpy/
 company-statistics-cache.el
 
 projectile-bookmarks.eld
+projectile-frecency.eld
 projectile.cache
 .persistent-scratch
 history
@@ -50,6 +51,7 @@ straight/
 quelpa/
 tree-sitter
 bookmarks
+bookmarks.eld
 
 .org-id-locations
 projects
