@@ -10,4 +10,6 @@ permissions:
 
 jobs:
   delete-branch:
-    uses: garaemon/delete-closed-branch/.github/workflows/delete-closed-branch-reusable.yml@v1
+    runs-on: ubuntu-slim
+    steps:
+      - uses: garaemon/delete-closed-branch@v1
