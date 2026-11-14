@@ -12,4 +12,4 @@ jobs:
   delete-branch:
     runs-on: ubuntu-slim
     steps:
-      - uses: garaemon/delete-closed-branch@v1
+      - uses: garaemon/delete-closed-branch@v1.1
