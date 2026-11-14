@@ -10,6 +10,4 @@ permissions:
 
 jobs:
   delete-branch:
-    # The local path runs the copy on the pull request's merge commit, so a
-    # change to the reusable workflow gets exercised before it reaches main.
-    uses: ./.github/workflows/delete-closed-branch-reusable.yml
+    uses: garaemon/delete-closed-branch/.github/workflows/delete-closed-branch-reusable.yml@v1
