@@ -204,6 +204,47 @@ forges resolve to nil so ghub falls back to its default host."
   (unless my-forge-ediff-review--session
     (user-error "No active forge ediff review session")))
 
+;;;; Paged GraphQL requests
+
+(defun my-forge-ediff-review--query-all-pages
+    (query variables path callback &optional errmsg acc)
+  "Run QUERY following PATH's cursor, then hand CALLBACK every node.
+VARIABLES is the GraphQL variable alist for the first page; each further
+page replaces the `after' cursor in it.  PATH leads from the response
+`data' down to the paginated connection, such as (repository pullRequest
+comments).  CALLBACK receives (NODES RESPONSE), where RESPONSE is the
+last page fetched, so scalar fields sitting beside the connection stay
+reachable.  ERRMSG prefixes the message shown when a page fails.
+
+ACC carries the nodes gathered so far across the recursion and is not
+meant for callers.  A failed page drops the whole accumulation rather
+than reporting it: a list that is silently short but looks complete is
+worse than one that is visibly absent."
+  (when (fboundp 'ghub-query)
+    (ghub-query
+      query variables
+      :auth 'forge
+      :host (plist-get my-forge-ediff-review--session :host)
+      :callback
+      (lambda (response &rest _)
+        (let* ((connection (my-forge-ediff-review-model-connection
+                            response path))
+               (nodes (append
+                       acc
+                       (my-forge-ediff-review-model-connection-nodes
+                        connection)))
+               (cursor (my-forge-ediff-review-model-next-cursor connection)))
+          (if cursor
+              (my-forge-ediff-review--query-all-pages
+               query
+               (cons (cons 'after cursor)
+                     (assq-delete-all 'after (copy-sequence variables)))
+               path callback errmsg nodes)
+            (funcall callback nodes response))))
+      :errorback (lambda (err &rest _)
+                   (message "%s: %S"
+                            (or errmsg "GraphQL request failed") err)))))
+
 ;;;; PR conversation (description and discussion comments)
 
 (defconst my-forge-ediff-review--conversation-buffer-name
@@ -241,19 +282,21 @@ carry the slot, yields nil and leaves the buffer to that refresh."
             (oref pullreq posts))))
 
 (defconst my-forge-ediff-review--conversation-query
-  "query($owner:String!,$repo:String!,$number:Int!){
+  "query($owner:String!,$repo:String!,$number:Int!,$after:String){
      repository(owner:$owner,name:$repo){
        pullRequest(number:$number){
          id
-         comments(first:100){
+         comments(first:100,after:$after){
+           pageInfo{ hasNextPage endCursor }
            nodes{ id databaseId body createdAt author{login} url }
          }
        }
      }
    }"
   "GraphQL query fetching a PR's conversation comments and its node id.
-Only the first 100 comments come back; following the cursor past that is
-a separate roadmap item, so a very long discussion is silently short.")
+Fetched a page at a time through `my-forge-ediff-review--query-all-pages',
+which supplies $after; it is omitted on the first request, which GitHub
+reads as \"from the beginning\".")
 
 (defun my-forge-ediff-review--fetch-conversation ()
   "Fetch the PR's conversation comments and refresh the buffer when they land.
@@ -261,30 +304,27 @@ Runs asynchronously; a failure is reported but changes nothing, leaving
 whatever forge's local database seeded on screen."
   (let* ((s my-forge-ediff-review--session)
          (num (plist-get s :num)))
-    (when (fboundp 'ghub-query)
-      (ghub-query
-        my-forge-ediff-review--conversation-query
-        `((owner . ,(plist-get s :owner))
-          (repo . ,(plist-get s :repo))
-          (number . ,num))
-        :auth 'forge
-        :host (plist-get s :host)
-        :callback (lambda (response &rest _)
-                    (my-forge-ediff-review--on-conversation-fetched
-                     response num))
-        :errorback (lambda (err &rest _)
-                     (message "Could not fetch PR comments: %S" err))))))
+    (my-forge-ediff-review--query-all-pages
+     my-forge-ediff-review--conversation-query
+     `((owner . ,(plist-get s :owner))
+       (repo . ,(plist-get s :repo))
+       (number . ,num))
+     '(repository pullRequest comments)
+     (lambda (nodes response)
+       (my-forge-ediff-review--on-conversation-fetched nodes response num))
+     "Could not fetch PR comments")))
 
-(defun my-forge-ediff-review--on-conversation-fetched (response num)
-  "Store conversation RESPONSE for PR NUM and redraw the buffer.
+(defun my-forge-ediff-review--on-conversation-fetched (nodes response num)
+  "Store conversation NODES from RESPONSE for PR NUM and redraw the buffer.
 NUM is the pull request the request was issued for.  A reply can outlive
 its session -- the reviewer quits and starts on a different PR while it
 is still in flight -- and without this check one PR's discussion would
-appear under another PR's title."
+appear under another PR's title.  RESPONSE is the last page, read only
+for the scalar node id beside the connection."
   (when (and my-forge-ediff-review--session
              (equal num (plist-get my-forge-ediff-review--session :num)))
     (setf (plist-get my-forge-ediff-review--session :conversation)
-          (my-forge-ediff-review-model-parse-conversation response))
+          (my-forge-ediff-review-model-parse-conversation-nodes nodes))
     (setf (plist-get my-forge-ediff-review--session :pr-node-id)
           (my-forge-ediff-review-model-parse-pr-node-id response))
     ;; Redraw only if the buffer is around; never display it, since this
@@ -339,10 +379,11 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
 ;;;; Existing review comments (fetched from GitHub)
 
 (defconst my-forge-ediff-review--threads-query
-  "query($owner:String!,$repo:String!,$number:Int!){
+  "query($owner:String!,$repo:String!,$number:Int!,$after:String){
      repository(owner:$owner,name:$repo){
        pullRequest(number:$number){
-         reviewThreads(first:100){
+         reviewThreads(first:100,after:$after){
+           pageInfo{ hasNextPage endCursor }
            nodes{
              id
              isResolved path line originalLine diffSide
@@ -354,33 +395,53 @@ refreshed from GitHub in the background; `g' refetches, `q' buries it."
        }
      }
    }"
-  "GraphQL query fetching a PR's review threads and their inline comments.")
+  "GraphQL query fetching a PR's review threads and their inline comments.
+The threads themselves are paged through by
+`my-forge-ediff-review--query-all-pages'.  The comments *within* one
+thread are still capped at 100: a single thread that long is
+pathological, and paging each thread separately would cost one request
+per thread on every refresh.")
 
 (defun my-forge-ediff-review--fetch-existing-threads ()
   "Fetch the PR's existing review comments and overlay them when they arrive.
 Runs asynchronously; failures are reported but never abort the review."
-  (let ((s my-forge-ediff-review--session))
-    (when (fboundp 'ghub-query)
-      (ghub-query
-        my-forge-ediff-review--threads-query
-        `((owner . ,(plist-get s :owner))
-          (repo . ,(plist-get s :repo))
-          (number . ,(plist-get s :num)))
-        :auth 'forge
-        :host (plist-get s :host)
-        :callback #'my-forge-ediff-review--on-threads-fetched
-        :errorback (lambda (err &rest _)
-                     (message "Could not fetch existing review comments: %S"
-                              err))))))
+  (let* ((s my-forge-ediff-review--session)
+         (num (plist-get s :num)))
+    (my-forge-ediff-review--query-all-pages
+     my-forge-ediff-review--threads-query
+     `((owner . ,(plist-get s :owner))
+       (repo . ,(plist-get s :repo))
+       (number . ,num))
+     '(repository pullRequest reviewThreads)
+     (lambda (nodes _response)
+       (my-forge-ediff-review--on-threads-fetched nodes num))
+     "Could not fetch existing review comments")))
 
-(defun my-forge-ediff-review--on-threads-fetched (response &rest _)
-  "Store parsed RESPONSE into the session and refresh overlays."
-  (when my-forge-ediff-review--session
-    (let ((entries (my-forge-ediff-review-model-parse-review-threads
-                    response)))
+(defun my-forge-ediff-review--on-threads-fetched (nodes num)
+  "Store thread NODES for PR NUM into the session and refresh overlays.
+NUM guards the same way the conversation fetch does: a request that
+outlives its session would otherwise hang one PR's inline comments on
+another PR's files, at line numbers that mean nothing there."
+  (when (and my-forge-ediff-review--session
+             (equal num (plist-get my-forge-ediff-review--session :num)))
+    (let ((entries (my-forge-ediff-review-model-parse-review-thread-nodes
+                    nodes)))
       (setf (plist-get my-forge-ediff-review--session :existing) entries)
       (my-forge-ediff-review--refresh-all-buffers)
       (message "Loaded %d existing review comment(s)." (length entries)))))
+
+(defun my-forge-ediff-review-refresh ()
+  "Refetch the PR's review threads and conversation from GitHub.
+Bound to `g' wherever a review buffer takes keys.  Both fetches run
+asynchronously and redraw what they touch as they land, so the sidebar
+is redrawn immediately rather than waiting on the network."
+  (interactive)
+  (my-forge-ediff-review--ensure-session)
+  (my-forge-ediff-review--fetch-existing-threads)
+  (my-forge-ediff-review--fetch-conversation)
+  (my-forge-ediff-review--refresh-sidebar)
+  (message "Refreshing PR #%s from GitHub..."
+           (plist-get my-forge-ediff-review--session :num)))
 
 ;;;; Overlays in ediff buffers
 
@@ -583,6 +644,7 @@ file/rev locals set by `my-magit-ediff--create-revision-buffer'."
       (define-key map (kbd "d") #'my-forge-ediff-review-toggle-reviewed)
       (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
       (define-key map (kbd "c") #'my-forge-ediff-review-toggle-cards)
+      (define-key map (kbd "g") #'my-forge-ediff-review-refresh)
       (define-key map (kbd "n") #'my-forge-ediff-review-next-diff)
       (define-key map (kbd "p") #'my-forge-ediff-review-prev-diff)
       (define-key map (kbd "q") #'my-forge-ediff-review-quit-ediff)
@@ -1051,7 +1113,7 @@ C-c C-c submits, C-c C-k cancels. HTML comments are stripped. -->\n\n"
     (define-key map (kbd "<mouse-1>") #'my-forge-ediff-review-sidebar-open)
     (define-key map (kbd "d") #'my-forge-ediff-review-sidebar-toggle-reviewed)
     (define-key map (kbd "D") #'my-forge-ediff-review-show-conversation)
-    (define-key map (kbd "g") #'my-forge-ediff-review-sidebar-refresh)
+    (define-key map (kbd "g") #'my-forge-ediff-review-refresh)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)
     (define-key map (kbd "q") #'my-forge-ediff-review-sidebar-quit)
@@ -1180,11 +1242,6 @@ commit in a `magit-show-commit' buffer."
   (interactive)
   (my-forge-ediff-review--toggle-reviewed-path
    (my-forge-ediff-review--sidebar-file-at-point)))
-
-(defun my-forge-ediff-review-sidebar-refresh ()
-  "Redraw the sidebar on demand."
-  (interactive)
-  (my-forge-ediff-review--render-sidebar))
 
 (defun my-forge-ediff-review-sidebar-quit ()
   "End the review session.  Quit the open diff first if one is shown."
