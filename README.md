@@ -170,6 +170,49 @@ which `eslint-plugin-html` extracts. Beyond the recommended rule set it enforces
 Tests stay with the component they exercise (`dotfiles-test.yml`,
 `emacs-test.yml`, `emacs-build-test.yml`, `skills-ci.yml`, `ansible.yml`).
 
+## Reusable Workflows
+
+Other repositories can call these GitHub Actions workflows with `uses:`. This
+repository is public, so private repositories can call them too.
+
+### Delete closed branch
+
+`delete-closed-branch-reusable.yml` cleans up after a pull request closes,
+merged or not. The workflow runs these steps:
+
+1. Retargets every open pull request based on the closed branch to the default
+   branch. A stacked pull request therefore stays open and moves down the
+   stack.
+1. Deletes the closed branch.
+
+The workflow skips pull requests from forks, because `GITHUB_TOKEN` cannot
+write to another repository.
+
+To enable the workflow, add `.github/workflows/delete-closed-branch.yml` to the
+repository:
+
+```yaml
+name: Delete closed branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  delete-branch:
+    uses: garaemon/garaemon-settings/.github/workflows/delete-closed-branch-reusable.yml@delete-closed-branch/v1
+```
+
+The caller must grant both write permissions. A called workflow cannot raise
+the permissions of the caller's `GITHUB_TOKEN`.
+
+Pin the tag, such as `delete-closed-branch/v1`, instead of `main`. A change on
+`main` then reaches the callers only when they move to a new tag.
+
 ## Scope
 
 This repository configures the **interactive desktop environment** of a host,
