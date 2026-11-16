@@ -186,18 +186,16 @@ If the file is new, it will be populated with a default template."
   (add-hook 'find-file-hook #'my-org-git-sync-fetch-on-find-file)
   (add-hook 'after-save-hook #'my-org-git-sync-schedule-auto-commit)
 
-  ;; Use proportional font for the headings in org-mode.
+  ;; Keep the headings in the default monospace font so that Japanese text
+  ;; aligns with the body.  Inheriting `modus-themes-heading-N' keeps the
+  ;; color, weight, and height that `ef-themes-headings' gives each level.
   (let ((default-font (face-attribute 'default :family)))
-    (custom-set-faces `(org-level-1 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-2 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-3 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-4 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-5 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-6 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-7 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-level-8 ((t (:family ,default-font :inherit default)))))
-    (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default)))))
-    )
+    (dolist (level (number-sequence 1 8))
+      (custom-set-faces
+       `(,(intern (format "org-level-%d" level))
+         ((t (:family ,default-font
+              :inherit ,(intern (format "modus-themes-heading-%d" level))))))))
+    (custom-set-faces `(org-document-title ((t (:family ,default-font :height 1.0 :weight bold :inherit default))))))
 
   :bind (("C-c c" . org-capture)
          ("C-M-c" . org/note-right-now)

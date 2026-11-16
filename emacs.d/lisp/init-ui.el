@@ -238,6 +238,12 @@ face height changes; `text-scale+' and friends below do that."
 (use-package ef-themes :ensure t
   :if (display-graphic-p)
   :config
+  ;; Each value is a height relative to the body text.  Bold applies to every
+  ;; level so that a heading stands out from the property drawer below it.
+  (setq ef-themes-headings
+        '((1 . (bold 1.3))
+          (2 . (bold 1.15))
+          (t . (bold))))
   (load-theme 'ef-elea-dark t))
 
 (use-package diff-hl :ensure t
