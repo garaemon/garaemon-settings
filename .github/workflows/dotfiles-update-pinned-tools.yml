@@ -63,7 +63,7 @@ jobs:
         # close-and-reopen the PR (or push an empty commit) to force CI
         # to run, or the maintainer can switch this token to a fine-grained
         # PAT / GitHub App token in the future.
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8  # v8.1.2
         with:
           branch: auto/bump-${{ matrix.tool }}-v${{ steps.bump.outputs.version }}
           base: main
