@@ -164,6 +164,14 @@ Keep one feature per PR.
 - Combine features in one PR only when they are closely related or cannot be separated, such as an option that depends on another new option.
 - When a task contains several features, split it into a series of PRs instead of one large PR.
 
+### PR Description Updates
+
+Fetch the current PR description right before you update it, for example with `gh pr view <number> --json body -q .body`. Never rewrite it from your own earlier copy.
+
+- Humans and other agents may have edited the description since you last read it.
+- Uploaded images and attachments live only as links in the description. Overwriting the body with a stale copy drops those links for good.
+- Edit the fetched body in place, and keep every part you do not intend to change, including image links, checklists, and sections others added.
+
 ## Git
 
 ### Branch Naming
