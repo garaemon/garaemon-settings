@@ -49,7 +49,6 @@ def parse_size(text: str) -> Size:
 - When a value can take only a fixed set of values, define an `enum.Enum` subclass for the set.
 - Do not represent such a value with a bare string or integer constant, such as `"active"` or `1`. A typo in a string literal fails only at runtime, while a typo in an enum member fails at import time and in the type checker.
 - Use `enum.StrEnum` or `enum.IntEnum` when the value must interoperate with plain strings or integers, such as a JSON field or a database column.
-- Use `typing.Literal` only for a small set of values local to one function signature that no other code needs to reference.
 
 BAD:
 
