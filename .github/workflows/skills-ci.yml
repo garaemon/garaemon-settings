@@ -72,7 +72,7 @@ jobs:
 
   review-bot-prs-tests:
     name: review-bot-prs tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
