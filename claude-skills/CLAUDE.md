@@ -127,6 +127,21 @@ make an equally strong, written argument here.
 
 Treat this as a one-off, not a precedent.
 
+### Documented exception: `review-bot-prs` runs `check_cve.py` on the host
+
+`skills/review-bot-prs/scripts/check_cve.py` reaches the network and runs
+directly on the host. The exception rests on these facts:
+
+- The script imports only the Python standard library, so no third-party
+  dependency can be compromised.
+- The script carries and reads no credential.
+- The only data it sends is public package names and versions, to
+  `api.osv.dev`.
+- The script must read the caller's git objects. The rest of the skill already
+  drives `gh` and `git` on the host, like `create-pr`.
+
+Treat this as a one-off, not a precedent.
+
 ### Skill layout
 
 ```text
