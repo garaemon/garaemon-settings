@@ -43,3 +43,34 @@ def parse_size(text: str) -> Size:
     width, height = text.split("x")
     return Size(width=int(width), height=int(height))
 ```
+
+## Enumerations
+
+- When a value can take only a fixed set of values, define an `enum.Enum` subclass for the set.
+- Do not represent such a value with a bare string or integer constant, such as `"active"` or `1`. A typo in a string literal fails only at runtime, while a typo in an enum member fails at import time and in the type checker.
+- Use `enum.StrEnum` or `enum.IntEnum` when the value must interoperate with plain strings or integers, such as a JSON field or a database column.
+- Use `typing.Literal` only for a small set of values local to one function signature that no other code needs to reference.
+
+BAD:
+
+```python
+def set_status(status: str) -> None:
+    if status not in ("active", "inactive", "suspended"):
+        raise ValueError(f"unknown status: {status}")
+```
+
+GOOD:
+
+```python
+from enum import Enum
+
+
+class Status(Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+
+
+def set_status(status: Status) -> None:
+    ...
+```
