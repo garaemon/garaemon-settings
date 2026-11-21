@@ -12,7 +12,7 @@ Apply these rules when creating or editing Python code (`*.py`).
 - Annotate every parameter and the return value of every function and method. Write `-> None` for a function that returns nothing. Leave `self` and `cls` unannotated.
 - Annotate a variable when the type checker cannot infer its type, such as an empty container: `names: list[str] = []`.
 - Use built-in generics and the `|` operator: `list[str]`, `dict[str, int]`, `int | str`. Do not use `typing.List`, `typing.Dict`, `typing.Optional`, or `typing.Union`.
-- Avoid `Any`. Use a concrete type, a `Protocol`, or a type variable instead. When an external library forces `Any`, explain why in a comment.
+- Avoid `Any`. See [Avoiding Any](#avoiding-any).
 
 BAD:
 
@@ -26,6 +26,57 @@ GOOD:
 ```python
 def count_words(text: str, ignore_case: bool = False) -> dict[str, int]:
     ...
+```
+
+## Avoiding Any
+
+Avoid `Any` wherever you can, including inside other types such as `dict[str, Any]`. The type checker skips every value typed as `Any`, so a mistake spreads silently to every place the value reaches.
+
+Use these alternatives instead:
+
+- Use a concrete type or a union of concrete types, such as `int | str`.
+- Use `object` when the code accepts any value but never inspects it.
+- Use a type variable or a generic class when the output type follows the input type.
+- Use a `Protocol` when the code needs only some methods or attributes of a value.
+- Parse untyped data, such as JSON or a YAML file, into a dataclass at the boundary where it enters the program. Do not pass `dict[str, Any]` around.
+- Use `TypedDict` when a dictionary with fixed keys must stay a dictionary, such as a payload for an external API.
+
+`Any` is still fine in these cases:
+
+- An external library has no type hints, or its types require `Any`.
+- A type cannot be expressed in the Python type system.
+
+In those cases, keep `Any` inside the smallest possible scope, and explain the reason in a comment.
+
+BAD:
+
+```python
+def load_user(path: str) -> dict[str, Any]:
+    with open(path) as user_file:
+        return json.load(user_file)
+
+
+def first_item(items: list[Any]) -> Any:
+    return items[0]
+```
+
+GOOD:
+
+```python
+@dataclass(frozen=True)
+class User:
+    name: str
+    age: int
+
+
+def load_user(path: str) -> User:
+    with open(path) as user_file:
+        raw_user = json.load(user_file)
+    return User(name=str(raw_user["name"]), age=int(raw_user["age"]))
+
+
+def first_item[T](items: Sequence[T]) -> T:
+    return items[0]
 ```
 
 ## Avoiding Optional Types
