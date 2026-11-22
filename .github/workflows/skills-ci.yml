@@ -70,6 +70,18 @@ jobs:
         working-directory: claude-skills/skills/gist-report
         run: uv run --no-project --python 3.9 -m unittest discover -s scripts
 
+  review-bot-prs-tests:
+    name: review-bot-prs tests
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      # Pinned to the floor the script supports so a newer-only construct fails
+      # here rather than on a machine whose python3 is 3.9.
+      - name: Run unit tests
+        working-directory: claude-skills/skills/review-bot-prs
+        run: uv run --no-project --python 3.9 -m unittest discover -s scripts
+
   spotify-sheets-image:
     name: Build spotify-sheets image
     runs-on: ubuntu-latest
