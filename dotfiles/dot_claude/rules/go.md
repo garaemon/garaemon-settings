@@ -18,7 +18,7 @@ BAD:
 
 ```go
 func ParseSize(text string) (int, int, error) {
-	...
+    ...
 }
 ```
 
@@ -26,12 +26,12 @@ GOOD:
 
 ```go
 type Size struct {
-	Width  int
-	Height int
+    Width  int
+    Height int
 }
 
 func ParseSize(text string) (Size, error) {
-	...
+    ...
 }
 ```
 
@@ -68,10 +68,10 @@ func Wait(timeout time.Duration)
 type Status int
 
 const (
-	StatusUnknown Status = iota
-	StatusActive
-	StatusInactive
-	StatusSuspended
+    StatusUnknown Status = iota
+    StatusActive
+    StatusInactive
+    StatusSuspended
 )
 ```
 
@@ -87,9 +87,9 @@ BAD:
 
 ```go
 type Request struct {
-	Status string // "loading", "success", or "failure"
-	Data   string // Valid only for "success".
-	Err    error  // Valid only for "failure".
+    Status string // "loading", "success", or "failure"
+    Data   string // Valid only for "success".
+    Err    error  // Valid only for "failure".
 }
 ```
 
@@ -97,7 +97,7 @@ GOOD:
 
 ```go
 type Request interface {
-	isRequest()
+    isRequest()
 }
 
 type Loading struct{}
@@ -109,16 +109,16 @@ func (Success) isRequest() {}
 func (Failure) isRequest() {}
 
 func DescribeRequest(request Request) string {
-	switch typedRequest := request.(type) {
-	case Loading:
-		return "loading"
-	case Success:
-		return typedRequest.Data
-	case Failure:
-		return typedRequest.Err.Error()
-	default:
-		panic(fmt.Sprintf("unknown request: %T", request))
-	}
+    switch typedRequest := request.(type) {
+    case Loading:
+        return "loading"
+    case Success:
+        return typedRequest.Data
+    case Failure:
+        return typedRequest.Err.Error()
+    default:
+        panic(fmt.Sprintf("unknown request: %T", request))
+    }
 }
 ```
 
