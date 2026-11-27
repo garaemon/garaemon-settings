@@ -25,6 +25,21 @@ Exceptions:
 - Libraries require inheritance.
 - You need inheritance of types.
 
+### Type-Driven Development
+
+Design the types first, and let the type checker keep the program sound. Treat a type error as a design signal, not an obstacle to silence.
+
+- Define the data types and function signatures before you write the function bodies.
+- Define a named type for every record. Do not bundle related values in a tuple, a pair, or a loosely typed map, such as a multi-value return or `dict[str, Any]`.
+- Give every field a name and a precise type.
+- Make illegal states unrepresentable. Model each state as its own type, and combine them with a sum type (tagged union, `enum` with payload, sealed class) instead of a record with optional fields that are valid only in some states.
+- Wrap a primitive in a domain type when mixing it up is a bug, such as a user ID versus an order ID, or meters versus seconds.
+- Parse, do not validate. Convert untyped input, such as JSON, command-line arguments, or environment variables, into a typed value at the boundary where it enters the program. Pass only the typed value inward.
+- Avoid escape hatches, such as `Any`, `interface{}`, `unknown` casts, `as`, `void*`, and unchecked casts. Narrow the type instead.
+- Match a sum type exhaustively, so that the compiler reports every branch you forget when you add a variant.
+
+A tuple is still fine for a homogeneous sequence, or for an API that requires one.
+
 ### Formatting
 
 Do not add trailing spaces.
