@@ -52,6 +52,10 @@ When creating a new shell script (`*.sh` or `*.bash`), read `~/.claude/rules/she
 
 When creating or editing Python code (`*.py`), read `~/.claude/rules/python.md` first and follow it.
 
+## TypeScript
+
+When creating or editing TypeScript code (`*.ts`, `*.tsx`, `*.mts`, `*.cts`), read `~/.claude/rules/typescript.md` first and follow it.
+
 ## Comments
 
 ### Principle
