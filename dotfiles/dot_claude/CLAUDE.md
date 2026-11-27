@@ -56,6 +56,10 @@ When creating or editing Python code (`*.py`), read `~/.claude/rules/python.md` 
 
 When creating or editing TypeScript code (`*.ts`, `*.tsx`, `*.mts`, `*.cts`), read `~/.claude/rules/typescript.md` first and follow it.
 
+## C++
+
+When creating or editing C++ code (`*.cpp`, `*.cc`, `*.cxx`, `*.hpp`, `*.hh`, `*.hxx`, and C++ `*.h` headers), read `~/.claude/rules/cpp.md` first and follow it.
+
 ## Comments
 
 ### Principle
