@@ -60,6 +60,10 @@ When creating or editing TypeScript code (`*.ts`, `*.tsx`, `*.mts`, `*.cts`), re
 
 When creating or editing C++ code (`*.cpp`, `*.cc`, `*.cxx`, `*.hpp`, `*.hh`, `*.hxx`, and C++ `*.h` headers), read `~/.claude/rules/cpp.md` first and follow it.
 
+## Go
+
+When creating or editing Go code (`*.go`), read `~/.claude/rules/go.md` first and follow it.
+
 ## Comments
 
 ### Principle
